@@ -9,7 +9,7 @@ APP_TAGLINE = "Was kann MAB.AI für dich tun?"
 
 BASE_DIR = Path(__file__).parent
 DB_PATH = BASE_DIR / "mab_ai_v13.db"
-LOGO_PATH = BASE_DIR / "apps" / "logo.png"
+LOGO_PATH = Path(__file__).parent / "logo.png"
 
 # OpenAI
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
