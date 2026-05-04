@@ -361,3 +361,32 @@ def verify_user(username, password):
         "tokens": user[4],
         "role": user[5],
     }
+
+def increment_usage(username, field):
+    conn = get_conn()
+    c = conn.cursor()
+
+    allowed = ["images", "videos", "content", "music"]
+    if field not in allowed:
+        conn.close()
+        return
+
+    try:
+        c.execute(f"ALTER TABLE users ADD COLUMN {field} INTEGER DEFAULT 0")
+    except Exception:
+        pass
+
+    c.execute(
+        f"UPDATE users SET {field} = COALESCE({field}, 0) + 1 WHERE username=?",
+        (username,)
+    )
+
+    conn.commit()
+    conn.close()
+
+def get_user(username):
+    conn = get_conn()
+    c = conn.cursor()
+    user = c.execute("SELECT * FROM users WHERE username=?", (username,)).fetchone()
+    conn.close()
+    return user
