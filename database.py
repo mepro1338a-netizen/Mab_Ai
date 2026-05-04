@@ -158,3 +158,35 @@ def list_users():
 
     conn.close()
     return users
+
+def list_purchases(username=None):
+    conn = get_conn()
+    c = conn.cursor()
+
+    c.execute("""
+    CREATE TABLE IF NOT EXISTS purchases (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT,
+        plan TEXT,
+        stripe_session TEXT,
+        status TEXT DEFAULT 'created',
+        created_at TEXT
+    )
+    """)
+
+    if username:
+        rows = c.execute("""
+        SELECT username, plan, stripe_session, status, created_at
+        FROM purchases
+        WHERE username=?
+        ORDER BY created_at DESC
+        """, (username,)).fetchall()
+    else:
+        rows = c.execute("""
+        SELECT username, plan, stripe_session, status, created_at
+        FROM purchases
+        ORDER BY created_at DESC
+        """).fetchall()
+
+    conn.close()
+    return rows
