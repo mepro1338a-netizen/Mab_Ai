@@ -336,3 +336,28 @@ def list_admin_chat(limit=80):
 
 def add_admin_chat(username, role, message):
     return True, "Message sent."
+
+def verify_user(username, password):
+    conn = get_conn()
+    c = conn.cursor()
+
+    user = c.execute(
+        "SELECT username, email, password, plan, tokens, role FROM users WHERE username=?",
+        (username.strip().lower(),)
+    ).fetchone()
+
+    conn.close()
+
+    if not user:
+        return False, "User not found.", None
+
+    if user[2] != password:
+        return False, "Wrong password.", None
+
+    return True, "Login successful.", {
+        "username": user[0],
+        "email": user[1],
+        "plan": user[3],
+        "tokens": user[4],
+        "role": user[5],
+    }
