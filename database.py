@@ -8,6 +8,10 @@ def hash_password(password: str, salt: str) -> str:
     return hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt.encode("utf-8"), 180000).hex()
 
 def init_db():
+
+c.execute("""
+CREATE TABLE IF NOT EXISTS support_messages (
+    
     conn = get_conn(); c = conn.cursor()
     c.execute("""CREATE TABLE IF NOT EXISTS users (
         username TEXT PRIMARY KEY, email TEXT UNIQUE, password_hash TEXT NOT NULL, salt TEXT NOT NULL,
@@ -42,6 +46,20 @@ def init_db():
         (username,email,password_hash,salt,plan,tokens,role,created_at,last_login)
         VALUES (?,?,?,?,?,?,?,?,?)""", ("admin","admin@mab.ai",pw,salt,"elite",10000,"admin",time.time(),time.time()))
     c.execute("UPDATE users SET email_verified=1 WHERE username='admin'")
+c.execute("""
+CREATE TABLE IF NOT EXISTS support_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT,
+    email TEXT,
+    category TEXT,
+    subject TEXT,
+    message TEXT,
+    status TEXT DEFAULT 'open',
+    is_read INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
+""")
     conn.commit(); conn.close()
 
 def create_user(username, email, password, role="user", plan="free", tokens=None):
