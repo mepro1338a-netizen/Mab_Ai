@@ -122,17 +122,35 @@ for key, value in defaults().items():
         st.session_state[key] = value
 
 
+def normalize_user(user):
+    if not user:
+        return None
+
+    if isinstance(user, dict):
+        return user
+
+    # tuple/list aus database.py
+    return {
+        "username": user[0] if len(user) > 0 else "",
+        "email": user[1] if len(user) > 1 else "",
+        "plan": user[3] if len(user) > 3 else "free",
+        "tokens": user[4] if len(user) > 4 else 0,
+        "role": user[5] if len(user) > 5 else "user",
+    }
+
+
 def sync_user():
     if not st.session_state.user:
         return
 
     user = refresh_user(st.session_state.user)
+    user = normalize_user(user)
+
     if user:
         st.session_state.email = user.get("email", "")
         st.session_state.plan = user.get("plan", "free")
         st.session_state.tokens = user.get("tokens", 0)
         st.session_state.role = user.get("role", "user")
-
 
 def login_success(user):
     st.session_state.user = user["username"]
