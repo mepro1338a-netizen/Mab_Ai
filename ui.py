@@ -364,6 +364,24 @@ header {
         grid-template-columns:1fr;
     }
 }
+[data-testid="stHeader"] {
+    background:#ffffff !important;
+}
+
+.header-logo-wrap {
+    position:fixed;
+    top:14px;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:999999;
+    pointer-events:none;
+}
+
+.header-logo-wrap img {
+    height:54px;
+    width:auto;
+    border-radius:12px;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -412,12 +430,13 @@ with st.sidebar:
 
     st.markdown("### Grand")
     nav_button("AI Video Generator", "video", "grand")
+    nav_button("Short Reels Creator", "reels", "grand")
 
     st.markdown("### Account")
     nav_button("User Dashboard", "dashboard", "free")
     nav_button("Support", "support", "free")
     nav_button("Buy Premium", "premium", "free")
-    nav_button("Connect APIs", "connect", "free")
+   
 
     if can_access_admin():
         st.markdown("### Team")
@@ -700,17 +719,6 @@ elif st.session_state.page == "premium":
                         else:
                             st.link_button("Open Checkout", url)
 
-
-elif st.session_state.page == "connect":
-    st.title("🔗 Connect APIs")
-    st.info("Hier kommen später deine API-Verbindungen rein.")
-    st.code("""
-OPENAI_API_KEY=
-STRIPE_SECRET_KEY=
-REPLICATE_API_TOKEN=
-RUNWAY_API_KEY=
-SUNO_API_KEY=
-""")
 
 
 # -------------------------------------------------
