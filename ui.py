@@ -1,171 +1,177 @@
 import streamlit as st
+import streamlit.components.v1 as components
+from pathlib import Path
 
-# =============================
-# SAFE IMPORTS (kein Crash mehr)
-# =============================
-try:
-    from database import *
-except:
-    pass
-
-try:
-    from auth import login_user, register_user
-except:
-    pass
-
-try:
-    from backend import *
-except:
-    pass
-
-# =============================
-# PAGE CONFIG
-# =============================
 st.set_page_config(
-    page_title="MAB AI",
-    layout="wide"
+    page_title="MAB.AI",
+    page_icon="🧠",
+    layout="wide",
+    initial_sidebar_state="expanded",
 )
 
-# =============================
-# SIDEBAR FIX (WICHTIG)
-# =============================
+BASE_DIR = Path(__file__).parent
+LOGO_PATH = BASE_DIR / "logo.png"
+
+components.html("""
+<script>
+setTimeout(() => {
+  const btn = window.parent.document.querySelector('[data-testid="collapsedControl"]');
+  if (btn) btn.click();
+}, 300);
+</script>
+""", height=0)
+
 st.markdown("""
 <style>
-
-/* Sidebar immer anzeigen */
-section[data-testid="stSidebar"] {
-    display: block !important;
+html, body, .stApp {
+    background:#000 !important;
+    color:#fff !important;
 }
 
-/* Toggle Button sichtbar */
-[data-testid="collapsedControl"] {
-    display: flex !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    pointer-events: auto !important;
-    z-index: 999999 !important;
-}
-
-/* Header sichtbar */
 header {
-    display: block !important;
+    display:block !important;
+    visibility:visible !important;
 }
 
-/* KEIN VERSTECKEN */
-.st-emotion-cache-1cypcdb {
-    display: block !important;
+[data-testid="stSidebar"] {
+    background:#07070b !important;
+    border-right:1px solid rgba(255,215,0,.25) !important;
 }
 
+[data-testid="stSidebar"] * {
+    color:#fff !important;
+}
+
+[data-testid="collapsedControl"] {
+    display:flex !important;
+    visibility:visible !important;
+    opacity:1 !important;
+    pointer-events:auto !important;
+    z-index:999999 !important;
+}
+
+.block-container {
+    max-width:1200px !important;
+    padding-top:2rem !important;
+}
+
+.sidebar-logo {
+    text-align:center;
+    margin-bottom:20px;
+}
+
+.hero {
+    background:linear-gradient(135deg,#06364d,#3b0b55);
+    border:1px solid rgba(255,255,255,.12);
+    border-radius:34px;
+    padding:55px;
+    margin-top:30px;
+}
+
+.hero h1 {
+    font-size:64px;
+    line-height:1;
+    font-weight:900;
+    color:white !important;
+}
+
+.hero p {
+    font-size:20px;
+    color:#e5e7eb !important;
+}
+
+.card {
+    background:#11111a;
+    border:1px solid rgba(255,255,255,.1);
+    border-radius:22px;
+    padding:24px;
+    min-height:130px;
+}
+
+.stButton button {
+    width:100%;
+    background:#000 !important;
+    color:#ffd700 !important;
+    border:1px solid rgba(255,215,0,.55) !important;
+    border-radius:14px !important;
+    min-height:46px;
+    font-weight:800;
+}
+
+.stButton button:hover {
+    border-color:#ffd700 !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
-# =============================
-# SIDEBAR
-# =============================
+if "page" not in st.session_state:
+    st.session_state.page = "home"
+
 with st.sidebar:
-    st.title("⚡ MAB AI")
+    if LOGO_PATH.exists():
+        st.image(str(LOGO_PATH), use_container_width=True)
+    else:
+        st.title("MAB.AI")
 
     st.markdown("---")
+    st.markdown("### Account")
 
-    st.subheader("Account")
-
+    if st.button("Memory Chat"):
+        st.session_state.page = "home"
     if st.button("User Dashboard"):
-        st.session_state["page"] = "dashboard"
-
+        st.session_state.page = "dashboard"
     if st.button("Support"):
-        st.session_state["page"] = "support"
-
+        st.session_state.page = "support"
     if st.button("Buy Premium"):
-        st.session_state["page"] = "premium"
-
-    if st.button("Connect"):
-        st.session_state["page"] = "connect"
+        st.session_state.page = "premium"
+    if st.button("Connect with"):
+        st.session_state.page = "connect"
 
     st.markdown("---")
-
-    st.subheader("Team")
+    st.markdown("### Team")
 
     if st.button("Admin Panel"):
-        st.session_state["page"] = "admin"
+        st.session_state.page = "admin"
 
-# =============================
-# DEFAULT PAGE
-# =============================
-if "page" not in st.session_state:
-    st.session_state["page"] = "home"
+page = st.session_state.page
 
-page = st.session_state["page"]
-
-# =============================
-# HOME
-# =============================
 if page == "home":
     st.markdown("""
-    <div style="text-align:center; padding-top:60px;">
+    <section class="hero">
         <h1>Was kann ich für dich tun?</h1>
-        <p>Starte mit Memory Chat. Erstelle Texte, plane Projekte oder lass dir helfen.</p>
-    </div>
+        <p>Starte mit Memory Chat. Erstelle Texte, plane Projekte, sammle Ideen oder lass dir direkt helfen.</p>
+    </section>
     """, unsafe_allow_html=True)
 
-    col1, col2, col3, col4 = st.columns(4)
+    c1, c2, c3, c4 = st.columns(4)
 
-    with col1:
-        st.info("Free\n\nMemory Chat inklusive.")
+    with c1:
+        st.markdown('<div class="card"><h3>Free</h3><p>Memory Chat inklusive.</p></div>', unsafe_allow_html=True)
+    with c2:
+        st.markdown('<div class="card"><h3>Pro</h3><p>Coding, Bilder, Musik und Video-Reels.</p></div>', unsafe_allow_html=True)
+    with c3:
+        st.markdown('<div class="card"><h3>Grand</h3><p>AI Video Generator.</p></div>', unsafe_allow_html=True)
+    with c4:
+        st.markdown('<div class="card"><h3>Elite</h3><p>Alles freigeschaltet.</p></div>', unsafe_allow_html=True)
 
-    with col2:
-        st.info("Pro\n\nCoding, Bilder, Musik & Video.")
-
-    with col3:
-        st.info("Grand\n\nAI Video Generator.")
-
-    with col4:
-        st.info("Elite\n\nAlles freigeschaltet.")
-
-# =============================
-# DASHBOARD
-# =============================
 elif page == "dashboard":
-    st.title("User Dashboard")
-    st.write("Hier kommt dein Dashboard rein.")
+    st.title("📊 User Dashboard")
+    st.info("Dashboard kommt hier rein.")
 
-# =============================
-# SUPPORT
-# =============================
 elif page == "support":
-    st.title("Support")
+    st.title("🆘 Support")
+    st.text_input("Betreff")
+    st.text_area("Nachricht")
+    st.button("Senden")
 
-    username = st.text_input("Username")
-    message = st.text_area("Nachricht")
-
-    if st.button("Senden"):
-        try:
-            add_support_message(username, "general", "Support", message)
-            st.success("Nachricht gesendet!")
-        except:
-            st.error("Support DB noch nicht ready.")
-
-# =============================
-# PREMIUM
-# =============================
 elif page == "premium":
-    st.title("Premium Upgrade")
-    st.write("Upgrade kommt hier rein.")
+    st.title("💳 Buy Premium")
+    st.info("Premium-Pläne kommen hier rein.")
 
-# =============================
-# CONNECT
-# =============================
 elif page == "connect":
-    st.title("Connect APIs")
-    st.write("Hier API Keys später.")
+    st.title("🔗 Connect with")
+    st.info("API-Verbindungen kommen hier rein.")
 
-# =============================
-# ADMIN
-# =============================
 elif page == "admin":
-    st.title("Admin Panel")
-
-    try:
-        users = list_users()
-        st.write(users)
-    except:
-        st.warning("User DB noch nicht vorhanden.")
+    st.title("🛡️ Admin Panel")
+    st.info("Admin Bereich kommt hier rein.")
