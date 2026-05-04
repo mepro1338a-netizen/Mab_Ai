@@ -142,3 +142,19 @@ def delete_support_message(message_id):
     c.execute("DELETE FROM support_messages WHERE id=?", (message_id,))
     conn.commit()
     conn.close()
+
+# -------------------------------------------------
+# USERS (FIX für ImportError)
+# -------------------------------------------------
+
+def list_users():
+    conn = get_conn()
+    c = conn.cursor()
+
+    try:
+        users = c.execute("SELECT * FROM users").fetchall()
+    except:
+        users = []
+
+    conn.close()
+    return users
