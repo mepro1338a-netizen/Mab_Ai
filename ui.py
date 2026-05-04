@@ -5,6 +5,7 @@ import base64
 import json
 import os
 import streamlit as st
+import streamlit.components.v1 as components
 
 from config import APP_NAME, APP_TAGLINE, PLANS, LOGO_PATH, ROLE_LABELS
 from database import (
@@ -22,8 +23,9 @@ from payments import create_checkout_session
 st.set_page_config(page_title=APP_NAME, page_icon="🧠", layout="wide", initial_sidebar_state="expanded")
 
 
+# Sidebar behavior is handled by Streamlit. Do not force-open or hide toggle buttons.
 
-# Sidebar uses Streamlit default behavior: desktop expanded, mobile toggleable.
+
 
 SESSION_FILE = "session.json"
 
@@ -466,7 +468,7 @@ div[data-testid="stBottomBlockContainer"],
 }
 
 
-/* FINAL SIDEBAR FIX - desktop open, mobile collapsible/reopenable */
+/* FINAL SIDEBAR FIX - desktop open, mobile toggle works */
 .top-navbar.no-brand {
     background: transparent !important;
     border: 0 !important;
@@ -476,25 +478,22 @@ div[data-testid="stBottomBlockContainer"],
     padding: 6px 20px !important;
 }
 
-/* Desktop sidebar: stable premium width */
 [data-testid="stSidebar"] {
     background: #07070b !important;
     border-right: 1px solid rgba(255,215,0,.16) !important;
-    box-shadow: 18px 0 60px rgba(0,0,0,.35) !important;
-    min-width: 310px !important;
-    width: 310px !important;
 }
 
 [data-testid="stSidebar"] > div {
-    width: 310px !important;
     padding-top: 1.2rem !important;
 }
 
-/* IMPORTANT: Never hide Streamlit sidebar controls */
+/* Keep Streamlit sidebar buttons visible/clickable */
 [data-testid="stSidebarCollapseButton"],
+[data-testid="collapsedControl"],
 button[title="Close sidebar"],
 button[aria-label="Close sidebar"],
-[data-testid="collapsedControl"] {
+button[title="Open sidebar"],
+button[aria-label="Open sidebar"] {
     display: flex !important;
     visibility: visible !important;
     opacity: 1 !important;
@@ -502,35 +501,20 @@ button[aria-label="Close sidebar"],
     z-index: 999999 !important;
 }
 
-/* Style the reopen button instead of hiding it */
-[data-testid="collapsedControl"] button {
-    background: #000000 !important;
-    color: #ffd700 !important;
-    border: 1px solid rgba(255,215,0,.55) !important;
-    border-radius: 12px !important;
+@media (min-width: 901px) {
+    [data-testid="stSidebar"] {
+        min-width: 320px !important;
+        width: 320px !important;
+    }
+    [data-testid="stSidebar"] > div {
+        width: 320px !important;
+    }
 }
 
-/* Mobile: allow Streamlit's native drawer behavior */
 @media (max-width: 900px) {
     [data-testid="stSidebar"] {
-        min-width: min(88vw, 320px) !important;
-        width: min(88vw, 320px) !important;
-        max-width: 88vw !important;
-    }
-
-    [data-testid="stSidebar"] > div {
-        width: min(88vw, 320px) !important;
-        max-width: 88vw !important;
-    }
-
-    .block-container {
-        padding-left: 1rem !important;
-        padding-right: 1rem !important;
-    }
-
-    .hero {
-        padding: 28px !important;
-        border-radius: 26px !important;
+        min-width: unset !important;
+        width: unset !important;
     }
 }
 
