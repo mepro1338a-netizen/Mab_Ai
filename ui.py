@@ -4,9 +4,7 @@ load_dotenv()
 import base64
 import json
 import os
-from pathlib import Path
 import streamlit as st
-import streamlit.components.v1 as components
 
 from config import APP_NAME, APP_TAGLINE, PLANS, LOGO_PATH, ROLE_LABELS
 from database import (
@@ -21,101 +19,19 @@ from backend import (
 )
 from payments import create_checkout_session
 
-# Optional config values / DB helpers. These fallbacks prevent Railway crashes
-# when older project files do not yet contain the new support/video helpers.
-try:
-    from config import VIDEO_MODES, TOKEN_PACKS
-except Exception:
-    VIDEO_MODES = {
-        "Basic": {"cost": 120, "seconds": "5s", "quality": "Standard", "margin_note": "Starter video mode."},
-        "Pro": {"cost": 220, "seconds": "8s", "quality": "High", "margin_note": "Better quality and longer output."},
-        "Grand": {"cost": 380, "seconds": "12s", "quality": "Premium", "margin_note": "Premium generation mode."},
-    }
-    TOKEN_PACKS = {
-        "small": {"label": "Small Pack", "price": "€9", "tokens": 250, "description": "Good for light usage."},
-        "creator": {"label": "Creator Pack", "price": "€19", "tokens": 700, "description": "Best for creators."},
-        "video": {"label": "Video Pack", "price": "€49", "tokens": 2200, "description": "For video-heavy workflows."},
-    }
-
-try:
-    from database import (
-        create_support_message, list_support_messages, set_support_read,
-        set_support_status, delete_support_message, support_counts,
-        list_admin_chat, add_admin_chat,
-    )
-except Exception:
-    def create_support_message(username, email, category, subject, message):
-        return False, "Support database helpers are missing. Please add them to database.py."
-
-    def list_support_messages(status_filter="all"):
-        return []
-
-    def set_support_read(message_id, is_read):
-        return False
-
-    def set_support_status(message_id, status):
-        return False
-
-    def delete_support_message(message_id):
-        return False
-
-    def support_counts():
-        return {"total": 0, "unread": 0, "open": 0, "closed": 0}
-
-    def list_admin_chat(limit=80):
-        return []
-
-    def add_admin_chat(username, role, message):
-        return False, "Admin team chat helpers are missing. Please add them to database.py."
-
 st.set_page_config(page_title=APP_NAME, page_icon="🧠", layout="wide", initial_sidebar_state="expanded")
 
 
-# Desktop: sidebar automatisch offen halten. Mobile: einklappbar und wieder öffnbar lassen.
-components.html(
-    """
-    <script>
-    function keepSidebarDesktopOpen() {
-        try {
-            const doc = window.parent.document;
-            const isDesktop = window.parent.innerWidth >= 900;
-            if (!isDesktop) return;
-            const sidebar = doc.querySelector('[data-testid="stSidebar"]');
-            const collapsed = doc.querySelector('[data-testid="collapsedControl"]');
-            if (collapsed && (!sidebar || sidebar.offsetWidth < 240)) { collapsed.click(); }
-        } catch(e) {}
-    }
-    keepSidebarDesktopOpen();
-    setTimeout(keepSidebarDesktopOpen, 400);
-    setTimeout(keepSidebarDesktopOpen, 1200);
-    window.parent.addEventListener('resize', keepSidebarDesktopOpen);
-    </script>
-    """,
-    height=0,
-    width=0,
-)
 
-
+# Sidebar uses Streamlit default behavior: desktop expanded, mobile toggleable.
 
 SESSION_FILE = "session.json"
 
 
 def logo_base64():
-    candidates = []
-    try:
-        candidates.append(Path(LOGO_PATH))
-    except Exception:
-        pass
-    candidates.append(Path(__file__).parent / "logo.png")
-    candidates.append(Path("logo.png"))
-
-    for logo_path in candidates:
-        try:
-            if logo_path.exists():
-                with open(logo_path, "rb") as f:
-                    return base64.b64encode(f.read()).decode("utf-8")
-        except Exception:
-            continue
+    if LOGO_PATH.exists():
+        with open(LOGO_PATH, "rb") as f:
+            return base64.b64encode(f.read()).decode("utf-8")
     return ""
 
 
@@ -131,17 +47,518 @@ def role_label(role):
 
 st.markdown("""
 <style>
-:root {--bg:#020204;--panel:#0b0b12;--gold:#ffd700;--cyan:#00b7ff;--purple:#b026ff;--muted:#a1a1aa;}
-html,body,.stApp{background:var(--bg)!important;color:#fff!important;}#MainMenu,footer,[data-testid="stToolbar"],[data-testid="stDecoration"],[data-testid="stStatusWidget"]{display:none!important;}header{background:transparent!important;}.block-container{max-width:1180px!important;padding:1.15rem 1.35rem 8rem!important;}h1,h2,h3,h4,h5,h6,p,label,span,div{color:#fff!important;}
-[data-testid="stSidebar"]{background:radial-gradient(circle at top,rgba(0,183,255,.12),transparent 15rem),#07070b!important;border-right:1px solid rgba(255,255,255,.08)!important;box-shadow:18px 0 70px rgba(0,0,0,.40)!important;}[data-testid="stSidebar"]>div{padding:1.25rem .9rem!important;}[data-testid="stSidebar"] *{color:#fff!important;}[data-testid="stSidebarCollapseButton"],[data-testid="collapsedControl"]{display:flex!important;visibility:visible!important;opacity:1!important;pointer-events:auto!important;}
-.sidebar-logo-card{background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.018));border:1px solid rgba(255,255,255,.08);border-radius:24px;padding:16px;margin:0 0 14px;box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 18px 45px rgba(0,0,0,.30);}.sidebar-logo-card img{width:100%;max-width:220px;display:block;margin:0 auto;border-radius:14px;}.small-muted{color:var(--muted)!important;font-size:.92rem;}.account-box{background:radial-gradient(circle at top right,rgba(176,38,255,.16),transparent 12rem),linear-gradient(180deg,rgba(20,20,30,.96),rgba(7,7,11,.96))!important;border:1px solid rgba(255,255,255,.10)!important;border-radius:22px!important;padding:16px!important;margin:12px 0 14px!important;}
-[data-testid="stSidebar"] h3{font-size:.8rem!important;text-transform:uppercase!important;letter-spacing:.12em!important;color:rgba(255,255,255,.62)!important;margin-top:1.1rem!important;}[data-testid="stSidebar"] hr{border:0!important;height:1px!important;background:linear-gradient(90deg,transparent,rgba(0,183,255,.35),rgba(176,38,255,.35),transparent)!important;margin:1rem 0!important;}
-button,.stButton button,[data-testid="stFormSubmitButton"] button{background:linear-gradient(180deg,#101018,#050507)!important;color:var(--gold)!important;border:1px solid rgba(255,215,0,.48)!important;border-radius:15px!important;font-weight:850!important;min-height:44px!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.05)!important;}button:hover,.stButton button:hover{border-color:var(--gold)!important;box-shadow:0 0 22px rgba(255,215,0,.16)!important;transform:translateY(-1px);}[data-testid="stSidebar"] .stButton button{width:100%!important;}
-input,textarea,.stTextInput input,.stTextArea textarea,[data-baseweb="input"] input,[data-baseweb="textarea"] textarea{background:#050507!important;color:#fff!important;caret-color:#fff!important;border:1px solid rgba(255,255,255,.10)!important;border-radius:14px!important;}input::placeholder,textarea::placeholder{color:#777!important;}[data-baseweb="select"]>div,[data-baseweb="popover"],[data-baseweb="menu"],ul[role="listbox"],div[role="listbox"]{background:#050507!important;color:#fff!important;border:1px solid rgba(0,183,255,.32)!important;border-radius:14px!important;}[data-baseweb="select"] *{color:#fff!important;}li[role="option"],div[role="option"]{background:#050507!important;color:#fff!important;}
-.top-navbar.no-brand{position:sticky;top:.5rem;z-index:50;height:54px;margin-bottom:12px;padding:6px 18px;background:rgba(2,2,4,.72)!important;backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.07)!important;border-radius:22px;display:flex;justify-content:flex-end;align-items:center;}.top-user{display:flex;gap:12px;align-items:center;background:#111116;border:1px solid rgba(255,255,255,.09);border-radius:999px;padding:10px 14px;font-weight:800;}
-.hero{position:relative;overflow:hidden;background:radial-gradient(circle at 18% 0%,rgba(0,183,255,.32),transparent 24rem),radial-gradient(circle at 88% 18%,rgba(176,38,255,.30),transparent 24rem),linear-gradient(135deg,rgba(5,8,16,.98),rgba(20,9,30,.98));border:1px solid rgba(255,255,255,.10);border-radius:34px;padding:46px;margin:16px 0 28px;box-shadow:0 30px 90px rgba(0,0,0,.45);}.hero::after{content:"";position:absolute;inset:auto -15% -45% -15%;height:220px;background:linear-gradient(90deg,transparent,rgba(0,183,255,.18),rgba(176,38,255,.20),transparent);filter:blur(30px);}.hero-logo{width:min(330px,80%);height:auto;margin:0 0 22px;display:block;border-radius:18px;}.hero-title{font-size:clamp(2.2rem,5vw,4.8rem);line-height:1.02;letter-spacing:-.065em;font-weight:950;margin:0 0 18px;}.hero p{color:#dbeafe!important;font-size:1.08rem;max-width:830px;line-height:1.65;}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-top:24px;}.card{background:linear-gradient(180deg,rgba(21,21,31,.92),rgba(10,10,15,.92));border:1px solid rgba(255,255,255,.09);border-radius:22px;padding:18px;margin-bottom:16px;box-shadow:0 18px 55px rgba(0,0,0,.24);}
-[data-testid="stChatMessage"]{background:var(--panel)!important;border:1px solid rgba(255,255,255,.09)!important;border-radius:18px!important;padding:12px!important;}[data-testid="stChatInput"],[data-testid="stChatInput"] *,section[data-testid="stBottomBlockContainer"],div[data-testid="stBottomBlockContainer"],[data-testid="stBottom"]{background:#000!important;background-color:#000!important;color:#fff!important;}[data-testid="stChatInput"] textarea,[data-testid="stChatInput"] textarea:focus{background:#000!important;color:#fff!important;caret-color:#fff!important;border:1px solid #282833!important;border-radius:18px!important;box-shadow:none!important;}[data-testid="stChatInput"] button{background:#000!important;color:var(--gold)!important;border:1px solid rgba(255,215,0,.65)!important;border-radius:14px!important;}
-@media(min-width:900px){[data-testid="stSidebar"]{min-width:320px!important;width:320px!important;}[data-testid="stSidebar"]>div{width:320px!important;}}@media(max-width:900px){.block-container{padding:1rem .9rem 7rem!important;}.grid{grid-template-columns:1fr!important;}.top-user{display:none!important;}.hero{padding:28px 22px;border-radius:26px;}.hero-title{font-size:2.15rem;}.hero-logo{width:min(240px,90%);}}
+:root {--bg:#000;--panel:#0b0b10;--panel2:#15151d;--border:#282833;--gold:#ffd700;--text:#fff;--muted:#a1a1aa;}
+html, body, .stApp {background:#000!important;color:#fff!important;}
+#MainMenu {visibility:hidden;} footer {visibility:hidden;}
+[data-testid="stToolbar"], [data-testid="stDecoration"], [data-testid="stStatusWidget"] {display:none!important;}
+[data-testid="stSidebar"] {background:#07070b!important;border-right:1px solid var(--border);}
+[data-testid="stSidebar"] * {color:#fff!important;}
+.block-container {max-width:1180px!important;padding-top:1rem!important;padding-bottom:8rem!important;}
+h1,h2,h3,h4,h5,h6,p,label,span,div {color:#fff!important;}
+button,.stButton button,[data-testid="stFormSubmitButton"] button {background:#000!important;color:var(--gold)!important;border:1px solid rgba(255,215,0,.5)!important;border-radius:14px!important;font-weight:850!important;min-height:44px;}
+button:hover,.stButton button:hover {border-color:var(--gold)!important;box-shadow:0 0 18px rgba(255,215,0,.18);}
+input,textarea,.stTextInput input,.stTextArea textarea,[data-baseweb="input"] input,[data-baseweb="textarea"] textarea {background:#000!important;color:#fff!important;caret-color:#fff!important;border:1px solid var(--border)!important;border-radius:14px!important;}
+input::placeholder,textarea::placeholder {color:#777!important;}
+[data-testid="stChatInput"],[data-testid="stChatInput"] > div,[data-testid="stChatInput"] section,[data-testid="stChatInput"] div {background-color:#000!important;}
+[data-testid="stChatInput"] textarea {background:#000!important;color:#fff!important;caret-color:#fff!important;border:1px solid var(--border)!important;border-radius:18px!important;}
+[data-baseweb="select"] > div,[data-baseweb="popover"],[data-baseweb="menu"],ul[role="listbox"],div[role="listbox"] {background:#000!important;color:#fff!important;border:1px solid rgba(255,215,0,.45)!important;}
+[data-baseweb="select"] * {color:#fff!important;} li[role="option"],div[role="option"] {background:#000!important;color:#fff!important;}
+[data-testid="stChatMessage"] {background:var(--panel)!important;border:1px solid var(--border)!important;border-radius:18px!important;padding:12px!important;}
+.top-navbar {position:sticky;top:0;z-index:100;height:74px;margin-bottom:28px;padding:14px 20px;background:rgba(0,0,0,.92);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.08);border-radius:22px;display:flex;align-items:center;justify-content:space-between;}
+.top-brand {display:flex;align-items:center;gap:14px;}.top-logo {height:48px;width:auto;border-radius:12px;object-fit:contain;}.brand-name {font-size:24px;font-weight:900;letter-spacing:-.04em;}.top-user {display:flex;gap:12px;align-items:center;background:#111116;border:1px solid var(--border);border-radius:999px;padding:10px 14px;font-weight:800;}
+.hero {background:radial-gradient(circle at top left,rgba(0,183,255,.22),transparent 30rem),radial-gradient(circle at top right,rgba(168,85,247,.28),transparent 28rem),linear-gradient(135deg,rgba(9,40,58,.94),rgba(49,17,68,.94));border:1px solid rgba(255,255,255,.1);border-radius:34px;padding:46px;margin:16px 0 28px;box-shadow:0 30px 90px rgba(0,0,0,.4);}
+.hero-logo {width:320px;max-width:80%;margin-bottom:24px;border-radius:18px;display:block;}.hero h1 {font-size:clamp(2.8rem,6vw,5.7rem);line-height:.95;letter-spacing:-.075em;margin:0 0 20px;}
+.hero-title {font-size:clamp(2.7rem,5.7vw,5.4rem);line-height:.98;letter-spacing:-.075em;font-weight:950;margin:0 0 20px;}
+.inline-logo {height:.95em;vertical-align:-.16em;margin:0 .18em;border-radius:10px;}.hero p {color:#dbeafe!important;font-size:1.12rem;max-width:850px;}
+.grid {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-top:24px;}.card {background:rgba(21,21,29,.86);border:1px solid var(--border);border-radius:22px;padding:18px;margin-bottom:16px;}.account-box {background:var(--panel2);border:1px solid var(--border);border-radius:18px;padding:14px 16px;margin-bottom:12px;}.small-muted {color:var(--muted)!important;font-size:.92rem;}
+@media(max-width:900px){.grid{grid-template-columns:1fr}.top-user{display:none}}
+
+/* V12.1 HARD FIX: prompt area always black */
+[data-testid="stChatInput"] {
+    background: #000000 !important;
+}
+[data-testid="stChatInput"] * {
+    background-color: #000000 !important;
+    color: #ffffff !important;
+}
+[data-testid="stChatInput"] textarea,
+[data-testid="stChatInput"] textarea:focus {
+    background: #000000 !important;
+    color: #ffffff !important;
+    border: 1px solid #282833 !important;
+    box-shadow: none !important;
+}
+
+/* Keep sidebar collapse/reopen usable */
+
+[data-testid="stToolbar"], [data-testid="stDecoration"], [data-testid="stStatusWidget"] {display:none!important;}
+
+
+/* Keep Streamlit header clickable so sidebar reopen works */
+header,
+
+
+/* Hide only Streamlit menu/toolbar/deploy elements, not the sidebar toggle */
+#MainMenu,
+footer,
+[data-testid="stToolbar"],
+[data-testid="stDecoration"],
+[data-testid="stStatusWidget"],
+
+
+/* Sidebar toggle/reopen button must stay visible */
+
+
+/* Make collapsed sidebar button match MAB.AI theme */
+
+
+[data-testid="stChatInput"] *,
+[data-testid="stChatInput"] > div,
+[data-testid="stChatInput"] > div > div,
+[data-testid="stChatInput"] section,
+[data-testid="stChatInput"] form,
+[data-testid="stChatInput"] label {
+    background: #000000 !important;
+    background-color: #000000 !important;
+    color: #ffffff !important;
+}
+
+[data-testid="stChatInput"] textarea,
+[data-testid="stChatInput"] textarea:focus,
+[data-testid="stChatInput"] div[data-baseweb="textarea"],
+[data-testid="stChatInput"] div[data-baseweb="base-input"],
+[data-testid="stChatInput"] div[data-baseweb="input"] {
+    background: #000000 !important;
+    background-color: #000000 !important;
+    color: #ffffff !important;
+    caret-color: #ffffff !important;
+    border: 1px solid #282833 !important;
+    border-radius: 18px !important;
+    box-shadow: none !important;
+}
+
+/* Send button black/gold */
+[data-testid="stChatInput"] button {
+    background: #000000 !important;
+    color: #ffd700 !important;
+    border: 1px solid rgba(255,215,0,.65) !important;
+    border-radius: 14px !important;
+}
+
+/* Remove remaining white bottom wrapper from Streamlit */
+section[data-testid="stBottomBlockContainer"],
+div[data-testid="stBottomBlockContainer"],
+[data-testid="stBottom"] {
+    background: #000000 !important;
+    background-color: #000000 !important;
+}
+
+/* Entire app bottom area black */
+.main,
+.block-container,
+[data-testid="stAppViewContainer"],
+[data-testid="stVerticalBlock"],
+[data-testid="stVerticalBlockBorderWrapper"] {
+    background-color: transparent !important;
+}
+
+
+/* Keep Streamlit header alive because sidebar toggle lives there */
+header,
+
+
+/* Hide Streamlit extras, but NEVER hide sidebar toggle */
+#MainMenu,
+footer,
+[data-testid="stToolbar"],
+[data-testid="stDecoration"],
+[data-testid="stStatusWidget"],
+
+
+/* Sidebar reopen button */
+
+
+[data-testid="stSidebar"] > div {
+    padding-top: 1.2rem !important;
+}
+
+/* Sidebar text */
+[data-testid="stSidebar"] h1,
+[data-testid="stSidebar"] h2,
+[data-testid="stSidebar"] h3,
+[data-testid="stSidebar"] p,
+[data-testid="stSidebar"] label,
+[data-testid="stSidebar"] span,
+[data-testid="stSidebar"] div {
+    color: #ffffff !important;
+}
+
+/* Sidebar section headings */
+[data-testid="stSidebar"] h3 {
+    font-size: .92rem !important;
+    text-transform: uppercase !important;
+    letter-spacing: .08em !important;
+    color: rgba(255,255,255,.68) !important;
+    margin-top: 1.15rem !important;
+    margin-bottom: .55rem !important;
+}
+
+/* Sidebar divider */
+[data-testid="stSidebar"] hr {
+    border: none !important;
+    height: 1px !important;
+    background: linear-gradient(90deg, transparent, rgba(255,215,0,.22), transparent) !important;
+    margin: 1.1rem 0 !important;
+}
+
+/* Sidebar buttons */
+[data-testid="stSidebar"] .stButton button {
+    width: 100% !important;
+    background:
+        linear-gradient(180deg, rgba(18,18,24,.95), rgba(0,0,0,.95)) !important;
+    color: #ffd700 !important;
+    border: 1px solid rgba(255,215,0,.45) !important;
+    border-radius: 16px !important;
+    min-height: 46px !important;
+    font-size: .96rem !important;
+    font-weight: 850 !important;
+    letter-spacing: -.01em !important;
+    transition: all .18s ease !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.04) !important;
+}
+
+[data-testid="stSidebar"] .stButton button:hover {
+    transform: translateY(-1px) !important;
+    border-color: rgba(255,215,0,.9) !important;
+    color: #fff4a3 !important;
+    box-shadow:
+        0 0 22px rgba(255,215,0,.18),
+        inset 0 1px 0 rgba(255,255,255,.06) !important;
+}
+
+/* Sidebar selectbox premium */
+[data-testid="stSidebar"] [data-baseweb="select"] > div {
+    background: #000000 !important;
+    border: 1px solid rgba(255,215,0,.38) !important;
+    border-radius: 16px !important;
+    min-height: 46px !important;
+}
+
+/* Sidebar logo card */
+.sidebar-logo-card {
+    background: rgba(255,255,255,.025);
+    border: 1px solid rgba(255,255,255,.06);
+    border-radius: 22px;
+    padding: 14px;
+    margin-bottom: 14px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
+}
+
+.sidebar-logo-card img {
+    width: 100%;
+    max-width: 210px;
+    display: block;
+    margin: 0 auto;
+    border-radius: 16px;
+}
+
+/* Account card premium */
+.account-box {
+    background:
+        radial-gradient(circle at top right, rgba(255,215,0,.12), transparent 10rem),
+        linear-gradient(180deg, rgba(22,22,30,.95), rgba(9,9,12,.95)) !important;
+    border: 1px solid rgba(255,215,0,.22) !important;
+    border-radius: 22px !important;
+    padding: 16px 18px !important;
+    margin: 12px 0 14px !important;
+    box-shadow:
+        0 18px 50px rgba(0,0,0,.35),
+        inset 0 1px 0 rgba(255,255,255,.06) !important;
+}
+
+/* Make login/register sidebar button more premium */
+[data-testid="stSidebar"] button[kind="secondary"] {
+    background: #000 !important;
+}
+
+/* Chat input bottom final black */
+[data-testid="stChatInput"],
+[data-testid="stChatInput"] *,
+[data-testid="stChatInput"] > div,
+[data-testid="stChatInput"] section,
+[data-testid="stChatInput"] form {
+    background: #000000 !important;
+    background-color: #000000 !important;
+    color: #ffffff !important;
+}
+
+[data-testid="stChatInput"] textarea,
+[data-testid="stChatInput"] textarea:focus {
+    background: #000000 !important;
+    background-color: #000000 !important;
+    color: #ffffff !important;
+    caret-color: #ffffff !important;
+    border: 1px solid #282833 !important;
+    border-radius: 18px !important;
+    box-shadow: none !important;
+}
+
+section[data-testid="stBottomBlockContainer"],
+div[data-testid="stBottomBlockContainer"],
+[data-testid="stBottom"] {
+    background: #000000 !important;
+    background-color: #000000 !important;
+}
+
+
+/* V12.6 OLD SIDEBAR RESTORED - SAFE CSS ONLY */
+
+/* Sidebar always visible when Streamlit state is expanded */
+[data-testid="stSidebar"] {
+    background: #07070b !important;
+    border-right: 1px solid rgba(255,215,0,.16) !important;
+    box-shadow: 18px 0 60px rgba(0,0,0,.35) !important;
+}
+
+[data-testid="stSidebar"] * {
+    color: #ffffff !important;
+}
+
+[data-testid="stSidebar"] .stButton button {
+    width: 100% !important;
+    background: #000000 !important;
+    color: #ffd700 !important;
+    border: 1px solid rgba(255,215,0,.55) !important;
+    border-radius: 14px !important;
+    min-height: 44px !important;
+    font-weight: 850 !important;
+}
+
+[data-testid="stSidebar"] .stButton button:hover {
+    border-color: #ffd700 !important;
+    box-shadow: 0 0 18px rgba(255,215,0,.20) !important;
+}
+
+[data-testid="stSidebar"] hr {
+    border: none !important;
+    height: 1px !important;
+    background: rgba(255,215,0,.18) !important;
+}
+
+/* Prompt final black fix without touching sidebar/header */
+[data-testid="stChatInput"],
+[data-testid="stChatInput"] > div,
+[data-testid="stChatInput"] section,
+[data-testid="stChatInput"] form,
+section[data-testid="stBottomBlockContainer"],
+div[data-testid="stBottomBlockContainer"],
+[data-testid="stBottom"] {
+    background: #000000 !important;
+    background-color: #000000 !important;
+}
+
+[data-testid="stChatInput"] textarea,
+[data-testid="stChatInput"] textarea:focus,
+[data-testid="stChatInput"] div[data-baseweb="textarea"],
+[data-testid="stChatInput"] div[data-baseweb="base-input"] {
+    background: #000000 !important;
+    background-color: #000000 !important;
+    color: #ffffff !important;
+    caret-color: #ffffff !important;
+    border: 1px solid #282833 !important;
+    border-radius: 18px !important;
+    box-shadow: none !important;
+}
+
+[data-testid="stChatInput"] button {
+    background: #000000 !important;
+    color: #ffd700 !important;
+    border: 1px solid rgba(255,215,0,.65) !important;
+}
+
+
+
+/* V12.8 SIDEBAR BACK - SAFE OLD DESIGN */
+[data-testid="stSidebar"] {
+    background: #07070b !important;
+    border-right: 1px solid rgba(255,215,0,.16) !important;
+    min-width: 300px !important;
+}
+
+[data-testid="stSidebar"] * {
+    color: #ffffff !important;
+}
+
+[data-testid="stSidebar"] .stButton button {
+    width: 100% !important;
+    background: #000000 !important;
+    color: #ffd700 !important;
+    border: 1px solid rgba(255,215,0,.55) !important;
+    border-radius: 14px !important;
+    min-height: 44px !important;
+    font-weight: 850 !important;
+}
+
+[data-testid="stSidebar"] .stButton button:hover {
+    border-color: #ffd700 !important;
+    box-shadow: 0 0 18px rgba(255,215,0,.20) !important;
+}
+
+[data-testid="stSidebar"] hr {
+    border: none !important;
+    height: 1px !important;
+    background: rgba(255,215,0,.18) !important;
+}
+
+.sidebar-logo-card {
+    background: rgba(255,255,255,.025);
+    border: 1px solid rgba(255,255,255,.06);
+    border-radius: 22px;
+    padding: 14px;
+    margin-bottom: 14px;
+}
+
+.sidebar-logo-card img {
+    width: 100%;
+    max-width: 210px;
+    display: block;
+    margin: 0 auto;
+    border-radius: 16px;
+}
+
+.account-box {
+    background: #15151d !important;
+    border: 1px solid rgba(255,215,0,.22) !important;
+    border-radius: 18px !important;
+    padding: 14px 16px !important;
+    margin-bottom: 12px !important;
+}
+
+/* Prompt stays black, but no sidebar/header manipulation */
+[data-testid="stChatInput"],
+[data-testid="stChatInput"] > div,
+[data-testid="stChatInput"] section,
+[data-testid="stChatInput"] form,
+section[data-testid="stBottomBlockContainer"],
+div[data-testid="stBottomBlockContainer"],
+[data-testid="stBottom"] {
+    background: #000000 !important;
+    background-color: #000000 !important;
+}
+
+[data-testid="stChatInput"] textarea,
+[data-testid="stChatInput"] textarea:focus,
+[data-testid="stChatInput"] div[data-baseweb="textarea"],
+[data-testid="stChatInput"] div[data-baseweb="base-input"] {
+    background: #000000 !important;
+    background-color: #000000 !important;
+    color: #ffffff !important;
+    caret-color: #ffffff !important;
+    border: 1px solid #282833 !important;
+    border-radius: 18px !important;
+    box-shadow: none !important;
+}
+
+[data-testid="stChatInput"] button {
+    background: #000000 !important;
+    color: #ffd700 !important;
+    border: 1px solid rgba(255,215,0,.65) !important;
+}
+
+
+/* FINAL SIDEBAR FIX - desktop open, mobile collapsible/reopenable */
+.top-navbar.no-brand {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    height: 54px !important;
+    margin-bottom: 8px !important;
+    padding: 6px 20px !important;
+}
+
+/* Desktop sidebar: stable premium width */
+[data-testid="stSidebar"] {
+    background: #07070b !important;
+    border-right: 1px solid rgba(255,215,0,.16) !important;
+    box-shadow: 18px 0 60px rgba(0,0,0,.35) !important;
+    min-width: 310px !important;
+    width: 310px !important;
+}
+
+[data-testid="stSidebar"] > div {
+    width: 310px !important;
+    padding-top: 1.2rem !important;
+}
+
+/* IMPORTANT: Never hide Streamlit sidebar controls */
+[data-testid="stSidebarCollapseButton"],
+button[title="Close sidebar"],
+button[aria-label="Close sidebar"],
+[data-testid="collapsedControl"] {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    z-index: 999999 !important;
+}
+
+/* Style the reopen button instead of hiding it */
+[data-testid="collapsedControl"] button {
+    background: #000000 !important;
+    color: #ffd700 !important;
+    border: 1px solid rgba(255,215,0,.55) !important;
+    border-radius: 12px !important;
+}
+
+/* Mobile: allow Streamlit's native drawer behavior */
+@media (max-width: 900px) {
+    [data-testid="stSidebar"] {
+        min-width: min(88vw, 320px) !important;
+        width: min(88vw, 320px) !important;
+        max-width: 88vw !important;
+    }
+
+    [data-testid="stSidebar"] > div {
+        width: min(88vw, 320px) !important;
+        max-width: 88vw !important;
+    }
+
+    .block-container {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+
+    .hero {
+        padding: 28px !important;
+        border-radius: 26px !important;
+    }
+}
+
+/* Black prompt whenever visible */
+[data-testid="stChatInput"],
+[data-testid="stChatInput"] *,
+[data-testid="stChatInput"] > div,
+[data-testid="stChatInput"] section,
+[data-testid="stChatInput"] form,
+section[data-testid="stBottomBlockContainer"],
+div[data-testid="stBottomBlockContainer"],
+[data-testid="stBottom"] {
+    background: #000000 !important;
+    background-color: #000000 !important;
+    color: #ffffff !important;
+}
+
+[data-testid="stChatInput"] textarea,
+[data-testid="stChatInput"] textarea:focus {
+    background: #000000 !important;
+    background-color: #000000 !important;
+    color: #ffffff !important;
+    caret-color: #ffffff !important;
+    border: 1px solid #282833 !important;
+    border-radius: 18px !important;
+    box-shadow: none !important;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -308,21 +725,8 @@ if st.session_state.show_login:
 
 if st.session_state.page == "chat":
     if not st.session_state.memory_chat:
-        hero_logo = f'<img src="data:image/png;base64,{LOGO_B64}" class="hero-logo" alt="MAB.AI Logo">' if LOGO_B64 else ""
-        st.markdown(
-            f"""<section class="hero">
-                {hero_logo}
-                <div class="hero-title">Was kann ich für dich tun?</div>
-                <p>Starte mit Memory Chat. Erstelle Texte, plane Projekte, sammle Ideen oder lass dir direkt helfen.</p>
-                <div class="grid">
-                    <div class="card"><b>Free</b><br>Memory Chat inklusive.</div>
-                    <div class="card"><b>Pro</b><br>Coding, Bilder, Musik und Video-Reels.</div>
-                    <div class="card"><b>Grand</b><br>AI Video Generator.</div>
-                    <div class="card"><b>Elite</b><br>Alles freigeschaltet. Best API runs.</div>
-                </div>
-            </section>""",
-            unsafe_allow_html=True,
-        )
+        inline_logo = f'<img src="data:image/png;base64,{LOGO_B64}" class="inline-logo">' if LOGO_B64 else "MAB.AI"
+        st.markdown(f'<section class="hero"><div class="hero-title">Was kann {inline_logo} für dich tun?</div><p>Starte mit Memory Chat. Erstelle Texte, plane Projekte, sammle Ideen oder lass dir direkt helfen.</p><div class="grid"><div class="card"><b>Free</b><br>Memory Chat inklusive.</div><div class="card"><b>Pro</b><br>Coding, Bilder, Musik und Video-Reels.</div><div class="card"><b>Grand</b><br>AI Video Generator.</div><div class="card"><b>Elite</b><br>Alles freigeschaltet. Best API runs.</div></div></section>', unsafe_allow_html=True)
 
     if require_login():
         if not st.session_state.chat_started and not st.session_state.memory_chat:
