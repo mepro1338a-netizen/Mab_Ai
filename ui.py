@@ -2,23 +2,24 @@ import base64
 import random
 from pathlib import Path
 import streamlit as st
+import streamlit.components.v1 as components
 
-BASE_DIR = Path(__file__).parent
+BASE_DIR = Path(file).parent
 
 HEADER_PATH = BASE_DIR / "neuerheader.png"
 LOGO_PATH = BASE_DIR / "logo.png"
 FAVICON_PATH = BASE_DIR / "Logo24mp.png"
 
 
-def image_to_base64(path: Path) -> str:
+def img_b64(path: Path):
     if path.exists():
         with open(path, "rb") as f:
-            return base64.b64encode(f.read()).decode("utf-8")
+            return base64.b64encode(f.read()).decode()
     return ""
 
 
-HEADER_B64 = image_to_base64(HEADER_PATH)
-LOGO_B64 = image_to_base64(LOGO_PATH)
+HEADER_B64 = img_b64(HEADER_PATH)
+LOGO_B64 = img_b64(LOGO_PATH)
 
 st.set_page_config(
     page_title="MAB.AI",
@@ -44,8 +45,7 @@ def refresh_captcha():
     st.session_state.captcha_b = random.randint(1, 5)
 
 
-st.markdown(
-    """
+st.markdown("""
 <style>
 html, body, .stApp {
     background: #05050a !important;
@@ -55,7 +55,6 @@ html, body, .stApp {
 [data-testid="stHeader"] {
     background: #000000 !important;
     height: 86px !important;
-    border-bottom: 1px solid rgba(255,255,255,.08);
 }
 
 .header-logo-fixed {
@@ -76,9 +75,6 @@ html, body, .stApp {
 .block-container {
     max-width: 1400px !important;
     padding-top: 120px !important;
-    padding-left: 2rem !important;
-    padding-right: 2rem !important;
-    padding-bottom: 80px !important;
 }
 
 section[data-testid="stSidebar"] {
@@ -113,140 +109,12 @@ section[data-testid="stSidebar"] * {
     border-radius: 14px !important;
     border: 1px solid rgba(255,215,0,.30) !important;
 }
-
-.hero-box {
-    background:
-        radial-gradient(circle at top left, rgba(0,183,255,.25), transparent 35rem),
-        radial-gradient(circle at top right, rgba(168,85,247,.25), transparent 35rem),
-        linear-gradient(135deg, #10253c 0%, #171e36 55%, #42206a 100%);
-    border-radius: 42px;
-    padding: 80px 60px;
-    text-align: center;
-    border: 1px solid rgba(255,255,255,.10);
-    box-shadow: 0 30px 90px rgba(0,0,0,.45);
-    margin-bottom: 34px;
-}
-
-.hero-title {
-    font-size: clamp(46px, 5.5vw, 90px);
-    line-height: 1.08;
-    font-weight: 950;
-    letter-spacing: -4px;
-    color: white !important;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 24px;
-    flex-wrap: wrap;
-}
-
-.hero-title img {
-    height: 82px;
-    width: auto;
-    object-fit: contain;
-    border-radius: 16px;
-    background: #000;
-    padding: 6px 14px;
-}
-
-.hero-subtitle {
-    margin-top: 52px;
-    font-size: 34px;
-    font-weight: 900;
-    color: white !important;
-}
-
-.hero-text {
-    margin: 26px auto 0 auto;
-    max-width: 1000px;
-    font-size: 24px;
-    line-height: 1.65;
-    color: #e5e7eb !important;
-    text-align: center;
-}
-
-.plan-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 22px;
-    margin-top: 34px;
-    margin-bottom: 80px;
-}
-
-.plan-card {
-    background: #101018;
-    border-radius: 26px;
-    padding: 32px;
-    min-height: 190px;
-    border: 1px solid rgba(255,255,255,.10);
-    box-shadow: 0 24px 70px rgba(0,0,0,.30);
-}
-
-.plan-card h3 {
-    font-size: 36px;
-    margin: 0 0 20px 0;
-    color: white !important;
-}
-
-.plan-card p {
-    font-size: 19px;
-    line-height: 1.6;
-    color: #d4d4d8 !important;
-}
-
-.locked {
-    opacity: .82;
-}
-
-@media(max-width: 900px) {
-    .block-container {
-        padding-top: 105px !important;
-        padding-left: 1rem !important;
-        padding-right: 1rem !important;
-    }
-
-    .header-logo-fixed img {
-        height: 52px;
-    }
-
-    .hero-box {
-        padding: 42px 24px;
-        border-radius: 30px;
-    }
-
-    .hero-title {
-        font-size: 42px;
-        letter-spacing: -2px;
-    }
-
-    .hero-title img {
-        height: 58px;
-    }
-
-    .hero-subtitle {
-        font-size: 24px;
-    }
-
-    .hero-text {
-        font-size: 18px;
-    }
-
-    .plan-grid {
-        grid-template-columns: 1fr;
-    }
-}
 </style>
-""",
-    unsafe_allow_html=True,
-)
+""", unsafe_allow_html=True)
 
 if HEADER_B64:
     st.markdown(
-        f"""
-        <div class="header-logo-fixed">
-            <img src="data:image/png;base64,{HEADER_B64}">
-        </div>
-        """,
+        f'<div class="header-logo-fixed"><img src="data:image/png;base64,{HEADER_B64}"></div>',
         unsafe_allow_html=True,
     )
 
@@ -295,8 +163,7 @@ with st.sidebar:
 
     st.markdown("### Free")
     nav_button("Memory Chat", "chat", "free")
-
-    st.markdown("### Pro")
+[06.05.2026 21:41] Voltage: st.markdown("### Pro")
     nav_button("Coding Area", "coding", "pro")
     nav_button("Image Generator", "image", "pro")
     nav_button("Music Generator", "music", "pro")
@@ -312,56 +179,173 @@ with st.sidebar:
 
 
 if st.session_state.page == "home":
-    logo_html = "MAB.AI"
-    if LOGO_B64:
-        logo_html = f'<img src="data:image/png;base64,{LOGO_B64}">'
+    logo_src = f"data:image/png;base64,{LOGO_B64}" if LOGO_B64 else ""
 
-    st.markdown(
+    components.html(
         f"""
-        <section class="hero-box">
-            <div class="hero-title">
-                <span>Hallo willkommen auf</span>
-                {logo_html}
-            </div>
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+body {{
+    margin: 0;
+    background: transparent;
+    font-family: Arial, Helvetica, sans-serif;
+    color: white;
+}}
 
-            <div class="hero-subtitle">
-                Was können wir für dich tun?
-            </div>
+.hero {{
+    background:
+        radial-gradient(circle at top left, rgba(0,183,255,.25), transparent 35rem),
+        radial-gradient(circle at top right, rgba(168,85,247,.25), transparent 35rem),
+        linear-gradient(135deg, #10253c 0%, #171e36 55%, #42206a 100%);
+    border-radius: 42px;
+    padding: 80px 60px;
+    text-align: center;
+    border: 1px solid rgba(255,255,255,.10);
+    box-shadow: 0 30px 90px rgba(0,0,0,.45);
+}}
 
-            <div class="hero-text">
-                Starte mit Memory Chat, erstelle Texte, plane Projekte,
-                sammle Ideen oder lass dir direkt helfen.
-            </div>
+.title {{
+    font-size: clamp(52px, 6vw, 92px);
+    line-height: 1.05;
+    font-weight: 950;
+    letter-spacing: -4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 24px;
+    flex-wrap: wrap;
+}}
 
-            <div class="hero-text">
-                Egal ob Programmierung, Monetarisierung oder künstliche Intelligenz —
-                in jedem Bereich können wir dir helfen.
-            </div>
-        </section>
+.title img {{
+    height: 82px;
+    width: auto;
+    object-fit: contain;
+    border-radius: 16px;
+    background: #000;
+    padding: 6px 14px;
+}}
 
-        <div class="plan-grid">
-            <div class="plan-card">
-                <h3>Free</h3>
-                <p>Memory Chat inklusive.</p>
-            </div>
+.subtitle {{
+    margin-top: 52px;
+    font-size: 34px;
+    font-weight: 900;
+}}
 
-            <div class="plan-card locked">
-                <h3>🔒 Pro</h3>
-                <p>1200 Tokens<br>Coding, Images, Musik & Reels.</p>
-            </div>
+.text {{
+    margin: 26px auto 0 auto;
+    max-width: 1000px;
+    font-size: 24px;
+    line-height: 1.65;
+    color: #e5e7eb;
+}}
 
-            <div class="plan-card locked">
-                <h3>🔒 Grand</h3>
-                <p>4000 Tokens<br>AI Video Generator.</p>
-            </div>
+.cards {{
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    margin-top: 34px;
+}}
 
-            <div class="plan-card locked">
-                <h3>🔒 Elite</h3>
-                <p>Alles freigeschaltet.<br>Höchste API-Leistung.</p>
-            </div>
+.card {{
+    background: #101018;
+    border-radius: 26px;
+    padding: 28px;
+    min-height: 160px;
+    border: 1px solid rgba(255,255,255,.10);
+}}
+
+.card h3 {{
+    font-size: 32px;
+    margin: 0 0 18px 0;
+}}
+
+.card p {{
+    font-size: 18px;
+    line-height: 1.55;
+    color: #d4d4d8;
+}}
+
+.locked {{
+    opacity: .78;
+}}
+
+@media(max-width: 900px) {{
+    .hero {{
+        padding: 42px 24px;
+    }}
+
+    .title {{
+        font-size: 44px;
+        letter-spacing: -2px;
+    }}
+
+    .title img {{
+        height: 58px;
+    }}
+
+    .subtitle {{
+        font-size: 24px;
+    }}
+
+    .text {{
+        font-size: 18px;
+    }}
+
+    .cards {{
+        grid-template-columns: 1fr;
+    }}
+}}
+</style>
+</head>
+
+<body>
+    <section class="hero">
+        <div class="title">
+            <span>Hallo willkommen auf</span>
+            {"<img src='" + logo_src + "'>" if logo_src else "<span>MAB.AI</span>"}
         </div>
+
+        <div class="subtitle">Was können wir für dich tun?</div>
+
+        <div class="text">
+            Starte mit Memory Chat, erstelle Texte, plane Projekte,
+            sammle Ideen oder lass dir direkt helfen.
+        </div>
+
+        <div class="text">
+            Egal ob Programmierung, Monetarisierung oder künstliche Intelligenz —
+            in jedem Bereich können wir dir helfen.
+        </div>
+    </section>
+
+    <div class="cards">
+        <div class="card">
+            <h3>Free</h3>
+            <p>Memory Chat inklusive.</p>
+        </div>
+
+        <div class="card locked">
+            <h3>🔒 Pro</h3>
+            <p>1200 Tokens<br>Coding, Images, Musik & Reels.</p>
+        </div>
+
+        <div class="card locked">
+            <h3>🔒 Grand</h3>
+            <p>4000 Tokens<br>AI Video Generator.</p>
+        </div>
+
+        <div class="card locked">
+            <h3>🔒 Elite</h3>
+            <p>Alles freigeschaltet.<br>Höchste API-Leistung.</p>
+        </div>
+    </div>
+</body>
+</html>
         """,
-        unsafe_allow_html=True,
+        height=760,
+        scrolling=False,
     )
 
 
@@ -369,8 +353,7 @@ elif st.session_state.page == "login":
     st.title("🔐 Login / Register")
 
     tab1, tab2 = st.tabs(["Login", "Register"])
-
-    with tab1:
+[06.05.2026 21:41] Voltage: with tab1:
         username = st.text_input("Username", key="login_username")
         password = st.text_input("Password", type="password", key="login_password")
 
@@ -484,13 +467,13 @@ elif st.session_state.page == "premium":
     c1, c2, c3 = st.columns(3)
 
     with c1:
-        st.markdown("### Pro\n**9.99€ / Monat**\n\n1200 Tokens")
+        st.markdown("### Pro\n9.99€ / Monat\n\n1200 Tokens")
         st.button("Buy Pro", key="buy_pro")
 
     with c2:
-        st.markdown("### Grand\n**49.99€ / Monat**\n\n4000 Tokens")
+        st.markdown("### Grand\n49.99€ / Monat\n\n4000 Tokens")
         st.button("Buy Grand", key="buy_grand")
 
     with c3:
-        st.markdown("### Elite\n**199€ / Monat**\n\nAlles freigeschaltet. Höchste API-Leistung.")
+        st.markdown("### Elite\n199€ / Monat\n\nAlles freigeschaltet. Höchste API-Leistung.")
         st.button("Buy Elite", key="buy_elite")
