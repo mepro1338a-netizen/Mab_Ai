@@ -78,12 +78,9 @@ html, body, .stApp {
     object-fit: contain;
 }
 
-/* Sidebar immer aufgeklappt/breit */
 section[data-testid="stSidebar"] {
     background: #050509 !important;
     border-right: 1px solid rgba(255,215,0,.20);
-    min-width: 320px !important;
-    max-width: 320px !important;
 }
 
 section[data-testid="stSidebar"] * {
@@ -204,11 +201,6 @@ section[data-testid="stSidebar"] * {
 @media(max-width: 900px) {
     .block-container {
         padding-top: 105px !important;
-    }
-
-    section[data-testid="stSidebar"] {
-        min-width: 300px !important;
-        max-width: 300px !important;
     }
 
     .top-logo-wrap img {
