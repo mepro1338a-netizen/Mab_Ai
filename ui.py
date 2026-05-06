@@ -7,6 +7,7 @@ BASE_DIR = Path(__file__).parent
 
 HEADER_PATH = BASE_DIR / "neuerheader.png"
 FAVICON_PATH = BASE_DIR / "Logo24mp.png"
+LOGO_PATH = BASE_DIR / "logo.png"
 
 
 def img_b64(path: Path):
@@ -17,6 +18,7 @@ def img_b64(path: Path):
 
 
 HEADER_B64 = img_b64(HEADER_PATH)
+LOGO_B64 = img_b64(LOGO_PATH)
 
 st.set_page_config(
     page_title="MAB.AI",
@@ -27,16 +29,12 @@ st.set_page_config(
 
 if "page" not in st.session_state:
     st.session_state.page = "home"
-
 if "plan" not in st.session_state:
     st.session_state.plan = "free"
-
 if "user" not in st.session_state:
     st.session_state.user = None
-
 if "captcha_a" not in st.session_state:
     st.session_state.captcha_a = random.randint(1, 5)
-
 if "captcha_b" not in st.session_state:
     st.session_state.captcha_b = random.randint(1, 5)
 
@@ -46,202 +44,192 @@ def refresh_captcha():
     st.session_state.captcha_b = random.randint(1, 5)
 
 
-st.markdown(
-    """
+st.markdown("""
 <style>
 html, body, .stApp {
-    background: #05050a !important;
-    color: white !important;
+    background:#05050a !important;
+    color:white !important;
 }
 
 [data-testid="stHeader"] {
-    background: #ffffff !important;
-    height: 86px !important;
-    border-bottom: 1px solid rgba(0,0,0,.08) !important;
+    background:#ffffff !important;
+    height:86px !important;
 }
 
 .header-logo-fixed {
-    position: fixed;
-    top: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 999999;
-    pointer-events: none;
+    position:fixed;
+    top:10px;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:999999;
+    pointer-events:none;
 }
 
 .header-logo-fixed img {
-    height: 62px;
-    width: auto;
-    object-fit: contain;
-    border-radius: 16px;
+    height:62px;
+    width:auto;
+    border-radius:16px;
+    object-fit:contain;
 }
 
 .block-container {
-    max-width: 1280px !important;
-    padding-top: 120px !important;
-    padding-left: 2rem !important;
-    padding-right: 2rem !important;
+    max-width:1280px !important;
+    padding-top:120px !important;
 }
 
 section[data-testid="stSidebar"] {
-    background: #050509 !important;
-    border-right: 1px solid rgba(255,215,0,.20) !important;
+    background:#050509 !important;
+    border-right:1px solid rgba(255,215,0,.20);
 }
 
 section[data-testid="stSidebar"] * {
-    color: white !important;
+    color:white !important;
 }
 
 .stButton button {
-    width: 100% !important;
-    background: #000000 !important;
-    color: white !important;
-    border: 1px solid rgba(255,215,0,.45) !important;
-    border-radius: 16px !important;
-    min-height: 48px !important;
-    font-weight: 800 !important;
+    width:100% !important;
+    background:#000000 !important;
+    color:white !important;
+    border:1px solid rgba(255,215,0,.45) !important;
+    border-radius:16px !important;
+    min-height:48px !important;
+    font-weight:800 !important;
 }
 
 .stButton button:hover {
-    border-color: #ffd700 !important;
-    color: #ffd700 !important;
+    border-color:#ffd700 !important;
+    color:#ffd700 !important;
 }
 
 .stTextInput input,
-.stTextArea textarea,
-input,
-textarea {
-    background: #000 !important;
-    color: white !important;
-    border-radius: 14px !important;
-    border: 1px solid rgba(255,215,0,.35) !important;
+.stTextArea textarea {
+    background:#000 !important;
+    color:white !important;
+    border-radius:14px !important;
+    border:1px solid rgba(255,215,0,.35) !important;
 }
 
 .hero-box {
     background:
         radial-gradient(circle at top left, rgba(0,183,255,.22), transparent 34rem),
         radial-gradient(circle at top right, rgba(168,85,247,.20), transparent 32rem),
-        linear-gradient(135deg, #102036 0%, #171d35 55%, #3b1d5f 100%);
-    border-radius: 38px;
-    padding: 64px 52px;
-    text-align: center;
-    border: 1px solid rgba(255,255,255,.08);
-    box-shadow: 0 30px 80px rgba(0,0,0,.40);
+        linear-gradient(135deg,#102036 0%,#171d35 55%,#3b1d5f 100%);
+    border-radius:38px;
+    padding:64px 52px;
+    text-align:center;
+    border:1px solid rgba(255,255,255,.08);
+    box-shadow:0 30px 80px rgba(0,0,0,.40);
 }
 
 .hero-title {
-    font-size: clamp(3rem, 6vw, 5.5rem);
-    line-height: 1.05;
-    font-weight: 950;
-    color: white !important;
-    letter-spacing: -0.04em;
+    font-size:clamp(3rem,6vw,5.5rem);
+    line-height:1.05;
+    font-weight:950;
+    color:white !important;
+    letter-spacing:-.04em;
 }
 
-.mab-text-logo {
-    color: white !important;
-    font-weight: 950;
-    letter-spacing: -0.04em;
+.hero-main-logo {
+    height:1em;
+    max-height:95px;
+    width:auto;
+    vertical-align:middle;
+    margin-left:16px;
+    border-radius:14px;
+    background:#000;
 }
 
 .hero-subtitle {
-    color: white !important;
-    font-size: 2rem;
-    font-weight: 900;
-    margin-top: 42px;
+    color:white !important;
+    font-size:2rem;
+    font-weight:900;
+    margin-top:42px;
 }
 
 .hero-text {
-    color: #e5e7eb !important;
-    font-size: 1.25rem;
-    line-height: 1.8;
-    margin-top: 22px;
-    text-align: center;
+    color:#e5e7eb !important;
+    font-size:1.25rem;
+    line-height:1.8;
+    margin-top:22px;
+    text-align:center;
 }
 
 .plan-grid {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 18px;
-    margin-top: 24px;
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:18px;
+    margin-top:24px;
 }
 
 .plan-card {
-    background: #101018;
-    border-radius: 24px;
-    padding: 24px;
-    border: 1px solid rgba(255,255,255,.08);
-    min-height: 160px;
+    background:#101018;
+    border-radius:24px;
+    padding:24px;
+    border:1px solid rgba(255,255,255,.08);
+    min-height:160px;
 }
 
 .plan-card h3 {
-    color: white !important;
-    font-size: 2rem;
+    color:white !important;
+    font-size:2rem;
 }
 
 .plan-card p {
-    color: #d4d4d8 !important;
-    font-size: 1rem;
-    line-height: 1.6;
+    color:#d4d4d8 !important;
+    font-size:1rem;
+    line-height:1.6;
 }
 
 .locked {
-    opacity: .75;
+    opacity:.75;
 }
 
 @media(max-width:900px) {
     .block-container {
-        padding-top: 105px !important;
-        padding-left: 1rem !important;
-        padding-right: 1rem !important;
+        padding-top:105px !important;
     }
 
     .header-logo-fixed img {
-        height: 52px;
+        height:52px;
     }
 
     .plan-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns:1fr;
     }
 
     .hero-box {
-        padding: 38px 24px;
+        padding:38px 24px;
     }
 
     .hero-title {
-        font-size: 3rem;
+        font-size:3rem;
     }
 
     .hero-subtitle {
-        font-size: 1.5rem;
+        font-size:1.5rem;
     }
 
     .hero-text {
-        font-size: 1rem;
+        font-size:1rem;
+    }
+
+    .hero-main-logo {
+        max-height:60px;
+        margin-left:8px;
     }
 }
 </style>
-""",
-    unsafe_allow_html=True,
-)
+""", unsafe_allow_html=True)
 
 if HEADER_B64:
     st.markdown(
-        f"""
-        <div class="header-logo-fixed">
-            <img src="data:image/png;base64,{HEADER_B64}">
-        </div>
-        """,
+        f'<div class="header-logo-fixed"><img src="data:image/png;base64,{HEADER_B64}"></div>',
         unsafe_allow_html=True,
     )
 
 
 def plan_rank(plan):
-    return {
-        "free": 1,
-        "pro": 2,
-        "grand": 3,
-        "elite": 4,
-    }.get(plan, 1)
+    return {"free": 1, "pro": 2, "grand": 3, "elite": 4}.get(plan, 1)
 
 
 def nav_button(label, page, required_plan="free"):
@@ -301,11 +289,15 @@ with st.sidebar:
 
 
 if st.session_state.page == "home":
+    logo_html = "MAB.AI"
+    if LOGO_B64:
+        logo_html = f'<img class="hero-main-logo" src="data:image/png;base64,{LOGO_B64}">'
+
     st.markdown(
-        """
+        f"""
         <div class="hero-box">
             <div class="hero-title">
-                Hallo willkommen auf <span class="mab-text-logo">MAB.AI</span>
+                Hallo willkommen auf {logo_html}
             </div>
 
             <div class="hero-subtitle">
@@ -313,8 +305,8 @@ if st.session_state.page == "home":
             </div>
 
             <div class="hero-text">
-                Starte mit Memory Chat, erstelle Texte,
-                plane Projekte, sammle Ideen oder lass dir direkt helfen.
+                Starte mit Memory Chat, erstelle Texte, plane Projekte,
+                sammle Ideen oder lass dir direkt helfen.
             </div>
 
             <div class="hero-text">
@@ -473,35 +465,13 @@ elif st.session_state.page == "premium":
     c1, c2, c3 = st.columns(3)
 
     with c1:
-        st.markdown(
-            """
-            ### Pro
-            **9.99€ / Monat**
-
-            1200 Tokens
-            """
-        )
+        st.markdown("### Pro\n**9.99€ / Monat**\n\n1200 Tokens")
         st.button("Buy Pro", key="buy_pro")
 
     with c2:
-        st.markdown(
-            """
-            ### Grand
-            **49.99€ / Monat**
-
-            4000 Tokens
-            """
-        )
+        st.markdown("### Grand\n**49.99€ / Monat**\n\n4000 Tokens")
         st.button("Buy Grand", key="buy_grand")
 
     with c3:
-        st.markdown(
-            """
-            ### Elite
-            **199€ / Monat**
-
-            Alles freigeschaltet.  
-            Höchste API-Leistung.
-            """
-        )
+        st.markdown("### Elite\n**199€ / Monat**\n\nAlles freigeschaltet. Höchste API-Leistung.")
         st.button("Buy Elite", key="buy_elite")
