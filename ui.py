@@ -1,20 +1,21 @@
 import base64
+import random
 from pathlib import Path
 import streamlit as st
 
 BASE_DIR = Path(__file__).parent
-HEADER_PATH = BASE_DIR / "header.png"
+HEADER_PATH = BASE_DIR / "neuerheader.png"
 FAVICON_PATH = BASE_DIR / "Logo24mp.png"
 
 
-def img_to_b64(path: Path) -> str:
+def img_b64(path: Path) -> str:
     if path.exists():
         with open(path, "rb") as f:
             return base64.b64encode(f.read()).decode("utf-8")
     return ""
 
 
-HEADER_B64 = img_to_b64(HEADER_PATH)
+HEADER_B64 = img_b64(HEADER_PATH)
 
 st.set_page_config(
     page_title="MAB.AI",
@@ -29,205 +30,173 @@ if "plan" not in st.session_state:
     st.session_state.plan = "free"
 if "user" not in st.session_state:
     st.session_state.user = None
+if "captcha_a" not in st.session_state:
+    st.session_state.captcha_a = random.randint(1, 5)
+    st.session_state.captcha_b = random.randint(1, 5)
+
+
+def refresh_captcha():
+    st.session_state.captcha_a = random.randint(1, 5)
+    st.session_state.captcha_b = random.randint(1, 5)
 
 
 st.markdown("""
 <style>
-/* APP */
 html, body, .stApp {
-    background: #07070b !important;
-    color: #ffffff !important;
+    background:#07070b !important;
+    color:white !important;
 }
 
-/* STREAMLIT HEADER */
 [data-testid="stHeader"] {
-    background: #ffffff !important;
-    height: 86px !important;
-    border-bottom: 1px solid rgba(0,0,0,.08) !important;
+    background:#ffffff !important;
+    height:86px !important;
 }
 
-/* HEADER LOGO */
 .header-logo-fixed {
-    position: fixed;
-    top: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 999999;
-    pointer-events: none;
+    position:fixed;
+    top:10px;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:999999;
+    pointer-events:none;
 }
 
 .header-logo-fixed img {
-    height: 62px;
-    width: auto;
-    object-fit: contain;
-    border-radius: 14px;
+    height:62px;
+    width:auto;
+    border-radius:14px;
+    object-fit:contain;
 }
 
-/* MAIN */
 .block-container {
-    max-width: 1180px !important;
-    padding-top: 120px !important;
-    padding-left: 2rem !important;
-    padding-right: 2rem !important;
-    padding-bottom: 4rem !important;
+    max-width:1180px !important;
+    padding-top:120px !important;
 }
 
-/* SIDEBAR */
 section[data-testid="stSidebar"] {
-    background: #050509 !important;
-    border-right: 1px solid rgba(255,215,0,.22) !important;
+    background:#050509 !important;
+    border-right:1px solid rgba(255,215,0,.22) !important;
 }
 
 section[data-testid="stSidebar"] * {
-    color: #ffffff !important;
+    color:white !important;
 }
 
-section[data-testid="stSidebar"] img {
-    border-radius: 18px;
-    margin-bottom: 1rem;
-}
-
-/* BUTTONS */
 .stButton button {
-    width: 100% !important;
-    background: #000000 !important;
-    color: #ffffff !important;
-    border: 1px solid rgba(255,215,0,.55) !important;
-    border-radius: 16px !important;
-    min-height: 46px !important;
-    font-weight: 800 !important;
+    width:100% !important;
+    background:#000 !important;
+    color:white !important;
+    border:1px solid rgba(255,215,0,.55) !important;
+    border-radius:16px !important;
+    min-height:46px !important;
+    font-weight:800 !important;
 }
 
 .stButton button:hover {
-    color: #ffd700 !important;
-    border-color: #ffd700 !important;
-    box-shadow: 0 0 18px rgba(255,215,0,.18) !important;
+    color:#ffd700 !important;
+    border-color:#ffd700 !important;
 }
 
-/* INPUTS */
 input, textarea,
 .stTextInput input,
 .stTextArea textarea {
-    background: #000000 !important;
-    color: #ffffff !important;
-    border: 1px solid rgba(255,215,0,.35) !important;
-    border-radius: 14px !important;
+    background:#000 !important;
+    color:white !important;
+    border:1px solid rgba(255,215,0,.35) !important;
+    border-radius:14px !important;
 }
 
-input::placeholder,
-textarea::placeholder {
-    color: #999999 !important;
-}
-
-/* TITLES */
-h1, h2, h3, h4, h5, h6, p, span, label, div {
-    color: #ffffff;
-}
-
-/* HERO */
 .hero-box {
     background:
         radial-gradient(circle at top left, rgba(0,183,255,.20), transparent 32rem),
         radial-gradient(circle at top right, rgba(168,85,247,.22), transparent 30rem),
-        linear-gradient(135deg, #101827 0%, #171a2e 55%, #2d1247 100%);
-    border: 1px solid rgba(255,255,255,.10);
-    border-radius: 34px;
-    padding: 54px 46px;
-    text-align: center;
-    margin: 0 auto 30px auto;
-    box-shadow: 0 30px 90px rgba(0,0,0,.35);
+        linear-gradient(135deg,#101827 0%,#171a2e 55%,#2d1247 100%);
+    border:1px solid rgba(255,255,255,.10);
+    border-radius:34px;
+    padding:54px 46px;
+    text-align:center;
+    box-shadow:0 30px 90px rgba(0,0,0,.35);
 }
 
-.hero-box h1 {
-    font-size: clamp(2.4rem, 5vw, 4.8rem);
-    line-height: 1.05;
-    margin: 0 0 26px 0;
-    color: #ffffff !important;
-    font-weight: 950;
-    letter-spacing: -.04em;
+.hero-title {
+    font-size:clamp(2.4rem,5vw,4.8rem);
+    line-height:1.05;
+    font-weight:950;
+    color:white !important;
+    letter-spacing:-.04em;
+    margin-bottom:30px;
+}
+
+.hero-inline-logo {
+    height:1.05em;
+    width:auto;
+    vertical-align:middle;
+    border-radius:12px;
+    margin-left:14px;
+    background:transparent !important;
 }
 
 .hero-box p {
-    color: #e5e7eb !important;
-    font-size: clamp(1rem, 1.7vw, 1.25rem);
-    line-height: 1.7;
-    margin: 0 auto 14px auto;
-    max-width: 900px;
+    color:#e5e7eb !important;
+    font-size:clamp(1rem,1.7vw,1.25rem);
+    line-height:1.7;
+    max-width:900px;
+    margin:0 auto 14px auto;
 }
 
 .hero-subtitle {
-    font-size: clamp(1.25rem, 2.2vw, 1.65rem) !important;
-    font-weight: 850 !important;
-    color: #ffffff !important;
+    font-size:clamp(1.25rem,2.2vw,1.65rem) !important;
+    font-weight:850 !important;
+    color:white !important;
 }
 
-/* PLAN GRID */
 .plan-grid {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 18px;
-    margin-top: 24px;
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:18px;
+    margin-top:24px;
 }
 
 .plan-card {
-    background: #11111a;
-    border: 1px solid rgba(255,255,255,.10);
-    border-radius: 24px;
-    padding: 24px;
-    min-height: 150px;
-    box-shadow: 0 20px 50px rgba(0,0,0,.22);
+    background:#11111a;
+    border:1px solid rgba(255,255,255,.10);
+    border-radius:24px;
+    padding:24px;
+    min-height:150px;
 }
 
 .plan-card h3 {
-    color: #ffffff !important;
-    margin-top: 0;
-    margin-bottom: 12px;
-    font-size: 1.45rem;
+    color:white !important;
 }
 
 .plan-card p {
-    color: #d4d4d8 !important;
-    line-height: 1.55;
+    color:#d4d4d8 !important;
 }
 
 .locked {
-    opacity: .72;
-    border-color: rgba(255,215,0,.25);
+    opacity:.72;
+    border-color:rgba(255,215,0,.25);
 }
 
-/* PREMIUM CARDS */
-.premium-card {
-    background: #11111a;
-    border: 1px solid rgba(255,215,0,.25);
-    border-radius: 24px;
-    padding: 26px;
-    min-height: 260px;
-}
-
-/* MOBILE */
-@media(max-width: 900px) {
+@media(max-width:900px) {
     .block-container {
-        padding-top: 105px !important;
-        padding-left: 1rem !important;
-        padding-right: 1rem !important;
+        padding-top:105px !important;
     }
 
     .header-logo-fixed img {
-        height: 52px;
+        height:52px;
     }
 
     .hero-box {
-        padding: 34px 22px;
-        border-radius: 26px;
+        padding:34px 22px;
     }
 
     .plan-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns:1fr;
     }
 }
 </style>
 """, unsafe_allow_html=True)
-
 
 if HEADER_B64:
     st.markdown(
@@ -240,11 +209,11 @@ if HEADER_B64:
     )
 
 
-def plan_rank(plan: str) -> int:
+def plan_rank(plan):
     return {"free": 1, "pro": 2, "grand": 3, "elite": 4}.get(plan, 1)
 
 
-def nav_button(label: str, page: str, required_plan: str = "free"):
+def nav_button(label, page, required_plan="free"):
     locked = plan_rank(st.session_state.plan) < plan_rank(required_plan)
     text = f"🔒 {label}" if locked else label
 
@@ -269,6 +238,7 @@ with st.sidebar:
     if st.session_state.user:
         st.success(f"👤 {st.session_state.user}")
         st.caption(f"Plan: {st.session_state.plan}")
+
         if st.button("Logout", key="logout_btn"):
             st.session_state.user = None
             st.session_state.plan = "free"
@@ -300,15 +270,25 @@ with st.sidebar:
 
 
 if st.session_state.page == "home":
+    logo_html = (
+        f'<img class="hero-inline-logo" src="data:image/png;base64,{HEADER_B64}">'
+        if HEADER_B64 else "MAB.AI"
+    )
+
     st.markdown(
-        """
+        f"""
         <section class="hero-box">
-            <h1>Hallo willkommen auf MAB.AI</h1>
+            <div class="hero-title">
+                Hallo willkommen auf {logo_html}
+            </div>
+
             <p class="hero-subtitle">Was können wir für dich tun?</p>
+
             <p>
                 Starte mit Memory Chat, erstelle Texte, plane Projekte,
                 sammle Ideen oder lass dir direkt helfen.
             </p>
+
             <p>
                 Egal ob Programmierung, Monetarisierung oder künstliche Intelligenz —
                 in jedem Bereich können wir dir helfen.
@@ -325,14 +305,17 @@ if st.session_state.page == "home":
                 <h3>Free</h3>
                 <p>Memory Chat inklusive.</p>
             </div>
+
             <div class="plan-card locked">
                 <h3>🔒 Pro</h3>
                 <p>1200 Tokens<br>Coding, Images, Musik & Reels.</p>
             </div>
+
             <div class="plan-card locked">
                 <h3>🔒 Grand</h3>
                 <p>4000 Tokens<br>AI Video Generator.</p>
             </div>
+
             <div class="plan-card locked">
                 <h3>🔒 Elite</h3>
                 <p>Alles freigeschaltet.<br>Höchste API-Leistung.</p>
@@ -367,9 +350,25 @@ elif st.session_state.page == "login":
         new_email = st.text_input("Email", key="register_email")
         new_password = st.text_input("Password", type="password", key="register_password")
 
+        captcha_answer = st.number_input(
+            f"Sicherheitsfrage: Was ist {st.session_state.captcha_a} + {st.session_state.captcha_b}?",
+            min_value=0,
+            max_value=10,
+            step=1,
+            key="register_captcha",
+        )
+
         if st.button("Register", key="register_submit"):
+            correct = st.session_state.captcha_a + st.session_state.captcha_b
+
+            if captcha_answer != correct:
+                st.error("Sicherheitsfrage falsch. Bitte nochmal versuchen.")
+                refresh_captcha()
+                st.rerun()
+
             if new_username and new_email and new_password:
                 st.success("Account erstellt. Du kannst dich jetzt einloggen.")
+                refresh_captcha()
             else:
                 st.error("Bitte alle Felder ausfüllen.")
 
@@ -426,7 +425,6 @@ elif st.session_state.page == "dashboard":
     st.title("📊 User Dashboard")
     st.metric("Aktueller Plan", st.session_state.plan)
     st.metric("Tokens", "0")
-    st.info("Redeem Codes und Billing kommen hier rein.")
 
 
 elif st.session_state.page == "support":
@@ -447,43 +445,13 @@ elif st.session_state.page == "premium":
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        st.markdown(
-            """
-            <div class="premium-card">
-                <h3>Pro</h3>
-                <p><b>9.99€ / Monat</b></p>
-                <p>1200 Tokens</p>
-                <p>Coding, Images, Musik & Reels.</p>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+        st.markdown("### Pro\n**9.99€ / Monat**\n\n1200 Tokens")
         st.button("Buy Pro", key="buy_pro")
 
     with col2:
-        st.markdown(
-            """
-            <div class="premium-card">
-                <h3>Grand</h3>
-                <p><b>49.99€ / Monat</b></p>
-                <p>4000 Tokens</p>
-                <p>AI Video Generator.</p>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+        st.markdown("### Grand\n**49.99€ / Monat**\n\n4000 Tokens")
         st.button("Buy Grand", key="buy_grand")
 
     with col3:
-        st.markdown(
-            """
-            <div class="premium-card">
-                <h3>Elite</h3>
-                <p><b>199€ / Monat</b></p>
-                <p>Alles freigeschaltet.</p>
-                <p>Höchste API-Leistung.</p>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+        st.markdown("### Elite\n**199€ / Monat**\n\nAlles freigeschaltet. Höchste API-Leistung.")
         st.button("Buy Elite", key="buy_elite")
