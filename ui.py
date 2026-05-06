@@ -4,14 +4,15 @@ from pathlib import Path
 import streamlit as st
 
 BASE_DIR = Path(__file__).parent
+
 HEADER_PATH = BASE_DIR / "neuerheader.png"
 FAVICON_PATH = BASE_DIR / "Logo24mp.png"
 
 
-def img_b64(path: Path) -> str:
+def img_b64(path: Path):
     if path.exists():
         with open(path, "rb") as f:
-            return base64.b64encode(f.read()).decode("utf-8")
+            return base64.b64encode(f.read()).decode()
     return ""
 
 
@@ -26,12 +27,17 @@ st.set_page_config(
 
 if "page" not in st.session_state:
     st.session_state.page = "home"
+
 if "plan" not in st.session_state:
     st.session_state.plan = "free"
+
 if "user" not in st.session_state:
     st.session_state.user = None
+
 if "captcha_a" not in st.session_state:
     st.session_state.captcha_a = random.randint(1, 5)
+
+if "captcha_b" not in st.session_state:
     st.session_state.captcha_b = random.randint(1, 5)
 
 
@@ -40,163 +46,183 @@ def refresh_captcha():
     st.session_state.captcha_b = random.randint(1, 5)
 
 
-st.markdown("""
+st.markdown(
+    """
 <style>
 html, body, .stApp {
-    background:#07070b !important;
-    color:white !important;
+    background: #05050a !important;
+    color: white !important;
 }
 
 [data-testid="stHeader"] {
-    background:#ffffff !important;
-    height:86px !important;
+    background: #ffffff !important;
+    height: 86px !important;
+    border-bottom: 1px solid rgba(0,0,0,.08) !important;
 }
 
 .header-logo-fixed {
-    position:fixed;
-    top:10px;
-    left:50%;
-    transform:translateX(-50%);
-    z-index:999999;
-    pointer-events:none;
+    position: fixed;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 999999;
+    pointer-events: none;
 }
 
 .header-logo-fixed img {
-    height:62px;
-    width:auto;
-    border-radius:14px;
-    object-fit:contain;
+    height: 62px;
+    width: auto;
+    object-fit: contain;
+    border-radius: 16px;
 }
 
 .block-container {
-    max-width:1180px !important;
-    padding-top:120px !important;
+    max-width: 1280px !important;
+    padding-top: 120px !important;
+    padding-left: 2rem !important;
+    padding-right: 2rem !important;
 }
 
 section[data-testid="stSidebar"] {
-    background:#050509 !important;
-    border-right:1px solid rgba(255,215,0,.22) !important;
+    background: #050509 !important;
+    border-right: 1px solid rgba(255,215,0,.20) !important;
 }
 
 section[data-testid="stSidebar"] * {
-    color:white !important;
+    color: white !important;
 }
 
 .stButton button {
-    width:100% !important;
-    background:#000 !important;
-    color:white !important;
-    border:1px solid rgba(255,215,0,.55) !important;
-    border-radius:16px !important;
-    min-height:46px !important;
-    font-weight:800 !important;
+    width: 100% !important;
+    background: #000000 !important;
+    color: white !important;
+    border: 1px solid rgba(255,215,0,.45) !important;
+    border-radius: 16px !important;
+    min-height: 48px !important;
+    font-weight: 800 !important;
 }
 
 .stButton button:hover {
-    color:#ffd700 !important;
-    border-color:#ffd700 !important;
+    border-color: #ffd700 !important;
+    color: #ffd700 !important;
 }
 
-input, textarea,
 .stTextInput input,
-.stTextArea textarea {
-    background:#000 !important;
-    color:white !important;
-    border:1px solid rgba(255,215,0,.35) !important;
-    border-radius:14px !important;
+.stTextArea textarea,
+input,
+textarea {
+    background: #000 !important;
+    color: white !important;
+    border-radius: 14px !important;
+    border: 1px solid rgba(255,215,0,.35) !important;
 }
 
 .hero-box {
     background:
-        radial-gradient(circle at top left, rgba(0,183,255,.20), transparent 32rem),
-        radial-gradient(circle at top right, rgba(168,85,247,.22), transparent 30rem),
-        linear-gradient(135deg,#101827 0%,#171a2e 55%,#2d1247 100%);
-    border:1px solid rgba(255,255,255,.10);
-    border-radius:34px;
-    padding:54px 46px;
-    text-align:center;
-    box-shadow:0 30px 90px rgba(0,0,0,.35);
+        radial-gradient(circle at top left, rgba(0,183,255,.22), transparent 34rem),
+        radial-gradient(circle at top right, rgba(168,85,247,.20), transparent 32rem),
+        linear-gradient(135deg, #102036 0%, #171d35 55%, #3b1d5f 100%);
+    border-radius: 38px;
+    padding: 64px 52px;
+    text-align: center;
+    border: 1px solid rgba(255,255,255,.08);
+    box-shadow: 0 30px 80px rgba(0,0,0,.40);
 }
 
 .hero-title {
-    font-size:clamp(2.4rem,5vw,4.8rem);
-    line-height:1.05;
-    font-weight:950;
-    color:white !important;
-    letter-spacing:-.04em;
-    margin-bottom:30px;
+    font-size: clamp(3rem, 6vw, 5.5rem);
+    line-height: 1.05;
+    font-weight: 950;
+    color: white !important;
+    letter-spacing: -0.04em;
 }
 
-.hero-inline-logo {
-    height:1.05em;
-    width:auto;
-    vertical-align:middle;
-    border-radius:12px;
-    margin-left:14px;
-    background:transparent !important;
-}
-
-.hero-box p {
-    color:#e5e7eb !important;
-    font-size:clamp(1rem,1.7vw,1.25rem);
-    line-height:1.7;
-    max-width:900px;
-    margin:0 auto 14px auto;
+.mab-text-logo {
+    color: white !important;
+    font-weight: 950;
+    letter-spacing: -0.04em;
 }
 
 .hero-subtitle {
-    font-size:clamp(1.25rem,2.2vw,1.65rem) !important;
-    font-weight:850 !important;
-    color:white !important;
+    color: white !important;
+    font-size: 2rem;
+    font-weight: 900;
+    margin-top: 42px;
+}
+
+.hero-text {
+    color: #e5e7eb !important;
+    font-size: 1.25rem;
+    line-height: 1.8;
+    margin-top: 22px;
+    text-align: center;
 }
 
 .plan-grid {
-    display:grid;
-    grid-template-columns:repeat(4,minmax(0,1fr));
-    gap:18px;
-    margin-top:24px;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 18px;
+    margin-top: 24px;
 }
 
 .plan-card {
-    background:#11111a;
-    border:1px solid rgba(255,255,255,.10);
-    border-radius:24px;
-    padding:24px;
-    min-height:150px;
+    background: #101018;
+    border-radius: 24px;
+    padding: 24px;
+    border: 1px solid rgba(255,255,255,.08);
+    min-height: 160px;
 }
 
 .plan-card h3 {
-    color:white !important;
+    color: white !important;
+    font-size: 2rem;
 }
 
 .plan-card p {
-    color:#d4d4d8 !important;
+    color: #d4d4d8 !important;
+    font-size: 1rem;
+    line-height: 1.6;
 }
 
 .locked {
-    opacity:.72;
-    border-color:rgba(255,215,0,.25);
+    opacity: .75;
 }
 
 @media(max-width:900px) {
     .block-container {
-        padding-top:105px !important;
+        padding-top: 105px !important;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
     }
 
     .header-logo-fixed img {
-        height:52px;
-    }
-
-    .hero-box {
-        padding:34px 22px;
+        height: 52px;
     }
 
     .plan-grid {
-        grid-template-columns:1fr;
+        grid-template-columns: 1fr;
+    }
+
+    .hero-box {
+        padding: 38px 24px;
+    }
+
+    .hero-title {
+        font-size: 3rem;
+    }
+
+    .hero-subtitle {
+        font-size: 1.5rem;
+    }
+
+    .hero-text {
+        font-size: 1rem;
     }
 }
 </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 if HEADER_B64:
     st.markdown(
@@ -210,7 +236,12 @@ if HEADER_B64:
 
 
 def plan_rank(plan):
-    return {"free": 1, "pro": 2, "grand": 3, "elite": 4}.get(plan, 1)
+    return {
+        "free": 1,
+        "pro": 2,
+        "grand": 3,
+        "elite": 4,
+    }.get(plan, 1)
 
 
 def nav_button(label, page, required_plan="free"):
@@ -264,36 +295,33 @@ with st.sidebar:
     nav_button("AI Video Generator", "video", "grand")
 
     st.markdown("### Account")
-    nav_button("User Dashboard", "dashboard", "free")
-    nav_button("Support", "support", "free")
-    nav_button("Buy Premium", "premium", "free")
+    nav_button("User Dashboard", "dashboard")
+    nav_button("Support", "support")
+    nav_button("Buy Premium", "premium")
 
 
 if st.session_state.page == "home":
-    logo_html = (
-        f'<img class="hero-inline-logo" src="data:image/png;base64,{HEADER_B64}">'
-        if HEADER_B64 else "MAB.AI"
-    )
-
     st.markdown(
-        f"""
-        <section class="hero-box">
+        """
+        <div class="hero-box">
             <div class="hero-title">
-                Hallo willkommen auf {logo_html}
+                Hallo willkommen auf <span class="mab-text-logo">MAB.AI</span>
             </div>
 
-            <p class="hero-subtitle">Was können wir für dich tun?</p>
+            <div class="hero-subtitle">
+                Was können wir für dich tun?
+            </div>
 
-            <p>
-                Starte mit Memory Chat, erstelle Texte, plane Projekte,
-                sammle Ideen oder lass dir direkt helfen.
-            </p>
+            <div class="hero-text">
+                Starte mit Memory Chat, erstelle Texte,
+                plane Projekte, sammle Ideen oder lass dir direkt helfen.
+            </div>
 
-            <p>
-                Egal ob Programmierung, Monetarisierung oder künstliche Intelligenz —
-                in jedem Bereich können wir dir helfen.
-            </p>
-        </section>
+            <div class="hero-text">
+                Egal ob Programmierung, Monetarisierung oder künstliche
+                Intelligenz — in jedem Bereich können wir dir helfen.
+            </div>
+        </div>
         """,
         unsafe_allow_html=True,
     )
@@ -329,13 +357,13 @@ if st.session_state.page == "home":
 elif st.session_state.page == "login":
     st.title("🔐 Login / Register")
 
-    tab_login, tab_register = st.tabs(["Login", "Register"])
+    tab1, tab2 = st.tabs(["Login", "Register"])
 
-    with tab_login:
+    with tab1:
         username = st.text_input("Username", key="login_username")
         password = st.text_input("Password", type="password", key="login_password")
 
-        if st.button("Login", key="login_submit"):
+        if st.button("Login", key="login_btn"):
             if username:
                 st.session_state.user = username
                 st.session_state.plan = "free"
@@ -345,29 +373,29 @@ elif st.session_state.page == "login":
             else:
                 st.error("Bitte Username eingeben.")
 
-    with tab_register:
-        new_username = st.text_input("Username", key="register_username")
-        new_email = st.text_input("Email", key="register_email")
-        new_password = st.text_input("Password", type="password", key="register_password")
+    with tab2:
+        reg_user = st.text_input("Username", key="register_user")
+        reg_mail = st.text_input("Email", key="register_mail")
+        reg_pw = st.text_input("Password", type="password", key="register_pw")
 
-        captcha_answer = st.number_input(
-            f"Sicherheitsfrage: Was ist {st.session_state.captcha_a} + {st.session_state.captcha_b}?",
+        captcha = st.number_input(
+            f"Was ist {st.session_state.captcha_a} + {st.session_state.captcha_b}?",
             min_value=0,
             max_value=10,
             step=1,
-            key="register_captcha",
+            key="captcha_input",
         )
 
-        if st.button("Register", key="register_submit"):
-            correct = st.session_state.captcha_a + st.session_state.captcha_b
+        if st.button("Register", key="register_btn"):
+            result = st.session_state.captcha_a + st.session_state.captcha_b
 
-            if captcha_answer != correct:
-                st.error("Sicherheitsfrage falsch. Bitte nochmal versuchen.")
+            if captcha != result:
+                st.error("Captcha falsch.")
                 refresh_captcha()
                 st.rerun()
 
-            if new_username and new_email and new_password:
-                st.success("Account erstellt. Du kannst dich jetzt einloggen.")
+            if reg_user and reg_mail and reg_pw:
+                st.success("Account erfolgreich erstellt.")
                 refresh_captcha()
             else:
                 st.error("Bitte alle Felder ausfüllen.")
@@ -375,7 +403,7 @@ elif st.session_state.page == "login":
 
 elif st.session_state.page == "chat":
     st.title("💬 Memory Chat")
-    user_input = st.text_area("Nachricht", key="chat_input")
+    prompt = st.text_area("Nachricht", key="chat_prompt")
 
     if st.button("Senden", key="chat_send"):
         st.success("Chat API kommt hier rein.")
@@ -383,9 +411,9 @@ elif st.session_state.page == "chat":
 
 elif st.session_state.page == "coding":
     st.title("💻 Coding Area")
-    code_input = st.text_area("Was soll gebaut oder gefixt werden?", key="coding_input")
+    prompt = st.text_area("Was soll gebaut werden?", key="coding_prompt")
 
-    if st.button("Run Coding Assistant", key="coding_run"):
+    if st.button("Code generieren", key="code_generate"):
         st.success("Coding API kommt hier rein.")
 
 
@@ -393,7 +421,7 @@ elif st.session_state.page == "image":
     st.title("🎨 Image Generator")
     prompt = st.text_area("Bildbeschreibung", key="image_prompt")
 
-    if st.button("Generate Image", key="image_generate"):
+    if st.button("Bild generieren", key="img_generate"):
         st.success("OpenAI Image API kommt hier rein.")
 
 
@@ -401,7 +429,7 @@ elif st.session_state.page == "music":
     st.title("🎵 Music Generator")
     prompt = st.text_area("Musikbeschreibung", key="music_prompt")
 
-    if st.button("Generate Music", key="music_generate"):
+    if st.button("Musik generieren", key="music_generate"):
         st.success("Music API kommt hier rein.")
 
 
@@ -409,7 +437,7 @@ elif st.session_state.page == "reels":
     st.title("🎞️ Short Reels Creator")
     prompt = st.text_area("Reel Beschreibung", key="reels_prompt")
 
-    if st.button("Generate Reel", key="reels_generate"):
+    if st.button("Reel erstellen", key="reel_generate"):
         st.success("Reels API kommt hier rein.")
 
 
@@ -417,13 +445,13 @@ elif st.session_state.page == "video":
     st.title("🎬 AI Video Generator")
     prompt = st.text_area("Videobeschreibung", key="video_prompt")
 
-    if st.button("Generate Video", key="video_generate"):
+    if st.button("Video generieren", key="video_generate"):
         st.success("Video API kommt hier rein.")
 
 
 elif st.session_state.page == "dashboard":
     st.title("📊 User Dashboard")
-    st.metric("Aktueller Plan", st.session_state.plan)
+    st.metric("Plan", st.session_state.plan)
     st.metric("Tokens", "0")
 
 
@@ -432,26 +460,48 @@ elif st.session_state.page == "support":
     subject = st.text_input("Betreff", key="support_subject")
     msg = st.text_area("Nachricht", key="support_msg")
 
-    if st.button("Ticket senden", key="support_send"):
+    if st.button("Ticket senden", key="ticket_send"):
         if subject and msg:
-            st.success("Support Ticket gesendet.")
+            st.success("Ticket gesendet.")
         else:
-            st.error("Bitte Betreff und Nachricht ausfüllen.")
+            st.error("Bitte alles ausfüllen.")
 
 
 elif st.session_state.page == "premium":
     st.title("💳 Buy Premium")
 
-    col1, col2, col3 = st.columns(3)
+    c1, c2, c3 = st.columns(3)
 
-    with col1:
-        st.markdown("### Pro\n**9.99€ / Monat**\n\n1200 Tokens")
+    with c1:
+        st.markdown(
+            """
+            ### Pro
+            **9.99€ / Monat**
+
+            1200 Tokens
+            """
+        )
         st.button("Buy Pro", key="buy_pro")
 
-    with col2:
-        st.markdown("### Grand\n**49.99€ / Monat**\n\n4000 Tokens")
+    with c2:
+        st.markdown(
+            """
+            ### Grand
+            **49.99€ / Monat**
+
+            4000 Tokens
+            """
+        )
         st.button("Buy Grand", key="buy_grand")
 
-    with col3:
-        st.markdown("### Elite\n**199€ / Monat**\n\nAlles freigeschaltet. Höchste API-Leistung.")
+    with c3:
+        st.markdown(
+            """
+            ### Elite
+            **199€ / Monat**
+
+            Alles freigeschaltet.  
+            Höchste API-Leistung.
+            """
+        )
         st.button("Buy Elite", key="buy_elite")
