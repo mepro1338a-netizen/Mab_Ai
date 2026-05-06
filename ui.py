@@ -1,14 +1,8 @@
 import base64
 from pathlib import Path
-
 import streamlit as st
 
-
-# =========================================================
-# CONFIG
-# =========================================================
 BASE_DIR = Path(__file__).parent
-
 HEADER_PATH = BASE_DIR / "header.png"
 FAVICON_PATH = BASE_DIR / "Logo24mp.png"
 
@@ -29,41 +23,33 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-
-# =========================================================
-# SESSION STATE
-# =========================================================
 if "page" not in st.session_state:
     st.session_state.page = "home"
-
 if "plan" not in st.session_state:
     st.session_state.plan = "free"
-
 if "user" not in st.session_state:
     st.session_state.user = None
 
 
-# =========================================================
-# CSS
-# =========================================================
-st.markdown(
-    """
+st.markdown("""
 <style>
+/* APP */
 html, body, .stApp {
-    background: #0b0b0f !important;
-    color: white !important;
+    background: #07070b !important;
+    color: #ffffff !important;
 }
 
-/* Header */
+/* STREAMLIT HEADER */
 [data-testid="stHeader"] {
     background: #ffffff !important;
-    height: 82px !important;
+    height: 86px !important;
+    border-bottom: 1px solid rgba(0,0,0,.08) !important;
 }
 
-/* Header logo */
+/* HEADER LOGO */
 .header-logo-fixed {
     position: fixed;
-    top: 8px;
+    top: 10px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 999999;
@@ -71,128 +57,178 @@ html, body, .stApp {
 }
 
 .header-logo-fixed img {
-    height: 64px;
+    height: 62px;
     width: auto;
     object-fit: contain;
-    border-radius: 12px;
+    border-radius: 14px;
 }
 
-/* Sidebar */
+/* MAIN */
+.block-container {
+    max-width: 1180px !important;
+    padding-top: 120px !important;
+    padding-left: 2rem !important;
+    padding-right: 2rem !important;
+    padding-bottom: 4rem !important;
+}
+
+/* SIDEBAR */
 section[data-testid="stSidebar"] {
-    background: #07070b !important;
-    border-right: 1px solid rgba(255,255,255,0.08);
+    background: #050509 !important;
+    border-right: 1px solid rgba(255,215,0,.22) !important;
 }
 
 section[data-testid="stSidebar"] * {
-    color: white !important;
+    color: #ffffff !important;
 }
 
-/* Buttons */
+section[data-testid="stSidebar"] img {
+    border-radius: 18px;
+    margin-bottom: 1rem;
+}
+
+/* BUTTONS */
 .stButton button {
-    width: 100%;
-    border-radius: 14px !important;
-    border: 1px solid rgba(255,215,0,.5) !important;
-    background: #000 !important;
-    color: white !important;
-    font-weight: 700 !important;
-    min-height: 45px;
+    width: 100% !important;
+    background: #000000 !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255,215,0,.55) !important;
+    border-radius: 16px !important;
+    min-height: 46px !important;
+    font-weight: 800 !important;
 }
 
 .stButton button:hover {
+    color: #ffd700 !important;
     border-color: #ffd700 !important;
+    box-shadow: 0 0 18px rgba(255,215,0,.18) !important;
 }
 
-/* Inputs */
-input, textarea {
-    background: #000 !important;
-    color: white !important;
+/* INPUTS */
+input, textarea,
+.stTextInput input,
+.stTextArea textarea {
+    background: #000000 !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255,215,0,.35) !important;
+    border-radius: 14px !important;
 }
 
-/* Main container */
-.block-container {
-    padding-top: 105px !important;
-    max-width: 1200px !important;
+input::placeholder,
+textarea::placeholder {
+    color: #999999 !important;
 }
 
-/* Hero */
+/* TITLES */
+h1, h2, h3, h4, h5, h6, p, span, label, div {
+    color: #ffffff;
+}
+
+/* HERO */
 .hero-box {
-    background: linear-gradient(135deg,#101827,#1e293b);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 28px;
-    padding: 60px;
+    background:
+        radial-gradient(circle at top left, rgba(0,183,255,.20), transparent 32rem),
+        radial-gradient(circle at top right, rgba(168,85,247,.22), transparent 30rem),
+        linear-gradient(135deg, #101827 0%, #171a2e 55%, #2d1247 100%);
+    border: 1px solid rgba(255,255,255,.10);
+    border-radius: 34px;
+    padding: 54px 46px;
     text-align: center;
-    margin-bottom: 30px;
+    margin: 0 auto 30px auto;
+    box-shadow: 0 30px 90px rgba(0,0,0,.35);
 }
 
 .hero-box h1 {
-    font-size: clamp(2.6rem, 6vw, 4.5rem);
-    margin-bottom: 28px;
-    color: white !important;
-    font-weight: 900;
+    font-size: clamp(2.4rem, 5vw, 4.8rem);
+    line-height: 1.05;
+    margin: 0 0 26px 0;
+    color: #ffffff !important;
+    font-weight: 950;
+    letter-spacing: -.04em;
 }
 
 .hero-box p {
     color: #e5e7eb !important;
-    font-size: 1.25rem;
+    font-size: clamp(1rem, 1.7vw, 1.25rem);
     line-height: 1.7;
+    margin: 0 auto 14px auto;
+    max-width: 900px;
 }
 
 .hero-subtitle {
-    font-size: 1.6rem !important;
-    font-weight: 700;
+    font-size: clamp(1.25rem, 2.2vw, 1.65rem) !important;
+    font-weight: 850 !important;
+    color: #ffffff !important;
 }
 
-/* Plans */
+/* PLAN GRID */
 .plan-grid {
     display: grid;
-    grid-template-columns: repeat(4,1fr);
-    gap: 20px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 18px;
+    margin-top: 24px;
 }
 
 .plan-card {
     background: #11111a;
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 22px;
-    padding: 25px;
-    min-height: 160px;
+    border: 1px solid rgba(255,255,255,.10);
+    border-radius: 24px;
+    padding: 24px;
+    min-height: 150px;
+    box-shadow: 0 20px 50px rgba(0,0,0,.22);
 }
 
 .plan-card h3 {
-    margin-bottom: 15px;
-    color: white !important;
+    color: #ffffff !important;
+    margin-top: 0;
+    margin-bottom: 12px;
+    font-size: 1.45rem;
 }
 
 .plan-card p {
     color: #d4d4d8 !important;
+    line-height: 1.55;
 }
 
 .locked {
-    opacity: .6;
+    opacity: .72;
+    border-color: rgba(255,215,0,.25);
 }
 
-/* Mobile */
-@media(max-width:900px) {
-    .plan-grid {
-        grid-template-columns: 1fr;
+/* PREMIUM CARDS */
+.premium-card {
+    background: #11111a;
+    border: 1px solid rgba(255,215,0,.25);
+    border-radius: 24px;
+    padding: 26px;
+    min-height: 260px;
+}
+
+/* MOBILE */
+@media(max-width: 900px) {
+    .block-container {
+        padding-top: 105px !important;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+
+    .header-logo-fixed img {
+        height: 52px;
     }
 
     .hero-box {
-        padding: 35px 22px;
+        padding: 34px 22px;
+        border-radius: 26px;
     }
 
-    .hero-box h1 {
-        font-size: 2.4rem;
+    .plan-grid {
+        grid-template-columns: 1fr;
     }
 }
 </style>
-""",
-    unsafe_allow_html=True,
-)
+""", unsafe_allow_html=True)
 
 
-# =========================================================
-# HEADER LOGO
-# =========================================================
 if HEADER_B64:
     st.markdown(
         f"""
@@ -204,16 +240,8 @@ if HEADER_B64:
     )
 
 
-# =========================================================
-# NAVIGATION
-# =========================================================
 def plan_rank(plan: str) -> int:
-    return {
-        "free": 1,
-        "pro": 2,
-        "grand": 3,
-        "elite": 4,
-    }.get(plan, 1)
+    return {"free": 1, "pro": 2, "grand": 3, "elite": 4}.get(plan, 1)
 
 
 def nav_button(label: str, page: str, required_plan: str = "free"):
@@ -228,32 +256,28 @@ def nav_button(label: str, page: str, required_plan: str = "free"):
     )
 
     if st.button(text, use_container_width=True, key=button_key):
-        if locked:
-            st.session_state.page = "premium"
-        else:
-            st.session_state.page = page
+        st.session_state.page = "premium" if locked else page
+        st.rerun()
 
 
-# =========================================================
-# SIDEBAR
-# =========================================================
 with st.sidebar:
     if FAVICON_PATH.exists():
-        st.image(str(FAVICON_PATH), width=110)
+        st.image(str(FAVICON_PATH), use_container_width=True)
 
     st.markdown("## MAB.AI")
 
     if st.session_state.user:
         st.success(f"👤 {st.session_state.user}")
         st.caption(f"Plan: {st.session_state.plan}")
-        if st.button("Logout", use_container_width=True, key="logout_btn"):
+        if st.button("Logout", key="logout_btn"):
             st.session_state.user = None
             st.session_state.plan = "free"
             st.session_state.page = "home"
             st.rerun()
     else:
-        if st.button("Login / Register", use_container_width=True, key="login_register_btn"):
+        if st.button("Login / Register", key="login_register_btn"):
             st.session_state.page = "login"
+            st.rerun()
 
     st.markdown("---")
 
@@ -275,13 +299,10 @@ with st.sidebar:
     nav_button("Buy Premium", "premium", "free")
 
 
-# =========================================================
-# PAGES
-# =========================================================
 if st.session_state.page == "home":
     st.markdown(
         """
-        <div class="hero-box">
+        <section class="hero-box">
             <h1>Hallo willkommen auf MAB.AI</h1>
             <p class="hero-subtitle">Was können wir für dich tun?</p>
             <p>
@@ -292,7 +313,7 @@ if st.session_state.page == "home":
                 Egal ob Programmierung, Monetarisierung oder künstliche Intelligenz —
                 in jedem Bereich können wir dir helfen.
             </p>
-        </div>
+        </section>
         """,
         unsafe_allow_html=True,
     )
@@ -304,17 +325,14 @@ if st.session_state.page == "home":
                 <h3>Free</h3>
                 <p>Memory Chat inklusive.</p>
             </div>
-
             <div class="plan-card locked">
                 <h3>🔒 Pro</h3>
                 <p>1200 Tokens<br>Coding, Images, Musik & Reels.</p>
             </div>
-
             <div class="plan-card locked">
                 <h3>🔒 Grand</h3>
                 <p>4000 Tokens<br>AI Video Generator.</p>
             </div>
-
             <div class="plan-card locked">
                 <h3>🔒 Elite</h3>
                 <p>Alles freigeschaltet.<br>Höchste API-Leistung.</p>
@@ -358,7 +376,6 @@ elif st.session_state.page == "login":
 
 elif st.session_state.page == "chat":
     st.title("💬 Memory Chat")
-
     user_input = st.text_area("Nachricht", key="chat_input")
 
     if st.button("Senden", key="chat_send"):
@@ -367,7 +384,6 @@ elif st.session_state.page == "chat":
 
 elif st.session_state.page == "coding":
     st.title("💻 Coding Area")
-
     code_input = st.text_area("Was soll gebaut oder gefixt werden?", key="coding_input")
 
     if st.button("Run Coding Assistant", key="coding_run"):
@@ -376,7 +392,6 @@ elif st.session_state.page == "coding":
 
 elif st.session_state.page == "image":
     st.title("🎨 Image Generator")
-
     prompt = st.text_area("Bildbeschreibung", key="image_prompt")
 
     if st.button("Generate Image", key="image_generate"):
@@ -385,7 +400,6 @@ elif st.session_state.page == "image":
 
 elif st.session_state.page == "music":
     st.title("🎵 Music Generator")
-
     prompt = st.text_area("Musikbeschreibung", key="music_prompt")
 
     if st.button("Generate Music", key="music_generate"):
@@ -394,7 +408,6 @@ elif st.session_state.page == "music":
 
 elif st.session_state.page == "reels":
     st.title("🎞️ Short Reels Creator")
-
     prompt = st.text_area("Reel Beschreibung", key="reels_prompt")
 
     if st.button("Generate Reel", key="reels_generate"):
@@ -403,7 +416,6 @@ elif st.session_state.page == "reels":
 
 elif st.session_state.page == "video":
     st.title("🎬 AI Video Generator")
-
     prompt = st.text_area("Videobeschreibung", key="video_prompt")
 
     if st.button("Generate Video", key="video_generate"):
@@ -412,7 +424,6 @@ elif st.session_state.page == "video":
 
 elif st.session_state.page == "dashboard":
     st.title("📊 User Dashboard")
-
     st.metric("Aktueller Plan", st.session_state.plan)
     st.metric("Tokens", "0")
     st.info("Redeem Codes und Billing kommen hier rein.")
@@ -420,7 +431,6 @@ elif st.session_state.page == "dashboard":
 
 elif st.session_state.page == "support":
     st.title("🆘 Support")
-
     subject = st.text_input("Betreff", key="support_subject")
     msg = st.text_area("Nachricht", key="support_msg")
 
@@ -439,35 +449,41 @@ elif st.session_state.page == "premium":
     with col1:
         st.markdown(
             """
-            ### Pro
-            **9.99€ / Monat**
-
-            1200 Tokens  
-            Coding, Images, Musik & Reels.
-            """
+            <div class="premium-card">
+                <h3>Pro</h3>
+                <p><b>9.99€ / Monat</b></p>
+                <p>1200 Tokens</p>
+                <p>Coding, Images, Musik & Reels.</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
         )
         st.button("Buy Pro", key="buy_pro")
 
     with col2:
         st.markdown(
             """
-            ### Grand
-            **49.99€ / Monat**
-
-            4000 Tokens  
-            AI Video Generator.
-            """
+            <div class="premium-card">
+                <h3>Grand</h3>
+                <p><b>49.99€ / Monat</b></p>
+                <p>4000 Tokens</p>
+                <p>AI Video Generator.</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
         )
         st.button("Buy Grand", key="buy_grand")
 
     with col3:
         st.markdown(
             """
-            ### Elite
-            **199€ / Monat**
-
-            Alles freigeschaltet.  
-            Höchste API-Leistung.
-            """
+            <div class="premium-card">
+                <h3>Elite</h3>
+                <p><b>199€ / Monat</b></p>
+                <p>Alles freigeschaltet.</p>
+                <p>Höchste API-Leistung.</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
         )
         st.button("Buy Elite", key="buy_elite")
