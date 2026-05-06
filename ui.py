@@ -1,398 +1,460 @@
-import streamlit as st
 import base64
-import os
 import random
+import textwrap
 from pathlib import Path
 
-# =========================
-# PAGE CONFIG
-# =========================
+import streamlit as st
+
+BASE_DIR = Path(__file__).parent
+HEADER_PATH = BASE_DIR / "neuerheader.png"
+LOGO_PATH = BASE_DIR / "logo.png"
+FAVICON_PATH = BASE_DIR / "Logo24mp.png"
+
+
+def img_b64(path: Path) -> str:
+    if path.exists():
+        return base64.b64encode(path.read_bytes()).decode("utf-8")
+    return ""
+
+
+HEADER_B64 = img_b64(HEADER_PATH)
+LOGO_B64 = img_b64(LOGO_PATH)
 
 st.set_page_config(
     page_title="MAB.AI",
-    page_icon="Logo24mp.png",
+    page_icon=str(FAVICON_PATH) if FAVICON_PATH.exists() else "🧠",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
 )
-
-# =========================
-# IMAGE HELPERS
-# =========================
-
-def image_to_base64(path):
-    try:
-        with open(path, "rb") as img:
-            return base64.b64encode(img.read()).decode()
-    except:
-        return ""
-
-BASE_DIR = Path(".")
-
-LOGO_B64 = image_to_base64(BASE_DIR / "logo.png")
-HEADER_B64 = image_to_base64(BASE_DIR / "neuerheader.png")
-ICON_B64 = image_to_base64(BASE_DIR / "Logo24mp.png")
-
-# =========================
-# SESSION STATE
-# =========================
 
 if "page" not in st.session_state:
     st.session_state.page = "home"
-
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
-
 if "plan" not in st.session_state:
     st.session_state.plan = "free"
+if "user" not in st.session_state:
+    st.session_state.user = None
+if "captcha_a" not in st.session_state:
+    st.session_state.captcha_a = random.randint(1, 5)
+if "captcha_b" not in st.session_state:
+    st.session_state.captcha_b = random.randint(1, 5)
 
-# =========================
-# CSS
-# =========================
 
-st.markdown("""
+def refresh_captcha():
+    st.session_state.captcha_a = random.randint(1, 5)
+    st.session_state.captcha_b = random.randint(1, 5)
+
+
+st.markdown(
+    """
 <style>
-
-html, body, [class*="css"] {
-    background: #000814 !important;
+html, body, .stApp {
+    background: #05050a !important;
     color: white !important;
-    font-family: 'Inter', sans-serif;
+}
+
+[data-testid="stHeader"] {
+    background: #000000 !important;
+    height: 86px !important;
 }
 
 .block-container {
-    padding-top: 0rem !important;
-    max-width: 100% !important;
+    max-width: 1400px !important;
+    padding-top: 120px !important;
+    padding-bottom: 120px !important;
 }
 
-/* HEADER */
-
-.top-header {
-    width: 100%;
-    background: #000000;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
-    padding: 18px 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-bottom: 30px;
+.top-logo-wrap {
+    position: fixed;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 999999;
+    pointer-events: none;
 }
 
-.top-header img {
-    height: 72px;
+.top-logo-wrap img {
+    height: 60px;
     width: auto;
     object-fit: contain;
 }
 
-/* HERO */
-
-.hero-box {
-    width: 92%;
-    margin: auto;
-    border-radius: 34px;
-    padding: 70px 50px;
-    background: linear-gradient(
-        135deg,
-        #113a58 0%,
-        #1a2248 48%,
-        #47236e 100%
-    );
-    box-shadow: 0 20px 60px rgba(0,0,0,.45);
-    text-align: center;
-}
-
-.hero-title {
-    font-size: 76px;
-    font-weight: 900;
-    line-height: 1.1;
-    color: white;
-    margin-bottom: 10px;
-}
-
-.hero-subtitle {
-    font-size: 33px;
-    font-weight: 700;
-    color: white;
-    margin-bottom: 28px;
-}
-
-.hero-text {
-    color: rgba(255,255,255,.92);
-    font-size: 24px;
-    line-height: 1.8;
-    margin-bottom: 18px;
-}
-
-/* PLAN GRID */
-
-.plan-grid {
-    width: 92%;
-    margin: 45px auto 70px auto;
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 28px;
-}
-
-.plan-card {
-    background: linear-gradient(
-        180deg,
-        rgba(17,17,35,.95),
-        rgba(8,8,18,.98)
-    );
-    border: 1px solid rgba(255,255,255,.06);
-    border-radius: 28px;
-    padding: 34px;
-    min-height: 270px;
-    transition: .25s ease;
-}
-
-.plan-card:hover {
-    transform: translateY(-4px);
-    border: 1px solid #6d42ff;
-    box-shadow: 0 15px 35px rgba(109,66,255,.25);
-}
-
-.plan-card h3 {
-    color: white;
-    font-size: 54px;
-    margin-bottom: 25px;
-    font-weight: 800;
-}
-
-.plan-card p {
-    color: rgba(255,255,255,.82);
-    font-size: 28px;
-    line-height: 1.7;
-}
-
-/* SIDEBAR */
-
 section[data-testid="stSidebar"] {
-    background: #050510 !important;
-    border-right: 1px solid rgba(255,255,255,.06);
+    background: #050509 !important;
+    border-right: 1px solid rgba(255,215,0,.20);
 }
 
 section[data-testid="stSidebar"] * {
     color: white !important;
 }
 
-.stButton > button {
-    width: 100%;
-    background: #090914 !important;
+.stButton button {
+    width: 100% !important;
+    background: #000 !important;
     color: white !important;
+    border: 1px solid rgba(255,215,0,.45) !important;
     border-radius: 16px !important;
-    border: 1px solid rgba(255,255,255,.08) !important;
-    padding: 14px 18px !important;
-    font-size: 18px !important;
-    font-weight: 600 !important;
-    transition: .2s ease;
+    min-height: 48px !important;
+    font-weight: 800 !important;
 }
 
-.stButton > button:hover {
-    border: 1px solid #6d42ff !important;
-    background: #121225 !important;
+.stButton button:hover {
+    border-color: #ffd700 !important;
+    color: #ffd700 !important;
 }
 
-/* LOGIN */
-
-.login-box {
-    width: 500px;
-    margin: auto;
-    margin-top: 80px;
-    background: #090914;
-    border-radius: 24px;
-    padding: 40px;
-    border: 1px solid rgba(255,255,255,.08);
+.stTextInput input,
+.stTextArea textarea,
+.stNumberInput input {
+    background: #000 !important;
+    color: white !important;
+    border-radius: 14px !important;
+    border: 1px solid rgba(255,215,0,.30) !important;
 }
 
-.login-title {
-    font-size: 42px;
-    font-weight: 800;
-    margin-bottom: 30px;
+.hero-box {
+    background:
+        radial-gradient(circle at top left, rgba(0,183,255,.25), transparent 35rem),
+        radial-gradient(circle at top right, rgba(168,85,247,.25), transparent 35rem),
+        linear-gradient(135deg, #10253c 0%, #171e36 55%, #42206a 100%);
+    border-radius: 42px;
+    padding: 80px 60px;
+    text-align: center;
+    border: 1px solid rgba(255,255,255,.10);
+    box-shadow: 0 30px 90px rgba(0,0,0,.45);
+    margin-bottom: 34px;
+}
+
+.hero-title {
+    font-size: clamp(46px, 5.5vw, 90px);
+    line-height: 1.08;
+    font-weight: 950;
+    letter-spacing: -4px;
+    color: white !important;
+}
+
+.hero-logo {
+    margin: 28px auto 36px auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.hero-logo img {
+    height: 95px;
+    width: auto;
+    object-fit: contain;
+    border-radius: 18px;
+    background: #000;
+    padding: 8px 18px;
+    box-shadow: 0 10px 35px rgba(0,0,0,.45);
+}
+
+.hero-subtitle {
+    font-size: 34px;
+    font-weight: 900;
+    color: white !important;
+    margin-top: 24px;
+}
+
+.hero-text {
+    margin: 24px auto 0 auto;
+    max-width: 1050px;
+    font-size: 24px;
+    line-height: 1.65;
+    color: #e5e7eb !important;
     text-align: center;
 }
 
+.plan-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 22px;
+    margin-top: 34px;
+    margin-bottom: 120px;
+}
+
+.plan-card {
+    background: #101018;
+    border-radius: 26px;
+    padding: 32px;
+    min-height: 210px;
+    border: 1px solid rgba(255,255,255,.10);
+    box-shadow: 0 24px 70px rgba(0,0,0,.30);
+}
+
+.plan-card h3 {
+    font-size: 36px;
+    margin: 0 0 20px 0;
+    color: white !important;
+}
+
+.plan-card p {
+    font-size: 19px;
+    line-height: 1.6;
+    color: #d4d4d8 !important;
+}
+
+.locked {
+    opacity: .82;
+}
+
+@media(max-width: 900px) {
+    .block-container {
+        padding-top: 105px !important;
+    }
+
+    .top-logo-wrap img {
+        height: 52px;
+    }
+
+    .hero-box {
+        padding: 42px 24px;
+        border-radius: 30px;
+    }
+
+    .hero-title {
+        font-size: 42px;
+        letter-spacing: -2px;
+    }
+
+    .hero-logo img {
+        height: 65px;
+    }
+
+    .hero-subtitle {
+        font-size: 24px;
+    }
+
+    .hero-text {
+        font-size: 18px;
+    }
+
+    .plan-grid {
+        grid-template-columns: 1fr;
+    }
+}
 </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
-# =========================
-# HEADER
-# =========================
-
-st.markdown(f"""
-<div class="top-header">
-    <img src="data:image/png;base64,{HEADER_B64}">
-</div>
-""", unsafe_allow_html=True)
-
-# =========================
-# SIDEBAR
-# =========================
-
-with st.sidebar:
-
-    st.markdown("## Navigation")
-
-    if st.button("🏠 Home", key="nav_home"):
-        st.session_state.page = "home"
-
-    if st.button("💬 Memory Chat", key="nav_chat"):
-        st.session_state.page = "chat"
-
-    if st.button("🖼️ Image Generator", key="nav_img"):
-        st.session_state.page = "img"
-
-    if st.button("🎵 Music Generator", key="nav_music"):
-        st.session_state.page = "music"
-
-    if st.button("🎬 Short Reels Creator", key="nav_reels"):
-        st.session_state.page = "reels"
-
-    if st.button("👤 Login / Register", key="nav_login"):
-        st.session_state.page = "login"
-
-# =========================
-# HOME PAGE
-# =========================
-
-if st.session_state.page == "home":
-
-    logo_html = "MAB.AI"
-
-    if LOGO_B64:
-        logo_html = f'''
-        <img src="data:image/png;base64,{LOGO_B64}" 
-        style="
-            height:90px;
-            width:auto;
-            object-fit:contain;
-            border-radius:18px;
-            background:#000;
-            padding:8px 18px;
-            box-shadow:0 10px 35px rgba(0,0,0,.45);
-        ">
-        '''
-
-    st.markdown(f"""
-    <div class="hero-box">
-
-        <div class="hero-title">
-            Hallo willkommen auf
-        </div>
-
-        <div style="
-            display:flex;
-            justify-content:center;
-            margin-top:22px;
-            margin-bottom:34px;
-        ">
-            {logo_html}
-        </div>
-
-        <div class="hero-subtitle">
-            Die neue AI für die Revolution von Social Media,
-            Business Bereiche uvm.
-        </div>
-
-        <div class="hero-text">
-            Starte mit Memory Chat, erstelle Texte,
-            plane Projekte, sammle Ideen oder lass dir direkt helfen.
-        </div>
-
-        <div class="hero-text">
-            Egal ob Programmierung, Monetarisierung oder künstliche
-            Intelligenz — in jedem Bereich können wir dir helfen.
-        </div>
-
-    </div>
-
-    <div class="plan-grid">
-
-        <div class="plan-card">
-            <h3>Free</h3>
-            <p>
-                Memory Chat inklusive.
-            </p>
-        </div>
-
-        <div class="plan-card">
-            <h3>🔒 Pro</h3>
-            <p>
-                1200 Tokens<br>
-                Coding, Images, Musik & Reels.
-            </p>
-        </div>
-
-        <div class="plan-card">
-            <h3>🔒 Grand</h3>
-            <p>
-                4000 Tokens<br>
-                AI Video Generator.
-            </p>
-        </div>
-
-        <div class="plan-card">
-            <h3>🔒 Elite</h3>
-            <p>
-                Alles freigeschaltet.<br>
-                Höchste API-Leistung.
-            </p>
-        </div>
-
-    </div>
-    """, unsafe_allow_html=True)
-
-# =========================
-# LOGIN PAGE
-# =========================
-
-elif st.session_state.page == "login":
-
-    if "captcha_a" not in st.session_state:
-        a = random.randint(1, 5)
-        b = random.randint(1, 5)
-        st.session_state.captcha_a = a
-        st.session_state.captcha_b = b
-
-    st.markdown("""
-    <div class="login-box">
-        <div class="login-title">
-            Login / Register
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    email = st.text_input("E-Mail")
-    password = st.text_input("Passwort", type="password")
-
-    answer = st.text_input(
-        f"Wieviel ist {st.session_state.captcha_a} + {st.session_state.captcha_b} ?"
+if HEADER_B64:
+    st.markdown(
+        f'<div class="top-logo-wrap"><img src="data:image/png;base64,{HEADER_B64}"></div>',
+        unsafe_allow_html=True,
     )
 
-    if st.button("Einloggen / Registrieren"):
 
-        try:
-            if int(answer) == (
-                st.session_state.captcha_a +
-                st.session_state.captcha_b
-            ):
-                st.success("Erfolgreich eingeloggt.")
-                st.session_state.logged_in = True
+def plan_rank(plan):
+    return {"free": 1, "pro": 2, "grand": 3, "elite": 4}.get(plan, 1)
+
+
+def nav_button(label, page, required_plan="free"):
+    locked = plan_rank(st.session_state.plan) < plan_rank(required_plan)
+    text = f"🔒 {label}" if locked else label
+    key = f"nav_{page}_{required_plan}_{label}".replace(" ", "_").replace("/", "_")
+
+    if st.button(text, use_container_width=True, key=key):
+        st.session_state.page = "premium" if locked else page
+        st.rerun()
+
+
+with st.sidebar:
+    if LOGO_PATH.exists():
+        st.image(str(LOGO_PATH), use_container_width=True)
+
+    st.markdown("## MAB.AI")
+
+    if st.session_state.user:
+        st.success(f"👤 {st.session_state.user}")
+        st.caption(f"Plan: {st.session_state.plan}")
+
+        if st.button("Logout", key="logout_btn"):
+            st.session_state.user = None
+            st.session_state.plan = "free"
+            st.session_state.page = "home"
+            st.rerun()
+    else:
+        if st.button("Login / Register", key="login_register_btn"):
+            st.session_state.page = "login"
+            st.rerun()
+
+    st.markdown("---")
+    st.markdown("### Free")
+    nav_button("Memory Chat", "chat", "free")
+
+    st.markdown("### Pro")
+    nav_button("Coding Area", "coding", "pro")
+    nav_button("Image Generator", "image", "pro")
+    nav_button("Music Generator", "music", "pro")
+    nav_button("Short Reels Creator", "reels", "pro")
+
+    st.markdown("### Grand")
+    nav_button("AI Video Generator", "video", "grand")
+
+    st.markdown("### Account")
+    nav_button("User Dashboard", "dashboard")
+    nav_button("Support", "support")
+    nav_button("Buy Premium", "premium")
+
+
+if st.session_state.page == "home":
+    logo_html = "MAB.AI"
+    if LOGO_B64:
+        logo_html = f'<img src="data:image/png;base64,{LOGO_B64}">'
+
+    html = f"""
+<section class="hero-box">
+  <div class="hero-title">Hallo willkommen auf</div>
+  <div class="hero-logo">{logo_html}</div>
+  <div class="hero-subtitle">
+    Die neue AI für die Revolution von Social Media, Business Bereiche uvm.
+  </div>
+  <div class="hero-text">
+    Starte mit Memory Chat, erstelle Texte, plane Projekte,
+    sammle Ideen oder lass dir direkt helfen.
+  </div>
+  <div class="hero-text">
+    Egal ob Programmierung, Monetarisierung oder künstliche Intelligenz —
+    in jedem Bereich können wir dir helfen.
+  </div>
+</section>
+
+<div class="plan-grid">
+  <div class="plan-card">
+    <h3>Free</h3>
+    <p>Memory Chat inklusive.</p>
+  </div>
+  <div class="plan-card locked">
+    <h3>🔒 Pro</h3>
+    <p>1200 Tokens<br>Coding, Images, Musik & Reels.</p>
+  </div>
+  <div class="plan-card locked">
+    <h3>🔒 Grand</h3>
+    <p>4000 Tokens<br>AI Video Generator.</p>
+  </div>
+  <div class="plan-card locked">
+    <h3>🔒 Elite</h3>
+    <p>Alles freigeschaltet.<br>Höchste API-Leistung.</p>
+  </div>
+</div>
+"""
+    st.markdown(textwrap.dedent(html), unsafe_allow_html=True)
+
+
+elif st.session_state.page == "login":
+    st.title("🔐 Login / Register")
+
+    tab1, tab2 = st.tabs(["Login", "Register"])
+
+    with tab1:
+        username = st.text_input("Username", key="login_username")
+        password = st.text_input("Password", type="password", key="login_password")
+
+        if st.button("Login", key="login_btn"):
+            if username:
+                st.session_state.user = username
+                st.session_state.plan = "free"
+                st.session_state.page = "home"
+                st.rerun()
             else:
-                st.error("Falsche Sicherheitsantwort.")
-        except:
-            st.error("Bitte richtige Zahl eingeben.")
+                st.error("Bitte Username eingeben.")
 
-# =========================
-# OTHER PAGES
-# =========================
+    with tab2:
+        reg_user = st.text_input("Username", key="register_user")
+        reg_mail = st.text_input("Email", key="register_mail")
+        reg_pw = st.text_input("Password", type="password", key="register_pw")
+
+        result = st.session_state.captcha_a + st.session_state.captcha_b
+
+        captcha = st.number_input(
+            f"Was ist {st.session_state.captcha_a} + {st.session_state.captcha_b}?",
+            min_value=0,
+            max_value=10,
+            step=1,
+            key="captcha_input",
+        )
+
+        if st.button("Register", key="register_btn"):
+            if captcha != result:
+                st.error("Captcha falsch.")
+                refresh_captcha()
+                st.rerun()
+
+            if reg_user and reg_mail and reg_pw:
+                st.success("Account erfolgreich erstellt.")
+                refresh_captcha()
+            else:
+                st.error("Bitte alles ausfüllen.")
+
 
 elif st.session_state.page == "chat":
     st.title("💬 Memory Chat")
+    st.text_area("Nachricht", key="chat_prompt")
+    st.button("Senden", key="chat_send")
 
-elif st.session_state.page == "img":
-    st.title("🖼️ Image Generator")
+
+elif st.session_state.page == "coding":
+    st.title("💻 Coding Area")
+    st.text_area("Was soll gebaut werden?", key="coding_prompt")
+    st.button("Code generieren", key="code_generate")
+
+
+elif st.session_state.page == "image":
+    st.title("🎨 Image Generator")
+    st.text_area("Bildbeschreibung", key="image_prompt")
+    st.button("Bild generieren", key="img_generate")
+
 
 elif st.session_state.page == "music":
     st.title("🎵 Music Generator")
+    st.text_area("Musikbeschreibung", key="music_prompt")
+    st.button("Musik generieren", key="music_generate")
+
 
 elif st.session_state.page == "reels":
-    st.title("🎬 Short Reels Creator")
+    st.title("🎞️ Short Reels Creator")
+    st.text_area("Reel Beschreibung", key="reels_prompt")
+    st.button("Reel erstellen", key="reel_generate")
+
+
+elif st.session_state.page == "video":
+    st.title("🎬 AI Video Generator")
+    st.text_area("Videobeschreibung", key="video_prompt")
+    st.button("Video generieren", key="video_generate")
+
+
+elif st.session_state.page == "dashboard":
+    st.title("📊 User Dashboard")
+    st.metric("Plan", st.session_state.plan)
+    st.metric("Tokens", "0")
+
+
+elif st.session_state.page == "support":
+    st.title("🆘 Support")
+    subject = st.text_input("Betreff", key="support_subject")
+    msg = st.text_area("Nachricht", key="support_msg")
+
+    if st.button("Ticket senden", key="ticket_send"):
+        if subject and msg:
+            st.success("Ticket gesendet.")
+        else:
+            st.error("Bitte alles ausfüllen.")
+
+
+elif st.session_state.page == "premium":
+    st.title("💳 Buy Premium")
+
+    c1, c2, c3 = st.columns(3)
+
+    with c1:
+        st.markdown("### Pro\n**9.99€ / Monat**\n\n1200 Tokens")
+        st.button("Buy Pro", key="buy_pro")
+
+    with c2:
+        st.markdown("### Grand\n**49.99€ / Monat**\n\n4000 Tokens")
+        st.button("Buy Grand", key="buy_grand")
+
+    with c3:
+        st.markdown("### Elite\n**199€ / Monat**\n\nAlles freigeschaltet. Höchste API-Leistung.")
+        st.button("Buy Elite", key="buy_elite")
