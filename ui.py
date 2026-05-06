@@ -163,7 +163,7 @@ with st.sidebar:
 
     st.markdown("### Free")
     nav_button("Memory Chat", "chat", "free")
-[06.05.2026 21:41] Voltage: st.markdown("### Pro")
+ st.markdown("### Pro")
     nav_button("Coding Area", "coding", "pro")
     nav_button("Image Generator", "image", "pro")
     nav_button("Music Generator", "music", "pro")
@@ -352,8 +352,7 @@ body {{
 elif st.session_state.page == "login":
     st.title("🔐 Login / Register")
 
-    tab1, tab2 = st.tabs(["Login", "Register"])
-[06.05.2026 21:41] Voltage: with tab1:
+with tab1:
         username = st.text_input("Username", key="login_username")
         password = st.text_input("Password", type="password", key="login_password")
 
