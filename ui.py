@@ -55,35 +55,22 @@ st.set_page_config(
 
 init_db()
 
-
-# =========================
-# SESSION
-# =========================
-
 if "page" not in st.session_state:
     st.session_state.page = "home"
-
 if "plan" not in st.session_state:
     st.session_state.plan = "free"
-
 if "tokens" not in st.session_state:
     st.session_state.tokens = 0
-
 if "user" not in st.session_state:
     st.session_state.user = None
-
 if "email" not in st.session_state:
     st.session_state.email = ""
-
 if "role" not in st.session_state:
     st.session_state.role = "user"
-
 if "admin_level" not in st.session_state:
     st.session_state.admin_level = 0
-
 if "captcha_a" not in st.session_state:
     st.session_state.captcha_a = random.randint(1, 5)
-
 if "captcha_b" not in st.session_state:
     st.session_state.captcha_b = random.randint(1, 5)
 
@@ -112,9 +99,13 @@ def is_owner():
     return st.session_state.role == "owner" or st.session_state.admin_level >= 3
 
 
-# =========================
-# CSS
-# =========================
+def plan_rank(plan):
+    return {"free": 1, "pro": 2, "grand": 3, "elite": 4}.get(plan, 1)
+
+
+def can_use(required_plan):
+    return plan_rank(st.session_state.plan) >= plan_rank(required_plan) or is_admin()
+
 
 st.markdown(
     """
@@ -174,14 +165,16 @@ section[data-testid="stSidebar"] * {
 .stButton button:hover {
     border-color: #ffd700 !important;
     color: #ffd700 !important;
+    box-shadow: 0 0 18px rgba(255,215,0,.14) !important;
 }
 
 .stTextInput input,
 .stTextArea textarea,
-.stNumberInput input,
-.stSelectbox div {
+.stNumberInput input {
     background: #000 !important;
     color: white !important;
+    border-radius: 14px !important;
+    border: 1px solid rgba(255,215,0,.30) !important;
 }
 
 .hero-box {
@@ -238,15 +231,15 @@ section[data-testid="stSidebar"] * {
     text-align: center;
 }
 
-.plan-grid {
+.card-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 22px;
     margin-top: 34px;
-    margin-bottom: 120px;
+    margin-bottom: 44px;
 }
 
-.plan-card {
+.app-card {
     background: #101018;
     border-radius: 26px;
     padding: 32px;
@@ -255,20 +248,75 @@ section[data-testid="stSidebar"] * {
     box-shadow: 0 24px 70px rgba(0,0,0,.30);
 }
 
-.plan-card h3 {
-    font-size: 36px;
-    margin: 0 0 20px 0;
+.app-card h3 {
+    font-size: 32px;
+    margin: 0 0 18px 0;
     color: white !important;
 }
 
-.plan-card p {
-    font-size: 19px;
+.app-card p {
+    font-size: 18px;
     line-height: 1.6;
     color: #d4d4d8 !important;
 }
 
 .locked {
     opacity: .82;
+}
+
+.page-card {
+    background: #101018;
+    border: 1px solid rgba(255,255,255,.10);
+    border-radius: 28px;
+    padding: 34px;
+    box-shadow: 0 24px 70px rgba(0,0,0,.30);
+    margin-bottom: 24px;
+}
+
+.badge {
+    display: inline-block;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: rgba(255,215,0,.12);
+    border: 1px solid rgba(255,215,0,.35);
+    color: #ffd700;
+    font-weight: 800;
+    margin-bottom: 16px;
+}
+
+.price-card {
+    background: linear-gradient(180deg, #111127, #090914);
+    border: 1px solid rgba(255,215,0,.25);
+    border-radius: 30px;
+    padding: 34px;
+    min-height: 360px;
+    box-shadow: 0 24px 70px rgba(0,0,0,.35);
+}
+
+.price-card h2 {
+    color: white !important;
+    font-size: 38px;
+}
+
+.price {
+    font-size: 34px;
+    font-weight: 950;
+    color: #ffd700;
+    margin: 16px 0;
+}
+
+.feature-list {
+    color: #d4d4d8;
+    line-height: 1.9;
+    font-size: 18px;
+}
+
+.sidebar-box {
+    background: #0f0f18;
+    border: 1px solid rgba(255,215,0,.18);
+    border-radius: 18px;
+    padding: 16px;
+    margin: 14px 0;
 }
 
 @media(max-width: 900px) {
@@ -307,7 +355,7 @@ section[data-testid="stSidebar"] * {
         font-size: 18px;
     }
 
-    .plan-grid {
+    .card-grid {
         grid-template-columns: 1fr;
     }
 }
@@ -323,16 +371,8 @@ if HEADER_B64:
     )
 
 
-# =========================
-# NAV
-# =========================
-
-def plan_rank(plan):
-    return {"free": 1, "pro": 2, "grand": 3, "elite": 4}.get(plan, 1)
-
-
 def nav_button(label, page, required_plan="free"):
-    locked = plan_rank(st.session_state.plan) < plan_rank(required_plan)
+    locked = not can_use(required_plan)
     text = f"🔒 {label}" if locked else label
     key = f"nav_{page}_{required_plan}_{label}".replace(" ", "_").replace("/", "_")
 
@@ -348,10 +388,17 @@ with st.sidebar:
     st.markdown("## MAB.AI")
 
     if st.session_state.user:
-        st.success(f"👤 {st.session_state.user}")
-        st.caption(f"Plan: {st.session_state.plan}")
-        st.caption(f"Tokens: {st.session_state.tokens}")
-        st.caption(f"Role: {st.session_state.role}")
+        st.markdown(
+            f"""
+            <div class="sidebar-box">
+                <b>👤 {st.session_state.user}</b><br>
+                ⭐ Plan: {st.session_state.plan}<br>
+                🪙 Tokens: {st.session_state.tokens}<br>
+                🛡️ Role: {st.session_state.role}
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
         if st.button("Logout", key="logout_btn"):
             st.session_state.user = None
@@ -369,30 +416,26 @@ with st.sidebar:
 
     st.markdown("---")
     st.markdown("### Free")
-    nav_button("Memory Chat", "chat", "free")
+    nav_button("💬 Memory Chat", "chat", "free")
 
     st.markdown("### Pro")
-    nav_button("Coding Area", "coding", "pro")
-    nav_button("Image Generator", "image", "pro")
-    nav_button("Music Generator", "music", "pro")
-    nav_button("Short Reels Creator", "reels", "pro")
+    nav_button("💻 Coding Area", "coding", "pro")
+    nav_button("🎨 Image Generator", "image", "pro")
+    nav_button("🎵 Music Generator", "music", "pro")
+    nav_button("🎞️ Short Reels Creator", "reels", "pro")
 
     st.markdown("### Grand")
-    nav_button("AI Video Generator", "video", "grand")
+    nav_button("🎬 AI Video Generator", "video", "grand")
 
     st.markdown("### Account")
-    nav_button("User Dashboard", "dashboard")
-    nav_button("Support", "support")
-    nav_button("Buy Premium", "premium")
+    nav_button("📊 User Dashboard", "dashboard")
+    nav_button("🆘 Support", "support")
+    nav_button("💳 Buy Premium", "premium")
 
     if is_admin():
         st.markdown("### Admin")
-        nav_button("Admin Panel", "admin")
+        nav_button("🛡️ Admin Panel", "admin")
 
-
-# =========================
-# HOME
-# =========================
 
 if st.session_state.page == "home":
     logo_html = "MAB.AI"
@@ -416,20 +459,20 @@ if st.session_state.page == "home":
   </div>
 </section>
 
-<div class="plan-grid">
-  <div class="plan-card">
+<div class="card-grid">
+  <div class="app-card">
     <h3>Free</h3>
-    <p>Memory Chat inklusive.</p>
+    <p>Memory Chat inklusive. Perfekt zum Starten, Planen und Schreiben.</p>
   </div>
-  <div class="plan-card locked">
+  <div class="app-card locked">
     <h3>🔒 Pro</h3>
     <p>1200 Tokens<br>Coding, Images, Musik & Reels.</p>
   </div>
-  <div class="plan-card locked">
+  <div class="app-card locked">
     <h3>🔒 Grand</h3>
-    <p>4000 Tokens<br>AI Video Generator.</p>
+    <p>4000 Tokens<br>AI Video Generator und stärkere Workflows.</p>
   </div>
-  <div class="plan-card locked">
+  <div class="app-card locked">
     <h3>🔒 Elite</h3>
     <p>Alles freigeschaltet.<br>Höchste API-Leistung.</p>
   </div>
@@ -438,16 +481,13 @@ if st.session_state.page == "home":
     st.markdown(textwrap.dedent(html), unsafe_allow_html=True)
 
 
-# =========================
-# LOGIN
-# =========================
-
 elif st.session_state.page == "login":
     st.title("🔐 Login / Register")
 
     tab1, tab2 = st.tabs(["Login", "Register"])
 
     with tab1:
+        st.markdown('<div class="page-card">', unsafe_allow_html=True)
         username = st.text_input("Username", key="login_username")
         password = st.text_input("Password", type="password", key="login_password")
 
@@ -466,8 +506,10 @@ elif st.session_state.page == "login":
                 st.rerun()
             else:
                 st.error(msg)
+        st.markdown('</div>', unsafe_allow_html=True)
 
     with tab2:
+        st.markdown('<div class="page-card">', unsafe_allow_html=True)
         reg_user = st.text_input("Username", key="register_user")
         reg_mail = st.text_input("Email", key="register_mail")
         reg_pw = st.text_input("Password", type="password", key="register_pw")
@@ -498,51 +540,40 @@ elif st.session_state.page == "login":
                     refresh_captcha()
                 else:
                     st.error(msg)
+        st.markdown('</div>', unsafe_allow_html=True)
 
 
-# =========================
-# FEATURES
-# =========================
+elif st.session_state.page in ["chat", "coding", "image", "music", "reels", "video"]:
+    feature_map = {
+        "chat": ("💬 Memory Chat", "free", "Schreibe, plane, sammle Ideen und arbeite mit deinem AI-Assistenten."),
+        "coding": ("💻 Coding Area", "pro", "Lass dir Code schreiben, debuggen, refactoren oder erklären."),
+        "image": ("🎨 Image Generator", "pro", "Erstelle Bilder für Social Media, Branding, Produkte und Kampagnen."),
+        "music": ("🎵 Music Generator", "pro", "Erstelle Musikideen, Lyrics, Prompts und später komplette Audio-Workflows."),
+        "reels": ("🎞️ Short Reels Creator", "pro", "Erstelle virale Reel-Ideen, Skripte, Hooks und Video-Prompts."),
+        "video": ("🎬 AI Video Generator", "grand", "Generiere Video-Prompts und später komplette Video-Workflows."),
+    }
 
-elif st.session_state.page == "chat":
-    st.title("💬 Memory Chat")
-    st.text_area("Nachricht", key="chat_prompt")
-    st.button("Senden", key="chat_send")
+    title, required, desc = feature_map[st.session_state.page]
 
+    st.markdown(
+        f"""
+        <div class="page-card">
+            <span class="badge">{required.upper()} Feature</span>
+            <h1>{title}</h1>
+            <p style="font-size:20px;color:#d4d4d8;line-height:1.7;">{desc}</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
-elif st.session_state.page == "coding":
-    st.title("💻 Coding Area")
-    st.text_area("Was soll gebaut werden?", key="coding_prompt")
-    st.button("Code generieren", key="code_generate")
+    if not can_use(required):
+        st.warning(f"Dieses Feature benötigt mindestens {required.upper()}.")
+        st.session_state.page = "premium"
+    else:
+        prompt = st.text_area("Dein Prompt", key=f"{st.session_state.page}_prompt", height=180)
+        if st.button("Starten", key=f"{st.session_state.page}_start"):
+            st.success("API kommt im nächsten Schritt rein.")
 
-
-elif st.session_state.page == "image":
-    st.title("🎨 Image Generator")
-    st.text_area("Bildbeschreibung", key="image_prompt")
-    st.button("Bild generieren", key="img_generate")
-
-
-elif st.session_state.page == "music":
-    st.title("🎵 Music Generator")
-    st.text_area("Musikbeschreibung", key="music_prompt")
-    st.button("Musik generieren", key="music_generate")
-
-
-elif st.session_state.page == "reels":
-    st.title("🎞️ Short Reels Creator")
-    st.text_area("Reel Beschreibung", key="reels_prompt")
-    st.button("Reel erstellen", key="reel_generate")
-
-
-elif st.session_state.page == "video":
-    st.title("🎬 AI Video Generator")
-    st.text_area("Videobeschreibung", key="video_prompt")
-    st.button("Video generieren", key="video_generate")
-
-
-# =========================
-# DASHBOARD
-# =========================
 
 elif st.session_state.page == "dashboard":
     st.title("📊 User Dashboard")
@@ -550,10 +581,12 @@ elif st.session_state.page == "dashboard":
     if st.session_state.user:
         sync_user(st.session_state.user)
 
-    st.metric("User", st.session_state.user or "Nicht eingeloggt")
-    st.metric("Plan", st.session_state.plan)
-    st.metric("Tokens", st.session_state.tokens)
+    a, b, c = st.columns(3)
+    a.metric("User", st.session_state.user or "Nicht eingeloggt")
+    b.metric("Plan", st.session_state.plan)
+    c.metric("Tokens", st.session_state.tokens)
 
+    st.markdown('<div class="page-card">', unsafe_allow_html=True)
     st.markdown("### Redeem Code")
     code = st.text_input("Code eingeben", key="redeem_code_input")
 
@@ -570,17 +603,15 @@ elif st.session_state.page == "dashboard":
                 st.rerun()
             else:
                 st.error(msg)
+    st.markdown('</div>', unsafe_allow_html=True)
 
-
-# =========================
-# SUPPORT
-# =========================
 
 elif st.session_state.page == "support":
     st.title("🆘 Support")
 
+    st.markdown('<div class="page-card">', unsafe_allow_html=True)
     subject = st.text_input("Betreff", key="support_subject")
-    msg = st.text_area("Nachricht", key="support_msg")
+    msg = st.text_area("Nachricht", key="support_msg", height=180)
     category = st.selectbox(
         "Kategorie",
         ["Allgemein", "Account", "Payment", "Technik", "Bug"],
@@ -604,11 +635,8 @@ elif st.session_state.page == "support":
                 st.success(response)
             else:
                 st.error(response)
+    st.markdown('</div>', unsafe_allow_html=True)
 
-
-# =========================
-# PREMIUM
-# =========================
 
 elif st.session_state.page == "premium":
     st.title("💳 Buy Premium")
@@ -616,21 +644,60 @@ elif st.session_state.page == "premium":
     c1, c2, c3 = st.columns(3)
 
     with c1:
-        st.markdown("### Pro\n**9.99€ / Monat**\n\n1200 Tokens")
+        st.markdown(
+            """
+            <div class="price-card">
+                <h2>Pro</h2>
+                <div class="price">9.99€ / Monat</div>
+                <div class="feature-list">
+                    • 1200 Tokens<br>
+                    • Coding Area<br>
+                    • Image Generator<br>
+                    • Music Generator<br>
+                    • Short Reels Creator
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
         st.button("Buy Pro", key="buy_pro")
 
     with c2:
-        st.markdown("### Grand\n**49.99€ / Monat**\n\n4000 Tokens")
+        st.markdown(
+            """
+            <div class="price-card">
+                <h2>Grand</h2>
+                <div class="price">49.99€ / Monat</div>
+                <div class="feature-list">
+                    • 4000 Tokens<br>
+                    • Alles aus Pro<br>
+                    • AI Video Generator<br>
+                    • Stärkere Workflows
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
         st.button("Buy Grand", key="buy_grand")
 
     with c3:
-        st.markdown("### Elite\n**199€ / Monat**\n\nAlles freigeschaltet. Höchste API-Leistung.")
+        st.markdown(
+            """
+            <div class="price-card">
+                <h2>Elite</h2>
+                <div class="price">199€ / Monat</div>
+                <div class="feature-list">
+                    • Alles freigeschaltet<br>
+                    • Höchste API-Leistung<br>
+                    • Beste Qualität<br>
+                    • Maximaler Zugriff
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
         st.button("Buy Elite", key="buy_elite")
 
-
-# =========================
-# ADMIN PANEL
-# =========================
 
 elif st.session_state.page == "admin":
     if not is_admin():
@@ -652,8 +719,6 @@ elif st.session_state.page == "admin":
     )
 
     with tab_tickets:
-        st.subheader("🎫 Support Tickets")
-
         status_filter = st.selectbox("Status Filter", ["all", "open", "closed"], key="admin_ticket_filter")
         tickets = list_support_messages(status_filter)
 
@@ -681,8 +746,6 @@ elif st.session_state.page == "admin":
                         st.rerun()
 
     with tab_users:
-        st.subheader("👥 User Verwaltung")
-
         users = list_users()
         st.dataframe([dict(u) for u in users], use_container_width=True)
 
@@ -728,8 +791,6 @@ elif st.session_state.page == "admin":
                 st.success("Role geändert.")
 
     with tab_codes:
-        st.subheader("🎟️ Redeem Codes")
-
         if not is_owner():
             st.info("Nur Owner/Admin Level 3 kann Codes erstellen.")
         else:
@@ -759,15 +820,12 @@ elif st.session_state.page == "admin":
         st.dataframe([dict(c) for c in codes], use_container_width=True)
 
     with tab_logs:
-        st.subheader("📊 Usage Logs")
         usage = list_usage()
         st.dataframe([dict(u) for u in usage], use_container_width=True)
 
-        st.subheader("🧾 Audit Logs")
         audits = list_audit_logs()
         st.dataframe([dict(a) for a in audits], use_container_width=True)
 
     with tab_payments:
-        st.subheader("💳 Payments")
         payments = list_purchases()
         st.dataframe([dict(p) for p in payments], use_container_width=True)
