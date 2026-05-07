@@ -10,8 +10,24 @@ from database import (
     create_user,
     verify_login,
     get_user,
+    list_users,
+    set_plan,
+    update_tokens,
+    set_role,
+    ban_user,
+    delete_user,
     create_support_message,
+    list_support_messages,
+    support_counts,
+    set_support_status,
+    delete_support_message,
+    create_redeem_code,
+    list_codes,
     redeem_code,
+    list_usage,
+    list_purchases,
+    list_audit_logs,
+    add_audit_log,
 )
 
 BASE_DIR = Path(__file__).parent
@@ -39,6 +55,11 @@ st.set_page_config(
 
 init_db()
 
+
+# =========================
+# SESSION
+# =========================
+
 if "page" not in st.session_state:
     st.session_state.page = "home"
 
@@ -53,6 +74,12 @@ if "user" not in st.session_state:
 
 if "email" not in st.session_state:
     st.session_state.email = ""
+
+if "role" not in st.session_state:
+    st.session_state.role = "user"
+
+if "admin_level" not in st.session_state:
+    st.session_state.admin_level = 0
 
 if "captcha_a" not in st.session_state:
     st.session_state.captcha_a = random.randint(1, 5)
@@ -73,7 +100,21 @@ def sync_user(username: str):
         st.session_state.email = user["email"]
         st.session_state.plan = user["plan"]
         st.session_state.tokens = user["tokens"]
+        st.session_state.role = user["role"]
+        st.session_state.admin_level = user["admin_level"]
 
+
+def is_admin():
+    return st.session_state.role in ["supporter", "admin", "owner"] or st.session_state.admin_level > 0
+
+
+def is_owner():
+    return st.session_state.role == "owner" or st.session_state.admin_level >= 3
+
+
+# =========================
+# CSS
+# =========================
 
 st.markdown(
     """
@@ -137,11 +178,10 @@ section[data-testid="stSidebar"] * {
 
 .stTextInput input,
 .stTextArea textarea,
-.stNumberInput input {
+.stNumberInput input,
+.stSelectbox div {
     background: #000 !important;
     color: white !important;
-    border-radius: 14px !important;
-    border: 1px solid rgba(255,215,0,.30) !important;
 }
 
 .hero-box {
@@ -283,6 +323,10 @@ if HEADER_B64:
     )
 
 
+# =========================
+# NAV
+# =========================
+
 def plan_rank(plan):
     return {"free": 1, "pro": 2, "grand": 3, "elite": 4}.get(plan, 1)
 
@@ -307,12 +351,15 @@ with st.sidebar:
         st.success(f"👤 {st.session_state.user}")
         st.caption(f"Plan: {st.session_state.plan}")
         st.caption(f"Tokens: {st.session_state.tokens}")
+        st.caption(f"Role: {st.session_state.role}")
 
         if st.button("Logout", key="logout_btn"):
             st.session_state.user = None
             st.session_state.email = ""
             st.session_state.plan = "free"
             st.session_state.tokens = 0
+            st.session_state.role = "user"
+            st.session_state.admin_level = 0
             st.session_state.page = "home"
             st.rerun()
     else:
@@ -338,6 +385,14 @@ with st.sidebar:
     nav_button("Support", "support")
     nav_button("Buy Premium", "premium")
 
+    if is_admin():
+        st.markdown("### Admin")
+        nav_button("Admin Panel", "admin")
+
+
+# =========================
+# HOME
+# =========================
 
 if st.session_state.page == "home":
     logo_html = "MAB.AI"
@@ -383,6 +438,10 @@ if st.session_state.page == "home":
     st.markdown(textwrap.dedent(html), unsafe_allow_html=True)
 
 
+# =========================
+# LOGIN
+# =========================
+
 elif st.session_state.page == "login":
     st.title("🔐 Login / Register")
 
@@ -400,6 +459,8 @@ elif st.session_state.page == "login":
                 st.session_state.email = user["email"]
                 st.session_state.plan = user["plan"]
                 st.session_state.tokens = user["tokens"]
+                st.session_state.role = user["role"]
+                st.session_state.admin_level = user["admin_level"]
                 st.session_state.page = "home"
                 st.success(msg)
                 st.rerun()
@@ -439,6 +500,10 @@ elif st.session_state.page == "login":
                     st.error(msg)
 
 
+# =========================
+# FEATURES
+# =========================
+
 elif st.session_state.page == "chat":
     st.title("💬 Memory Chat")
     st.text_area("Nachricht", key="chat_prompt")
@@ -475,6 +540,10 @@ elif st.session_state.page == "video":
     st.button("Video generieren", key="video_generate")
 
 
+# =========================
+# DASHBOARD
+# =========================
+
 elif st.session_state.page == "dashboard":
     st.title("📊 User Dashboard")
 
@@ -502,6 +571,10 @@ elif st.session_state.page == "dashboard":
             else:
                 st.error(msg)
 
+
+# =========================
+# SUPPORT
+# =========================
 
 elif st.session_state.page == "support":
     st.title("🆘 Support")
@@ -533,6 +606,10 @@ elif st.session_state.page == "support":
                 st.error(response)
 
 
+# =========================
+# PREMIUM
+# =========================
+
 elif st.session_state.page == "premium":
     st.title("💳 Buy Premium")
 
@@ -549,3 +626,148 @@ elif st.session_state.page == "premium":
     with c3:
         st.markdown("### Elite\n**199€ / Monat**\n\nAlles freigeschaltet. Höchste API-Leistung.")
         st.button("Buy Elite", key="buy_elite")
+
+
+# =========================
+# ADMIN PANEL
+# =========================
+
+elif st.session_state.page == "admin":
+    if not is_admin():
+        st.error("Kein Zugriff.")
+        st.stop()
+
+    st.title("🛡️ Admin Panel")
+
+    counts = support_counts()
+
+    a, b, c, d = st.columns(4)
+    a.metric("Tickets Gesamt", counts.get("total", 0))
+    b.metric("Offen", counts.get("open", 0))
+    c.metric("Geschlossen", counts.get("closed", 0))
+    d.metric("Admin Level", st.session_state.admin_level)
+
+    tab_tickets, tab_users, tab_codes, tab_logs, tab_payments = st.tabs(
+        ["Tickets", "Users", "Redeem Codes", "Logs", "Payments"]
+    )
+
+    with tab_tickets:
+        st.subheader("🎫 Support Tickets")
+
+        status_filter = st.selectbox("Status Filter", ["all", "open", "closed"], key="admin_ticket_filter")
+        tickets = list_support_messages(status_filter)
+
+        if not tickets:
+            st.info("Keine Tickets vorhanden.")
+        else:
+            for ticket in tickets:
+                with st.expander(f"#{ticket['id']} · {ticket['subject']} · {ticket['status']}"):
+                    st.write(f"User: {ticket['username']}")
+                    st.write(f"Email: {ticket['email']}")
+                    st.write(f"Kategorie: {ticket['category']}")
+                    st.write(f"Nachricht: {ticket['message']}")
+                    st.write(f"Erstellt: {ticket['created_at']}")
+
+                    c1, c2 = st.columns(2)
+
+                    if c1.button("Als geschlossen markieren", key=f"close_ticket_{ticket['id']}"):
+                        set_support_status(ticket["id"], "closed")
+                        add_audit_log(st.session_state.user, "close_ticket", str(ticket["id"]))
+                        st.rerun()
+
+                    if c2.button("Ticket löschen", key=f"delete_ticket_{ticket['id']}"):
+                        delete_support_message(ticket["id"])
+                        add_audit_log(st.session_state.user, "delete_ticket", str(ticket["id"]))
+                        st.rerun()
+
+    with tab_users:
+        st.subheader("👥 User Verwaltung")
+
+        users = list_users()
+        st.dataframe([dict(u) for u in users], use_container_width=True)
+
+        st.markdown("### User bearbeiten")
+
+        target_user = st.text_input("Username", key="admin_target_user")
+        new_plan = st.selectbox("Plan", ["free", "pro", "grand", "elite"], key="admin_new_plan")
+        new_tokens = st.number_input("Tokens setzen", min_value=0, value=0, step=100, key="admin_new_tokens")
+
+        if is_owner():
+            new_role = st.selectbox("Role", ["user", "supporter", "admin", "owner"], key="admin_new_role")
+            new_level = st.selectbox("Admin Level", [0, 1, 2, 3], key="admin_new_level")
+        else:
+            new_role = "user"
+            new_level = 0
+
+        c1, c2, c3, c4 = st.columns(4)
+
+        if c1.button("Plan setzen", key="admin_set_plan"):
+            set_plan(target_user, new_plan)
+            add_audit_log(st.session_state.user, "set_plan", target_user, new_plan)
+            st.success("Plan geändert.")
+
+        if c2.button("Tokens setzen", key="admin_set_tokens"):
+            update_tokens(target_user, new_tokens)
+            add_audit_log(st.session_state.user, "set_tokens", target_user, str(new_tokens))
+            st.success("Tokens geändert.")
+
+        if c3.button("User bannen", key="admin_ban_user"):
+            ban_user(target_user, True)
+            add_audit_log(st.session_state.user, "ban_user", target_user)
+            st.success("User gebannt.")
+
+        if c4.button("User löschen", key="admin_delete_user"):
+            delete_user(target_user)
+            add_audit_log(st.session_state.user, "delete_user", target_user)
+            st.success("User gelöscht.")
+
+        if is_owner():
+            if st.button("Role / Admin Level setzen", key="admin_set_role"):
+                set_role(target_user, new_role, new_level)
+                add_audit_log(st.session_state.user, "set_role", target_user, f"{new_role}:{new_level}")
+                st.success("Role geändert.")
+
+    with tab_codes:
+        st.subheader("🎟️ Redeem Codes")
+
+        if not is_owner():
+            st.info("Nur Owner/Admin Level 3 kann Codes erstellen.")
+        else:
+            with st.form("create_code_form"):
+                code_type = st.selectbox("Typ", ["tokens", "plan", "mixed"])
+                plan = st.selectbox("Plan", ["free", "pro", "grand", "elite"])
+                tokens = st.number_input("Tokens", min_value=0, value=100, step=100)
+                max_uses = st.number_input("Max Uses", min_value=1, value=1)
+                days_valid = st.number_input("Gültig Tage", min_value=1, value=30)
+
+                submit = st.form_submit_button("Code erstellen")
+
+            if submit:
+                code = create_redeem_code(
+                    code_type=code_type,
+                    value="",
+                    tokens=tokens,
+                    plan=plan,
+                    max_uses=max_uses,
+                    created_by=st.session_state.user,
+                    days_valid=days_valid,
+                )
+                add_audit_log(st.session_state.user, "create_redeem_code", code)
+                st.success(f"Code erstellt: {code}")
+
+        codes = list_codes()
+        st.dataframe([dict(c) for c in codes], use_container_width=True)
+
+    with tab_logs:
+        st.subheader("📊 Usage Logs")
+        usage = list_usage()
+        st.dataframe([dict(u) for u in usage], use_container_width=True)
+
+        st.subheader("🧾 Audit Logs")
+        audits = list_audit_logs()
+        st.dataframe([dict(a) for a in audits], use_container_width=True)
+
+    with tab_payments:
+        st.subheader("💳 Payments")
+        payments = list_purchases()
+        st.dataframe([dict(p) for p in payments], use_container_width=True)
