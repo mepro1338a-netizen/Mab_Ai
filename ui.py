@@ -5,7 +5,17 @@ from pathlib import Path
 
 import streamlit as st
 
+from database import (
+    init_db,
+    create_user,
+    verify_login,
+    get_user,
+    create_support_message,
+    redeem_code,
+)
+
 BASE_DIR = Path(__file__).parent
+
 HEADER_PATH = BASE_DIR / "neuerheader.png"
 LOGO_PATH = BASE_DIR / "logo1.png"
 FAVICON_PATH = BASE_DIR / "Logo24mp.png"
@@ -27,14 +37,26 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+init_db()
+
 if "page" not in st.session_state:
     st.session_state.page = "home"
+
 if "plan" not in st.session_state:
     st.session_state.plan = "free"
+
+if "tokens" not in st.session_state:
+    st.session_state.tokens = 0
+
 if "user" not in st.session_state:
     st.session_state.user = None
+
+if "email" not in st.session_state:
+    st.session_state.email = ""
+
 if "captcha_a" not in st.session_state:
     st.session_state.captcha_a = random.randint(1, 5)
+
 if "captcha_b" not in st.session_state:
     st.session_state.captcha_b = random.randint(1, 5)
 
@@ -42,6 +64,15 @@ if "captcha_b" not in st.session_state:
 def refresh_captcha():
     st.session_state.captcha_a = random.randint(1, 5)
     st.session_state.captcha_b = random.randint(1, 5)
+
+
+def sync_user(username: str):
+    user = get_user(username)
+    if user:
+        st.session_state.user = user["username"]
+        st.session_state.email = user["email"]
+        st.session_state.plan = user["plan"]
+        st.session_state.tokens = user["tokens"]
 
 
 st.markdown(
@@ -81,6 +112,8 @@ html, body, .stApp {
 section[data-testid="stSidebar"] {
     background: #050509 !important;
     border-right: 1px solid rgba(255,215,0,.20);
+    min-width: 320px !important;
+    max-width: 320px !important;
 }
 
 section[data-testid="stSidebar"] * {
@@ -203,6 +236,11 @@ section[data-testid="stSidebar"] * {
         padding-top: 105px !important;
     }
 
+    section[data-testid="stSidebar"] {
+        min-width: 300px !important;
+        max-width: 300px !important;
+    }
+
     .top-logo-wrap img {
         height: 52px;
     }
@@ -268,10 +306,13 @@ with st.sidebar:
     if st.session_state.user:
         st.success(f"👤 {st.session_state.user}")
         st.caption(f"Plan: {st.session_state.plan}")
+        st.caption(f"Tokens: {st.session_state.tokens}")
 
         if st.button("Logout", key="logout_btn"):
             st.session_state.user = None
+            st.session_state.email = ""
             st.session_state.plan = "free"
+            st.session_state.tokens = 0
             st.session_state.page = "home"
             st.rerun()
     else:
@@ -352,13 +393,18 @@ elif st.session_state.page == "login":
         password = st.text_input("Password", type="password", key="login_password")
 
         if st.button("Login", key="login_btn"):
-            if username:
-                st.session_state.user = username
-                st.session_state.plan = "free"
+            ok, msg, user = verify_login(username, password)
+
+            if ok and user:
+                st.session_state.user = user["username"]
+                st.session_state.email = user["email"]
+                st.session_state.plan = user["plan"]
+                st.session_state.tokens = user["tokens"]
                 st.session_state.page = "home"
+                st.success(msg)
                 st.rerun()
             else:
-                st.error("Bitte Username eingeben.")
+                st.error(msg)
 
     with tab2:
         reg_user = st.text_input("Username", key="register_user")
@@ -381,11 +427,16 @@ elif st.session_state.page == "login":
                 refresh_captcha()
                 st.rerun()
 
-            if reg_user and reg_mail and reg_pw:
-                st.success("Account erfolgreich erstellt.")
-                refresh_captcha()
-            else:
+            if not reg_user or not reg_mail or not reg_pw:
                 st.error("Bitte alles ausfüllen.")
+            else:
+                ok, msg = create_user(reg_user, reg_mail, reg_pw)
+
+                if ok:
+                    st.success(msg)
+                    refresh_captcha()
+                else:
+                    st.error(msg)
 
 
 elif st.session_state.page == "chat":
@@ -426,20 +477,60 @@ elif st.session_state.page == "video":
 
 elif st.session_state.page == "dashboard":
     st.title("📊 User Dashboard")
+
+    if st.session_state.user:
+        sync_user(st.session_state.user)
+
+    st.metric("User", st.session_state.user or "Nicht eingeloggt")
     st.metric("Plan", st.session_state.plan)
-    st.metric("Tokens", "0")
+    st.metric("Tokens", st.session_state.tokens)
+
+    st.markdown("### Redeem Code")
+    code = st.text_input("Code eingeben", key="redeem_code_input")
+
+    if st.button("Code einlösen", key="redeem_btn"):
+        if not st.session_state.user:
+            st.error("Bitte zuerst einloggen.")
+        elif not code:
+            st.error("Bitte Code eingeben.")
+        else:
+            ok, msg = redeem_code(st.session_state.user, code)
+            if ok:
+                sync_user(st.session_state.user)
+                st.success(msg)
+                st.rerun()
+            else:
+                st.error(msg)
 
 
 elif st.session_state.page == "support":
     st.title("🆘 Support")
+
     subject = st.text_input("Betreff", key="support_subject")
     msg = st.text_area("Nachricht", key="support_msg")
+    category = st.selectbox(
+        "Kategorie",
+        ["Allgemein", "Account", "Payment", "Technik", "Bug"],
+        key="support_category",
+    )
 
     if st.button("Ticket senden", key="ticket_send"):
-        if subject and msg:
-            st.success("Ticket gesendet.")
-        else:
+        if not subject or not msg:
             st.error("Bitte alles ausfüllen.")
+        else:
+            username = st.session_state.user or "guest"
+            email = st.session_state.email or ""
+            ok, response = create_support_message(
+                username=username,
+                email=email,
+                category=category,
+                subject=subject,
+                message=msg,
+            )
+            if ok:
+                st.success(response)
+            else:
+                st.error(response)
 
 
 elif st.session_state.page == "premium":
