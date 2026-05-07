@@ -7,7 +7,7 @@ import streamlit as st
 
 BASE_DIR = Path(__file__).parent
 HEADER_PATH = BASE_DIR / "neuerheader.png"
-LOGO_PATH = BASE_DIR / "logo.png"
+LOGO_PATH = BASE_DIR / "logo1.png"
 FAVICON_PATH = BASE_DIR / "Logo24mp.png"
 
 
