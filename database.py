@@ -1,53 +1,60 @@
 import sqlite3
+from pathlib import Path
 from datetime import datetime
 
-DB_NAME = "app.db"
+BASE_DIR = Path(__file__).parent
+DB_PATH = BASE_DIR / "mabai.db"
 
 
-def get_conn():
-    return sqlite3.connect(DB_NAME, check_same_thread=False)
+def get_connection():
+    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+    conn.row_factory = sqlite3.Row
+    return conn
 
 
 def init_db():
-    conn = get_conn()
-    c = conn.cursor()
+    conn = get_connection()
+    cur = conn.cursor()
 
-    # USERS
-    c.execute("""
+    cur.execute("""
     CREATE TABLE IF NOT EXISTS users (
-        username TEXT PRIMARY KEY,
-        email TEXT,
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE,
+        email TEXT UNIQUE,
         password TEXT,
         plan TEXT DEFAULT 'free',
         tokens INTEGER DEFAULT 0,
-        role TEXT DEFAULT 'user'
+        created_at TEXT
     )
     """)
 
-    # SUPPORT
-    c.execute("""
-    CREATE TABLE IF NOT EXISTS support_messages (
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS login_logs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT,
-        email TEXT,
-        category TEXT,
-        subject TEXT,
-        message TEXT,
-        status TEXT DEFAULT 'open',
-        is_read INTEGER DEFAULT 0,
-        created_at TEXT,
-        updated_at TEXT
+        ip_address TEXT,
+        login_time TEXT
     )
     """)
 
-    # PURCHASES
-    c.execute("""
-    CREATE TABLE IF NOT EXISTS purchases (
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS generations (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT,
+        tool TEXT,
+        prompt TEXT,
+        created_at TEXT
+    )
+    """)
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS stripe_payments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT,
+        customer_id TEXT,
+        subscription_id TEXT,
         plan TEXT,
-        stripe_session TEXT,
-        status TEXT DEFAULT 'created',
+        status TEXT,
         created_at TEXT
     )
     """)
@@ -56,337 +63,292 @@ def init_db():
     conn.close()
 
 
-# ---------------- USERS ----------------
+def create_user(username, email, password):
+    conn = get_connection()
+    cur = conn.cursor()
 
-def list_users():
-    conn = get_conn()
-    c = conn.cursor()
     try:
-        users = c.execute("SELECT * FROM users").fetchall()
-    except:
-        users = []
-    conn.close()
-    return users
+        cur.execute("""
+        INSERT INTO users (
+            username,
+            email,
+            password,
+            plan,
+            tokens,
+            created_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?)
+        """, (
+            username,
+            email,
+            password,
+            "free",
+            0,
+            datetime.utcnow().isoformat()
+        ))
+
+        conn.commit()
+        conn.close()
+        return True
+
+    except Exception:
+        conn.close()
+        return False
 
 
 def get_user(username):
-    conn = get_conn()
-    c = conn.cursor()
-    user = c.execute("SELECT * FROM users WHERE username=?", (username,)).fetchone()
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+    SELECT * FROM users
+    WHERE username = ?
+    """, (username,))
+
+    user = cur.fetchone()
+
     conn.close()
     return user
 
 
-# ---------------- SUPPORT ----------------
+def login_user(username, password):
+    conn = get_connection()
+    cur = conn.cursor()
 
-def create_support_message(username, email, category, subject, message):
-    conn = get_conn()
-    c = conn.cursor()
-    now = datetime.utcnow().isoformat()
+    cur.execute("""
+    SELECT * FROM users
+    WHERE username = ?
+    AND password = ?
+    """, (
+        username,
+        password
+    ))
 
-    c.execute("""
-    INSERT INTO support_messages
-    (username, email, category, subject, message, status, is_read, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, 'open', 0, ?, ?)
-    """, (username, email, category, subject, message, now, now))
-
-    conn.commit()
-    conn.close()
-    return True, "ok"
-
-
-def list_support_messages():
-    conn = get_conn()
-    c = conn.cursor()
-    rows = c.execute("SELECT * FROM support_messages ORDER BY created_at DESC").fetchall()
-    conn.close()
-    return rows
-
-
-def support_counts():
-    conn = get_conn()
-    c = conn.cursor()
-
-    try:
-        total = c.execute("SELECT COUNT(*) FROM support_messages").fetchone()[0]
-    except:
-        total = 0
+    user = cur.fetchone()
 
     conn.close()
-    return {"total": total}
+    return user
 
 
-# ---------------- PURCHASES ----------------
+def update_user_plan(username, plan):
+    conn = get_connection()
+    cur = conn.cursor()
 
-def list_purchases(username=None):
-    conn = get_conn()
-    c = conn.cursor()
+    cur.execute("""
+    UPDATE users
+    SET plan = ?
+    WHERE username = ?
+    """, (
+        plan,
+        username
+    ))
 
-    if username:
-        rows = c.execute(
-            "SELECT * FROM purchases WHERE username=? ORDER BY created_at DESC",
-            (username,)
-        ).fetchall()
-    else:
-        rows = c.execute(
-            "SELECT * FROM purchases ORDER BY created_at DESC"
-        ).fetchall()
-
-    conn.close()
-    return rows
-
-def set_plan(username, plan):
-    conn = get_conn()
-    c = conn.cursor()
-    c.execute("UPDATE users SET plan=? WHERE username=?", (plan, username))
     conn.commit()
     conn.close()
 
 
 def update_tokens(username, tokens):
-    conn = get_conn()
-    c = conn.cursor()
-    c.execute("UPDATE users SET tokens = COALESCE(tokens, 0) + ? WHERE username=?", (tokens, username))
-    conn.commit()
-    conn.close()
+    conn = get_connection()
+    cur = conn.cursor()
 
-
-def set_role(username, role):
-    conn = get_conn()
-    c = conn.cursor()
-    c.execute("UPDATE users SET role=? WHERE username=?", (role, username))
-    conn.commit()
-    conn.close()
-
-
-def delete_user(username):
-    conn = get_conn()
-    c = conn.cursor()
-    c.execute("DELETE FROM users WHERE username=?", (username,))
-    conn.commit()
-    conn.close()
-    return True
-
-
-def create_user(username, email, password, role="user", plan="free"):
-    conn = get_conn()
-    c = conn.cursor()
-    try:
-        c.execute("""
-        INSERT INTO users (username, email, password, plan, tokens, role)
-        VALUES (?, ?, ?, ?, ?, ?)
-        """, (username.strip().lower(), email, password, plan, 0, role))
-        conn.commit()
-        return True, "User created."
-    except Exception as e:
-        return False, str(e)
-    finally:
-        conn.close()
-
-
-def add_memory(username, key, value):
-    conn = get_conn()
-    c = conn.cursor()
-    c.execute("""
-    CREATE TABLE IF NOT EXISTS memories (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT,
-        key TEXT,
-        value TEXT,
-        created_at TEXT
-    )
-    """)
-    c.execute(
-        "INSERT INTO memories (username, key, value, created_at) VALUES (?, ?, ?, ?)",
-        (username, key, value, datetime.utcnow().isoformat())
-    )
-    conn.commit()
-    conn.close()
-
-
-def load_memory(username):
-    conn = get_conn()
-    c = conn.cursor()
-    c.execute("""
-    CREATE TABLE IF NOT EXISTS memories (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT,
-        key TEXT,
-        value TEXT,
-        created_at TEXT
-    )
-    """)
-    rows = c.execute(
-        "SELECT key, value FROM memories WHERE username=? ORDER BY id DESC",
-        (username,)
-    ).fetchall()
-    conn.close()
-    return {k: v for k, v in rows}
-
-
-def create_redeem_code(code_type, value, tokens, plan, max_uses, created_by, days_valid):
-    import secrets
-    code = secrets.token_hex(4).upper()
-
-    conn = get_conn()
-    c = conn.cursor()
-    c.execute("""
-    CREATE TABLE IF NOT EXISTS redeem_codes (
-        code TEXT PRIMARY KEY,
-        code_type TEXT,
-        value TEXT,
-        tokens INTEGER,
-        plan TEXT,
-        max_uses INTEGER,
-        used INTEGER DEFAULT 0,
-        created_by TEXT,
-        created_at TEXT,
-        expires_at TEXT,
-        active INTEGER DEFAULT 1
-    )
-    """)
-    c.execute("""
-    INSERT INTO redeem_codes
-    (code, code_type, value, tokens, plan, max_uses, used, created_by, created_at, expires_at, active)
-    VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, ?, 1)
+    cur.execute("""
+    UPDATE users
+    SET tokens = ?
+    WHERE username = ?
     """, (
-        code, code_type, value, int(tokens), plan, int(max_uses),
-        created_by, datetime.utcnow().isoformat(), datetime.utcnow().isoformat()
+        tokens,
+        username
     ))
+
     conn.commit()
     conn.close()
-    return code
 
 
-def list_codes():
-    conn = get_conn()
-    c = conn.cursor()
-    c.execute("""
-    CREATE TABLE IF NOT EXISTS redeem_codes (
-        code TEXT PRIMARY KEY,
-        code_type TEXT,
-        value TEXT,
-        tokens INTEGER,
-        plan TEXT,
-        max_uses INTEGER,
-        used INTEGER DEFAULT 0,
-        created_by TEXT,
-        created_at TEXT,
-        expires_at TEXT,
-        active INTEGER DEFAULT 1
+def add_tokens(username, amount):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+    UPDATE users
+    SET tokens = tokens + ?
+    WHERE username = ?
+    """, (
+        amount,
+        username
+    ))
+
+    conn.commit()
+    conn.close()
+
+
+def remove_tokens(username, amount):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+    UPDATE users
+    SET tokens = MAX(tokens - ?, 0)
+    WHERE username = ?
+    """, (
+        amount,
+        username
+    ))
+
+    conn.commit()
+    conn.close()
+
+
+def save_generation(username, tool, prompt):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+    INSERT INTO generations (
+        username,
+        tool,
+        prompt,
+        created_at
     )
-    """)
-    rows = c.execute("SELECT * FROM redeem_codes ORDER BY created_at DESC").fetchall()
+    VALUES (?, ?, ?, ?)
+    """, (
+        username,
+        tool,
+        prompt,
+        datetime.utcnow().isoformat()
+    ))
+
+    conn.commit()
+    conn.close()
+
+
+def get_generations(username):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+    SELECT * FROM generations
+    WHERE username = ?
+    ORDER BY id DESC
+    """, (username,))
+
+    rows = cur.fetchall()
+
     conn.close()
     return rows
 
 
-def redeem_code(username, code):
-    conn = get_conn()
-    c = conn.cursor()
-    row = c.execute("SELECT * FROM redeem_codes WHERE code=? AND active=1", (code,)).fetchone()
+def save_login_log(username, ip_address):
+    conn = get_connection()
+    cur = conn.cursor()
 
-    if not row:
-        conn.close()
-        return False, "Invalid code."
-
-    code_value = row
-    tokens = code_value[3] or 0
-    plan = code_value[4]
-
-    if tokens:
-        c.execute("UPDATE users SET tokens = COALESCE(tokens, 0) + ? WHERE username=?", (tokens, username))
-
-    if plan:
-        c.execute("UPDATE users SET plan=? WHERE username=?", (plan, username))
-
-    c.execute("UPDATE redeem_codes SET used = used + 1 WHERE code=?", (code,))
-    conn.commit()
-    conn.close()
-    return True, "Code redeemed."
-
-
-def set_support_read(message_id, value):
-    conn = get_conn()
-    c = conn.cursor()
-    c.execute("UPDATE support_messages SET is_read=? WHERE id=?", (value, message_id))
-    conn.commit()
-    conn.close()
-
-
-def set_support_status(message_id, status):
-    conn = get_conn()
-    c = conn.cursor()
-    c.execute("UPDATE support_messages SET status=? WHERE id=?", (status, message_id))
-    conn.commit()
-    conn.close()
-
-
-def delete_support_message(message_id):
-    conn = get_conn()
-    c = conn.cursor()
-    c.execute("DELETE FROM support_messages WHERE id=?", (message_id,))
-    conn.commit()
-    conn.close()
-
-
-def list_admin_chat(limit=80):
-    return []
-
-
-def add_admin_chat(username, role, message):
-    return True, "Message sent."
-
-def verify_user(username, password):
-    conn = get_conn()
-    c = conn.cursor()
-
-    user = c.execute(
-        "SELECT username, email, password, plan, tokens, role FROM users WHERE username=?",
-        (username.strip().lower(),)
-    ).fetchone()
-
-    conn.close()
-
-    if not user:
-        return False, "User not found.", None
-
-    if user[2] != password:
-        return False, "Wrong password.", None
-
-    return True, "Login successful.", {
-        "username": user[0],
-        "email": user[1],
-        "plan": user[3],
-        "tokens": user[4],
-        "role": user[5],
-    }
-
-def increment_usage(username, field):
-    conn = get_conn()
-    c = conn.cursor()
-
-    allowed = ["images", "videos", "content", "music"]
-    if field not in allowed:
-        conn.close()
-        return
-
-    try:
-        c.execute(f"ALTER TABLE users ADD COLUMN {field} INTEGER DEFAULT 0")
-    except Exception:
-        pass
-
-    c.execute(
-        f"UPDATE users SET {field} = COALESCE({field}, 0) + 1 WHERE username=?",
-        (username,)
+    cur.execute("""
+    INSERT INTO login_logs (
+        username,
+        ip_address,
+        login_time
     )
+    VALUES (?, ?, ?)
+    """, (
+        username,
+        ip_address,
+        datetime.utcnow().isoformat()
+    ))
 
     conn.commit()
     conn.close()
 
-def get_user(username):
-    conn = get_conn()
-    c = conn.cursor()
-    user = c.execute("SELECT * FROM users WHERE username=?", (username,)).fetchone()
+
+def get_login_logs(username):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+    SELECT * FROM login_logs
+    WHERE username = ?
+    ORDER BY id DESC
+    """, (username,))
+
+    rows = cur.fetchall()
+
     conn.close()
-    return user
+    return rows
+
+
+def save_payment(
+    username,
+    customer_id,
+    subscription_id,
+    plan,
+    status
+):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+    INSERT INTO stripe_payments (
+        username,
+        customer_id,
+        subscription_id,
+        plan,
+        status,
+        created_at
+    )
+    VALUES (?, ?, ?, ?, ?, ?)
+    """, (
+        username,
+        customer_id,
+        subscription_id,
+        plan,
+        status,
+        datetime.utcnow().isoformat()
+    ))
+
+    conn.commit()
+    conn.close()
+
+
+def get_payments(username):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+    SELECT * FROM stripe_payments
+    WHERE username = ?
+    ORDER BY id DESC
+    """, (username,))
+
+    rows = cur.fetchall()
+
+    conn.close()
+    return rows
+
+
+def delete_user(username):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+    DELETE FROM users
+    WHERE username = ?
+    """, (username,))
+
+    conn.commit()
+    conn.close()
+
+
+def get_all_users():
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+    SELECT * FROM users
+    ORDER BY id DESC
+    """)
+
+    rows = cur.fetchall()
+
+    conn.close()
+    return rows
+
+
+init_db()
