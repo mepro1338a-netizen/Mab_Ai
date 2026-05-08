@@ -1,204 +1,146 @@
-from config import PLANS
-from database import get_user, update_tokens, increment_usage, load_memory
-from ai import ask_ai, generate_image, generate_video, generate_music
-from tokens import estimate_cost
+import os
+import time
+import requests
+from openai import OpenAI
+from database import get_user, spend_tokens, increment_usage
+from config import TOKEN_COSTS
+
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+REPLICATE_API_TOKEN = os.getenv("REPLICATE_API_TOKEN", "")
+
+TEXT_MODEL = os.getenv("OPENAI_TEXT_MODEL", "gpt-4.1-mini")
+CODING_MODEL = os.getenv("OPENAI_CODING_MODEL", "gpt-4.1")
+IMAGE_MODEL = os.getenv("OPENAI_IMAGE_MODEL", "gpt-image-1")
+
+REPLICATE_VIDEO_MODEL = os.getenv("REPLICATE_VIDEO_MODEL", "")
+REPLICATE_REELS_MODEL = os.getenv("REPLICATE_REELS_MODEL", REPLICATE_VIDEO_MODEL)
+REPLICATE_MUSIC_MODEL = os.getenv("REPLICATE_MUSIC_MODEL", "")
 
 
 def refresh_user(username):
     return get_user(username)
 
 
-def has_feature(user, feature):
-    if not user:
-        return False, "Please login first."
-
-    if user.get("role") == "admin":
-        return True, ""
-
-    plan = user.get("plan", "free")
-    features = PLANS.get(plan, PLANS["free"])["features"]
-
-    if "all" in features or feature in features:
-        return True, ""
-
-    return False, f"{feature.title()} requires a higher plan."
+def _openai_client():
+    if not OPENAI_API_KEY:
+        raise RuntimeError("OPENAI_API_KEY fehlt in Railway Variables.")
+    return OpenAI(api_key=OPENAI_API_KEY)
 
 
-def charge_tokens(username, cost):
-    user = get_user(username)
+def _text_response(prompt, model=TEXT_MODEL, system="Du bist MAB.AI, ein hilfreicher KI-Assistent."):
+    client = _openai_client()
+    response = client.responses.create(
+        model=model,
+        input=[
+            {"role": "system", "content": system},
+            {"role": "user", "content": prompt},
+        ],
+    )
+    return getattr(response, "output_text", None) or str(response)
 
-    if not user:
-        return False, "Please login first."
 
-    if user["tokens"] < cost:
-        return False, "Not enough tokens."
-
-    update_tokens(username, -cost)
-    return True, ""
-
-
-def run_text_tool(username, prompt, mode, feature, language, history=None):
-    user = get_user(username)
-
-    ok, msg = has_feature(user, feature)
-    if not ok:
-        return msg, 0, False
-
-    cost = estimate_cost(mode, prompt)
-
-    ok, msg = charge_tokens(username, cost)
+def process_chat(username, prompt, language="German", history=None):
+    cost = TOKEN_COSTS["chat"]
+    ok, msg = spend_tokens(username, cost)
     if not ok:
         return msg, cost, False
-
-    memory = load_memory(username) if mode == "chat" else []
-
-    answer = ask_ai(
-        history=history or [],
-        prompt=prompt,
-        plan=user["plan"],
-        mode=mode,
-        language=language,
-        memory=memory,
-    )
-
-    return answer, cost, True
+    try:
+        answer = _text_response(
+            prompt,
+            TEXT_MODEL,
+            f"Antworte auf {language}. Du bist MAB.AI. Hilf klar, direkt und praxisnah."
+        )
+        return answer, cost, True
+    except Exception as e:
+        return f"API Fehler: {e}", cost, False
 
 
-def process_chat(username, prompt, language, history=None):
-    return run_text_tool(username, prompt, "chat", "chat", language, history)
-
-
-def process_coding(username, task, language):
-    prompt = f"""Help with this coding task:
-
-{task}
-
-Return:
-- solution
-- complete code if useful
-- short explanation
-"""
-    return run_text_tool(username, prompt, "coding", "coding", language)
-
-
-def process_content(username, topic, platform, niche, language):
-    prompt = f"""Create content for {platform}.
-
-Topic: {topic}
-Niche: {niche}
-
-Return:
-- 5 viral ideas
-- hook for each idea
-- shot list
-- caption
-- CTA
-- hashtags
-- posting angle
-"""
-    answer, cost, ok = run_text_tool(username, prompt, "content", "content", language)
-    if ok:
-        increment_usage(username, "content_used")
-    return answer, cost, ok
-
-
-def process_script(username, topic, platform, style, language):
-    prompt = f"""Create a high-retention {platform} script.
-
-Topic: {topic}
-Style: {style}
-
-Return:
-1. Hook
-2. Full script
-3. Scene structure
-4. Caption
-5. CTA
-6. Hashtags
-"""
-    return run_text_tool(username, prompt, "script", "script", language)
-
-
-def process_reels(username, topic, platform, language):
-    prompt = f"""Create a ready-to-film short reel for {platform}.
-
-Topic: {topic}
-
-Return:
-- 3 hook options
-- 15-30 second script
-- scene-by-scene shot list
-- text overlays
-- caption
-- CTA
-- hashtags
-"""
-    return run_text_tool(username, prompt, "reels", "reels", language)
+def process_coding(username, task, language="German"):
+    cost = TOKEN_COSTS["coding"]
+    ok, msg = spend_tokens(username, cost)
+    if not ok:
+        return msg, cost, False
+    try:
+        answer = _text_response(
+            task,
+            CODING_MODEL,
+            f"Antworte auf {language}. Du bist ein Senior Software Engineer. Gib copy-paste-ready Code."
+        )
+        return answer, cost, True
+    except Exception as e:
+        return f"API Fehler: {e}", cost, False
 
 
 def process_image(username, prompt):
-    user = get_user(username)
-
-    ok, msg = has_feature(user, "image")
-    if not ok:
-        return None, msg, 0, False
-
-    cost = estimate_cost("image", prompt)
-
-    ok, msg = charge_tokens(username, cost)
+    cost = TOKEN_COSTS["image"]
+    ok, msg = spend_tokens(username, cost)
     if not ok:
         return None, msg, cost, False
+    try:
+        client = _openai_client()
+        img = client.images.generate(
+            model=IMAGE_MODEL,
+            prompt=prompt,
+            size="1024x1024",
+            n=1,
+        )
+        item = img.data[0]
+        increment_usage(username, "images")
+        if getattr(item, "b64_json", None):
+            return f"data:image/png;base64,{item.b64_json}", None, cost, True
+        if getattr(item, "url", None):
+            return item.url, None, cost, True
+        return None, "Kein Bild zurückgegeben.", cost, False
+    except Exception as e:
+        return None, f"API Fehler: {e}", cost, False
 
-    result, error = generate_image(prompt)
 
-    if error:
-        return None, error, cost, False
+def _replicate_prediction(model, prompt):
+    if not REPLICATE_API_TOKEN:
+        raise RuntimeError("REPLICATE_API_TOKEN fehlt in Railway Variables.")
+    if not model:
+        raise RuntimeError("Replicate Model fehlt. Setze REPLICATE_VIDEO_MODEL / REPLICATE_REELS_MODEL / REPLICATE_MUSIC_MODEL.")
 
-    increment_usage(username, "images_used")
-    return result, "", cost, True
+    headers = {
+        "Authorization": f"Bearer {REPLICATE_API_TOKEN}",
+        "Content-Type": "application/json",
+        "Prefer": "wait",
+    }
+
+    # model format: owner/name
+    url = f"https://api.replicate.com/v1/models/{model}/predictions"
+    r = requests.post(url, headers=headers, json={"input": {"prompt": prompt}}, timeout=120)
+    if r.status_code >= 400:
+        raise RuntimeError(r.text)
+    data = r.json()
+    output = data.get("output")
+    if isinstance(output, list) and output:
+        return output[0]
+    return output or data.get("urls", {}).get("get") or str(data)
 
 
-def process_video(username, prompt, mode_cost_key="video_fast"):
-    user = get_user(username)
-
-    ok, msg = has_feature(user, "video")
-    if not ok:
-        return None, msg, 0, False
-
-    cost = estimate_cost(mode_cost_key, prompt)
-
-    ok, msg = charge_tokens(username, cost)
+def process_video(username, prompt, mode="video"):
+    cost = TOKEN_COSTS["reels"] if mode == "reels" else TOKEN_COSTS["video"]
+    ok, msg = spend_tokens(username, cost)
     if not ok:
         return None, msg, cost, False
-
-    mode_name = "Fast"
-    if mode_cost_key == "reels":
-        mode_name = "Fast"
-    elif mode_cost_key == "video_quality":
-        mode_name = "Quality"
-    elif mode_cost_key == "video_premium":
-        mode_name = "Premium"
-
-    video, error = generate_video(prompt, mode_name)
-
-    if error:
-        return None, error, cost, False
-
-    increment_usage(username, "videos_used")
-    return video, "", cost, True
+    try:
+        model = REPLICATE_REELS_MODEL if mode == "reels" else REPLICATE_VIDEO_MODEL
+        result = _replicate_prediction(model, prompt)
+        increment_usage(username, "videos")
+        return result, None, cost, True
+    except Exception as e:
+        return None, f"API Fehler: {e}", cost, False
 
 
 def process_music(username, prompt):
-    user = get_user(username)
-    ok, msg = has_feature(user, "music")
-    if not ok:
-        return None, msg, 0, False
-    cost = estimate_cost("music", prompt)
-    ok, msg = charge_tokens(username, cost)
+    cost = TOKEN_COSTS["music"]
+    ok, msg = spend_tokens(username, cost)
     if not ok:
         return None, msg, cost, False
-    music, error = generate_music(prompt)
-    if error:
-        return None, error, cost, False
-    increment_usage(username, "music_used")
-    return music, "", cost, True
+    try:
+        result = _replicate_prediction(REPLICATE_MUSIC_MODEL, prompt)
+        increment_usage(username, "music")
+        return result, None, cost, True
+    except Exception as e:
+        return None, f"API Fehler: {e}", cost, False

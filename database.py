@@ -56,6 +56,20 @@ def init_db():
     )
     """)
 
+cur.execute("""
+CREATE TABLE IF NOT EXISTS usage_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT,
+    feature TEXT,
+    prompt TEXT,
+    tokens_used INTEGER DEFAULT 0,
+    cost_tokens INTEGER DEFAULT 0,
+    api_provider TEXT,
+    status TEXT,
+    created_at TEXT
+)
+""")
+
     cur.execute("""
     CREATE TABLE IF NOT EXISTS support_tickets (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -1003,3 +1017,57 @@ def list_api_key_refs():
 
 
 init_db()
+
+def remove_tokens(username, amount):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        UPDATE users
+        SET tokens = CASE
+            WHEN tokens - ? < 0 THEN 0
+            ELSE tokens - ?
+        END
+        WHERE username = ?
+    """, (amount, amount, username))
+
+    conn.commit()
+    conn.close()
+
+
+def save_usage(
+    username,
+    feature,
+    prompt,
+    tokens_used=0,
+    cost_tokens=0,
+    api_provider="",
+    status="success",
+):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+        INSERT INTO usage_logs (
+            username,
+            feature,
+            prompt,
+            tokens_used,
+            cost_tokens,
+            api_provider,
+            status,
+            created_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
+    """, (
+        username,
+        feature,
+        prompt,
+        tokens_used,
+        cost_tokens,
+        api_provider,
+        status,
+    ))
+
+    conn.commit()
+    conn.close()
