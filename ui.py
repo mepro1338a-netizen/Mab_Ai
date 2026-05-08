@@ -365,10 +365,10 @@ section[data-testid="stSidebar"] * {
 )
 
 if HEADER_B64:
-    st.markdown(
-        f'<div class="top-logo-wrap"><img src="data:image/png;base64,{HEADER_B64}"></div>',
-        unsafe_allow_html=True,
-    )
+st.markdown(
+    '<img src="logo1.png" style="background:transparent; display:block; margin:auto;">',
+    unsafe_allow_html=True
+)
 
 
 def nav_button(label, page, required_plan="free"):
