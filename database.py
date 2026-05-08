@@ -20,6 +20,19 @@ def row_to_dict(row):
     return dict(row) if row else None
 
 
+def validate_password(password):
+    if not password:
+        return False, "Bitte Passwort eingeben."
+
+    if len(password) < 6:
+        return False, "Passwort muss mindestens 6 Zeichen haben."
+
+    if len(password.encode("utf-8")) > 72:
+        return False, "Passwort ist zu lang. Bitte maximal 72 Zeichen verwenden."
+
+    return True, ""
+
+
 def init_db():
     conn = get_connection()
     cur = conn.cursor()
@@ -167,20 +180,16 @@ def init_db():
     conn.close()
 
 
-# USERS
-
 def create_user(username, email, password, role="user", plan="free", tokens=None):
-    username = username.strip().lower()
-    email = email.strip().lower()
+    username = (username or "").strip().lower()
+    email = (email or "").strip().lower()
 
     if not username or not email or not password:
         return False, "Bitte alle Felder ausfüllen."
 
-    if len(password) < 6:
-    return False, "Passwort muss mindestens 6 Zeichen haben."
-
-if len(password.encode("utf-8")) > 72:
-    return False, "Passwort ist zu lang. Bitte maximal 72 Zeichen verwenden."
+    valid, msg = validate_password(password)
+    if not valid:
+        return False, msg
 
     if tokens is None:
         tokens = PLANS.get(plan, PLANS["free"])["tokens"]
@@ -219,10 +228,14 @@ if len(password.encode("utf-8")) > 72:
 
 
 def verify_login(username, password):
-    username = username.strip().lower()
+    username = (username or "").strip().lower()
 
-if len(password.encode("utf-8")) > 72:
-    return False, "Passwort ist zu lang. Bitte maximal 72 Zeichen verwenden.", None
+    if not username or not password:
+        return False, "Bitte Username und Passwort eingeben.", None
+
+    valid, msg = validate_password(password)
+    if not valid:
+        return False, msg, None
 
     conn = get_connection()
     cur = conn.cursor()
@@ -238,30 +251,29 @@ if len(password.encode("utf-8")) > 72:
         conn.close()
         return False, "Account gesperrt.", None
 
-    password_hash = user["password_hash"]
-
     try:
-        valid = bcrypt.verify(password, password_hash)
+        valid_login = bcrypt.verify(password, user["password_hash"])
     except Exception:
-        valid = False
+        valid_login = False
 
-    if not valid:
+    if not valid_login:
         conn.close()
         return False, "Falsches Passwort.", None
 
     cur.execute("UPDATE users SET last_login = ? WHERE username = ?", (now(), username))
     conn.commit()
 
-    user = cur.execute("SELECT * FROM users WHERE username = ?", (username,)).fetchone()
-    conn.close()
+    cur.execute("SELECT * FROM users WHERE username = ?", (username,))
+    updated_user = cur.fetchone()
 
-    return True, "Login erfolgreich.", row_to_dict(user)
+    conn.close()
+    return True, "Login erfolgreich.", row_to_dict(updated_user)
 
 
 def get_user(username):
     conn = get_connection()
     cur = conn.cursor()
-    cur.execute("SELECT * FROM users WHERE username = ?", (username.strip().lower(),))
+    cur.execute("SELECT * FROM users WHERE username = ?", ((username or "").strip().lower(),))
     user = cur.fetchone()
     conn.close()
     return row_to_dict(user)
@@ -270,7 +282,7 @@ def get_user(username):
 def get_user_by_email(email):
     conn = get_connection()
     cur = conn.cursor()
-    cur.execute("SELECT * FROM users WHERE email = ?", (email.strip().lower(),))
+    cur.execute("SELECT * FROM users WHERE email = ?", ((email or "").strip().lower(),))
     user = cur.fetchone()
     conn.close()
     return row_to_dict(user)
@@ -393,8 +405,6 @@ def delete_user(username):
     return True
 
 
-# SUPPORT
-
 def create_support_message(username, email, category, subject, message):
     conn = get_connection()
     cur = conn.cursor()
@@ -515,8 +525,6 @@ def delete_support_message(ticket_id):
     conn.close()
 
 
-# REDEEM CODES
-
 def create_redeem_code(code_type, value="", tokens=0, plan="", max_uses=1, created_by="", days_valid=30):
     code = secrets.token_hex(4).upper()
     expires_at = (datetime.utcnow() + timedelta(days=int(days_valid))).isoformat()
@@ -610,8 +618,6 @@ def redeem_code(username, code):
 
     return True, "Code eingelöst."
 
-
-# PAYMENTS / SUBSCRIPTIONS
 
 def save_payment(username, email, customer_id, session_id, subscription_id, price_id, plan, amount, currency, status):
     conn = get_connection()
@@ -742,8 +748,6 @@ def list_subscriptions(username=None):
     return [dict(row) for row in rows]
 
 
-# USAGE / AUDIT
-
 def save_usage(username, tool, prompt, tokens_used=0, cost_tokens=0, api_provider="", status="success"):
     conn = get_connection()
     cur = conn.cursor()
@@ -814,8 +818,6 @@ def list_audit_logs():
     conn.close()
     return [dict(row) for row in rows]
 
-
-# API KEY REFS
 
 def save_api_key_ref(provider, env_name):
     conn = get_connection()
