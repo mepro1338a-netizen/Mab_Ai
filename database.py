@@ -49,7 +49,22 @@ def list_users():
     return [dict(row) for row in rows]
 
 
-def set_plan(username, plan):
+def set_plan(username, plan):^
+def update_tokens(username, tokens):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+    UPDATE users
+    SET tokens = ?
+    WHERE username = ?
+    """, (
+        int(tokens),
+        username.strip().lower()
+    ))
+
+    conn.commit()
+    conn.close()
     conn = get_connection()
     cur = conn.cursor()
 
