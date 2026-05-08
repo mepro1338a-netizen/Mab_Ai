@@ -5,6 +5,13 @@ from pathlib import Path
 
 import streamlit as st
 
+
+from security import (
+    is_valid_username,
+    is_valid_email,
+    check_login_rate,
+)
+
 from config import APP_NAME, PLANS, TOKEN_COSTS, LOGO_PATH, FAVICON_PATH, HEADER_PATH
 from ai_service import generate_image, generate_video, ai_health_check
 from database import (
@@ -50,6 +57,7 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
 
 init_db()
 
@@ -588,23 +596,33 @@ elif page == "login":
         username = st.text_input("Username", key="login_username")
         password = st.text_input("Password", type="password", key="login_password")
 
-        if st.button("Login", key="login_btn"):
-            ok, msg, user = verify_login(username, password)
+       if st.button("Login", key="login_btn"):
 
-            if ok and user:
-                st.session_state.user = user["username"]
-                st.session_state.email = user["email"]
-                st.session_state.plan = user["plan"]
-                st.session_state.tokens = user["tokens"]
-                st.session_state.role = user["role"]
-                st.session_state.admin_level = user["admin_level"]
-                st.session_state.page = "home"
-                st.success(msg)
-                st.rerun()
-            else:
-                st.error(msg)
+    allowed, rate_msg = check_login_rate(username)
 
-        st.markdown("</div>", unsafe_allow_html=True)
+    if not allowed:
+        st.error(rate_msg)
+
+    else:
+        ok, msg, user = verify_login(username, password)
+
+        if ok and user:
+
+            st.session_state.user = user["username"]
+            st.session_state.email = user["email"]
+            st.session_state.plan = user["plan"]
+            st.session_state.tokens = user["tokens"]
+            st.session_state.role = user["role"]
+            st.session_state.admin_level = user["admin_level"]
+            st.session_state.page = "home"
+
+            st.success(msg)
+            st.rerun()
+
+        else:
+            st.error(msg)
+
+st.markdown("</div>", unsafe_allow_html=True)
 
     with tab2:
         st.markdown('<div class="page-card">', unsafe_allow_html=True)
