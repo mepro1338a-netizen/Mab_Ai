@@ -461,6 +461,9 @@ if st.session_state.page == "home":
     in jedem Bereich können wir dir helfen.
   </div>
 </section>
+"""
+
+    st.markdown(html, unsafe_allow_html=True)
 
 <div class="card-grid">
   <div class="app-card">
