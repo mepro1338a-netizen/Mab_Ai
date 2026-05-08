@@ -47,6 +47,15 @@ HEADER_B64 = img_b64(HEADER_PATH)
 LOGO_B64 = img_b64(LOGO_PATH)
 
 st.set_page_config(
+
+    st.image("logo1.png", use_container_width=True)
+   # dein Layout
+st.title("...")
+
+# 👉 HIER Logo einfügen
+st.image("logo1.png", use_container_width=True)
+
+# restlicher Code
     page_title="MAB.AI",
     page_icon=str(FAVICON_PATH) if FAVICON_PATH.exists() else "🧠",
     layout="wide",
@@ -364,11 +373,7 @@ section[data-testid="stSidebar"] * {
     unsafe_allow_html=True,
 )
 
-if HEADER_B64:
-st.markdown(
-    '<img src="logo1.png" style="background:transparent; display:block; margin:auto;">',
-    unsafe_allow_html=True
-)
+
 
 
 def nav_button(label, page, required_plan="free"):
@@ -438,9 +443,7 @@ with st.sidebar:
 
 
 if st.session_state.page == "home":
-    logo_html = "MAB.AI"
-    if LOGO_B64:
-        logo_html = f'<img src="data:image/png;base64,{LOGO_B64}">'
+    logo_html = '<img src="logo1.png" style="background:transparent; max-width:220px;">'
 
     html = f"""
 <section class="hero-box">
