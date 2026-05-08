@@ -177,7 +177,10 @@ def create_user(username, email, password, role="user", plan="free", tokens=None
         return False, "Bitte alle Felder ausfüllen."
 
     if len(password) < 6:
-        return False, "Passwort muss mindestens 6 Zeichen haben."
+    return False, "Passwort muss mindestens 6 Zeichen haben."
+
+if len(password.encode("utf-8")) > 72:
+    return False, "Passwort ist zu lang. Bitte maximal 72 Zeichen verwenden."
 
     if tokens is None:
         tokens = PLANS.get(plan, PLANS["free"])["tokens"]
@@ -217,6 +220,9 @@ def create_user(username, email, password, role="user", plan="free", tokens=None
 
 def verify_login(username, password):
     username = username.strip().lower()
+
+if len(password.encode("utf-8")) > 72:
+    return False, "Passwort ist zu lang. Bitte maximal 72 Zeichen verwenden.", None
 
     conn = get_connection()
     cur = conn.cursor()
