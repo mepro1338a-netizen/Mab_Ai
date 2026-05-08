@@ -1,12 +1,12 @@
 import base64
 import random
 import textwrap
-from ai_service import generate_image, generate_video
-
 from pathlib import Path
 
 import streamlit as st
 
+from config import APP_NAME, PLANS, TOKEN_COSTS, LOGO_PATH, FAVICON_PATH, HEADER_PATH
+from ai_service import generate_image, generate_video, ai_health_check
 from database import (
     init_db,
     create_user,
@@ -30,56 +30,46 @@ from database import (
     list_purchases,
     list_audit_logs,
     add_audit_log,
+    spend_tokens,
+    save_usage,
 )
 
-BASE_DIR = Path(__file__).parent
-
-HEADER_PATH = BASE_DIR / "neuerheader.png"
-LOGO_PATH = BASE_DIR / "logo1.png"
-FAVICON_PATH = BASE_DIR / "Logo24mp.png"
-
-
-def img_b64(path: Path) -> str:
-    if path.exists():
-        return base64.b64encode(path.read_bytes()).decode("utf-8")
-    return ""
+try:
+    from payments import create_checkout_session
+except Exception:
+    create_checkout_session = None
 
 
-HEADER_B64 = img_b64(HEADER_PATH)
-LOGO_B64 = img_b64(LOGO_PATH)
+# =========================================================
+# APP SETUP
+# =========================================================
 
 st.set_page_config(
-    page_title="MAB.AI",
-    page_icon=str(FAVICON_PATH) if FAVICON_PATH.exists() else "🧠",
+    page_title=APP_NAME,
+    page_icon=str(FAVICON_PATH) if Path(FAVICON_PATH).exists() else "🧠",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
 init_db()
 
-if "page" not in st.session_state:
-    st.session_state.page = "home"
-if "plan" not in st.session_state:
-    st.session_state.plan = "free"
-if "tokens" not in st.session_state:
-    st.session_state.tokens = 0
-if "user" not in st.session_state:
-    st.session_state.user = None
-if "email" not in st.session_state:
-    st.session_state.email = ""
-if "role" not in st.session_state:
-    st.session_state.role = "user"
-if "admin_level" not in st.session_state:
-    st.session_state.admin_level = 0
-if "captcha_a" not in st.session_state:
-    st.session_state.captcha_a = random.randint(1, 5)
-if "captcha_b" not in st.session_state:
-    st.session_state.captcha_b = random.randint(1, 5)
+
+# =========================================================
+# HELPERS
+# =========================================================
+
+def img_b64(path) -> str:
+    path = Path(path)
+    if path.exists():
+        return base64.b64encode(path.read_bytes()).decode("utf-8")
+    return ""
 
 
-def refresh_captcha():
-    st.session_state.captcha_a = random.randint(1, 5)
-    st.session_state.captcha_b = random.randint(1, 5)
+def file_bytes(path):
+    path = Path(path)
+    if path.exists():
+        return path.read_bytes()
+    return None
 
 
 def sync_user(username: str):
@@ -93,12 +83,27 @@ def sync_user(username: str):
         st.session_state.admin_level = user["admin_level"]
 
 
+def logout():
+    st.session_state.user = None
+    st.session_state.email = ""
+    st.session_state.plan = "free"
+    st.session_state.tokens = 0
+    st.session_state.role = "user"
+    st.session_state.admin_level = 0
+    st.session_state.page = "home"
+    st.rerun()
+
+
+def is_logged_in():
+    return bool(st.session_state.get("user"))
+
+
 def is_admin():
-    return st.session_state.role in ["supporter", "admin", "owner"] or st.session_state.admin_level > 0
+    return st.session_state.role in ["supporter", "moderator", "admin", "owner"] or int(st.session_state.admin_level) > 0
 
 
 def is_owner():
-    return st.session_state.role == "owner" or st.session_state.admin_level >= 3
+    return st.session_state.role == "owner" or int(st.session_state.admin_level) >= 3
 
 
 def plan_rank(plan):
@@ -108,6 +113,87 @@ def plan_rank(plan):
 def can_use(required_plan):
     return plan_rank(st.session_state.plan) >= plan_rank(required_plan) or is_admin()
 
+
+def require_login():
+    if not is_logged_in():
+        st.warning("Bitte zuerst einloggen.")
+        st.session_state.page = "login"
+        st.rerun()
+
+
+def refresh_captcha():
+    st.session_state.captcha_a = random.randint(1, 5)
+    st.session_state.captcha_b = random.randint(1, 5)
+
+
+def nav_button(label, page, required_plan="free"):
+    locked = is_logged_in() and not can_use(required_plan)
+    text = f"🔒 {label}" if locked else label
+    key = f"nav_{page}_{required_plan}_{label}".replace(" ", "_").replace("/", "_")
+
+    if st.button(text, use_container_width=True, key=key):
+        if not is_logged_in() and page not in ["home", "premium", "login"]:
+            st.session_state.page = "login"
+        elif locked:
+            st.session_state.page = "premium"
+        else:
+            st.session_state.page = page
+        st.rerun()
+
+
+def render_file_download(path, label):
+    data = file_bytes(path)
+    if not data:
+        st.error("Datei konnte nicht gefunden werden.")
+        return
+
+    suffix = Path(path).suffix.lower()
+
+    if suffix in [".png", ".jpg", ".jpeg", ".webp"]:
+        mime = "image/png"
+    elif suffix in [".mp4", ".mov"]:
+        mime = "video/mp4"
+    else:
+        mime = "application/octet-stream"
+
+    st.download_button(
+        label=label,
+        data=data,
+        file_name=Path(path).name,
+        mime=mime,
+        use_container_width=True,
+    )
+
+
+# =========================================================
+# SESSION DEFAULTS
+# =========================================================
+
+defaults = {
+    "page": "home",
+    "plan": "free",
+    "tokens": 0,
+    "user": None,
+    "email": "",
+    "role": "user",
+    "admin_level": 0,
+    "captcha_a": random.randint(1, 5),
+    "captcha_b": random.randint(1, 5),
+    "last_image_path": None,
+    "last_video_path": None,
+}
+
+for key, value in defaults.items():
+    if key not in st.session_state:
+        st.session_state[key] = value
+
+
+# =========================================================
+# CSS
+# =========================================================
+
+HEADER_B64 = img_b64(HEADER_PATH)
+LOGO_B64 = img_b64(LOGO_PATH)
 
 st.markdown(
     """
@@ -172,11 +258,11 @@ section[data-testid="stSidebar"] * {
 
 .stTextInput input,
 .stTextArea textarea,
-.stNumberInput input {
+.stNumberInput input,
+.stSelectbox div[data-baseweb="select"] {
     background: #000 !important;
     color: white !important;
     border-radius: 14px !important;
-    border: 1px solid rgba(255,215,0,.30) !important;
 }
 
 .hero-box {
@@ -262,10 +348,6 @@ section[data-testid="stSidebar"] * {
     color: #d4d4d8 !important;
 }
 
-.locked {
-    opacity: .82;
-}
-
 .page-card {
     background: #101018;
     border: 1px solid rgba(255,255,255,.10);
@@ -291,7 +373,7 @@ section[data-testid="stSidebar"] * {
     border: 1px solid rgba(255,215,0,.25);
     border-radius: 30px;
     padding: 34px;
-    min-height: 360px;
+    min-height: 390px;
     box-shadow: 0 24px 70px rgba(0,0,0,.35);
 }
 
@@ -319,6 +401,14 @@ section[data-testid="stSidebar"] * {
     border-radius: 18px;
     padding: 16px;
     margin: 14px 0;
+}
+
+.result-box {
+    background: #080812;
+    border: 1px solid rgba(0,183,255,.25);
+    border-radius: 24px;
+    padding: 24px;
+    margin-top: 24px;
 }
 
 @media(max-width: 900px) {
@@ -373,23 +463,17 @@ if HEADER_B64:
     )
 
 
-def nav_button(label, page, required_plan="free"):
-    locked = not can_use(required_plan)
-    text = f"🔒 {label}" if locked else label
-    key = f"nav_{page}_{required_plan}_{label}".replace(" ", "_").replace("/", "_")
-
-    if st.button(text, use_container_width=True, key=key):
-        st.session_state.page = "premium" if locked else page
-        st.rerun()
-
+# =========================================================
+# SIDEBAR
+# =========================================================
 
 with st.sidebar:
-    if LOGO_PATH.exists():
+    if Path(LOGO_PATH).exists():
         st.image(str(LOGO_PATH), use_container_width=True)
 
     st.markdown("## MAB.AI")
 
-    if st.session_state.user:
+    if is_logged_in():
         st.markdown(
             f"""
             <div class="sidebar-box">
@@ -403,30 +487,19 @@ with st.sidebar:
         )
 
         if st.button("Logout", key="logout_btn"):
-            st.session_state.user = None
-            st.session_state.email = ""
-            st.session_state.plan = "free"
-            st.session_state.tokens = 0
-            st.session_state.role = "user"
-            st.session_state.admin_level = 0
-            st.session_state.page = "home"
-            st.rerun()
+            logout()
     else:
         if st.button("Login / Register", key="login_register_btn"):
             st.session_state.page = "login"
             st.rerun()
 
     st.markdown("---")
-    st.markdown("### Free")
+    nav_button("🏠 Home", "home")
     nav_button("💬 Memory Chat", "chat", "free")
-
-    st.markdown("### Pro")
     nav_button("💻 Coding Area", "coding", "pro")
     nav_button("🎨 Image Generator", "image", "pro")
     nav_button("🎵 Music Generator", "music", "pro")
     nav_button("🎞️ Short Reels Creator", "reels", "pro")
-
-    st.markdown("### Grand")
     nav_button("🎬 AI Video Generator", "video", "grand")
 
     st.markdown("### Account")
@@ -435,21 +508,15 @@ with st.sidebar:
     nav_button("💳 Buy Premium", "premium")
 
     st.markdown("### Redeem Code")
-
-    sidebar_code = st.text_input(
-        "Code eingeben",
-        key="sidebar_redeem_code",
-        placeholder="z.B. PRO2026",
-    )
+    sidebar_code = st.text_input("Code eingeben", key="sidebar_redeem_code")
 
     if st.button("Code einlösen", key="sidebar_redeem_btn"):
-        if not st.session_state.user:
+        if not is_logged_in():
             st.error("Bitte zuerst einloggen.")
         elif not sidebar_code:
             st.error("Bitte Code eingeben.")
         else:
             ok, msg = redeem_code(st.session_state.user, sidebar_code)
-
             if ok:
                 sync_user(st.session_state.user)
                 st.success(msg)
@@ -462,7 +529,15 @@ with st.sidebar:
         nav_button("🛡️ Admin Panel", "admin")
 
 
-if st.session_state.page == "home":
+# =========================================================
+# PAGES
+# =========================================================
+
+page = st.session_state.page
+
+
+# HOME
+if page == "home":
     logo_html = "MAB.AI"
     if LOGO_B64:
         logo_html = f'<img src="data:image/png;base64,{LOGO_B64}">'
@@ -472,15 +547,11 @@ if st.session_state.page == "home":
   <div class="hero-title">Hallo willkommen auf</div>
   <div class="hero-logo">{logo_html}</div>
   <div class="hero-subtitle">
-    Die neue AI für die Revolution von Social Media, Business Bereiche uvm.
+    Die neue AI für Social Media, Business, Coding und Content Creation.
   </div>
   <div class="hero-text">
-    Starte mit Memory Chat, erstelle Texte, plane Projekte,
-    sammle Ideen oder lass dir direkt helfen.
-  </div>
-  <div class="hero-text">
-    Egal ob Programmierung, Monetarisierung oder künstliche Intelligenz —
-    in jedem Bereich können wir dir helfen.
+    Starte mit Memory Chat, erstelle Bilder, generiere Videos,
+    plane Projekte und baue digitale Workflows mit künstlicher Intelligenz.
   </div>
 </section>
 
@@ -489,16 +560,16 @@ if st.session_state.page == "home":
     <h3>Free</h3>
     <p>Memory Chat inklusive. Perfekt zum Starten, Planen und Schreiben.</p>
   </div>
-  <div class="app-card locked">
-    <h3>🔒 Pro</h3>
+  <div class="app-card">
+    <h3>Pro</h3>
     <p>1200 Tokens<br>Coding, Images, Musik & Reels.</p>
   </div>
-  <div class="app-card locked">
-    <h3>🔒 Grand</h3>
+  <div class="app-card">
+    <h3>Grand</h3>
     <p>4000 Tokens<br>AI Video Generator und stärkere Workflows.</p>
   </div>
-  <div class="app-card locked">
-    <h3>🔒 Elite</h3>
+  <div class="app-card">
+    <h3>Elite</h3>
     <p>Alles freigeschaltet.<br>Höchste API-Leistung.</p>
   </div>
 </div>
@@ -506,7 +577,8 @@ if st.session_state.page == "home":
     st.markdown(textwrap.dedent(html), unsafe_allow_html=True)
 
 
-elif st.session_state.page == "login":
+# LOGIN
+elif page == "login":
     st.title("🔐 Login / Register")
 
     tab1, tab2 = st.tabs(["Login", "Register"])
@@ -531,6 +603,7 @@ elif st.session_state.page == "login":
                 st.rerun()
             else:
                 st.error(msg)
+
         st.markdown("</div>", unsafe_allow_html=True)
 
     with tab2:
@@ -540,7 +613,6 @@ elif st.session_state.page == "login":
         reg_pw = st.text_input("Password", type="password", key="register_pw")
 
         result = st.session_state.captcha_a + st.session_state.captcha_b
-
         captcha = st.number_input(
             f"Was ist {st.session_state.captcha_a} + {st.session_state.captcha_b}?",
             min_value=0,
@@ -555,35 +627,220 @@ elif st.session_state.page == "login":
                 refresh_captcha()
                 st.rerun()
 
-            if not reg_user or not reg_mail or not reg_pw:
-                st.error("Bitte alles ausfüllen.")
-            else:
-                ok, msg = create_user(reg_user, reg_mail, reg_pw)
+            ok, msg = create_user(reg_user, reg_mail, reg_pw)
 
-                if ok:
-                    st.success(msg)
-                    refresh_captcha()
-                else:
-                    st.error(msg)
+            if ok:
+                st.success(msg)
+                refresh_captcha()
+            else:
+                st.error(msg)
+
         st.markdown("</div>", unsafe_allow_html=True)
 
 
-elif st.session_state.page in ["chat", "coding", "image", "music", "reels", "video"]:
+# DASHBOARD
+elif page == "dashboard":
+    require_login()
+    sync_user(st.session_state.user)
+
+    st.title("📊 User Dashboard")
+
+    a, b, c = st.columns(3)
+    a.metric("User", st.session_state.user)
+    b.metric("Plan", st.session_state.plan)
+    c.metric("Tokens", st.session_state.tokens)
+
+    st.markdown('<div class="page-card">', unsafe_allow_html=True)
+    st.markdown("### Letzte Nutzung")
+
+    usage = list_usage(st.session_state.user)
+    if usage:
+        st.dataframe(usage[:20], use_container_width=True)
+    else:
+        st.info("Noch keine Nutzung vorhanden.")
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+# IMAGE GENERATOR
+elif page == "image":
+    require_login()
+
+    st.markdown(
+        """
+        <div class="page-card">
+            <span class="badge">PRO FEATURE</span>
+            <h1>🎨 AI Image Generator</h1>
+            <p style="font-size:20px;color:#d4d4d8;line-height:1.7;">
+                Erstelle professionelle Bilder für Branding, Produkte, Social Media und Kampagnen.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    if not can_use("pro"):
+        st.warning("Dieses Feature benötigt mindestens PRO.")
+        st.stop()
+
+    cost = TOKEN_COSTS.get("image", 25)
+
+    prompt = st.text_area(
+        "Bild Prompt",
+        key="image_prompt",
+        height=180,
+        placeholder="Beispiel: Futuristisches Luxus-Logo auf schwarzem Hintergrund, neon blue and purple, cinematic lighting...",
+    )
+
+    size = st.selectbox("Bildgröße", ["1024x1024", "1024x1536", "1536x1024"], key="image_size")
+
+    st.info(f"Kosten: {cost} Tokens pro Bild")
+
+    if st.button("Bild generieren", key="generate_image_btn"):
+        if not prompt.strip():
+            st.error("Bitte Prompt eingeben.")
+        else:
+            ok, msg = spend_tokens(st.session_state.user, cost)
+            if not ok:
+                st.error(msg)
+            else:
+                with st.spinner("Bild wird generiert..."):
+                    success, result = generate_image(prompt, size=size)
+
+                if success:
+                    st.session_state.last_image_path = result
+                    save_usage(
+                        username=st.session_state.user,
+                        tool="image",
+                        prompt=prompt,
+                        tokens_used=0,
+                        cost_tokens=cost,
+                        api_provider="openai",
+                        status="success",
+                    )
+                    sync_user(st.session_state.user)
+                    st.success("Bild erfolgreich generiert.")
+                    add_audit_log(st.session_state.user, "generate_image", "image", prompt[:250])
+                else:
+                    save_usage(
+                        username=st.session_state.user,
+                        tool="image",
+                        prompt=prompt,
+                        tokens_used=0,
+                        cost_tokens=cost,
+                        api_provider="openai",
+                        status="failed",
+                    )
+                    st.error(result)
+
+    if st.session_state.last_image_path:
+        st.markdown('<div class="result-box">', unsafe_allow_html=True)
+        st.subheader("Ergebnis")
+        st.image(st.session_state.last_image_path, use_container_width=True)
+        render_file_download(st.session_state.last_image_path, "Bild herunterladen")
+        st.markdown("</div>", unsafe_allow_html=True)
+
+
+# VIDEO GENERATOR
+elif page == "video":
+    require_login()
+
+    st.markdown(
+        """
+        <div class="page-card">
+            <span class="badge">GRAND FEATURE</span>
+            <h1>🎬 AI Video Generator</h1>
+            <p style="font-size:20px;color:#d4d4d8;line-height:1.7;">
+                Generiere AI-Videos über Replicate für Reels, Ads, Social Media und Content-Kampagnen.
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    if not can_use("grand"):
+        st.warning("Dieses Feature benötigt mindestens GRAND.")
+        st.stop()
+
+    cost = TOKEN_COSTS.get("video", 150)
+
+    prompt = st.text_area(
+        "Video Prompt",
+        key="video_prompt",
+        height=200,
+        placeholder="Beispiel: A cinematic product video of a luxury AI platform logo, neon blue and purple energy waves, slow camera movement...",
+    )
+
+    st.info(f"Kosten: {cost} Tokens pro Video")
+
+    if st.button("Video generieren", key="generate_video_btn"):
+        if not prompt.strip():
+            st.error("Bitte Prompt eingeben.")
+        else:
+            ok, msg = spend_tokens(st.session_state.user, cost)
+            if not ok:
+                st.error(msg)
+            else:
+                with st.spinner("Video wird generiert. Das kann länger dauern..."):
+                    success, result = generate_video(prompt)
+
+                if success:
+                    st.session_state.last_video_path = result
+                    save_usage(
+                        username=st.session_state.user,
+                        tool="video",
+                        prompt=prompt,
+                        tokens_used=0,
+                        cost_tokens=cost,
+                        api_provider="replicate",
+                        status="success",
+                    )
+                    sync_user(st.session_state.user)
+                    st.success("Video erfolgreich generiert.")
+                    add_audit_log(st.session_state.user, "generate_video", "video", prompt[:250])
+                else:
+                    save_usage(
+                        username=st.session_state.user,
+                        tool="video",
+                        prompt=prompt,
+                        tokens_used=0,
+                        cost_tokens=cost,
+                        api_provider="replicate",
+                        status="failed",
+                    )
+                    st.error(result)
+
+    if st.session_state.last_video_path:
+        st.markdown('<div class="result-box">', unsafe_allow_html=True)
+        st.subheader("Ergebnis")
+
+        if str(st.session_state.last_video_path).startswith("http"):
+            st.video(st.session_state.last_video_path)
+            st.markdown(f"[Video öffnen]({st.session_state.last_video_path})")
+        else:
+            st.video(st.session_state.last_video_path)
+            render_file_download(st.session_state.last_video_path, "Video herunterladen")
+
+        st.markdown("</div>", unsafe_allow_html=True)
+
+
+# CHAT / CODING / MUSIC / REELS PLACEHOLDER
+elif page in ["chat", "coding", "music", "reels"]:
+    require_login()
+
     feature_map = {
-        "chat": ("💬 Memory Chat", "free", "Schreibe, plane, sammle Ideen und arbeite mit deinem AI-Assistenten."),
-        "coding": ("💻 Coding Area", "pro", "Lass dir Code schreiben, debuggen, refactoren oder erklären."),
-        "image": ("🎨 Image Generator", "pro", "Erstelle Bilder für Social Media, Branding, Produkte und Kampagnen."),
-        "music": ("🎵 Music Generator", "pro", "Erstelle Musikideen, Lyrics, Prompts und später komplette Audio-Workflows."),
-        "reels": ("🎞️ Short Reels Creator", "pro", "Erstelle virale Reel-Ideen, Skripte, Hooks und Video-Prompts."),
-        "video": ("🎬 AI Video Generator", "grand", "Generiere Video-Prompts und später komplette Video-Workflows."),
+        "chat": ("💬 Memory Chat", "free", "Schreibe, plane und arbeite mit deinem AI-Assistenten."),
+        "coding": ("💻 Coding Area", "pro", "Lass dir Code schreiben, debuggen oder erklären."),
+        "music": ("🎵 Music Generator", "pro", "Erstelle Musikideen, Lyrics und Audio-Prompts."),
+        "reels": ("🎞️ Short Reels Creator", "pro", "Erstelle virale Reels, Hooks und Skripte."),
     }
 
-    title, required, desc = feature_map[st.session_state.page]
+    title, required, desc = feature_map[page]
 
     st.markdown(
         f"""
         <div class="page-card">
-            <span class="badge">{required.upper()} Feature</span>
+            <span class="badge">{required.upper()} FEATURE</span>
             <h1>{title}</h1>
             <p style="font-size:20px;color:#d4d4d8;line-height:1.7;">{desc}</p>
         </div>
@@ -593,45 +850,15 @@ elif st.session_state.page in ["chat", "coding", "image", "music", "reels", "vid
 
     if not can_use(required):
         st.warning(f"Dieses Feature benötigt mindestens {required.upper()}.")
-        st.session_state.page = "premium"
-    else:
-        prompt = st.text_area("Dein Prompt", key=f"{st.session_state.page}_prompt", height=180)
-        if st.button("Starten", key=f"{st.session_state.page}_start"):
-            st.success("API kommt im nächsten Schritt rein.")
+        st.stop()
+
+    st.info("Dieses Modul verbinden wir im nächsten Step mit OpenAI Chat, Coding, Music und Reels.")
 
 
-elif st.session_state.page == "dashboard":
-    st.title("📊 User Dashboard")
+# SUPPORT
+elif page == "support":
+    require_login()
 
-    if st.session_state.user:
-        sync_user(st.session_state.user)
-
-    a, b, c = st.columns(3)
-    a.metric("User", st.session_state.user or "Nicht eingeloggt")
-    b.metric("Plan", st.session_state.plan)
-    c.metric("Tokens", st.session_state.tokens)
-
-    st.markdown('<div class="page-card">', unsafe_allow_html=True)
-    st.markdown("### Redeem Code")
-    code = st.text_input("Code eingeben", key="redeem_code_input")
-
-    if st.button("Code einlösen", key="redeem_btn"):
-        if not st.session_state.user:
-            st.error("Bitte zuerst einloggen.")
-        elif not code:
-            st.error("Bitte Code eingeben.")
-        else:
-            ok, msg = redeem_code(st.session_state.user, code)
-            if ok:
-                sync_user(st.session_state.user)
-                st.success(msg)
-                st.rerun()
-            else:
-                st.error(msg)
-    st.markdown("</div>", unsafe_allow_html=True)
-
-
-elif st.session_state.page == "support":
     st.title("🆘 Support")
 
     st.markdown('<div class="page-card">', unsafe_allow_html=True)
@@ -647,11 +874,9 @@ elif st.session_state.page == "support":
         if not subject or not msg:
             st.error("Bitte alles ausfüllen.")
         else:
-            username = st.session_state.user or "guest"
-            email = st.session_state.email or ""
             ok, response = create_support_message(
-                username=username,
-                email=email,
+                username=st.session_state.user,
+                email=st.session_state.email,
                 category=category,
                 subject=subject,
                 message=msg,
@@ -660,71 +885,57 @@ elif st.session_state.page == "support":
                 st.success(response)
             else:
                 st.error(response)
+
     st.markdown("</div>", unsafe_allow_html=True)
 
 
-elif st.session_state.page == "premium":
+# PREMIUM
+elif page == "premium":
     st.title("💳 Buy Premium")
 
-    c1, c2, c3 = st.columns(3)
+    plans = [
+        ("pro", "Pro", "9.99€ / Monat", "1200 Tokens<br>Image Generator<br>Coding Area<br>Music Generator<br>Short Reels"),
+        ("grand", "Grand", "49.99€ / Monat", "4000 Tokens<br>Alles aus Pro<br>AI Video Generator<br>Stärkere Workflows"),
+        ("elite", "Elite", "199€ / Monat", "Alles freigeschaltet<br>Höchste API-Leistung<br>Beste Qualität<br>Maximaler Zugriff"),
+    ]
 
-    with c1:
-        st.markdown(
-            """
-            <div class="price-card">
-                <h2>Pro</h2>
-                <div class="price">9.99€ / Monat</div>
-                <div class="feature-list">
-                    • 1200 Tokens<br>
-                    • Coding Area<br>
-                    • Image Generator<br>
-                    • Music Generator<br>
-                    • Short Reels Creator
+    cols = st.columns(3)
+
+    for col, item in zip(cols, plans):
+        plan_key, title, price, features = item
+
+        with col:
+            st.markdown(
+                f"""
+                <div class="price-card">
+                    <h2>{title}</h2>
+                    <div class="price">{price}</div>
+                    <div class="feature-list">{features}</div>
                 </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-        st.button("Buy Pro", key="buy_pro")
+                """,
+                unsafe_allow_html=True,
+            )
 
-    with c2:
-        st.markdown(
-            """
-            <div class="price-card">
-                <h2>Grand</h2>
-                <div class="price">49.99€ / Monat</div>
-                <div class="feature-list">
-                    • 4000 Tokens<br>
-                    • Alles aus Pro<br>
-                    • AI Video Generator<br>
-                    • Stärkere Workflows
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-        st.button("Buy Grand", key="buy_grand")
+            if st.button(f"Buy {title}", key=f"buy_{plan_key}"):
+                if not is_logged_in():
+                    st.warning("Bitte zuerst einloggen.")
+                    st.session_state.page = "login"
+                    st.rerun()
 
-    with c3:
-        st.markdown(
-            """
-            <div class="price-card">
-                <h2>Elite</h2>
-                <div class="price">199€ / Monat</div>
-                <div class="feature-list">
-                    • Alles freigeschaltet<br>
-                    • Höchste API-Leistung<br>
-                    • Beste Qualität<br>
-                    • Maximaler Zugriff
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-        st.button("Buy Elite", key="buy_elite")
+                if create_checkout_session is None:
+                    st.error("Stripe Modul ist noch nicht korrekt verbunden.")
+                else:
+                    url, error = create_checkout_session(st.session_state.user, plan_key)
+                    if error:
+                        st.error(error)
+                    else:
+                        st.link_button("Zur Zahlung", url, use_container_width=True)
 
 
-elif st.session_state.page == "admin":
+# ADMIN
+elif page == "admin":
+    require_login()
+
     if not is_admin():
         st.error("Kein Zugriff.")
         st.stop()
@@ -732,6 +943,7 @@ elif st.session_state.page == "admin":
     st.title("🛡️ Admin Panel")
 
     counts = support_counts()
+    health = ai_health_check()
 
     a, b, c, d = st.columns(4)
     a.metric("Tickets Gesamt", counts.get("total", 0))
@@ -739,8 +951,8 @@ elif st.session_state.page == "admin":
     c.metric("Geschlossen", counts.get("closed", 0))
     d.metric("Admin Level", st.session_state.admin_level)
 
-    tab_tickets, tab_users, tab_codes, tab_logs, tab_payments = st.tabs(
-        ["Tickets", "Users", "Redeem Codes", "Logs", "Payments"]
+    tab_tickets, tab_users, tab_codes, tab_logs, tab_payments, tab_system = st.tabs(
+        ["Tickets", "Users", "Redeem Codes", "Logs", "Payments", "System"]
     )
 
     with tab_tickets:
@@ -752,11 +964,11 @@ elif st.session_state.page == "admin":
         else:
             for ticket in tickets:
                 with st.expander(f"#{ticket['id']} · {ticket['subject']} · {ticket['status']}"):
-                    st.write(f"User: {ticket['username']}")
-                    st.write(f"Email: {ticket['email']}")
-                    st.write(f"Kategorie: {ticket['category']}")
-                    st.write(f"Nachricht: {ticket['message']}")
-                    st.write(f"Erstellt: {ticket['created_at']}")
+                    st.write(f"User: {ticket.get('username')}")
+                    st.write(f"Email: {ticket.get('email')}")
+                    st.write(f"Kategorie: {ticket.get('category')}")
+                    st.write(f"Nachricht: {ticket.get('message')}")
+                    st.write(f"Erstellt: {ticket.get('created_at')}")
 
                     c1, c2 = st.columns(2)
 
@@ -772,7 +984,7 @@ elif st.session_state.page == "admin":
 
     with tab_users:
         users = list_users()
-        st.dataframe([dict(u) for u in users], use_container_width=True)
+        st.dataframe(users, use_container_width=True)
 
         st.markdown("### User bearbeiten")
 
@@ -781,7 +993,7 @@ elif st.session_state.page == "admin":
         new_tokens = st.number_input("Tokens setzen", min_value=0, value=0, step=100, key="admin_new_tokens")
 
         if is_owner():
-            new_role = st.selectbox("Role", ["user", "supporter", "admin", "owner"], key="admin_new_role")
+            new_role = st.selectbox("Role", ["user", "supporter", "moderator", "admin", "owner"], key="admin_new_role")
             new_level = st.selectbox("Admin Level", [0, 1, 2, 3], key="admin_new_level")
         else:
             new_role = "user"
@@ -842,15 +1054,26 @@ elif st.session_state.page == "admin":
                 st.success(f"Code erstellt: {code}")
 
         codes = list_codes()
-        st.dataframe([dict(c) for c in codes], use_container_width=True)
+        st.dataframe(codes, use_container_width=True)
 
     with tab_logs:
-        usage = list_usage()
-        st.dataframe([dict(u) for u in usage], use_container_width=True)
+        st.markdown("### Usage Logs")
+        st.dataframe(list_usage(), use_container_width=True)
 
-        audits = list_audit_logs()
-        st.dataframe([dict(a) for a in audits], use_container_width=True)
+        st.markdown("### Audit Logs")
+        st.dataframe(list_audit_logs(), use_container_width=True)
 
     with tab_payments:
-        payments = list_purchases()
-        st.dataframe([dict(p) for p in payments], use_container_width=True)
+        purchases = list_purchases()
+        st.dataframe(purchases, use_container_width=True)
+
+    with tab_system:
+        st.markdown("### AI Health Check")
+        st.json(health)
+
+        st.markdown("### Plans")
+        st.json(PLANS)
+
+
+else:
+    st.error("Seite nicht gefunden.")
