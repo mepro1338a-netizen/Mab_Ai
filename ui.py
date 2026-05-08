@@ -1,7 +1,7 @@
 import base64
 import random
 import textwrap
-import ai_services
+import ai_service
 import generate_image, generate_video
 from pathlib import Path
 
