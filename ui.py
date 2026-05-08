@@ -596,7 +596,7 @@ elif page == "login":
         username = st.text_input("Username", key="login_username")
         password = st.text_input("Password", type="password", key="login_password")
 
-       if st.button("Login", key="login_btn"):
+if st.button("Login", key="login_btn"):
 
     allowed, rate_msg = check_login_rate(username)
 
@@ -621,8 +621,6 @@ elif page == "login":
 
         else:
             st.error(msg)
-
-st.markdown("</div>", unsafe_allow_html=True)
 
     with tab2:
         st.markdown('<div class="page-card">', unsafe_allow_html=True)
