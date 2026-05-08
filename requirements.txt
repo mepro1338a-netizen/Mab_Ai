@@ -4,3 +4,5 @@ python-dotenv>=1.0.1
 stripe>=10.0.0
 requests>=2.32.0
 Pillow>=10.4.0
+replicate>=0.32.0
+bcrypt
