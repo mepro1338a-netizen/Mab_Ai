@@ -2,12 +2,14 @@ import sqlite3
 import secrets
 from datetime import datetime, timedelta
 import bcrypt
+from migrations import run_migrations
 
 from config import DB_PATH, PLANS
 
 
 def now():
     return datetime.utcnow().isoformat()
+
 
 
 def get_connection():
@@ -499,3 +501,10 @@ def list_purchases(username=None):
 init_db()
 make_admin("mepro1337")
 set_plan("mepro1337", "elite")
+    conn.close()
+
+    print("Migrations complete.")
+
+
+if __name__ == "__main__":
+    run_migrations()
