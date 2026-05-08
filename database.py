@@ -7,6 +7,10 @@ import bcrypt
 from config import DB_PATH, PLANS
 
 
+# =========================================================
+# BASIC
+# =========================================================
+
 def now():
     return datetime.utcnow().isoformat()
 
@@ -21,7 +25,12 @@ def row_to_dict(row):
     return dict(row) if row else None
 
 
+# =========================================================
+# PASSWORD
+# =========================================================
+
 def validate_password(password):
+
     if not password:
         return False, "Bitte Passwort eingeben."
 
@@ -33,92 +42,13 @@ def validate_password(password):
 
     return True, ""
 
-def list_users():
-    conn = get_connection()
-    cur = conn.cursor()
 
-    cur.execute("""
-    SELECT id, username, email, plan, tokens, role, admin_level, created_at, last_login
-    FROM users
-    ORDER BY id DESC
-    """)
-
-    rows = cur.fetchall()
-    conn.close()
-
-    return [dict(row) for row in rows]
-
-
-def set_plan(username, plan):^
-def update_tokens(username, tokens):
-    conn = get_connection()
-    cur = conn.cursor()
-
-    cur.execute("""
-    UPDATE users
-    SET tokens = ?
-    WHERE username = ?
-    """, (
-        int(tokens),
-        username.strip().lower()
-    ))
-
-    conn.commit()
-    conn.close()
-    conn = get_connection()
-    cur = conn.cursor()
-
-    tokens = PLANS.get(plan, PLANS["free"])["tokens"]
-
-    cur.execute("""
-    UPDATE users
-    SET plan = ?, tokens = ?
-    WHERE username = ?
-    """, (plan, tokens, username.strip().lower()))
-
-    conn.commit()
-    conn.close()
-
-
-def set_role(username, role, admin_level=0):
-    conn = get_connection()
-    cur = conn.cursor()
-
-    cur.execute("""
-    UPDATE users
-    SET role = ?, admin_level = ?
-    WHERE username = ?
-    """, (role, int(admin_level), username.strip().lower()))
-
-    conn.commit()
-    conn.close()
-
-
-def ban_user(username, banned=True):
-    conn = get_connection()
-    cur = conn.cursor()
-
-    cur.execute("""
-    UPDATE users
-    SET is_banned = ?
-    WHERE username = ?
-    """, (1 if banned else 0, username.strip().lower()))
-
-    conn.commit()
-    conn.close()
-
-
-def delete_user(username):
-    conn = get_connection()
-    cur = conn.cursor()
-
-    cur.execute("DELETE FROM users WHERE username = ?", (username.strip().lower(),))
-
-    conn.commit()
-    conn.close()
-    return True
+# =========================================================
+# DATABASE INIT
+# =========================================================
 
 def init_db():
+
     conn = get_connection()
     cur = conn.cursor()
 
@@ -132,6 +62,7 @@ def init_db():
         tokens INTEGER NOT NULL DEFAULT 0,
         role TEXT NOT NULL DEFAULT 'user',
         admin_level INTEGER NOT NULL DEFAULT 0,
+        is_banned INTEGER NOT NULL DEFAULT 0,
         created_at TEXT NOT NULL,
         last_login TEXT
     )
@@ -141,7 +72,12 @@ def init_db():
     conn.close()
 
 
+# =========================================================
+# CREATE USER
+# =========================================================
+
 def create_user(username, email, password):
+
     username = username.strip().lower()
     email = email.strip().lower()
 
@@ -154,6 +90,7 @@ def create_user(username, email, password):
     cur = conn.cursor()
 
     try:
+
         password_hash = bcrypt.hashpw(
             password.encode("utf-8"),
             bcrypt.gensalt()
@@ -168,9 +105,10 @@ def create_user(username, email, password):
             tokens,
             role,
             admin_level,
+            is_banned,
             created_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             username,
             email,
@@ -178,6 +116,7 @@ def create_user(username, email, password):
             "free",
             PLANS["free"]["tokens"],
             "user",
+            0,
             0,
             now()
         ))
@@ -196,16 +135,21 @@ def create_user(username, email, password):
         conn.close()
 
 
+# =========================================================
+# LOGIN
+# =========================================================
+
 def verify_login(username, password):
+
     username = username.strip().lower()
 
     conn = get_connection()
     cur = conn.cursor()
 
-    cur.execute(
-        "SELECT * FROM users WHERE username = ?",
-        (username,)
-    )
+    cur.execute("""
+    SELECT * FROM users
+    WHERE username = ?
+    """, (username,))
 
     user = cur.fetchone()
 
@@ -213,7 +157,12 @@ def verify_login(username, password):
         conn.close()
         return False, "User nicht gefunden.", None
 
+    if user["is_banned"]:
+        conn.close()
+        return False, "Account gesperrt.", None
+
     try:
+
         valid = bcrypt.checkpw(
             password.encode("utf-8"),
             user["password_hash"].encode("utf-8")
@@ -230,14 +179,17 @@ def verify_login(username, password):
     UPDATE users
     SET last_login = ?
     WHERE username = ?
-    """, (now(), username))
+    """, (
+        now(),
+        username
+    ))
 
     conn.commit()
 
-    cur.execute(
-        "SELECT * FROM users WHERE username = ?",
-        (username,)
-    )
+    cur.execute("""
+    SELECT * FROM users
+    WHERE username = ?
+    """, (username,))
 
     updated_user = cur.fetchone()
 
@@ -246,14 +198,21 @@ def verify_login(username, password):
     return True, "Login erfolgreich.", row_to_dict(updated_user)
 
 
+# =========================================================
+# GET USER
+# =========================================================
+
 def get_user(username):
+
     conn = get_connection()
     cur = conn.cursor()
 
     cur.execute("""
     SELECT * FROM users
     WHERE username = ?
-    """, (username.strip().lower(),))
+    """, (
+        username.strip().lower(),
+    ))
 
     user = cur.fetchone()
 
@@ -262,13 +221,58 @@ def get_user(username):
     return row_to_dict(user)
 
 
+# =========================================================
+# LIST USERS
+# =========================================================
+
+def list_users():
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+    SELECT *
+    FROM users
+    ORDER BY id DESC
+    """)
+
+    rows = cur.fetchall()
+
+    conn.close()
+
+    return [dict(row) for row in rows]
+
+
+# =========================================================
+# TOKENS
+# =========================================================
+
+def update_tokens(username, tokens):
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+    UPDATE users
+    SET tokens = ?
+    WHERE username = ?
+    """, (
+        int(tokens),
+        username.strip().lower()
+    ))
+
+    conn.commit()
+    conn.close()
+
+
 def spend_tokens(username, amount):
+
     user = get_user(username)
 
     if not user:
         return False, "User nicht gefunden."
 
-    if user["tokens"] < amount:
+    if int(user["tokens"]) < int(amount):
         return False, "Nicht genug Tokens."
 
     conn = get_connection()
@@ -278,12 +282,114 @@ def spend_tokens(username, amount):
     UPDATE users
     SET tokens = tokens - ?
     WHERE username = ?
-    """, (amount, username.strip().lower()))
+    """, (
+        int(amount),
+        username.strip().lower()
+    ))
 
     conn.commit()
     conn.close()
 
     return True, "Tokens abgezogen."
 
+
+# =========================================================
+# PLAN
+# =========================================================
+
+def set_plan(username, plan):
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    tokens = PLANS.get(
+        plan,
+        PLANS["free"]
+    )["tokens"]
+
+    cur.execute("""
+    UPDATE users
+    SET plan = ?, tokens = ?
+    WHERE username = ?
+    """, (
+        plan,
+        tokens,
+        username.strip().lower()
+    ))
+
+    conn.commit()
+    conn.close()
+
+
+# =========================================================
+# ROLE
+# =========================================================
+
+def set_role(username, role, admin_level=0):
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+    UPDATE users
+    SET role = ?, admin_level = ?
+    WHERE username = ?
+    """, (
+        role,
+        int(admin_level),
+        username.strip().lower()
+    ))
+
+    conn.commit()
+    conn.close()
+
+
+# =========================================================
+# BAN USER
+# =========================================================
+
+def ban_user(username, banned=True):
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+    UPDATE users
+    SET is_banned = ?
+    WHERE username = ?
+    """, (
+        1 if banned else 0,
+        username.strip().lower()
+    ))
+
+    conn.commit()
+    conn.close()
+
+
+# =========================================================
+# DELETE USER
+# =========================================================
+
+def delete_user(username):
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+    DELETE FROM users
+    WHERE username = ?
+    """, (
+        username.strip().lower(),
+    ))
+
+    conn.commit()
+    conn.close()
+
+    return True
+
+
+# =========================================================
+# INIT
+# =========================================================
 
 init_db()
