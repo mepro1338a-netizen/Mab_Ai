@@ -1,11 +1,9 @@
 import streamlit as st
 from ui_helpers import require_login, render_download
-from database import Database
 from openai import OpenAI
 import os
 import uuid
 
-db = Database()
 
 client = OpenAI(
     api_key=os.getenv("OPENAI_API_KEY")
