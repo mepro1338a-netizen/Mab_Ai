@@ -1,4 +1,5 @@
 import streamlit as st
+from PIL import Image
 
 from database import init_db
 from ui_styles import load_css
@@ -70,6 +71,7 @@ render_sidebar()
 # =========================================================
 
 page = st.session_state.get("page", "home")
+
 
 if page == "home":
     render_home()
