@@ -144,8 +144,73 @@ def render_coding_page():
         st.warning("Dieses Feature benötigt mindestens PRO.")
         st.stop()
 
-    st.title("💻 Coding Area")
-    st.info("Coding Modul verbinden wir als nächstes mit OpenAI.")
+    st.markdown(
+        """
+        <div class="page-card">
+            <span class="badge">PRO FEATURE</span>
+            <h1>💻 Coding AI</h1>
+            <p>Debugging, Code schreiben, Fehler erklären und Architektur planen.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    prompt = st.text_area(
+        "Was soll die Coding AI machen?",
+        height=220,
+        placeholder="Beispiel: Fixe diesen Python Fehler... oder Schreibe mir eine FastAPI Route...",
+    )
+
+    if st.button("Coding AI starten", key="coding_ai_btn"):
+        if not prompt.strip():
+            st.error("Bitte Prompt eingeben.")
+        else:
+            from chat_service import generate_chat
+            from database import spend_tokens, save_usage, add_audit_log
+            from config import TOKEN_COSTS
+
+            cost = TOKEN_COSTS.get("coding", 5)
+            ok, msg = spend_tokens(st.session_state.user, cost)
+
+            if not ok:
+                st.error(msg)
+            else:
+                messages = [
+                    {
+                        "role": "system",
+                        "content": "Du bist eine professionelle Coding AI. Antworte mit sauberem Code, klaren Fixes und kurzen Erklärungen.",
+                    },
+                    {
+                        "role": "user",
+                        "content": prompt,
+                    },
+                ]
+
+                with st.spinner("Coding AI arbeitet..."):
+                    success, answer = generate_chat(prompt, history=messages)
+
+                if success:
+                    st.markdown("### Ergebnis")
+                    st.code(answer)
+
+                    save_usage(
+                        username=st.session_state.user,
+                        tool="coding",
+                        prompt=prompt,
+                        tokens_used=0,
+                        cost_tokens=cost,
+                        api_provider="openai",
+                        status="success",
+                    )
+
+                    add_audit_log(
+                        actor=st.session_state.user,
+                        action="coding_ai",
+                        target="coding",
+                        details=prompt[:250],
+                    )
+                else:
+                    st.error(answer)
 
 
 def render_music_page():
