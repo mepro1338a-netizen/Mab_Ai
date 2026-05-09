@@ -14,31 +14,39 @@ from pages.media import (
     render_music_page,
     render_reels_page,
 )
+
 from pages.account import (
     render_dashboard,
     render_support,
     render_premium,
     render_redeem,
 )
+
 from pages.admin import render_admin
 
 
 # =========================================================
-# APP INIT
+# CONFIG
 # =========================================================
 
 st.set_page_config(
     page_title="MAB.AI",
+    page_icon="logo24mp.png",
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+
+# =========================================================
+# INIT
+# =========================================================
 
 init_db()
 load_css()
 
 
 # =========================================================
-# SESSION DEFAULTS
+# SESSION
 # =========================================================
 
 defaults = {
@@ -96,14 +104,14 @@ elif page == "reels":
 elif page == "dashboard":
     render_dashboard()
 
-elif page == "redeem":
-    render_redeem()
-
 elif page == "support":
     render_support()
 
 elif page == "premium":
     render_premium()
+
+elif page == "redeem":
+    render_redeem()
 
 elif page == "admin":
     render_admin()
