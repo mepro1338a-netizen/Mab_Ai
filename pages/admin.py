@@ -1,8 +1,8 @@
 import streamlit as st
 
 from ai_service import ai_health_check
-from streamlit_autorefresh import st_autorefresh
 
+from db_manager import execute, fetch_all
 from database import (
     list_users,
     set_plan,
@@ -10,10 +10,7 @@ from database import (
     set_role,
     ban_user,
     delete_user,
-    list_support_messages,
     support_counts,
-    set_support_status,
-    delete_support_message,
     create_redeem_code,
     list_codes,
     list_usage,
@@ -25,6 +22,47 @@ from database import (
 from ui_helpers import require_login, is_admin, is_owner
 
 
+def init_admin_support_tables():
+    execute("""
+    CREATE TABLE IF NOT EXISTS support_replies (
+        id SERIAL PRIMARY KEY,
+        ticket_id INTEGER,
+        sender TEXT,
+        sender_role TEXT,
+        message TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
+
+def safe_users():
+    try:
+        users = list_users()
+        clean = []
+
+        for user in users:
+            user = dict(user)
+            user.pop("password", None)
+            user.pop("password_hash", None)
+            clean.append(user)
+
+        return clean
+    except Exception:
+        return fetch_all("""
+        SELECT
+            id,
+            username,
+            email,
+            plan,
+            tokens,
+            role,
+            admin_level,
+            created_at
+        FROM users
+        ORDER BY id DESC
+        """)
+
+
 def render_admin():
     require_login()
 
@@ -32,20 +70,40 @@ def render_admin():
         st.error("Kein Zugriff.")
         st.stop()
 
-    st.title("🛡️ Admin Panel")
+    init_admin_support_tables()
 
-    counts = support_counts()
-    health = ai_health_check()
+    st.markdown(
+        """
+        <div class="page-card">
+            <span class="badge">ADMIN</span>
+            <h1>🛡️ Admin Panel</h1>
+            <p>Verwalte User, Tickets, Redeem Codes, Logs und Systemstatus.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
-    col1, col2, col3, col4 = st.columns(4)
+    try:
+        counts = support_counts()
+    except Exception:
+        counts = {"total": 0, "open": 0, "closed": 0}
 
-    col1.metric("Tickets Gesamt", counts.get("total", 0))
-    col2.metric("Offen", counts.get("open", 0))
-    col3.metric("Geschlossen", counts.get("closed", 0))
-    col4.metric("Admin Level", st.session_state.admin_level)
+    try:
+        health = ai_health_check()
+    except Exception as e:
+        health = {"error": str(e)}
+
+    users = safe_users()
+
+    c1, c2, c3, c4 = st.columns(4)
+
+    c1.metric("User", len(users))
+    c2.metric("Tickets Gesamt", counts.get("total", 0))
+    c3.metric("Offen", counts.get("open", 0))
+    c4.metric("Admin Level", st.session_state.admin_level)
 
     tab_tickets, tab_users, tab_codes, tab_logs, tab_payments, tab_system = st.tabs(
-        ["Tickets", "Users", "Redeem Codes", "Logs", "Payments", "System"]
+        ["🎫 Tickets", "👥 Users", "🎁 Redeem Codes", "📜 Logs", "💳 Payments", "⚙️ System"]
     )
 
     with tab_tickets:
@@ -68,138 +126,253 @@ def render_admin():
 
 
 def render_admin_tickets():
+    st.markdown("## 🎫 Support Tickets")
+
     status_filter = st.selectbox(
         "Status Filter",
         ["all", "open", "closed"],
         key="admin_ticket_filter",
     )
 
-    tickets = list_support_messages(status_filter)
+    if status_filter == "all":
+        tickets = fetch_all("""
+        SELECT *
+        FROM support_tickets
+        ORDER BY created_at DESC
+        """)
+    else:
+        tickets = fetch_all("""
+        SELECT *
+        FROM support_tickets
+        WHERE status = %s
+        ORDER BY created_at DESC
+        """, (status_filter,))
 
     if not tickets:
         st.info("Keine Tickets vorhanden.")
         return
 
     for ticket in tickets:
-        with st.expander(f"#{ticket['id']} · {ticket.get('subject')} · {ticket.get('status')}"):
-            st.write(f"User: {ticket.get('username')}")
-            st.write(f"Email: {ticket.get('email')}")
-            st.write(f"Kategorie: {ticket.get('category')}")
-            st.write(f"Nachricht: {ticket.get('message')}")
-            st.write(f"Erstellt: {ticket.get('created_at')}")
+        status = ticket.get("status", "open")
+        title = ticket.get("subject", "Ohne Betreff")
 
-            col1, col2 = st.columns(2)
+        with st.expander(f"#{ticket['id']} · {title} · {status}"):
+            st.markdown(
+                f"""
+                <div class="page-card">
+                    <b>User:</b> {ticket.get("username")}<br>
+                    <b>Email:</b> {ticket.get("email")}<br>
+                    <b>Kategorie:</b> {ticket.get("category")}<br>
+                    <b>Status:</b> {ticket.get("status")}<br>
+                    <b>Erstellt:</b> {ticket.get("created_at")}
+                    <hr>
+                    <h4>Nachricht</h4>
+                    <p>{ticket.get("message")}</p>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
-            if col1.button("Als geschlossen markieren", key=f"close_ticket_{ticket['id']}"):
-                set_support_status(ticket["id"], "closed")
+            replies = fetch_all("""
+            SELECT *
+            FROM support_replies
+            WHERE ticket_id = %s
+            ORDER BY created_at ASC
+            """, (ticket["id"],))
+
+            st.markdown("### Verlauf")
+
+            if replies:
+                for reply in replies:
+                    st.markdown(
+                        f"""
+                        <div class="page-card">
+                            <b>{reply.get("sender")}</b>
+                            <span style="color:#ffd700;">({reply.get("sender_role")})</span><br>
+                            <small>{reply.get("created_at")}</small>
+                            <p style="margin-top:12px;">{reply.get("message")}</p>
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
+            else:
+                st.info("Noch keine Antworten.")
+
+            reply_text = st.text_area(
+                "Antwort schreiben",
+                key=f"reply_text_{ticket['id']}",
+                height=120,
+            )
+
+            col1, col2, col3 = st.columns(3)
+
+            if col1.button("Antwort senden", key=f"send_reply_{ticket['id']}"):
+                if not reply_text.strip():
+                    st.error("Bitte Antwort eingeben.")
+                else:
+                    execute("""
+                    INSERT INTO support_replies (
+                        ticket_id,
+                        sender,
+                        sender_role,
+                        message
+                    )
+                    VALUES (%s, %s, %s, %s)
+                    """, (
+                        ticket["id"],
+                        st.session_state.user,
+                        st.session_state.role,
+                        reply_text,
+                    ))
+
+                    execute("""
+                    UPDATE support_tickets
+                    SET status = 'open'
+                    WHERE id = %s
+                    """, (ticket["id"],))
+
+                    add_audit_log(
+                        st.session_state.user,
+                        "support_reply",
+                        str(ticket["id"]),
+                        reply_text[:250],
+                    )
+
+                    st.success("Antwort gesendet.")
+                    st.rerun()
+
+            if col2.button("Ticket schließen", key=f"close_ticket_{ticket['id']}"):
+                execute("""
+                UPDATE support_tickets
+                SET status = 'closed'
+                WHERE id = %s
+                """, (ticket["id"],))
+
                 add_audit_log(
                     st.session_state.user,
                     "close_ticket",
                     str(ticket["id"]),
+                    "",
                 )
+
+                st.success("Ticket geschlossen.")
                 st.rerun()
 
-            if col2.button("Ticket löschen", key=f"delete_ticket_{ticket['id']}"):
-                delete_support_message(ticket["id"])
+            if col3.button("Ticket löschen", key=f"delete_ticket_{ticket['id']}"):
+                execute("""
+                DELETE FROM support_replies
+                WHERE ticket_id = %s
+                """, (ticket["id"],))
+
+                execute("""
+                DELETE FROM support_tickets
+                WHERE id = %s
+                """, (ticket["id"],))
+
                 add_audit_log(
                     st.session_state.user,
                     "delete_ticket",
                     str(ticket["id"]),
+                    "",
                 )
+
+                st.success("Ticket gelöscht.")
                 st.rerun()
 
 
 def render_admin_users():
-    st_autorefresh(interval=5000, key="admin_users_refresh")
-    users = list_users()
-    st.dataframe(users, use_container_width=True)
+    st.markdown("## 👥 Users")
 
+    if st.button("🔄 Userliste aktualisieren", key="refresh_users"):
+        st.rerun()
+
+    users = safe_users()
+
+    if users:
+        st.dataframe(users, use_container_width=True)
+    else:
+        st.info("Keine User vorhanden.")
+
+    st.markdown("---")
     st.markdown("### User bearbeiten")
 
     target_user = st.text_input("Username", key="admin_target_user")
-    new_plan = st.selectbox(
-        "Plan",
-        ["free", "pro", "grand", "elite"],
-        key="admin_new_plan",
-    )
-    new_tokens = st.number_input(
-        "Tokens setzen",
-        min_value=0,
-        value=0,
-        step=100,
-        key="admin_new_tokens",
-    )
 
-    if is_owner():
-        new_role = st.selectbox(
-            "Role",
-            ["user", "supporter", "moderator", "admin", "owner"],
-            key="admin_new_role",
+    col_a, col_b = st.columns(2)
+
+    with col_a:
+        new_plan = st.selectbox(
+            "Plan",
+            ["free", "pro", "grand", "elite"],
+            key="admin_new_plan",
         )
-        new_level = st.selectbox(
-            "Admin Level",
-            [0, 1, 2, 3, 999],
-            key="admin_new_level",
+
+        new_tokens = st.number_input(
+            "Tokens setzen",
+            min_value=0,
+            value=0,
+            step=100,
+            key="admin_new_tokens",
         )
-    else:
-        new_role = "user"
-        new_level = 0
 
-    col1, col2, col3, col4 = st.columns(4)
+    with col_b:
+        if is_owner():
+            new_role = st.selectbox(
+                "Role",
+                ["user", "supporter", "moderator", "admin", "owner"],
+                key="admin_new_role",
+            )
 
-    if col1.button("Plan setzen", key="admin_set_plan"):
-        if not target_user:
+            new_level = st.selectbox(
+                "Admin Level",
+                [0, 1, 2, 3, 999],
+                key="admin_new_level",
+            )
+        else:
+            new_role = "user"
+            new_level = 0
+
+    c1, c2, c3, c4 = st.columns(4)
+
+    if c1.button("Plan setzen", key="admin_set_plan"):
+        if not target_user.strip():
             st.error("Bitte Username eingeben.")
         else:
             set_plan(target_user, new_plan)
-            add_audit_log(
-                st.session_state.user,
-                "set_plan",
-                target_user,
-                new_plan,
-            )
+            add_audit_log(st.session_state.user, "set_plan", target_user, new_plan)
             st.success("Plan geändert.")
+            st.rerun()
 
-    if col2.button("Tokens setzen", key="admin_set_tokens"):
-        if not target_user:
+    if c2.button("Tokens setzen", key="admin_set_tokens"):
+        if not target_user.strip():
             st.error("Bitte Username eingeben.")
         else:
             update_tokens(target_user, new_tokens)
-            add_audit_log(
-                st.session_state.user,
-                "set_tokens",
-                target_user,
-                str(new_tokens),
-            )
+            add_audit_log(st.session_state.user, "set_tokens", target_user, str(new_tokens))
             st.success("Tokens geändert.")
+            st.rerun()
 
-    if col3.button("User bannen", key="admin_ban_user"):
-        if not target_user:
+    if c3.button("User bannen", key="admin_ban_user"):
+        if not target_user.strip():
             st.error("Bitte Username eingeben.")
         else:
             ban_user(target_user, True)
-            add_audit_log(
-                st.session_state.user,
-                "ban_user",
-                target_user,
-            )
+            add_audit_log(st.session_state.user, "ban_user", target_user, "")
             st.success("User gebannt.")
+            st.rerun()
 
-    if col4.button("User löschen", key="admin_delete_user"):
-        if not target_user:
+    if c4.button("User löschen", key="admin_delete_user"):
+        if not target_user.strip():
             st.error("Bitte Username eingeben.")
         else:
             delete_user(target_user)
-            add_audit_log(
-                st.session_state.user,
-                "delete_user",
-                target_user,
-            )
+            add_audit_log(st.session_state.user, "delete_user", target_user, "")
             st.success("User gelöscht.")
+            st.rerun()
 
     if is_owner():
         if st.button("Role / Admin Level setzen", key="admin_set_role"):
-            if not target_user:
+            if not target_user.strip():
                 st.error("Bitte Username eingeben.")
             else:
                 set_role(target_user, new_role, new_level)
@@ -210,15 +383,28 @@ def render_admin_users():
                     f"{new_role}:{new_level}",
                 )
                 st.success("Role geändert.")
+                st.rerun()
 
 
 def render_admin_codes():
+    st.markdown("## 🎁 Redeem Codes")
+
     if not is_owner():
         st.info("Nur Owner/Admin Level 999 kann Codes erstellen.")
     else:
+        st.markdown(
+            """
+            <div class="page-card">
+                <h3>Neuen Redeem Code erstellen</h3>
+                <p>Erstelle Token-, Plan- oder Mixed-Codes für User.</p>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
         with st.form("create_code_form"):
             code_type = st.selectbox("Typ", ["tokens", "plan", "mixed"])
-            plan = st.selectbox("Plan", ["free", "pro", "grand", "elite"])
+            plan = st.selectbox("Plan", ["", "free", "pro", "grand", "elite"])
             tokens = st.number_input("Tokens", min_value=0, value=100, step=100)
             max_uses = st.number_input("Max Uses", min_value=1, value=1)
             days_valid = st.number_input("Gültig Tage", min_value=1, value=30)
@@ -235,14 +421,22 @@ def render_admin_codes():
                 created_by=st.session_state.user,
                 days_valid=days_valid,
             )
+
             add_audit_log(
                 st.session_state.user,
                 "create_redeem_code",
                 code,
+                f"tokens={tokens}; plan={plan}; max_uses={max_uses}",
             )
+
             st.success(f"Code erstellt: {code}")
 
-    codes = list_codes()
+    st.markdown("### Bestehende Codes")
+
+    try:
+        codes = list_codes()
+    except Exception:
+        codes = []
 
     if codes:
         st.dataframe(codes, use_container_width=True)
@@ -251,8 +445,13 @@ def render_admin_codes():
 
 
 def render_admin_logs():
+    st.markdown("## 📜 Logs")
+
     st.markdown("### Usage Logs")
-    usage = list_usage()
+    try:
+        usage = list_usage()
+    except Exception:
+        usage = []
 
     if usage:
         st.dataframe(usage, use_container_width=True)
@@ -260,7 +459,10 @@ def render_admin_logs():
         st.info("Keine Usage Logs vorhanden.")
 
     st.markdown("### Audit Logs")
-    audit_logs = list_audit_logs()
+    try:
+        audit_logs = list_audit_logs()
+    except Exception:
+        audit_logs = []
 
     if audit_logs:
         st.dataframe(audit_logs, use_container_width=True)
@@ -269,7 +471,12 @@ def render_admin_logs():
 
 
 def render_admin_payments():
-    purchases = list_purchases()
+    st.markdown("## 💳 Payments")
+
+    try:
+        purchases = list_purchases()
+    except Exception:
+        purchases = []
 
     if purchases:
         st.dataframe(purchases, use_container_width=True)
@@ -278,6 +485,8 @@ def render_admin_payments():
 
 
 def render_admin_system(health):
+    st.markdown("## ⚙️ System")
+
     st.markdown("### AI Health Check")
     st.json(health)
 
