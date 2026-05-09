@@ -1,6 +1,6 @@
 import streamlit as st
 
-from database import redeem_code, get_user
+from database import get_user
 
 
 def sync_user(username):
@@ -37,7 +37,7 @@ def nav_button(label, page, required_plan="free"):
     locked = is_logged_in() and not can_use(required_plan)
     text = f"🔒 {label}" if locked else label
 
-    if st.button(text, use_container_width=True, key=f"nav_{page}"):
+    if st.button(text, use_container_width=True, key=f"nav_{page}_{required_plan}"):
         if not is_logged_in() and page not in ["home", "premium", "login"]:
             st.session_state.page = "login"
         elif locked:
@@ -60,25 +60,25 @@ def logout():
 
 def render_sidebar():
     with st.sidebar:
-        st.markdown("## MAB.AI")
+        st.markdown("## ⚡ MAB.AI")
 
         if is_logged_in():
             st.markdown(
                 f"""
-                <div class="page-card">
-                    <b>👤 {st.session_state.user}</b><br>
-                    ⭐ Plan: {st.session_state.plan}<br>
-                    🪙 Tokens: {st.session_state.tokens}<br>
-                    🛡️ Role: {st.session_state.role}
+                <div class="sidebar-card">
+                    <h3>👤 {st.session_state.user}</h3>
+                    <p>⭐ Plan: <b>{st.session_state.plan}</b></p>
+                    <p>🪙 Tokens: <b>{st.session_state.tokens}</b></p>
+                    <p>🛡️ Role: <b>{st.session_state.role}</b></p>
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
 
-            if st.button("Logout", key="logout_btn"):
+            if st.button("🚪 Logout", key="logout_btn"):
                 logout()
         else:
-            if st.button("Login / Register", key="login_register_btn"):
+            if st.button("🔐 Login / Register", key="login_register_btn"):
                 st.session_state.page = "login"
                 st.rerun()
 
@@ -86,35 +86,18 @@ def render_sidebar():
 
         nav_button("🏠 Home", "home")
         nav_button("💬 Memory Chat", "chat", "free")
-        nav_button("💻 Coding Area", "coding", "pro")
-        nav_button("🎨 Image Generator", "image", "pro")
-        nav_button("🎵 Music Generator", "music", "pro")
-        nav_button("🎞️ Short Reels Creator", "reels", "pro")
-        nav_button("🎬 AI Video Generator", "video", "grand")
+        nav_button("💻 Coding AI", "coding", "pro")
+        nav_button("🎨 Image AI", "image", "pro")
+        nav_button("🎵 Music AI", "music", "pro")
+        nav_button("🎞️ Reels Creator", "reels", "pro")
+        nav_button("🎬 Video AI", "video", "grand")
 
         st.markdown("### Account")
         nav_button("📊 Dashboard", "dashboard")
+        nav_button("🎁 Redeem Code", "redeem")
         nav_button("🆘 Support", "support")
         nav_button("💳 Premium", "premium")
 
         if is_admin():
             st.markdown("### Admin")
             nav_button("🛡️ Admin Panel", "admin")
-
-        st.markdown("### Redeem Code")
-        code = st.text_input("Code eingeben", key="sidebar_redeem_code")
-
-        if st.button("Code einlösen", key="sidebar_redeem_btn"):
-            if not is_logged_in():
-                st.error("Bitte zuerst einloggen.")
-            elif not code:
-                st.error("Bitte Code eingeben.")
-            else:
-                ok, msg = redeem_code(st.session_state.user, code)
-
-                if ok:
-                    sync_user(st.session_state.user)
-                    st.success(msg)
-                    st.rerun()
-                else:
-                    st.error(msg)

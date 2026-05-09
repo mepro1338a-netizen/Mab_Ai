@@ -18,6 +18,7 @@ from pages.account import (
     render_dashboard,
     render_support,
     render_premium,
+    render_redeem,
 )
 from pages.admin import render_admin
 
@@ -94,6 +95,9 @@ elif page == "reels":
 
 elif page == "dashboard":
     render_dashboard()
+
+elif page == "redeem":
+    render_redeem()
 
 elif page == "support":
     render_support()
