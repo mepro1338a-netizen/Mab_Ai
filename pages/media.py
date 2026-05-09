@@ -1,4 +1,5 @@
 import streamlit as st
+from datetime import datetime
 
 from ai_service import generate_image, generate_video
 from ai_pipeline import run_ai_task
@@ -217,7 +218,17 @@ def render_music_page():
         st.warning("Dieses Feature benötigt mindestens PRO.")
         st.stop()
 
-    st.title("🎵 Music Generator")
+    st.markdown(
+        """
+        <div class="page-card">
+            <span class="badge">PRO FEATURE</span>
+            <h1>🎵 Music Generator</h1>
+            <p>Erstelle Songideen, Lyrics, Hooks und Musik-Prompts.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
     st.info("Music AI verbinden wir als nächstes.")
 
 
@@ -230,8 +241,14 @@ def render_reels_page():
 
     from reels_service import generate_reel_plan
     from reels_db import init_reels_table, save_reel, list_reels
+    from reels_scheduler import (
+        init_scheduler_table,
+        schedule_reel,
+        list_scheduled_reels,
+    )
 
     init_reels_table()
+    init_scheduler_table()
 
     st.markdown(
         """
@@ -296,6 +313,25 @@ def render_reels_page():
         key="reel_duration",
     )
 
+    schedule_enabled = st.checkbox(
+        "Automatisch posten planen",
+        key="schedule_enabled",
+    )
+
+    scheduled_date = None
+    scheduled_time = None
+
+    if schedule_enabled:
+        scheduled_date = st.date_input(
+            "Datum",
+            key="scheduled_date",
+        )
+
+        scheduled_time = st.time_input(
+            "Uhrzeit",
+            key="scheduled_time",
+        )
+
     if st.button("Reel Konzept generieren", key="generate_reel_btn"):
         if not topic.strip():
             st.error("Bitte ein Thema eingeben.")
@@ -326,6 +362,21 @@ def render_reels_page():
 
             st.success("Reel Konzept gespeichert.")
 
+            if schedule_enabled and scheduled_date and scheduled_time:
+                scheduled_datetime = datetime.combine(
+                    scheduled_date,
+                    scheduled_time,
+                )
+
+                schedule_reel(
+                    st.session_state.user,
+                    platform,
+                    result,
+                    scheduled_datetime,
+                )
+
+                st.success("Reel wurde geplant.")
+
             st.download_button(
                 "Reel Konzept herunterladen",
                 data=result,
@@ -349,3 +400,16 @@ def render_reels_page():
                 st.markdown(reel["content"])
     else:
         st.info("Noch keine gespeicherten Reels.")
+
+    st.markdown("### Geplante Reels")
+
+    scheduled = list_scheduled_reels(st.session_state.user)
+
+    if scheduled:
+        for reel in scheduled[:10]:
+            with st.expander(
+                f"{reel['platform']} · {reel['scheduled_time']} · {reel['status']}"
+            ):
+                st.markdown(reel["content"])
+    else:
+        st.info("Keine geplanten Reels.")
