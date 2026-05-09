@@ -1,12 +1,14 @@
 from openai import OpenAI
 
-from config import OPENAI_API_KEY, OPENAI_FREE_MODEL
-from logger import log_info, log_error
+from config import OPENAI_API_KEY
+from logger import log_error
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 
+DEFAULT_CHAT_MODEL = "gpt-4o-mini"
 
-def generate_chat(messages, model=OPENAI_FREE_MODEL):
+
+def generate_chat(messages, model=DEFAULT_CHAT_MODEL):
     try:
         response = client.chat.completions.create(
             model=model,
@@ -15,7 +17,6 @@ def generate_chat(messages, model=OPENAI_FREE_MODEL):
         )
 
         text = response.choices[0].message.content
-
         usage = response.usage.total_tokens if response.usage else 0
 
         return True, {
