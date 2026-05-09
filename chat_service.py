@@ -1,7 +1,9 @@
 from openai import OpenAI
-from config import OPENAI_API_KEY, OPENAI_FREE_MODEL
+from config import OPENAI_API_KEY
 
 client = OpenAI(api_key=OPENAI_API_KEY)
+
+DEFAULT_CHAT_MODEL = "gpt-4o-mini"
 
 
 def generate_chat(prompt, history=None):
@@ -15,10 +17,11 @@ def generate_chat(prompt, history=None):
 
         if history:
             for msg in history:
-                messages.append({
-                    "role": msg["role"],
-                    "content": msg["content"]
-                })
+                if msg.get("role") in ["user", "assistant", "system"]:
+                    messages.append({
+                        "role": msg["role"],
+                        "content": msg["content"]
+                    })
 
         messages.append({
             "role": "user",
@@ -26,15 +29,13 @@ def generate_chat(prompt, history=None):
         })
 
         response = client.chat.completions.create(
-            model=OPENAI_FREE_MODEL,
+            model=DEFAULT_CHAT_MODEL,
             messages=messages,
             temperature=0.7,
             max_tokens=700,
         )
 
-        answer = response.choices[0].message.content
-
-        return True, answer
+        return True, response.choices[0].message.content
 
     except Exception as e:
         return False, str(e)
