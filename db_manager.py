@@ -4,6 +4,7 @@ from psycopg2.extras import RealDictCursor
 
 
 DATABASE_URL = os.getenv("DATABASE_URL")
+print("DATABASE_URL SET:", bool(DATABASE_URL))
 
 
 def get_connection():
@@ -132,3 +133,9 @@ def execute(query, params=None):
 
 
 init_db()
+
+class Database:
+    def get_connection(self):
+        return get_connection()
+
+db = Database()
