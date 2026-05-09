@@ -229,6 +229,9 @@ def render_reels_page():
         st.stop()
 
     from reels_service import generate_reel_plan
+    from reels_db import init_reels_table, save_reel, list_reels
+
+    init_reels_table()
 
     st.markdown(
         """
@@ -249,19 +252,41 @@ def render_reels_page():
 
     niche = st.selectbox(
         "Nische",
-        ["AI", "Business", "Fitness", "Gaming", "Luxury", "Motivation", "Fashion", "Food", "Tech"],
+        [
+            "AI",
+            "Business",
+            "Fitness",
+            "Gaming",
+            "Luxury",
+            "Motivation",
+            "Fashion",
+            "Food",
+            "Tech",
+        ],
         key="reel_niche",
     )
 
     platform = st.selectbox(
         "Plattform",
-        ["TikTok", "Instagram Reels", "YouTube Shorts"],
+        [
+            "TikTok",
+            "Instagram Reels",
+            "YouTube Shorts",
+        ],
         key="reel_platform",
     )
 
     style = st.selectbox(
         "Stil",
-        ["Viral", "Cinematic", "Luxury", "Motivational", "Funny", "Educational", "Dark Aesthetic"],
+        [
+            "Viral",
+            "Cinematic",
+            "Luxury",
+            "Motivational",
+            "Funny",
+            "Educational",
+            "Dark Aesthetic",
+        ],
         key="reel_style",
     )
 
@@ -277,11 +302,29 @@ def render_reels_page():
             return
 
         with st.spinner("MAB.AI erstellt dein Reel-Konzept..."):
-            success, result = generate_reel_plan(topic, niche, platform, style, duration)
+            success, result = generate_reel_plan(
+                topic,
+                niche,
+                platform,
+                style,
+                duration,
+            )
 
         if success:
             st.markdown("### Dein Reel Konzept")
             st.markdown(result)
+
+            save_reel(
+                st.session_state.user,
+                topic,
+                niche,
+                platform,
+                style,
+                duration,
+                result,
+            )
+
+            st.success("Reel Konzept gespeichert.")
 
             st.download_button(
                 "Reel Konzept herunterladen",
@@ -290,5 +333,19 @@ def render_reels_page():
                 mime="text/plain",
                 use_container_width=True,
             )
+
         else:
             st.error(result)
+
+    st.markdown("### Gespeicherte Reels")
+
+    saved = list_reels(st.session_state.user)
+
+    if saved:
+        for reel in saved[:10]:
+            with st.expander(
+                f"{reel['topic']} · {reel['platform']} · {reel['status']}"
+            ):
+                st.markdown(reel["content"])
+    else:
+        st.info("Noch keine gespeicherten Reels.")
