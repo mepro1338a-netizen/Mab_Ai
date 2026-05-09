@@ -3,7 +3,7 @@ import streamlit as st
 
 def render_home():
 
-    st.image("Header.png", use_container_width=True)
+    st.image("./Header.png", use_container_width=True)
 
     st.markdown(
         """
