@@ -2,45 +2,48 @@ import streamlit as st
 
 
 def render_home():
+
     st.markdown(
         """
-        <div class="hero-box">
-            <h1 class="hero-title">Mabyte</h1>
-            <p class="hero-sub">Die neue Generation von AI Plattformen.</p>
+        <div style='text-align:center; padding-top:40px; padding-bottom:10px;'>
+            <h1 style='font-size:64px; margin-bottom:0;'>Mabyte</h1>
+            <p style='font-size:22px; color:#9db4ff; margin-top:0;'>
+                Die neue Generation von AI Plattformen.
+            </p>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    c1, c2, c3 = st.columns(3)
+    col1, col2, col3 = st.columns(3)
 
-    with c1:
+    with col1:
         st.markdown(
             """
             <div class="feature-card">
-                <h3>💬 Smart Chat</h3>
+                <h2>💬 Smart Chat</h2>
                 <p>Chatte mit deiner AI und speichere deinen Verlauf.</p>
             </div>
             """,
             unsafe_allow_html=True,
         )
 
-    with c2:
+    with col2:
         st.markdown(
             """
             <div class="feature-card">
-                <h3>🎬 AI Media</h3>
+                <h2>🎬 AI Media</h2>
                 <p>Bilder, Videos, Musik und kreative Assets erstellen.</p>
             </div>
             """,
             unsafe_allow_html=True,
         )
 
-    with c3:
+    with col3:
         st.markdown(
             """
             <div class="feature-card">
-                <h3>🚀 Creator Tools</h3>
+                <h2>🚀 Creator Tools</h2>
                 <p>Reels Creator, Scheduler und Automation Tools.</p>
             </div>
             """,
