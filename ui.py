@@ -41,7 +41,7 @@ if "page" not in st.session_state:
 
 with st.sidebar:
 
-    st.image("logoMAIN.png", use_container_width=True)
+    st.image("LogoMAIN.png", use_container_width=True)
 
     st.markdown(
         """
