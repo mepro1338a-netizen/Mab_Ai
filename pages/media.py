@@ -228,5 +228,67 @@ def render_reels_page():
         st.warning("Dieses Feature benötigt mindestens PRO.")
         st.stop()
 
-    st.title("🎞️ Reels Generator")
-    st.info("Reels AI verbinden wir als nächstes.")
+    from reels_service import generate_reel_plan
+
+    st.markdown(
+        """
+        <div class="page-card">
+            <span class="badge">PRO FEATURE</span>
+            <h1>🎞️ AI Reels Creator</h1>
+            <p>Erstelle virale Reels mit Hook, Skript, Caption, Hashtags und Video-Prompt.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    topic = st.text_input(
+        "Reel Thema",
+        placeholder="z.B. Wie man mit AI online Geld verdient",
+        key="reel_topic",
+    )
+
+    niche = st.selectbox(
+        "Nische",
+        ["AI", "Business", "Fitness", "Gaming", "Luxury", "Motivation", "Fashion", "Food", "Tech"],
+        key="reel_niche",
+    )
+
+    platform = st.selectbox(
+        "Plattform",
+        ["TikTok", "Instagram Reels", "YouTube Shorts"],
+        key="reel_platform",
+    )
+
+    style = st.selectbox(
+        "Stil",
+        ["Viral", "Cinematic", "Luxury", "Motivational", "Funny", "Educational", "Dark Aesthetic"],
+        key="reel_style",
+    )
+
+    duration = st.selectbox(
+        "Dauer",
+        [15, 30, 45, 60],
+        key="reel_duration",
+    )
+
+    if st.button("Reel Konzept generieren", key="generate_reel_btn"):
+        if not topic.strip():
+            st.error("Bitte ein Thema eingeben.")
+            return
+
+        with st.spinner("MAB.AI erstellt dein Reel-Konzept..."):
+            success, result = generate_reel_plan(topic, niche, platform, style, duration)
+
+        if success:
+            st.markdown("### Dein Reel Konzept")
+            st.markdown(result)
+
+            st.download_button(
+                "Reel Konzept herunterladen",
+                data=result,
+                file_name="mab_ai_reel_konzept.txt",
+                mime="text/plain",
+                use_container_width=True,
+            )
+        else:
+            st.error(result)
