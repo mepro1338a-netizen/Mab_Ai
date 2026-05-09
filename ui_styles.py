@@ -1,109 +1,130 @@
-# ui.py
-
 import streamlit as st
 
-from database import init_db
-from ui_styles import load_css
 
-from pages.home import render_home
-from pages.chat import render_chat
-from pages.media import render_media
-from pages.admin import render_admin
-
-# ============================================
-# APP CONFIG
-# ============================================
-
-st.set_page_config(
-    page_title="Mabyte",
-    page_icon="Logo24mp.png",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
-
-# ============================================
-# INIT
-# ============================================
-
-init_db()
-load_css()
-
-# ============================================
-# SESSION STATE
-# ============================================
-
-if "page" not in st.session_state:
-    st.session_state.page = "home"
-
-# ============================================
-# SIDEBAR
-# ============================================
-
-with st.sidebar:
-
-    st.image("logoMAIN.png", use_container_width=True)
-
+def load_css():
     st.markdown(
         """
-        <div class="sidebar-subtitle">
-            Next Generation AI Platform
-        </div>
+<style>
+html, body, [class*="css"] {
+    font-family: 'Segoe UI', sans-serif;
+}
+
+.stApp {
+    background:
+        radial-gradient(circle at top left, rgba(59,130,246,0.16), transparent 30%),
+        radial-gradient(circle at bottom right, rgba(139,92,246,0.12), transparent 30%),
+        linear-gradient(135deg, #050816 0%, #081120 45%, #0a1630 100%);
+    color: white;
+}
+
+[data-testid="stSidebar"] {
+    background: rgba(8, 12, 26, 0.96);
+    border-right: 1px solid rgba(96,165,250,0.18);
+}
+
+.sidebar-subtitle {
+    color: #93c5fd;
+    text-align: center;
+    margin-top: -10px;
+    margin-bottom: 25px;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 1px;
+}
+
+.stButton > button {
+    width: 100%;
+    border-radius: 18px;
+    border: 1px solid rgba(96,165,250,0.35);
+    background: linear-gradient(135deg, #14315f, #1d4f91);
+    color: white;
+    font-weight: 700;
+    padding: 14px;
+    transition: 0.25s ease;
+    box-shadow: 0 0 18px rgba(59,130,246,0.18);
+}
+
+.stButton > button:hover {
+    transform: translateY(-2px);
+    border: 1px solid #60a5fa;
+    box-shadow: 0 0 28px rgba(59,130,246,0.45);
+}
+
+.hero-title {
+    text-align: center;
+    font-size: 58px;
+    font-weight: 900;
+    color: white;
+    margin-bottom: 10px;
+}
+
+.hero-subtitle {
+    text-align: center;
+    font-size: 24px;
+    color: #cbd5e1;
+    margin-bottom: 55px;
+    font-weight: 600;
+}
+
+.tool-card {
+    background: linear-gradient(145deg, rgba(12,18,40,0.95), rgba(15,25,55,0.95));
+    border: 1px solid rgba(96,165,250,0.15);
+    border-radius: 28px;
+    padding: 35px;
+    min-height: 260px;
+    transition: 0.3s ease;
+    box-shadow: 0 0 35px rgba(59,130,246,0.08), inset 0 0 25px rgba(255,255,255,0.02);
+}
+
+.tool-card:hover {
+    transform: translateY(-6px);
+    border: 1px solid rgba(96,165,250,0.45);
+    box-shadow: 0 0 45px rgba(59,130,246,0.24), 0 0 90px rgba(59,130,246,0.12);
+}
+
+.tool-title {
+    font-size: 42px;
+    font-weight: 900;
+    color: white;
+    margin-bottom: 22px;
+}
+
+.tool-text {
+    color: #cbd5e1;
+    font-size: 22px;
+    line-height: 1.7;
+}
+
+[data-testid="stChatInput"] {
+    background: rgba(8, 14, 30, 0.92) !important;
+    border-top: 1px solid rgba(96, 165, 250, 0.22) !important;
+}
+
+[data-testid="stChatInput"] textarea {
+    background: linear-gradient(135deg, #0b1633, #10284d) !important;
+    color: white !important;
+    border: 1px solid rgba(96, 165, 250, 0.45) !important;
+    border-radius: 18px !important;
+    box-shadow: 0 0 28px rgba(59, 130, 246, 0.18) !important;
+}
+
+[data-testid="stChatInput"] textarea::placeholder {
+    color: #93c5fd !important;
+}
+
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: #09111f;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #1d4ed8;
+    border-radius: 20px;
+}
+</style>
         """,
         unsafe_allow_html=True,
     )
-
-    st.markdown("### AI Tools")
-
-    if st.button("🏠 Home", use_container_width=True):
-        st.session_state.page = "home"
-
-    if st.button("💬 Memory Chat", use_container_width=True):
-        st.session_state.page = "chat"
-
-    if st.button("💻 Coding AI", use_container_width=True):
-        st.session_state.page = "coding"
-
-    if st.button("🎨 Image Generator", use_container_width=True):
-        st.session_state.page = "image"
-
-    if st.button("🎵 Music Generator", use_container_width=True):
-        st.session_state.page = "music"
-
-    if st.button("🎬 Reels Creator", use_container_width=True):
-        st.session_state.page = "reels"
-
-    if st.button("🎞️ AI Video Generator", use_container_width=True):
-        st.session_state.page = "video"
-
-    st.markdown("---")
-    st.markdown("### Account")
-
-    if st.button("📊 Dashboard", use_container_width=True):
-        st.session_state.page = "admin"
-
-# ============================================
-# ROUTING
-# ============================================
-
-page = st.session_state.page
-
-if page == "home":
-    render_home()
-
-elif page == "chat":
-    render_chat()
-
-elif page in [
-    "image",
-    "video",
-    "music",
-    "reels",
-    "coding",
-]:
-    render_media()
-
-elif page == "admin":
-    render_admin()
-
-else:
-    render_home()
