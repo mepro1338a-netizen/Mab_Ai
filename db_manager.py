@@ -100,3 +100,77 @@ def update_tokens(username, tokens):
 
 
 init_db()
+
+def create_redeem_code(code, tokens=0, plan=None, max_uses=1):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+    INSERT INTO redeem_codes (
+        code,
+        tokens,
+        plan,
+        max_uses
+    )
+    VALUES (%s, %s, %s, %s)
+    """, (code, tokens, plan, max_uses))
+
+    conn.commit()
+
+    cur.close()
+    conn.close()
+
+
+def redeem_code(username, code):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute(
+        "SELECT * FROM redeem_codes WHERE code=%s AND active=TRUE",
+        (code,)
+    )
+
+    redeem = cur.fetchone()
+
+    if not redeem:
+        cur.close()
+        conn.close()
+        return False, "Code ungültig."
+
+    if redeem["used_count"] >= redeem["max_uses"]:
+        cur.close()
+        conn.close()
+        return False, "Code bereits verbraucht."
+
+    cur.execute(
+        "SELECT * FROM users WHERE username=%s",
+        (username,)
+    )
+
+    user = cur.fetchone()
+
+    new_tokens = user["tokens"] + redeem["tokens"]
+
+    new_plan = user["plan"]
+
+    if redeem["plan"]:
+        new_plan = redeem["plan"]
+
+    cur.execute("""
+    UPDATE users
+    SET tokens=%s, plan=%s
+    WHERE username=%s
+    """, (new_tokens, new_plan, username))
+
+    cur.execute("""
+    UPDATE redeem_codes
+    SET used_count = used_count + 1
+    WHERE code=%s
+    """, (code,))
+
+    conn.commit()
+
+    cur.close()
+    conn.close()
+
+    return True, f"{redeem['tokens']} Tokens erhalten."
