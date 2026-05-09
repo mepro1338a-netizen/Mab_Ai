@@ -1,9 +1,14 @@
+import os
 import streamlit as st
 
 
-def render_home():
+def safe_image(path, **kwargs):
+    if os.path.exists(path):
+        st.image(path, **kwargs)
 
-    st.image("./Header.png", use_container_width=True)
+
+def render_home():
+    safe_image("Header.png", use_container_width=True)
 
     st.markdown(
         """
@@ -24,7 +29,7 @@ def render_home():
             """
             <div class="feature-card">
                 <h3>💬 Smart Chat</h3>
-                <p>Ultra schnelle KI Antworten.</p>
+                <p>Chatte mit deiner AI und speichere deinen Verlauf.</p>
             </div>
             """,
             unsafe_allow_html=True,
@@ -35,7 +40,7 @@ def render_home():
             """
             <div class="feature-card">
                 <h3>🎬 AI Media</h3>
-                <p>Bilder, Musik & Videos generieren.</p>
+                <p>Bilder, Videos, Musik und kreative Assets erstellen.</p>
             </div>
             """,
             unsafe_allow_html=True,
@@ -46,7 +51,7 @@ def render_home():
             """
             <div class="feature-card">
                 <h3>🚀 Creator Tools</h3>
-                <p>Reels Scheduler & Automation.</p>
+                <p>Reels Creator, Scheduler und Automation Tools.</p>
             </div>
             """,
             unsafe_allow_html=True,
