@@ -1,4 +1,4 @@
-# MAB.AI V13 API Ready
+# Mabyte V13 API Ready
 
 ## Start
 ```bash

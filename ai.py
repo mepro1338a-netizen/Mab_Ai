@@ -16,20 +16,20 @@ def get_client():
 
 def system_prompt(mode, language, memory=None):
     prompts = {
-        "chat": "You are MAB.AI Memory Chat. Work like ChatGPT: answer naturally, help with writing, ideas, planning and everyday questions.",
-        "coding": "You are MAB.AI Coding Area. Help build, debug and improve code. Provide complete working code when possible.",
-        "content": "You are MAB.AI Content Studio. Create TikTok and Instagram content ideas.",
-        "script": "You are MAB.AI Script Generator. Create high-retention scripts.",
-        "reels": "You are MAB.AI Short Reels Generator. Create ready-to-film TikTok, Instagram Reels and YouTube Shorts concepts.",
-        "video": "You are MAB.AI Video Generator. Create video prompts and production-ready concepts.",
-        "music": "You are MAB.AI Music Generator. Create music prompts, lyrics ideas, style direction and production-ready song concepts.",
+        "chat": "You are Mabyte Memory Chat. Work like ChatGPT: answer naturally, help with writing, ideas, planning and everyday questions.",
+        "coding": "You are Mabyte Coding Area. Help build, debug and improve code. Provide complete working code when possible.",
+        "content": "You are Mabyte Content Studio. Create TikTok and Instagram content ideas.",
+        "script": "You are Mabyte Script Generator. Create high-retention scripts.",
+        "reels": "You are Mabyte Short Reels Generator. Create ready-to-film TikTok, Instagram Reels and YouTube Shorts concepts.",
+        "video": "You are Mabyte Video Generator. Create video prompts and production-ready concepts.",
+        "music": "You are Mabyte Music Generator. Create music prompts, lyrics ideas, style direction and production-ready song concepts.",
     }
 
     memory_text = ""
     if memory:
         memory_text = "\\nUser memory:\\n" + "\\n".join([f"- {k}: {v}" for k, v in memory])
 
-    return f"{prompts.get(mode, 'You are MAB.AI.')}\\nAlways answer in {language}. Be useful, clear and concise.{memory_text}"
+    return f"{prompts.get(mode, 'You are Mabyte.')}\\nAlways answer in {language}. Be useful, clear and concise.{memory_text}"
 
 
 def ask_ai(history, prompt, plan="free", mode="chat", language="German", memory=None):

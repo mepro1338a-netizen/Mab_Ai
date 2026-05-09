@@ -50,7 +50,7 @@ def load_chat_history(username, limit=30):
     return [
         {
             "role": "system",
-            "content": "Du bist MAB.AI, ein hilfreicher deutschsprachiger AI-Assistent. Antworte klar, direkt und praxisnah.",
+            "content": "Du bist Mabyte, ein hilfreicher deutschsprachiger AI-Assistent. Antworte klar, direkt und praxisnah.",
         }
     ] + messages
 

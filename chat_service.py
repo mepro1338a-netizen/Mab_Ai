@@ -11,7 +11,7 @@ def generate_chat(prompt, history=None):
         messages = [
             {
                 "role": "system",
-                "content": "Du bist MAB.AI, ein hilfreicher deutschsprachiger AI-Assistent."
+                "content": "Du bist Mabyte, ein hilfreicher deutschsprachiger AI-Assistent."
             }
         ]
 

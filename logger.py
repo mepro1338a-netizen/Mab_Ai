@@ -8,9 +8,9 @@ LOG_DIR = os.path.join(DATA_DIR, "logs")
 
 os.makedirs(LOG_DIR, exist_ok=True)
 
-LOG_FILE = os.path.join(LOG_DIR, "mab_ai.log")
+LOG_FILE = os.path.join(LOG_DIR, "Mabyte.log")
 
-logger = logging.getLogger("mab_ai")
+logger = logging.getLogger("Mabyte")
 
 logger.setLevel(logging.INFO)
 

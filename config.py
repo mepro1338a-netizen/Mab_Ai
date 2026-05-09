@@ -6,7 +6,7 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent
 
-APP_NAME = "MAB.AI"
+APP_NAME = "Mabyte"
 APP_TAGLINE = "AI workspace for creators, coders and businesses."
 
 # Railway Volume Support

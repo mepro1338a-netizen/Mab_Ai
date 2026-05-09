@@ -27,7 +27,7 @@ def _openai_client():
     return OpenAI(api_key=OPENAI_API_KEY)
 
 
-def _text_response(prompt, model=TEXT_MODEL, system="Du bist MAB.AI, ein hilfreicher KI-Assistent."):
+def _text_response(prompt, model=TEXT_MODEL, system="Du bist Mabyte, ein hilfreicher KI-Assistent."):
     client = _openai_client()
     response = client.responses.create(
         model=model,
@@ -48,7 +48,7 @@ def process_chat(username, prompt, language="German", history=None):
         answer = _text_response(
             prompt,
             TEXT_MODEL,
-            f"Antworte auf {language}. Du bist MAB.AI. Hilf klar, direkt und praxisnah."
+            f"Antworte auf {language}. Du bist Mabyte. Hilf klar, direkt und praxisnah."
         )
         return answer, cost, True
     except Exception as e:

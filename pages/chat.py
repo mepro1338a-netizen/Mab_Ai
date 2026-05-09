@@ -23,7 +23,7 @@ def render_chat():
             <span class="badge">FREE FEATURE</span>
             <h1>💬 Memory Chat</h1>
             <p style="font-size:20px;color:#d4d4d8;line-height:1.7;">
-                Chatte mit MAB.AI. Dein Verlauf wird dauerhaft gespeichert.
+                Chatte mit Mabyte. Dein Verlauf wird dauerhaft gespeichert.
             </p>
         </div>
         """,
@@ -56,7 +56,7 @@ def render_chat():
             st.markdown(prompt)
 
         with st.chat_message("assistant"):
-            with st.spinner("MAB.AI denkt nach..."):
+            with st.spinner("Mabyte denkt nach..."):
                 success, answer = generate_chat(prompt, history=history)
 
             if success:

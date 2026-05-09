@@ -30,7 +30,7 @@ from pages.admin import render_admin
 # =========================================================
 
 st.set_page_config(
-    page_title="MAB.AI",
+    page_title="Mabyte",
     page_icon="logo24mp.png",
     layout="wide",
     initial_sidebar_state="expanded",

@@ -236,7 +236,7 @@ def render_sidebar():
         except:
             st.markdown("""
             <div class="sidebar-title">
-                MAB.AI
+                Mabyte
             </div>
             """, unsafe_allow_html=True)
 

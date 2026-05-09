@@ -8,7 +8,7 @@ def render_home():
     st.markdown(
         """
         <div class="hero-box">
-            <h1 class="hero-title">MAB.AI</h1>
+            <h1 class="hero-title">Mabyte</h1>
             <p class="hero-sub">
                 Die neue Generation von AI Plattformen.
             </p>

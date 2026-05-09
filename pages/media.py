@@ -337,7 +337,7 @@ def render_reels_page():
             st.error("Bitte ein Thema eingeben.")
             return
 
-        with st.spinner("MAB.AI erstellt dein Reel-Konzept..."):
+        with st.spinner("Mabyte erstellt dein Reel-Konzept..."):
             success, result = generate_reel_plan(
                 topic,
                 niche,
@@ -380,7 +380,7 @@ def render_reels_page():
             st.download_button(
                 "Reel Konzept herunterladen",
                 data=result,
-                file_name="mab_ai_reel_konzept.txt",
+                file_name="Mabyte_reel_konzept.txt",
                 mime="text/plain",
                 use_container_width=True,
             )
