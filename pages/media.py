@@ -1,7 +1,7 @@
 import streamlit as st
 from datetime import datetime
 
-from auth import require_login
+from auth import require_auth
 from subscriptions import can_use
 from tokens import TOKEN_COSTS
 from ai_runner import run_ai_task
@@ -22,7 +22,7 @@ from reels_scheduler import (
 # =========================
 
 def render_video_page():
-    require_login()
+    require_auth()
 
     if not can_use("grand"):
         st.warning("Dieses Feature benötigt mindestens GRAND.")
@@ -210,7 +210,7 @@ User Prompt:
 # =========================
 
 def render_reels_page():
-    require_login()
+    require_auth()
 
     if not can_use("pro"):
         st.warning("Dieses Feature benötigt mindestens PRO.")
