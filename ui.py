@@ -28,6 +28,7 @@ from config import (
 )
 
 from ai_service import generate_image, generate_video, ai_health_check
+from ai_pipeline import run_ai_task
 
 from database import (
     init_db,
@@ -52,8 +53,6 @@ from database import (
     list_purchases,
     list_audit_logs,
     add_audit_log,
-    spend_tokens,
-    save_usage,
 )
 
 try:
@@ -61,10 +60,6 @@ try:
 except Exception:
     create_checkout_session = None
 
-
-# =========================================================
-# APP SETUP
-# =========================================================
 
 st.set_page_config(
     page_title=APP_NAME,
@@ -79,13 +74,8 @@ if is_session_expired():
     session_logout()
 
 update_activity()
-
 init_db()
 
-
-# =========================================================
-# HELPERS
-# =========================================================
 
 def img_b64(path) -> str:
     path = Path(path)
@@ -198,10 +188,6 @@ def render_file_download(path, label):
     )
 
 
-# =========================================================
-# SESSION DEFAULTS
-# =========================================================
-
 defaults = {
     "page": "home",
     "plan": "free",
@@ -221,10 +207,6 @@ for key, value in defaults.items():
     if key not in st.session_state:
         st.session_state[key] = value
 
-
-# =========================================================
-# CSS
-# =========================================================
 
 HEADER_B64 = img_b64(HEADER_PATH)
 LOGO_B64 = img_b64(LOGO_PATH)
@@ -500,10 +482,6 @@ if HEADER_B64:
     )
 
 
-# =========================================================
-# SIDEBAR
-# =========================================================
-
 with st.sidebar:
     if Path(LOGO_PATH).exists():
         st.image(str(LOGO_PATH), use_container_width=True)
@@ -566,14 +544,9 @@ with st.sidebar:
         nav_button("🛡️ Admin Panel", "admin")
 
 
-# =========================================================
-# PAGES
-# =========================================================
-
 page = st.session_state.page
 
 
-# HOME
 if page == "home":
     logo_html = "MAB.AI"
     if LOGO_B64:
@@ -614,7 +587,6 @@ if page == "home":
     st.markdown(textwrap.dedent(html), unsafe_allow_html=True)
 
 
-# LOGIN
 elif page == "login":
     st.title("🔐 Login / Register")
 
@@ -691,7 +663,6 @@ elif page == "login":
         st.markdown("</div>", unsafe_allow_html=True)
 
 
-# DASHBOARD
 elif page == "dashboard":
     require_login()
     sync_user(st.session_state.user)
@@ -715,7 +686,6 @@ elif page == "dashboard":
     st.markdown("</div>", unsafe_allow_html=True)
 
 
-# IMAGE GENERATOR
 elif page == "image":
     require_login()
 
@@ -750,42 +720,25 @@ elif page == "image":
     st.info(f"Kosten: {cost} Tokens pro Bild")
 
     if st.button("Bild generieren", key="generate_image_btn"):
-        if not prompt.strip():
-            st.error("Bitte Prompt eingeben.")
+        with st.spinner("Bild wird generiert..."):
+            success, result, updated_user = run_ai_task(
+                username=st.session_state.user,
+                tool="image",
+                prompt=prompt,
+                provider="openai",
+                generator_func=generate_image,
+                size=size,
+            )
+
+        if success:
+            st.session_state.last_image_path = result
+
+            if updated_user:
+                st.session_state.tokens = updated_user["tokens"]
+
+            st.success("Bild erfolgreich generiert.")
         else:
-            ok, msg = spend_tokens(st.session_state.user, cost)
-
-            if not ok:
-                st.error(msg)
-            else:
-                with st.spinner("Bild wird generiert..."):
-                    success, result = generate_image(prompt, size=size)
-
-                if success:
-                    st.session_state.last_image_path = result
-                    save_usage(
-                        username=st.session_state.user,
-                        tool="image",
-                        prompt=prompt,
-                        tokens_used=0,
-                        cost_tokens=cost,
-                        api_provider="openai",
-                        status="success",
-                    )
-                    sync_user(st.session_state.user)
-                    st.success("Bild erfolgreich generiert.")
-                    add_audit_log(st.session_state.user, "generate_image", "image", prompt[:250])
-                else:
-                    save_usage(
-                        username=st.session_state.user,
-                        tool="image",
-                        prompt=prompt,
-                        tokens_used=0,
-                        cost_tokens=cost,
-                        api_provider="openai",
-                        status="failed",
-                    )
-                    st.error(result)
+            st.error(result)
 
     if st.session_state.last_image_path:
         st.markdown('<div class="result-box">', unsafe_allow_html=True)
@@ -795,7 +748,6 @@ elif page == "image":
         st.markdown("</div>", unsafe_allow_html=True)
 
 
-# VIDEO GENERATOR
 elif page == "video":
     require_login()
 
@@ -828,42 +780,24 @@ elif page == "video":
     st.info(f"Kosten: {cost} Tokens pro Video")
 
     if st.button("Video generieren", key="generate_video_btn"):
-        if not prompt.strip():
-            st.error("Bitte Prompt eingeben.")
+        with st.spinner("Video wird generiert. Das kann länger dauern..."):
+            success, result, updated_user = run_ai_task(
+                username=st.session_state.user,
+                tool="video",
+                prompt=prompt,
+                provider="replicate",
+                generator_func=generate_video,
+            )
+
+        if success:
+            st.session_state.last_video_path = result
+
+            if updated_user:
+                st.session_state.tokens = updated_user["tokens"]
+
+            st.success("Video erfolgreich generiert.")
         else:
-            ok, msg = spend_tokens(st.session_state.user, cost)
-
-            if not ok:
-                st.error(msg)
-            else:
-                with st.spinner("Video wird generiert. Das kann länger dauern..."):
-                    success, result = generate_video(prompt)
-
-                if success:
-                    st.session_state.last_video_path = result
-                    save_usage(
-                        username=st.session_state.user,
-                        tool="video",
-                        prompt=prompt,
-                        tokens_used=0,
-                        cost_tokens=cost,
-                        api_provider="replicate",
-                        status="success",
-                    )
-                    sync_user(st.session_state.user)
-                    st.success("Video erfolgreich generiert.")
-                    add_audit_log(st.session_state.user, "generate_video", "video", prompt[:250])
-                else:
-                    save_usage(
-                        username=st.session_state.user,
-                        tool="video",
-                        prompt=prompt,
-                        tokens_used=0,
-                        cost_tokens=cost,
-                        api_provider="replicate",
-                        status="failed",
-                    )
-                    st.error(result)
+            st.error(result)
 
     if st.session_state.last_video_path:
         st.markdown('<div class="result-box">', unsafe_allow_html=True)
@@ -879,7 +813,6 @@ elif page == "video":
         st.markdown("</div>", unsafe_allow_html=True)
 
 
-# CHAT / CODING / MUSIC / REELS PLACEHOLDER
 elif page in ["chat", "coding", "music", "reels"]:
     require_login()
 
@@ -910,7 +843,6 @@ elif page in ["chat", "coding", "music", "reels"]:
     st.info("Dieses Modul verbinden wir im nächsten Step mit OpenAI Chat, Coding, Music und Reels.")
 
 
-# SUPPORT
 elif page == "support":
     require_login()
 
@@ -946,7 +878,6 @@ elif page == "support":
     st.markdown("</div>", unsafe_allow_html=True)
 
 
-# PREMIUM
 elif page == "premium":
     st.title("💳 Buy Premium")
 
@@ -990,7 +921,6 @@ elif page == "premium":
                         st.link_button("Zur Zahlung", url, use_container_width=True)
 
 
-# ADMIN
 elif page == "admin":
     require_login()
 
