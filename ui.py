@@ -7,13 +7,7 @@ from ui_sidebar import render_sidebar
 from pages.home import render_home
 from pages.auth import render_auth
 from pages.chat import render_chat
-from pages.media import (
-    render_image_page,
-    render_video_page,
-    render_coding_page,
-    render_music_page,
-    render_reels_page,
-)
+from pages.media import render_media
 
 from pages.account import (
     render_dashboard,
@@ -26,12 +20,12 @@ from pages.admin import render_admin
 
 
 # =========================================================
-# CONFIG
+# APP CONFIG
 # =========================================================
 
 st.set_page_config(
     page_title="Mabyte",
-    page_icon="logo24mp.png",
+    page_icon="Logo24mp.png",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -46,7 +40,7 @@ load_css()
 
 
 # =========================================================
-# SESSION
+# SESSION DEFAULTS
 # =========================================================
 
 defaults = {
@@ -75,7 +69,7 @@ render_sidebar()
 # ROUTER
 # =========================================================
 
-page = st.session_state.page
+page = st.session_state.get("page", "home")
 
 if page == "home":
     render_home()
@@ -86,20 +80,8 @@ elif page == "login":
 elif page == "chat":
     render_chat()
 
-elif page == "image":
-    render_image_page()
-
-elif page == "video":
-    render_video_page()
-
-elif page == "coding":
-    render_coding_page()
-
-elif page == "music":
-    render_music_page()
-
-elif page == "reels":
-    render_reels_page()
+elif page in ["image", "video", "music", "reels", "coding", "media"]:
+    render_media()
 
 elif page == "dashboard":
     render_dashboard()
@@ -117,4 +99,4 @@ elif page == "admin":
     render_admin()
 
 else:
-    st.error("Seite nicht gefunden.")
+    render_home()
