@@ -2,7 +2,6 @@ import sqlite3
 import secrets
 from datetime import datetime, timedelta
 import bcrypt
-from migrations import run_migrations
 
 from config import DB_PATH, PLANS
 
@@ -11,9 +10,8 @@ def now():
     return datetime.utcnow().isoformat()
 
 
-
 def get_connection():
-    conn = sqlite3.connect(DB_PATH, check_same_thread=False)
+    conn = sqlite3.connect(DB_PATH, check_same_thread=False, timeout=30)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -29,10 +27,13 @@ def rows_to_dicts(rows):
 def validate_password(password):
     if not password:
         return False, "Bitte Passwort eingeben."
+
     if len(password) < 6:
         return False, "Passwort muss mindestens 6 Zeichen haben."
+
     if len(password.encode("utf-8")) > 72:
         return False, "Passwort maximal 72 Zeichen."
+
     return True, ""
 
 
@@ -130,8 +131,11 @@ def init_db():
 
 
 def create_user(username, email, password):
-    username = username.strip().lower()
-    email = email.strip().lower()
+    username = (username or "").strip().lower()
+    email = (email or "").strip().lower()
+
+    if not username or not email or not password:
+        return False, "Bitte alle Felder ausfüllen."
 
     valid, msg = validate_password(password)
     if not valid:
@@ -148,8 +152,15 @@ def create_user(username, email, password):
 
         cur.execute("""
         INSERT INTO users (
-            username, email, password_hash, plan, tokens,
-            role, admin_level, is_banned, created_at
+            username,
+            email,
+            password_hash,
+            plan,
+            tokens,
+            role,
+            admin_level,
+            is_banned,
+            created_at
         )
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
@@ -157,7 +168,7 @@ def create_user(username, email, password):
             email,
             password_hash,
             "free",
-            PLANS["free"]["tokens"],
+            int(PLANS["free"]["tokens"]),
             "user",
             0,
             0,
@@ -169,14 +180,19 @@ def create_user(username, email, password):
 
     except sqlite3.IntegrityError:
         return False, "Username oder Email existiert bereits."
+
     except Exception as e:
         return False, f"Datenbankfehler: {e}"
+
     finally:
         conn.close()
 
 
 def verify_login(username, password):
-    username = username.strip().lower()
+    username = (username or "").strip().lower()
+
+    if not username or not password:
+        return False, "Bitte Username und Passwort eingeben.", None
 
     conn = get_connection()
     cur = conn.cursor()
@@ -204,7 +220,11 @@ def verify_login(username, password):
         conn.close()
         return False, "Falsches Passwort.", None
 
-    cur.execute("UPDATE users SET last_login = ? WHERE username = ?", (now(), username))
+    cur.execute(
+        "UPDATE users SET last_login = ? WHERE username = ?",
+        (now(), username)
+    )
+
     conn.commit()
 
     cur.execute("SELECT * FROM users WHERE username = ?", (username,))
@@ -217,17 +237,25 @@ def verify_login(username, password):
 def get_user(username):
     conn = get_connection()
     cur = conn.cursor()
-    cur.execute("SELECT * FROM users WHERE username = ?", (username.strip().lower(),))
+
+    cur.execute(
+        "SELECT * FROM users WHERE username = ?",
+        ((username or "").strip().lower(),)
+    )
+
     user = cur.fetchone()
     conn.close()
+
     return row_to_dict(user)
 
 
 def list_users():
     conn = get_connection()
     cur = conn.cursor()
+
     cur.execute("SELECT * FROM users ORDER BY id DESC")
     rows = cur.fetchall()
+
     conn.close()
     return rows_to_dicts(rows)
 
@@ -235,40 +263,50 @@ def list_users():
 def update_tokens(username, tokens):
     conn = get_connection()
     cur = conn.cursor()
+
     cur.execute(
         "UPDATE users SET tokens = ? WHERE username = ?",
-        (int(tokens), username.strip().lower())
+        (int(tokens), (username or "").strip().lower())
     )
+
     conn.commit()
     conn.close()
 
 
 def spend_tokens(username, amount):
     user = get_user(username)
+
     if not user:
         return False, "User nicht gefunden."
-    if int(user["tokens"]) < int(amount):
+
+    if int(user["tokens"] or 0) < int(amount):
         return False, "Nicht genug Tokens."
 
     conn = get_connection()
     cur = conn.cursor()
+
     cur.execute(
         "UPDATE users SET tokens = tokens - ? WHERE username = ?",
-        (int(amount), username.strip().lower())
+        (int(amount), (username or "").strip().lower())
     )
+
     conn.commit()
     conn.close()
+
     return True, "Tokens abgezogen."
 
 
 def set_plan(username, plan):
     tokens = PLANS.get(plan, PLANS["free"])["tokens"]
+
     conn = get_connection()
     cur = conn.cursor()
+
     cur.execute(
         "UPDATE users SET plan = ?, tokens = ? WHERE username = ?",
-        (plan, int(tokens), username.strip().lower())
+        (plan, int(tokens), (username or "").strip().lower())
     )
+
     conn.commit()
     conn.close()
 
@@ -276,10 +314,12 @@ def set_plan(username, plan):
 def set_role(username, role, admin_level=0):
     conn = get_connection()
     cur = conn.cursor()
+
     cur.execute(
         "UPDATE users SET role = ?, admin_level = ? WHERE username = ?",
-        (role, int(admin_level), username.strip().lower())
+        (role, int(admin_level), (username or "").strip().lower())
     )
+
     conn.commit()
     conn.close()
 
@@ -291,10 +331,12 @@ def make_admin(username):
 def ban_user(username, banned=True):
     conn = get_connection()
     cur = conn.cursor()
+
     cur.execute(
         "UPDATE users SET is_banned = ? WHERE username = ?",
-        (1 if banned else 0, username.strip().lower())
+        (1 if banned else 0, (username or "").strip().lower())
     )
+
     conn.commit()
     conn.close()
 
@@ -302,56 +344,104 @@ def ban_user(username, banned=True):
 def delete_user(username):
     conn = get_connection()
     cur = conn.cursor()
-    cur.execute("DELETE FROM users WHERE username = ?", (username.strip().lower(),))
+
+    cur.execute(
+        "DELETE FROM users WHERE username = ?",
+        ((username or "").strip().lower(),)
+    )
+
     conn.commit()
     conn.close()
+
     return True
 
 
 def create_support_message(username, email, category, subject, message):
     conn = get_connection()
     cur = conn.cursor()
+
     cur.execute("""
     INSERT INTO support_tickets (
-        username, email, category, subject, message,
-        status, priority, created_at, updated_at
+        username,
+        email,
+        category,
+        subject,
+        message,
+        status,
+        priority,
+        created_at,
+        updated_at
     )
     VALUES (?, ?, ?, ?, ?, 'open', 'normal', ?, ?)
-    """, (username, email, category, subject, message, now(), now()))
+    """, (
+        username,
+        email,
+        category,
+        subject,
+        message,
+        now(),
+        now()
+    ))
+
     conn.commit()
     conn.close()
+
     return True, "Ticket erstellt."
 
 
 def list_support_messages(status_filter="all"):
     conn = get_connection()
     cur = conn.cursor()
+
     if status_filter == "all":
         cur.execute("SELECT * FROM support_tickets ORDER BY id DESC")
     else:
-        cur.execute("SELECT * FROM support_tickets WHERE status = ? ORDER BY id DESC", (status_filter,))
+        cur.execute(
+            "SELECT * FROM support_tickets WHERE status = ? ORDER BY id DESC",
+            (status_filter,)
+        )
+
     rows = cur.fetchall()
     conn.close()
+
     return rows_to_dicts(rows)
 
 
 def support_counts():
     conn = get_connection()
     cur = conn.cursor()
-    total = cur.execute("SELECT COUNT(*) AS c FROM support_tickets").fetchone()["c"]
-    open_count = cur.execute("SELECT COUNT(*) AS c FROM support_tickets WHERE status='open'").fetchone()["c"]
-    closed_count = cur.execute("SELECT COUNT(*) AS c FROM support_tickets WHERE status='closed'").fetchone()["c"]
+
+    total = cur.execute(
+        "SELECT COUNT(*) AS c FROM support_tickets"
+    ).fetchone()["c"]
+
+    open_count = cur.execute(
+        "SELECT COUNT(*) AS c FROM support_tickets WHERE status='open'"
+    ).fetchone()["c"]
+
+    closed_count = cur.execute(
+        "SELECT COUNT(*) AS c FROM support_tickets WHERE status='closed'"
+    ).fetchone()["c"]
+
     conn.close()
-    return {"total": total, "open": open_count, "closed": closed_count, "unread": open_count}
+
+    return {
+        "total": total,
+        "open": open_count,
+        "closed": closed_count,
+        "unread": open_count,
+    }
 
 
 def set_support_status(ticket_id, status):
     conn = get_connection()
     cur = conn.cursor()
+
     cur.execute(
         "UPDATE support_tickets SET status = ?, updated_at = ? WHERE id = ?",
         (status, now(), int(ticket_id))
     )
+
     conn.commit()
     conn.close()
 
@@ -359,44 +449,81 @@ def set_support_status(ticket_id, status):
 def delete_support_message(ticket_id):
     conn = get_connection()
     cur = conn.cursor()
-    cur.execute("DELETE FROM support_tickets WHERE id = ?", (int(ticket_id),))
+
+    cur.execute(
+        "DELETE FROM support_tickets WHERE id = ?",
+        (int(ticket_id),)
+    )
+
     conn.commit()
     conn.close()
 
 
-def create_redeem_code(code_type, value="", tokens=0, plan="", max_uses=1, created_by="", days_valid=30):
+def create_redeem_code(
+    code_type,
+    value="",
+    tokens=0,
+    plan="",
+    max_uses=1,
+    created_by="",
+    days_valid=30
+):
     code = secrets.token_hex(4).upper()
     expires_at = (datetime.utcnow() + timedelta(days=int(days_valid))).isoformat()
 
     conn = get_connection()
     cur = conn.cursor()
+
     cur.execute("""
     INSERT INTO redeem_codes (
-        code, code_type, plan, tokens, max_uses,
-        used_count, created_by, expires_at, is_active, created_at
+        code,
+        code_type,
+        plan,
+        tokens,
+        max_uses,
+        used_count,
+        created_by,
+        expires_at,
+        is_active,
+        created_at
     )
     VALUES (?, ?, ?, ?, ?, 0, ?, ?, 1, ?)
-    """, (code, code_type, plan, int(tokens or 0), int(max_uses or 1), created_by, expires_at, now()))
+    """, (
+        code,
+        code_type,
+        plan,
+        int(tokens or 0),
+        int(max_uses or 1),
+        created_by,
+        expires_at,
+        now()
+    ))
+
     conn.commit()
     conn.close()
+
     return code
 
 
 def list_codes():
     conn = get_connection()
     cur = conn.cursor()
+
     cur.execute("SELECT * FROM redeem_codes ORDER BY id DESC")
     rows = cur.fetchall()
+
     conn.close()
+
     return rows_to_dicts(rows)
 
 
 def redeem_code(username, code):
-    code = code.strip().upper()
-    username = username.strip().lower()
+    code = (code or "").strip().upper()
+    username = (username or "").strip().lower()
 
     conn = get_connection()
     cur = conn.cursor()
+
     item = cur.execute(
         "SELECT * FROM redeem_codes WHERE code = ? AND is_active = 1",
         (code,)
@@ -406,7 +533,7 @@ def redeem_code(username, code):
         conn.close()
         return False, "Code ungültig."
 
-    if int(item["used_count"]) >= int(item["max_uses"]):
+    if int(item["used_count"] or 0) >= int(item["max_uses"] or 1):
         conn.close()
         return False, "Code wurde bereits zu oft genutzt."
 
@@ -414,28 +541,64 @@ def redeem_code(username, code):
         conn.close()
         return False, "Code ist abgelaufen."
 
-    if item["tokens"]:
-        cur.execute("UPDATE users SET tokens = tokens + ? WHERE username = ?", (int(item["tokens"]), username))
+    if int(item["tokens"] or 0) > 0:
+        cur.execute(
+            "UPDATE users SET tokens = tokens + ? WHERE username = ?",
+            (int(item["tokens"]), username)
+        )
 
     if item["plan"]:
-        cur.execute("UPDATE users SET plan = ? WHERE username = ?", (item["plan"], username))
+        cur.execute(
+            "UPDATE users SET plan = ? WHERE username = ?",
+            (item["plan"], username)
+        )
 
-    cur.execute("UPDATE redeem_codes SET used_count = used_count + 1 WHERE code = ?", (code,))
+    cur.execute(
+        "UPDATE redeem_codes SET used_count = used_count + 1 WHERE code = ?",
+        (code,)
+    )
+
     conn.commit()
     conn.close()
+
     return True, "Code eingelöst."
 
 
-def save_usage(username, tool, prompt, tokens_used=0, cost_tokens=0, api_provider="", status="success"):
+def save_usage(
+    username,
+    tool,
+    prompt,
+    tokens_used=0,
+    cost_tokens=0,
+    api_provider="",
+    status="success"
+):
     conn = get_connection()
     cur = conn.cursor()
+
     cur.execute("""
     INSERT INTO usage_logs (
-        username, tool, prompt, tokens_used,
-        cost_tokens, api_provider, status, created_at
+        username,
+        tool,
+        prompt,
+        tokens_used,
+        cost_tokens,
+        api_provider,
+        status,
+        created_at
     )
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    """, (username, tool, prompt, int(tokens_used or 0), int(cost_tokens or 0), api_provider, status, now()))
+    """, (
+        username,
+        tool,
+        prompt,
+        int(tokens_used or 0),
+        int(cost_tokens or 0),
+        api_provider,
+        status,
+        now()
+    ))
+
     conn.commit()
     conn.close()
 
@@ -443,22 +606,42 @@ def save_usage(username, tool, prompt, tokens_used=0, cost_tokens=0, api_provide
 def list_usage(username=None):
     conn = get_connection()
     cur = conn.cursor()
+
     if username:
-        cur.execute("SELECT * FROM usage_logs WHERE username = ? ORDER BY id DESC", (username,))
+        cur.execute(
+            "SELECT * FROM usage_logs WHERE username = ? ORDER BY id DESC",
+            ((username or "").strip().lower(),)
+        )
     else:
         cur.execute("SELECT * FROM usage_logs ORDER BY id DESC")
+
     rows = cur.fetchall()
     conn.close()
+
     return rows_to_dicts(rows)
 
 
 def add_audit_log(actor, action, target="", details=""):
     conn = get_connection()
     cur = conn.cursor()
+
     cur.execute("""
-    INSERT INTO audit_logs (actor, action, target, details, created_at)
+    INSERT INTO audit_logs (
+        actor,
+        action,
+        target,
+        details,
+        created_at
+    )
     VALUES (?, ?, ?, ?, ?)
-    """, (actor, action, target, details, now()))
+    """, (
+        actor,
+        action,
+        target,
+        details,
+        now()
+    ))
+
     conn.commit()
     conn.close()
 
@@ -466,22 +649,40 @@ def add_audit_log(actor, action, target="", details=""):
 def list_audit_logs():
     conn = get_connection()
     cur = conn.cursor()
+
     cur.execute("SELECT * FROM audit_logs ORDER BY id DESC")
     rows = cur.fetchall()
+
     conn.close()
+
     return rows_to_dicts(rows)
 
 
 def record_purchase(username, plan, amount, session_id, payment_status, status):
     conn = get_connection()
     cur = conn.cursor()
+
     cur.execute("""
     INSERT INTO payments (
-        username, plan, amount, stripe_session_id,
-        payment_status, status, created_at
+        username,
+        plan,
+        amount,
+        stripe_session_id,
+        payment_status,
+        status,
+        created_at
     )
     VALUES (?, ?, ?, ?, ?, ?, ?)
-    """, (username, plan, int(amount or 0), session_id, payment_status, status, now()))
+    """, (
+        username,
+        plan,
+        int(amount or 0),
+        session_id,
+        payment_status,
+        status,
+        now()
+    ))
+
     conn.commit()
     conn.close()
 
@@ -489,22 +690,21 @@ def record_purchase(username, plan, amount, session_id, payment_status, status):
 def list_purchases(username=None):
     conn = get_connection()
     cur = conn.cursor()
+
     if username:
-        cur.execute("SELECT * FROM payments WHERE username = ? ORDER BY id DESC", (username,))
+        cur.execute(
+            "SELECT * FROM payments WHERE username = ? ORDER BY id DESC",
+            ((username or "").strip().lower(),)
+        )
     else:
         cur.execute("SELECT * FROM payments ORDER BY id DESC")
+
     rows = cur.fetchall()
     conn.close()
+
     return rows_to_dicts(rows)
 
 
 init_db()
 make_admin("mepro1337")
 set_plan("mepro1337", "elite")
-    conn.close()
-
-    print("Migrations complete.")
-
-
-if __name__ == "__main__":
-    run_migrations()
