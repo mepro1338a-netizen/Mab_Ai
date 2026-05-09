@@ -1,6 +1,7 @@
 import streamlit as st
 
 from ai_service import ai_health_check
+from streamlit_autorefresh import st_autorefresh
 
 from database import (
     list_users,
@@ -109,6 +110,7 @@ def render_admin_tickets():
 
 
 def render_admin_users():
+    st_autorefresh(interval=5000, key="admin_users_refresh")
     users = list_users()
     st.dataframe(users, use_container_width=True)
 
