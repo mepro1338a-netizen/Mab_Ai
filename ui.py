@@ -2,7 +2,7 @@ import base64
 import random
 import textwrap
 from pathlib import Path
-
+from chat_service import generate_chat
 import streamlit as st
 
 from session_manager import (
