@@ -477,7 +477,36 @@ section[data-testid="stSidebar"] * {
     .card-grid {
         grid-template-columns: 1fr;
     }
+
+.stChatInputContainer {
+    background: #05050a !important;
+    border-top: 1px solid rgba(255,215,0,.15) !important;
 }
+
+.stChatInputContainer textarea {
+    background: #0b0b12 !important;
+    color: white !important;
+    border: 1px solid rgba(255,215,0,.25) !important;
+    border-radius: 16px !important;
+}
+
+.stChatInputContainer textarea::placeholder {
+    color: #9ca3af !important;
+}
+
+[data-testid="stChatMessage"] {
+    background: #0b0b12 !important;
+    border: 1px solid rgba(255,255,255,.08) !important;
+    border-radius: 18px !important;
+    padding: 14px !important;
+    margin-bottom: 12px !important;
+}
+
+[data-testid="stChatMessage"] * {
+    color: white !important;
+}
+}
+
 </style>
 """,
     unsafe_allow_html=True,
