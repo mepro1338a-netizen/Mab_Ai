@@ -5,6 +5,12 @@ from pathlib import Path
 
 import streamlit as st
 
+from session_manager import (
+    init_session,
+    update_activity,
+    is_session_expired,
+    logout as session_logout,
+)
 
 from security import (
     is_valid_username,
@@ -12,8 +18,17 @@ from security import (
     check_login_rate,
 )
 
-from config import APP_NAME, PLANS, TOKEN_COSTS, LOGO_PATH, FAVICON_PATH, HEADER_PATH
+from config import (
+    APP_NAME,
+    PLANS,
+    TOKEN_COSTS,
+    LOGO_PATH,
+    FAVICON_PATH,
+    HEADER_PATH,
+)
+
 from ai_service import generate_image, generate_video, ai_health_check
+
 from database import (
     init_db,
     create_user,
@@ -58,6 +73,12 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+init_session()
+
+if is_session_expired():
+    session_logout()
+
+update_activity()
 
 init_db()
 
@@ -84,20 +105,21 @@ def sync_user(username: str):
     user = get_user(username)
     if user:
         st.session_state.user = user["username"]
-        st.session_state.email = user["email"]
+        st.session_state.email = user.get("email", "")
         st.session_state.plan = user["plan"]
         st.session_state.tokens = user["tokens"]
         st.session_state.role = user["role"]
         st.session_state.admin_level = user["admin_level"]
 
 
-def logout():
+def app_logout():
     st.session_state.user = None
     st.session_state.email = ""
     st.session_state.plan = "free"
     st.session_state.tokens = 0
     st.session_state.role = "user"
     st.session_state.admin_level = 0
+    st.session_state.logged_in = False
     st.session_state.page = "home"
     st.rerun()
 
@@ -107,11 +129,14 @@ def is_logged_in():
 
 
 def is_admin():
-    return st.session_state.role in ["supporter", "moderator", "admin", "owner"] or int(st.session_state.admin_level) > 0
+    return (
+        st.session_state.role in ["supporter", "moderator", "admin", "owner"]
+        or int(st.session_state.admin_level) > 0
+    )
 
 
 def is_owner():
-    return st.session_state.role == "owner" or int(st.session_state.admin_level) >= 3
+    return st.session_state.role == "owner" or int(st.session_state.admin_level) >= 999
 
 
 def plan_rank(plan):
@@ -189,6 +214,7 @@ defaults = {
     "captcha_b": random.randint(1, 5),
     "last_image_path": None,
     "last_video_path": None,
+    "logged_in": False,
 }
 
 for key, value in defaults.items():
@@ -251,16 +277,19 @@ section[data-testid="stSidebar"] * {
 .stButton button {
     width: 100% !important;
     background: #000 !important;
-    color: white !important;
+    color: #ffffff !important;
     border: 1px solid rgba(255,215,0,.45) !important;
     border-radius: 16px !important;
     min-height: 48px !important;
-    font-weight: 800 !important;
+    font-weight: 900 !important;
+    font-size: 18px !important;
+    letter-spacing: .2px !important;
 }
 
 .stButton button:hover {
     border-color: #ffd700 !important;
-    color: #ffd700 !important;
+    color: #ffffff !important;
+    background: rgba(255,215,0,.08) !important;
     box-shadow: 0 0 18px rgba(255,215,0,.14) !important;
 }
 
@@ -495,7 +524,7 @@ with st.sidebar:
         )
 
         if st.button("Logout", key="logout_btn"):
-            logout()
+            app_logout()
     else:
         if st.button("Login / Register", key="login_register_btn"):
             st.session_state.page = "login"
@@ -593,37 +622,38 @@ elif page == "login":
 
     with tab1:
         st.markdown('<div class="page-card">', unsafe_allow_html=True)
+
         username = st.text_input("Username", key="login_username")
         password = st.text_input("Password", type="password", key="login_password")
 
-if st.button("Login", key="login_btn"):
+        if st.button("Login", key="login_btn"):
+            allowed, rate_msg = check_login_rate(username)
 
-    allowed, rate_msg = check_login_rate(username)
+            if not allowed:
+                st.error(rate_msg)
+            else:
+                ok, msg, user = verify_login(username, password)
 
-    if not allowed:
-        st.error(rate_msg)
+                if ok and user:
+                    st.session_state.logged_in = True
+                    st.session_state.user = user["username"]
+                    st.session_state.email = user.get("email", "")
+                    st.session_state.plan = user["plan"]
+                    st.session_state.tokens = user["tokens"]
+                    st.session_state.role = user["role"]
+                    st.session_state.admin_level = user["admin_level"]
+                    st.session_state.page = "home"
 
-    else:
-        ok, msg, user = verify_login(username, password)
+                    st.success(msg)
+                    st.rerun()
+                else:
+                    st.error(msg)
 
-        if ok and user:
-
-            st.session_state.user = user["username"]
-            st.session_state.email = user["email"]
-            st.session_state.plan = user["plan"]
-            st.session_state.tokens = user["tokens"]
-            st.session_state.role = user["role"]
-            st.session_state.admin_level = user["admin_level"]
-            st.session_state.page = "home"
-
-            st.success(msg)
-            st.rerun()
-
-        else:
-            st.error(msg)
+        st.markdown("</div>", unsafe_allow_html=True)
 
     with tab2:
         st.markdown('<div class="page-card">', unsafe_allow_html=True)
+
         reg_user = st.text_input("Username", key="register_user")
         reg_mail = st.text_input("Email", key="register_mail")
         reg_pw = st.text_input("Password", type="password", key="register_pw")
@@ -638,18 +668,25 @@ if st.button("Login", key="login_btn"):
         )
 
         if st.button("Register", key="register_btn"):
-            if captcha != result:
+            if not is_valid_username(reg_user):
+                st.error("Ungültiger Username. Nutze 3-40 Zeichen: Buchstaben, Zahlen oder _.")
+
+            elif not is_valid_email(reg_mail):
+                st.error("Ungültige Email.")
+
+            elif captcha != result:
                 st.error("Captcha falsch.")
                 refresh_captcha()
                 st.rerun()
 
-            ok, msg = create_user(reg_user, reg_mail, reg_pw)
-
-            if ok:
-                st.success(msg)
-                refresh_captcha()
             else:
-                st.error(msg)
+                ok, msg = create_user(reg_user, reg_mail, reg_pw)
+
+                if ok:
+                    st.success(msg)
+                    refresh_captcha()
+                else:
+                    st.error(msg)
 
         st.markdown("</div>", unsafe_allow_html=True)
 
@@ -717,6 +754,7 @@ elif page == "image":
             st.error("Bitte Prompt eingeben.")
         else:
             ok, msg = spend_tokens(st.session_state.user, cost)
+
             if not ok:
                 st.error(msg)
             else:
@@ -794,6 +832,7 @@ elif page == "video":
             st.error("Bitte Prompt eingeben.")
         else:
             ok, msg = spend_tokens(st.session_state.user, cost)
+
             if not ok:
                 st.error(msg)
             else:
@@ -878,6 +917,7 @@ elif page == "support":
     st.title("🆘 Support")
 
     st.markdown('<div class="page-card">', unsafe_allow_html=True)
+
     subject = st.text_input("Betreff", key="support_subject")
     msg = st.text_area("Nachricht", key="support_msg", height=180)
     category = st.selectbox(
@@ -897,6 +937,7 @@ elif page == "support":
                 subject=subject,
                 message=msg,
             )
+
             if ok:
                 st.success(response)
             else:
@@ -942,6 +983,7 @@ elif page == "premium":
                     st.error("Stripe Modul ist noch nicht korrekt verbunden.")
                 else:
                     url, error = create_checkout_session(st.session_state.user, plan_key)
+
                     if error:
                         st.error(error)
                     else:
@@ -1010,7 +1052,7 @@ elif page == "admin":
 
         if is_owner():
             new_role = st.selectbox("Role", ["user", "supporter", "moderator", "admin", "owner"], key="admin_new_role")
-            new_level = st.selectbox("Admin Level", [0, 1, 2, 3], key="admin_new_level")
+            new_level = st.selectbox("Admin Level", [0, 1, 2, 3, 999], key="admin_new_level")
         else:
             new_role = "user"
             new_level = 0
@@ -1045,7 +1087,7 @@ elif page == "admin":
 
     with tab_codes:
         if not is_owner():
-            st.info("Nur Owner/Admin Level 3 kann Codes erstellen.")
+            st.info("Nur Owner/Admin Level 999 kann Codes erstellen.")
         else:
             with st.form("create_code_form"):
                 code_type = st.selectbox("Typ", ["tokens", "plan", "mixed"])
