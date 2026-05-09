@@ -5,6 +5,13 @@ from pathlib import Path
 from chat_service import generate_chat
 import streamlit as st
 
+from chat_memory import (
+    init_chat_memory,
+    save_chat_message,
+    load_chat_history,
+    clear_chat_history,
+)
+
 from session_manager import (
     init_session,
     update_activity,
@@ -75,6 +82,7 @@ if is_session_expired():
 
 update_activity()
 init_db()
+init_chat_memory()
 
 
 def img_b64(path) -> str:
@@ -813,35 +821,17 @@ elif page == "video":
         st.markdown("</div>", unsafe_allow_html=True)
 
 
-elif page in ["chat", "coding", "music", "reels"]:
+elif page == "coding":
     require_login()
+    st.title("coding")
 
-    feature_map = {
-        "chat": ("💬 Memory Chat", "free", "Schreibe, plane und arbeite mit deinem AI-Assistenten."),
-        "coding": ("💻 Coding Area", "pro", "Lass dir Code schreiben, debuggen oder erklären."),
-        "music": ("🎵 Music Generator", "pro", "Erstelle Musikideen, Lyrics und Audio-Prompts."),
-        "reels": ("🎞️ Short Reels Creator", "pro", "Erstelle virale Reels, Hooks und Skripte."),
-    }
+elif page == "musik":
+    require_login()
+    st.title("music")
 
-    title, required, desc = feature_map[page]
-
-    st.markdown(
-        f"""
-        <div class="page-card">
-            <span class="badge">{required.upper()} FEATURE</span>
-            <h1>{title}</h1>
-            <p style="font-size:20px;color:#d4d4d8;line-height:1.7;">{desc}</p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    if not can_use(required):
-        st.warning(f"Dieses Feature benötigt mindestens {required.upper()}.")
-        st.stop()
-
-    st.info("Dieses Modul verbinden wir im nächsten Step mit OpenAI Chat, Coding, Music und Reels.")
-
+elif page == "reels":
+    require_login()
+    st.title("reels")
 
 elif page == "support":
     require_login()
