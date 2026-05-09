@@ -19,7 +19,13 @@ from database import (
     add_audit_log,
 )
 
-from ui_helpers import require_login, is_admin, is_owner
+from redeem_tracking import list_redeem_redemptions
+
+from ui_helpers import (
+    require_login,
+    is_admin,
+    is_owner,
+)
 
 
 def init_admin_support_tables():
@@ -38,15 +44,19 @@ def init_admin_support_tables():
 def safe_users():
     try:
         users = list_users()
+
         clean = []
 
         for user in users:
             user = dict(user)
+
             user.pop("password", None)
             user.pop("password_hash", None)
+
             clean.append(user)
 
         return clean
+
     except Exception:
         return fetch_all("""
         SELECT
@@ -72,21 +82,25 @@ def render_admin():
 
     init_admin_support_tables()
 
-    st.markdown(
-        """
-        <div class="page-card">
-            <span class="badge">ADMIN</span>
-            <h1>🛡️ Admin Panel</h1>
-            <p>Verwalte User, Tickets, Redeem Codes, Logs und Systemstatus.</p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    st.markdown("""
+    <div class="page-card">
+        <span class="badge">ADMIN</span>
+        <h1>🛡️ Admin Panel</h1>
+        <p>
+            Verwalte User, Tickets, Redeem Codes,
+            Logs und Systemstatus.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
 
     try:
         counts = support_counts()
     except Exception:
-        counts = {"total": 0, "open": 0, "closed": 0}
+        counts = {
+            "total": 0,
+            "open": 0,
+            "closed": 0,
+        }
 
     try:
         health = ai_health_check()
@@ -102,9 +116,23 @@ def render_admin():
     c3.metric("Offen", counts.get("open", 0))
     c4.metric("Admin Level", st.session_state.admin_level)
 
-    tab_tickets, tab_users, tab_codes, tab_logs, tab_payments, tab_system = st.tabs(
-        ["🎫 Tickets", "👥 Users", "🎁 Redeem Codes", "📜 Logs", "💳 Payments", "⚙️ System"]
-    )
+    (
+        tab_tickets,
+        tab_users,
+        tab_codes,
+        tab_redeem_logs,
+        tab_logs,
+        tab_payments,
+        tab_system,
+    ) = st.tabs([
+        "🎫 Tickets",
+        "👥 Users",
+        "🎁 Redeem Codes",
+        "🧾 Redeem Logs",
+        "📜 Logs",
+        "💳 Payments",
+        "⚙️ System",
+    ])
 
     with tab_tickets:
         render_admin_tickets()
@@ -114,6 +142,9 @@ def render_admin():
 
     with tab_codes:
         render_admin_codes()
+
+    with tab_redeem_logs:
+        render_admin_redeem_logs()
 
     with tab_logs:
         render_admin_logs()
@@ -156,7 +187,9 @@ def render_admin_tickets():
         status = ticket.get("status", "open")
         title = ticket.get("subject", "Ohne Betreff")
 
-        with st.expander(f"#{ticket['id']} · {title} · {status}"):
+        with st.expander(
+            f"#{ticket['id']} · {title} · {status}"
+        ):
             st.markdown(
                 f"""
                 <div class="page-card">
@@ -165,7 +198,9 @@ def render_admin_tickets():
                     <b>Kategorie:</b> {ticket.get("category")}<br>
                     <b>Status:</b> {ticket.get("status")}<br>
                     <b>Erstellt:</b> {ticket.get("created_at")}
+
                     <hr>
+
                     <h4>Nachricht</h4>
                     <p>{ticket.get("message")}</p>
                 </div>
@@ -188,9 +223,18 @@ def render_admin_tickets():
                         f"""
                         <div class="page-card">
                             <b>{reply.get("sender")}</b>
-                            <span style="color:#ffd700;">({reply.get("sender_role")})</span><br>
-                            <small>{reply.get("created_at")}</small>
-                            <p style="margin-top:12px;">{reply.get("message")}</p>
+
+                            <span style="color:#ffd700;">
+                                ({reply.get("sender_role")})
+                            </span><br>
+
+                            <small>
+                                {reply.get("created_at")}
+                            </small>
+
+                            <p style="margin-top:12px;">
+                                {reply.get("message")}
+                            </p>
                         </div>
                         """,
                         unsafe_allow_html=True,
@@ -206,7 +250,10 @@ def render_admin_tickets():
 
             col1, col2, col3 = st.columns(3)
 
-            if col1.button("Antwort senden", key=f"send_reply_{ticket['id']}"):
+            if col1.button(
+                "Antwort senden",
+                key=f"send_reply_{ticket['id']}"
+            ):
                 if not reply_text.strip():
                     st.error("Bitte Antwort eingeben.")
                 else:
@@ -241,24 +288,23 @@ def render_admin_tickets():
                     st.success("Antwort gesendet.")
                     st.rerun()
 
-            if col2.button("Ticket schließen", key=f"close_ticket_{ticket['id']}"):
+            if col2.button(
+                "Ticket schließen",
+                key=f"close_ticket_{ticket['id']}"
+            ):
                 execute("""
                 UPDATE support_tickets
                 SET status = 'closed'
                 WHERE id = %s
                 """, (ticket["id"],))
 
-                add_audit_log(
-                    st.session_state.user,
-                    "close_ticket",
-                    str(ticket["id"]),
-                    "",
-                )
-
                 st.success("Ticket geschlossen.")
                 st.rerun()
 
-            if col3.button("Ticket löschen", key=f"delete_ticket_{ticket['id']}"):
+            if col3.button(
+                "Ticket löschen",
+                key=f"delete_ticket_{ticket['id']}"
+            ):
                 execute("""
                 DELETE FROM support_replies
                 WHERE ticket_id = %s
@@ -269,13 +315,6 @@ def render_admin_tickets():
                 WHERE id = %s
                 """, (ticket["id"],))
 
-                add_audit_log(
-                    st.session_state.user,
-                    "delete_ticket",
-                    str(ticket["id"]),
-                    "",
-                )
-
                 st.success("Ticket gelöscht.")
                 st.rerun()
 
@@ -283,20 +322,23 @@ def render_admin_tickets():
 def render_admin_users():
     st.markdown("## 👥 Users")
 
-    if st.button("🔄 Userliste aktualisieren", key="refresh_users"):
-        st.rerun()
-
     users = safe_users()
 
     if users:
-        st.dataframe(users, use_container_width=True)
+        st.dataframe(
+            users,
+            use_container_width=True,
+        )
     else:
         st.info("Keine User vorhanden.")
 
     st.markdown("---")
     st.markdown("### User bearbeiten")
 
-    target_user = st.text_input("Username", key="admin_target_user")
+    target_user = st.text_input(
+        "Username",
+        key="admin_target_user",
+    )
 
     col_a, col_b = st.columns(2)
 
@@ -319,7 +361,13 @@ def render_admin_users():
         if is_owner():
             new_role = st.selectbox(
                 "Role",
-                ["user", "supporter", "moderator", "admin", "owner"],
+                [
+                    "user",
+                    "supporter",
+                    "moderator",
+                    "admin",
+                    "owner",
+                ],
                 key="admin_new_role",
             )
 
@@ -334,138 +382,139 @@ def render_admin_users():
 
     c1, c2, c3, c4 = st.columns(4)
 
-    if c1.button("Plan setzen", key="admin_set_plan"):
-        if not target_user.strip():
-            st.error("Bitte Username eingeben.")
-        else:
-            set_plan(target_user, new_plan)
-            add_audit_log(st.session_state.user, "set_plan", target_user, new_plan)
-            st.success("Plan geändert.")
-            st.rerun()
+    if c1.button("Plan setzen"):
+        set_plan(target_user, new_plan)
+        st.success("Plan geändert.")
+        st.rerun()
 
-    if c2.button("Tokens setzen", key="admin_set_tokens"):
-        if not target_user.strip():
-            st.error("Bitte Username eingeben.")
-        else:
-            update_tokens(target_user, new_tokens)
-            add_audit_log(st.session_state.user, "set_tokens", target_user, str(new_tokens))
-            st.success("Tokens geändert.")
-            st.rerun()
+    if c2.button("Tokens setzen"):
+        update_tokens(target_user, new_tokens)
+        st.success("Tokens geändert.")
+        st.rerun()
 
-    if c3.button("User bannen", key="admin_ban_user"):
-        if not target_user.strip():
-            st.error("Bitte Username eingeben.")
-        else:
-            ban_user(target_user, True)
-            add_audit_log(st.session_state.user, "ban_user", target_user, "")
-            st.success("User gebannt.")
-            st.rerun()
+    if c3.button("User bannen"):
+        ban_user(target_user, True)
+        st.success("User gebannt.")
+        st.rerun()
 
-    if c4.button("User löschen", key="admin_delete_user"):
-        if not target_user.strip():
-            st.error("Bitte Username eingeben.")
-        else:
-            delete_user(target_user)
-            add_audit_log(st.session_state.user, "delete_user", target_user, "")
-            st.success("User gelöscht.")
-            st.rerun()
+    if c4.button("User löschen"):
+        delete_user(target_user)
+        st.success("User gelöscht.")
+        st.rerun()
 
     if is_owner():
-        if st.button("Role / Admin Level setzen", key="admin_set_role"):
-            if not target_user.strip():
-                st.error("Bitte Username eingeben.")
-            else:
-                set_role(target_user, new_role, new_level)
-                add_audit_log(
-                    st.session_state.user,
-                    "set_role",
-                    target_user,
-                    f"{new_role}:{new_level}",
-                )
-                st.success("Role geändert.")
-                st.rerun()
+        if st.button("Role setzen"):
+            set_role(
+                target_user,
+                new_role,
+                new_level,
+            )
+
+            st.success("Role geändert.")
+            st.rerun()
 
 
 def render_admin_codes():
     st.markdown("## 🎁 Redeem Codes")
 
     if not is_owner():
-        st.info("Nur Owner/Admin Level 999 kann Codes erstellen.")
-    else:
-        st.markdown(
-            """
-            <div class="page-card">
-                <h3>Neuen Redeem Code erstellen</h3>
-                <p>Erstelle Token-, Plan- oder Mixed-Codes für User.</p>
-            </div>
-            """,
-            unsafe_allow_html=True,
+        st.info("Nur Owner kann Codes erstellen.")
+        return
+
+    with st.form("create_code_form"):
+        code_type = st.selectbox(
+            "Typ",
+            ["tokens", "plan", "mixed"]
         )
 
-        with st.form("create_code_form"):
-            code_type = st.selectbox("Typ", ["tokens", "plan", "mixed"])
-            plan = st.selectbox("Plan", ["", "free", "pro", "grand", "elite"])
-            tokens = st.number_input("Tokens", min_value=0, value=100, step=100)
-            max_uses = st.number_input("Max Uses", min_value=1, value=1)
-            days_valid = st.number_input("Gültig Tage", min_value=1, value=30)
+        plan = st.selectbox(
+            "Plan",
+            ["", "free", "pro", "grand", "elite"]
+        )
 
-            submit = st.form_submit_button("Code erstellen")
+        tokens = st.number_input(
+            "Tokens",
+            min_value=0,
+            value=100,
+            step=100,
+        )
 
-        if submit:
-            code = create_redeem_code(
-                code_type=code_type,
-                value="",
-                tokens=tokens,
-                plan=plan,
-                max_uses=max_uses,
-                created_by=st.session_state.user,
-                days_valid=days_valid,
-            )
+        max_uses = st.number_input(
+            "Max Uses",
+            min_value=1,
+            value=1,
+        )
 
-            add_audit_log(
-                st.session_state.user,
-                "create_redeem_code",
-                code,
-                f"tokens={tokens}; plan={plan}; max_uses={max_uses}",
-            )
+        days_valid = st.number_input(
+            "Gültig Tage",
+            min_value=1,
+            value=30,
+        )
 
-            st.success(f"Code erstellt: {code}")
+        submit = st.form_submit_button(
+            "Code erstellen"
+        )
 
-    st.markdown("### Bestehende Codes")
+    if submit:
+        code = create_redeem_code(
+            code_type=code_type,
+            value="",
+            tokens=tokens,
+            plan=plan,
+            max_uses=max_uses,
+            created_by=st.session_state.user,
+            days_valid=days_valid,
+        )
 
-    try:
-        codes = list_codes()
-    except Exception:
-        codes = []
+        st.success(f"Code erstellt: {code}")
+
+    codes = list_codes()
 
     if codes:
-        st.dataframe(codes, use_container_width=True)
+        st.dataframe(
+            codes,
+            use_container_width=True,
+        )
     else:
         st.info("Keine Codes vorhanden.")
+
+
+def render_admin_redeem_logs():
+    st.markdown("## 🧾 Redeem Logs")
+
+    logs = list_redeem_redemptions()
+
+    if logs:
+        st.dataframe(
+            logs,
+            use_container_width=True,
+        )
+    else:
+        st.info(
+            "Noch keine Redeem Einlösungen vorhanden."
+        )
 
 
 def render_admin_logs():
     st.markdown("## 📜 Logs")
 
-    st.markdown("### Usage Logs")
-    try:
-        usage = list_usage()
-    except Exception:
-        usage = []
+    usage = list_usage()
 
     if usage:
-        st.dataframe(usage, use_container_width=True)
+        st.dataframe(
+            usage,
+            use_container_width=True,
+        )
     else:
-        st.info("Keine Usage Logs vorhanden.")
+        st.info("Keine Logs vorhanden.")
 
-    st.markdown("### Audit Logs")
-    try:
-        audit_logs = list_audit_logs()
-    except Exception:
-        audit_logs = []
+    audit_logs = list_audit_logs()
 
     if audit_logs:
-        st.dataframe(audit_logs, use_container_width=True)
+        st.dataframe(
+            audit_logs,
+            use_container_width=True,
+        )
     else:
         st.info("Keine Audit Logs vorhanden.")
 
@@ -473,13 +522,13 @@ def render_admin_logs():
 def render_admin_payments():
     st.markdown("## 💳 Payments")
 
-    try:
-        purchases = list_purchases()
-    except Exception:
-        purchases = []
+    purchases = list_purchases()
 
     if purchases:
-        st.dataframe(purchases, use_container_width=True)
+        st.dataframe(
+            purchases,
+            use_container_width=True,
+        )
     else:
         st.info("Keine Payments vorhanden.")
 
@@ -491,11 +540,9 @@ def render_admin_system(health):
     st.json(health)
 
     st.markdown("### Session")
-    st.json(
-        {
-            "user": st.session_state.get("user"),
-            "plan": st.session_state.get("plan"),
-            "role": st.session_state.get("role"),
-            "admin_level": st.session_state.get("admin_level"),
-        }
-    )
+    st.json({
+        "user": st.session_state.get("user"),
+        "plan": st.session_state.get("plan"),
+        "role": st.session_state.get("role"),
+        "admin_level": st.session_state.get("admin_level"),
+    })
