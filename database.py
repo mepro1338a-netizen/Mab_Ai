@@ -185,6 +185,7 @@ def create_user(username, email, password):
         return False, f"Datenbankfehler: {e}"
 
     finally:
+        conn.commit()
         conn.close()
 
 

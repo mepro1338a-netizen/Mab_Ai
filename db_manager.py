@@ -1,57 +1,102 @@
-import sqlite3
-import threading
-import time
-from config import DB_PATH
+import os
+import psycopg2
+from psycopg2.extras import RealDictCursor
 
-class DatabaseManager:
-    def __init__(self):
-        self.lock = threading.Lock()
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-    def get_connection(self):
-        conn = sqlite3.connect(
-            DB_PATH,
-            check_same_thread=False,
-            timeout=30
-        )
 
-        conn.row_factory = sqlite3.Row
+def get_connection():
+    return psycopg2.connect(
+        DATABASE_URL,
+        cursor_factory=RealDictCursor
+    )
 
-        conn.execute("PRAGMA journal_mode=WAL")
-        conn.execute("PRAGMA synchronous=NORMAL")
-        conn.execute("PRAGMA foreign_keys=ON")
 
-        return conn
+def init_db():
+    conn = get_connection()
+    cur = conn.cursor()
 
-    def execute(self, query, params=(), fetchone=False, fetchall=False):
-        retries = 3
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        username TEXT UNIQUE NOT NULL,
+        email TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL,
+        plan TEXT DEFAULT 'free',
+        tokens INTEGER DEFAULT 100,
+        role TEXT DEFAULT 'user',
+        admin_level INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
 
-        for attempt in range(retries):
-            try:
-                with self.lock:
-                    conn = self.get_connection()
-                    cur = conn.cursor()
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS redeem_codes (
+        id SERIAL PRIMARY KEY,
+        code TEXT UNIQUE NOT NULL,
+        tokens INTEGER DEFAULT 0,
+        plan TEXT,
+        max_uses INTEGER DEFAULT 1,
+        used_count INTEGER DEFAULT 0,
+        active BOOLEAN DEFAULT TRUE
+    )
+    """)
 
-                    cur.execute(query, params)
+    conn.commit()
+    cur.close()
+    conn.close()
 
-                    result = None
 
-                    if fetchone:
-                        result = cur.fetchone()
+def create_user(username, email, password):
+    conn = get_connection()
+    cur = conn.cursor()
 
-                    elif fetchall:
-                        result = cur.fetchall()
+    cur.execute("""
+    INSERT INTO users (
+        username,
+        email,
+        password
+    )
+    VALUES (%s, %s, %s)
+    """, (username, email, password))
 
-                    conn.commit()
-                    conn.close()
+    conn.commit()
+    cur.close()
+    conn.close()
 
-                    return result
+    return True
 
-            except sqlite3.OperationalError as e:
-                print(f"DB Error: {e}")
 
-                if attempt < retries - 1:
-                    time.sleep(1)
-                else:
-                    raise e
+def get_user(username):
+    conn = get_connection()
+    cur = conn.cursor()
 
-db = DatabaseManager()
+    cur.execute(
+        "SELECT * FROM users WHERE username=%s",
+        (username,)
+    )
+
+    user = cur.fetchone()
+
+    cur.close()
+    conn.close()
+
+    return user
+
+
+def update_tokens(username, tokens):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute(
+        "UPDATE users SET tokens=%s WHERE username=%s",
+        (tokens, username)
+    )
+
+    conn.commit()
+
+    cur.close()
+    conn.close()
+
+
+init_db()
