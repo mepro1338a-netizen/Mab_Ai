@@ -1,14 +1,12 @@
 import streamlit as st
 
 from ai_service import generate_image, generate_video
-from database import save_usage
-from task_pipeline import run_ai_task
-from ui_helpers import render_file_download
-from auth import require_login, can_use
+from ai_pipeline import run_ai_task
+from config import TOKEN_COSTS
+from ui_helpers import require_login, can_use, render_download
 
 
 def render_image_page():
-
     require_login()
 
     st.markdown(
@@ -16,10 +14,7 @@ def render_image_page():
         <div class="page-card">
             <span class="badge">PRO FEATURE</span>
             <h1>🎨 AI Image Generator</h1>
-            <p style="font-size:20px;color:#d4d4d8;line-height:1.7;">
-                Erstelle professionelle Bilder für Branding, Produkte,
-                Social Media und Kampagnen.
-            </p>
+            <p>Erstelle Bilder für Branding, Social Media und Kampagnen.</p>
         </div>
         """,
         unsafe_allow_html=True,
@@ -27,7 +22,9 @@ def render_image_page():
 
     if not can_use("pro"):
         st.warning("Dieses Feature benötigt mindestens PRO.")
-        return
+        st.stop()
+
+    cost = TOKEN_COSTS.get("image", 25)
 
     prompt = st.text_area(
         "Bild Prompt",
@@ -38,15 +35,7 @@ def render_image_page():
 
     image_style = st.selectbox(
         "Bild Stil",
-        [
-            "Realistisch",
-            "Cinematic",
-            "Anime",
-            "3D Render",
-            "Luxury",
-            "Cyberpunk",
-            "Fantasy",
-        ],
+        ["Realistisch", "Cinematic", "Anime", "3D Render", "Luxury", "Cyberpunk"],
         key="image_style",
     )
 
@@ -54,18 +43,17 @@ def render_image_page():
         "Realistisch": "Ultra realistic, highly detailed, real photography.",
         "Cinematic": "Cinematic lighting, movie quality, dramatic atmosphere.",
         "Anime": "Anime art style, vibrant colors, Japanese animation.",
-        "3D Render": "High quality 3D render, octane render, detailed.",
+        "3D Render": "High quality 3D render, detailed materials.",
         "Luxury": "Luxury premium aesthetic, elegant branding.",
         "Cyberpunk": "Cyberpunk neon futuristic atmosphere.",
-        "Fantasy": "Fantasy world, magical atmosphere, epic scene.",
     }
 
     final_prompt = f"{style_prompts[image_style]}\n\n{prompt}"
 
+    st.info(f"Kosten: {cost} Tokens pro Bild")
+
     if st.button("Bild generieren", key="generate_image_btn"):
-
         with st.spinner("Bild wird generiert..."):
-
             success, result, updated_user = run_ai_task(
                 username=st.session_state.user,
                 tool="image",
@@ -75,46 +63,24 @@ def render_image_page():
             )
 
         if success:
-
-            st.session_state.user_data = updated_user
             st.session_state.last_image_path = result
 
-            save_usage(
-                username=st.session_state.user,
-                tool="image",
-                prompt=final_prompt,
-                tokens_used=0,
-                cost_tokens=25,
-                api_provider="openai",
-                status="success",
-            )
+            if updated_user:
+                st.session_state.tokens = updated_user["tokens"]
 
             st.success("Bild erfolgreich generiert.")
-
         else:
             st.error(result)
 
     if st.session_state.get("last_image_path"):
-
         st.markdown('<div class="result-box">', unsafe_allow_html=True)
-
         st.subheader("Ergebnis")
-
-        st.image(
-            st.session_state.last_image_path,
-            use_container_width=True
-        )
-
-        render_file_download(
-            st.session_state.last_image_path,
-            "Bild herunterladen"
-        )
-
+        st.image(st.session_state.last_image_path, use_container_width=True)
+        render_download(st.session_state.last_image_path, "Bild herunterladen")
         st.markdown("</div>", unsafe_allow_html=True)
 
 
 def render_video_page():
-
     require_login()
 
     st.markdown(
@@ -122,10 +88,7 @@ def render_video_page():
         <div class="page-card">
             <span class="badge">GRAND FEATURE</span>
             <h1>🎬 AI Video Generator</h1>
-            <p style="font-size:20px;color:#d4d4d8;line-height:1.7;">
-                Generiere AI Videos für Reels, Ads, Branding,
-                Social Media und Kampagnen.
-            </p>
+            <p>Generiere AI Videos für Reels, Ads, Branding und Social Media.</p>
         </div>
         """,
         unsafe_allow_html=True,
@@ -133,7 +96,9 @@ def render_video_page():
 
     if not can_use("grand"):
         st.warning("Dieses Feature benötigt mindestens GRAND.")
-        return
+        st.stop()
+
+    cost = TOKEN_COSTS.get("video", 150)
 
     prompt = st.text_area(
         "Video Prompt",
@@ -168,10 +133,10 @@ def render_video_page():
 
     final_prompt = f"{mode_prompts[video_mode]}\n\n{prompt}"
 
+    st.info(f"Kosten: {cost} Tokens pro Video")
+
     if st.button("Video generieren", key="generate_video_btn"):
-
         with st.spinner("Video wird generiert. Das kann länger dauern..."):
-
             success, result, updated_user = run_ai_task(
                 username=st.session_state.user,
                 tool="video",
@@ -181,46 +146,87 @@ def render_video_page():
             )
 
         if success:
-
-            st.session_state.user_data = updated_user
             st.session_state.last_video_path = result
 
-            save_usage(
-                username=st.session_state.user,
-                tool="video",
-                prompt=final_prompt,
-                tokens_used=0,
-                cost_tokens=150,
-                api_provider="replicate",
-                status="success",
-            )
+            if updated_user:
+                st.session_state.tokens = updated_user["tokens"]
 
             st.success("Video erfolgreich generiert.")
-
         else:
             st.error(result)
 
     if st.session_state.get("last_video_path"):
-
         st.markdown('<div class="result-box">', unsafe_allow_html=True)
-
         st.subheader("Ergebnis")
 
         if str(st.session_state.last_video_path).startswith("http"):
-
             st.video(st.session_state.last_video_path)
-
-            st.markdown(
-                f"[Video öffnen]({st.session_state.last_video_path})"
-            )
-
+            st.markdown(f"[Video öffnen]({st.session_state.last_video_path})")
         else:
-
             st.video(st.session_state.last_video_path)
-
-            render_file_download(
-                st.session_state.last_video_path,
-                "Video herunterladen"
-            )
+            render_download(st.session_state.last_video_path, "Video herunterladen")
 
         st.markdown("</div>", unsafe_allow_html=True)
+
+
+def render_coding_page():
+    require_login()
+
+    if not can_use("pro"):
+        st.warning("Dieses Feature benötigt mindestens PRO.")
+        st.stop()
+
+    st.markdown(
+        """
+        <div class="page-card">
+            <span class="badge">PRO FEATURE</span>
+            <h1>💻 Coding AI</h1>
+            <p>Code schreiben, Fehler fixen und Projekte planen.</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    prompt = st.text_area(
+        "Was soll die Coding AI machen?",
+        height=220,
+        placeholder="Beispiel: Schreibe mir eine Flask Login Funktion...",
+    )
+
+    if st.button("Coding AI starten", key="coding_ai_btn"):
+        if not prompt.strip():
+            st.error("Bitte Prompt eingeben.")
+            return
+
+        from coding_service import generate_code
+
+        with st.spinner("Coding AI arbeitet..."):
+            success, answer = generate_code(prompt)
+
+        if success:
+            st.markdown("### Ergebnis")
+            st.code(answer)
+        else:
+            st.error(answer)
+
+
+def render_music_page():
+    require_login()
+
+    if not can_use("pro"):
+        st.warning("Dieses Feature benötigt mindestens PRO.")
+        st.stop()
+
+    st.title("🎵 Music Generator")
+    st.info("Music AI verbinden wir als nächstes.")
+
+
+def render_reels_page():
+    require_login()
+
+    if not can_use("pro"):
+        st.warning("Dieses Feature benötigt mindestens PRO.")
+        st.stop()
+
+    st.title("🎞️ Reels Generator")
+    st.info("Reels AI verbinden wir als nächstes.")
