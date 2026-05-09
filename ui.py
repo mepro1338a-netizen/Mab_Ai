@@ -821,21 +821,61 @@ elif page == "video":
         st.markdown("</div>", unsafe_allow_html=True)
 
 
+
+elif page == "chat":
+    require_login()
+
+    st.title("💬 Memory Chat")
+
+    init_chat_memory()
+
+    history = load_chat_history(st.session_state.user)
+
+    for msg in history:
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
+
+    prompt = st.chat_input("Schreibe eine Nachricht...")
+
+    if prompt:
+        save_chat_message(st.session_state.user, "user", prompt)
+
+        with st.chat_message("user"):
+            st.markdown(prompt)
+
+        with st.spinner("AI denkt nach..."):
+            success, answer = generate_chat(prompt)
+
+        if success:
+            save_chat_message(st.session_state.user, "assistant", answer)
+
+            with st.chat_message("assistant"):
+                st.markdown(answer)
+
+        else:
+            st.error(answer)
+
+    if st.button("🗑 Chat löschen"):
+        clear_chat_history(st.session_state.user)
+        st.rerun()
+
+
 elif page == "coding":
     require_login()
-    st.title("coding")
+    st.title("💻 Coding Area")
+    st.info("Coding Modul folgt als nächstes.")
 
-elif page == "musik":
+
+elif page == "music":
     require_login()
-    st.title("music")
+    st.title("🎵 Music Generator")
+    st.info("Music Modul folgt als nächstes.")
+
 
 elif page == "reels":
     require_login()
-    st.title("reels")
-
-elif page == "support":
-    require_login()
-
+    st.title("🎞️ Reels Generator")
+    st.info("Reels Modul folgt als nächstes.")
     st.title("🆘 Support")
 
     st.markdown('<div class="page-card">', unsafe_allow_html=True)
