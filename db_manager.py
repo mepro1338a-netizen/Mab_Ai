@@ -2,13 +2,18 @@ import os
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
+
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 
 def get_connection():
+    if not DATABASE_URL:
+        raise RuntimeError("DATABASE_URL ist nicht gesetzt.")
+
     return psycopg2.connect(
         DATABASE_URL,
-        cursor_factory=RealDictCursor
+        cursor_factory=RealDictCursor,
+        sslmode="require",
     )
 
 
@@ -26,6 +31,7 @@ def init_db():
         tokens INTEGER DEFAULT 100,
         role TEXT DEFAULT 'user',
         admin_level INTEGER DEFAULT 0,
+        banned BOOLEAN DEFAULT FALSE,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     """)
@@ -38,7 +44,56 @@ def init_db():
         plan TEXT,
         max_uses INTEGER DEFAULT 1,
         used_count INTEGER DEFAULT 0,
-        active BOOLEAN DEFAULT TRUE
+        active BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS support_tickets (
+        id SERIAL PRIMARY KEY,
+        username TEXT,
+        email TEXT,
+        category TEXT,
+        subject TEXT,
+        message TEXT,
+        status TEXT DEFAULT 'open',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS usage_logs (
+        id SERIAL PRIMARY KEY,
+        username TEXT,
+        tool TEXT,
+        prompt TEXT,
+        tokens_used INTEGER DEFAULT 0,
+        cost_tokens INTEGER DEFAULT 0,
+        api_provider TEXT,
+        status TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS audit_logs (
+        id SERIAL PRIMARY KEY,
+        actor TEXT,
+        action TEXT,
+        target TEXT,
+        details TEXT,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS chat_messages (
+        id SERIAL PRIMARY KEY,
+        username TEXT NOT NULL,
+        role TEXT NOT NULL,
+        content TEXT NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
     """)
 
@@ -47,130 +102,33 @@ def init_db():
     conn.close()
 
 
-def create_user(username, email, password):
+def fetch_all(query, params=None):
     conn = get_connection()
     cur = conn.cursor()
-
-    cur.execute("""
-    INSERT INTO users (
-        username,
-        email,
-        password
-    )
-    VALUES (%s, %s, %s)
-    """, (username, email, password))
-
-    conn.commit()
+    cur.execute(query, params or ())
+    rows = cur.fetchall()
     cur.close()
     conn.close()
+    return rows
 
-    return True
 
-
-def get_user(username):
+def fetch_one(query, params=None):
     conn = get_connection()
     cur = conn.cursor()
-
-    cur.execute(
-        "SELECT * FROM users WHERE username=%s",
-        (username,)
-    )
-
-    user = cur.fetchone()
-
+    cur.execute(query, params or ())
+    row = cur.fetchone()
     cur.close()
     conn.close()
+    return row
 
-    return user
 
-
-def update_tokens(username, tokens):
+def execute(query, params=None):
     conn = get_connection()
     cur = conn.cursor()
-
-    cur.execute(
-        "UPDATE users SET tokens=%s WHERE username=%s",
-        (tokens, username)
-    )
-
+    cur.execute(query, params or ())
     conn.commit()
-
     cur.close()
     conn.close()
 
 
 init_db()
-
-def create_redeem_code(code, tokens=0, plan=None, max_uses=1):
-    conn = get_connection()
-    cur = conn.cursor()
-
-    cur.execute("""
-    INSERT INTO redeem_codes (
-        code,
-        tokens,
-        plan,
-        max_uses
-    )
-    VALUES (%s, %s, %s, %s)
-    """, (code, tokens, plan, max_uses))
-
-    conn.commit()
-
-    cur.close()
-    conn.close()
-
-
-def redeem_code(username, code):
-    conn = get_connection()
-    cur = conn.cursor()
-
-    cur.execute(
-        "SELECT * FROM redeem_codes WHERE code=%s AND active=TRUE",
-        (code,)
-    )
-
-    redeem = cur.fetchone()
-
-    if not redeem:
-        cur.close()
-        conn.close()
-        return False, "Code ungültig."
-
-    if redeem["used_count"] >= redeem["max_uses"]:
-        cur.close()
-        conn.close()
-        return False, "Code bereits verbraucht."
-
-    cur.execute(
-        "SELECT * FROM users WHERE username=%s",
-        (username,)
-    )
-
-    user = cur.fetchone()
-
-    new_tokens = user["tokens"] + redeem["tokens"]
-
-    new_plan = user["plan"]
-
-    if redeem["plan"]:
-        new_plan = redeem["plan"]
-
-    cur.execute("""
-    UPDATE users
-    SET tokens=%s, plan=%s
-    WHERE username=%s
-    """, (new_tokens, new_plan, username))
-
-    cur.execute("""
-    UPDATE redeem_codes
-    SET used_count = used_count + 1
-    WHERE code=%s
-    """, (code,))
-
-    conn.commit()
-
-    cur.close()
-    conn.close()
-
-    return True, f"{redeem['tokens']} Tokens erhalten."
