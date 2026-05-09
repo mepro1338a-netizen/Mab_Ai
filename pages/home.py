@@ -1,86 +1,57 @@
-import base64
 import os
 import streamlit as st
 
 
-def img_base64(path):
-    if not os.path.exists(path):
-        return ""
-    with open(path, "rb") as f:
-        return base64.b64encode(f.read()).decode()
+def safe_logo():
+    if os.path.exists("LogoMAIN.png"):
+        st.image("LogoMAIN.png", width=260)
+    elif os.path.exists("LogoMain.png"):
+        st.image("LogoMain.png", width=260)
+    elif os.path.exists("logoMAIN.png"):
+        st.image("logoMAIN.png", width=260)
+    else:
+        st.markdown("# Mabyte")
 
 
 def render_home():
-    header = img_base64("Header.png")
+    col_left, col_mid, col_right = st.columns([1, 2, 1])
 
-    if header:
-        bg = f"""
-        background:
-            linear-gradient(90deg, rgba(2,6,23,.92), rgba(2,6,23,.55)),
-            url("data:image/png;base64,{header}");
-        background-size: cover;
-        background-position: center;
+    with col_mid:
+        safe_logo()
+
+    st.markdown("# Willkommen bei MABYTE")
+    st.markdown("## MABYTE ist mehr als nur eine AI.")
+
+    st.markdown(
         """
-    else:
-        bg = """
-        background:
-            radial-gradient(circle at top left, rgba(59,130,246,.35), transparent 35%),
-            radial-gradient(circle at bottom right, rgba(14,165,233,.22), transparent 35%),
-            linear-gradient(135deg, #020617, #07152f);
-        """
+MABYTE ist dein persönlicher Begleiter für Ideen, Projekte und Visionen.
 
-    st.markdown(f"""
-<div class="mabyte-hero" style='{bg}'>
-  <div class="mabyte-hero-content">
-    <span class="badge">MABYTE</span>
-    <h1>Willkommen bei MABYTE</h1>
-    <h2>MABYTE ist mehr als nur eine AI.</h2>
+Eine Unterstützung, die mitdenkt, dich inspiriert und dir hilft, deine Gedanken zu realisieren.
 
-    <p>
-      Es ist dein persönlicher Begleiter für Ideen, Projekte und Visionen.
-      Eine Unterstützung, die mitdenkt, dich inspiriert und dir hilft,
-      deine Gedanken zu realisieren.
-    </p>
+Egal ob du programmierst, ein Business aufbaust, Content erschaffst oder einfach neue Möglichkeiten entdecken willst:  
+**MABYTE begleitet dich auf deinem Weg.**
 
-    <p>
-      Egal ob du programmierst, ein Business aufbaust, Content erschaffst
-      oder neue Möglichkeiten entdecken willst: MABYTE begleitet dich auf deinem Weg.
-    </p>
+### Schneller. Kreativer. Grenzenloser.
 
-    <h3>Schneller. Kreativer. Grenzenloser.</h3>
+Denn die Zukunft entsteht nicht irgendwann.  
+Sie entsteht genau jetzt — mit dir.
 
-    <p>
-      Denn die Zukunft entsteht nicht irgendwann.<br>
-      Sie entsteht genau jetzt — mit dir.
-    </p>
+## MABYTE — BEYOND LIMITS.
+"""
+    )
 
-    <div class="mabyte-claim">MABYTE — BEYOND LIMITS.</div>
-  </div>
-</div>
-""", unsafe_allow_html=True)
+    st.markdown("---")
 
     c1, c2, c3 = st.columns(3)
 
     with c1:
-        st.markdown("""
-<div class="feature-card">
-  <h3>💬 Smart Chat</h3>
-  <p>Chatte mit deiner AI und speichere deinen Verlauf.</p>
-</div>
-""", unsafe_allow_html=True)
+        st.markdown("## 💬 Smart Chat")
+        st.write("Chatte mit deiner AI und speichere deinen Verlauf.")
 
     with c2:
-        st.markdown("""
-<div class="feature-card">
-  <h3>🎬 AI Media</h3>
-  <p>Bilder, Videos, Musik und kreative Assets erstellen.</p>
-</div>
-""", unsafe_allow_html=True)
+        st.markdown("## 🎬 AI Media")
+        st.write("Bilder, Videos, Musik und kreative Assets erstellen.")
 
     with c3:
-        st.markdown("""
-<div class="feature-card">
-  <h3>🚀 Creator Tools</h3>
-  <p>Reels Creator, Scheduler und Automation Tools.</p>
-</div>
-""", unsafe_allow_html=True)
+        st.markdown("## 🚀 Creator Tools")
+        st.write("Reels Creator, Scheduler und Automation Tools.")
