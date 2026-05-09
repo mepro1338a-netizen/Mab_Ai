@@ -10,107 +10,46 @@ def show_logo():
 
 
 def render_home():
-    st.markdown('<div class="home-shell">', unsafe_allow_html=True)
+    left, right = st.columns([1.2, 0.8])
 
-    c1, c2 = st.columns([1.15, 0.85])
-
-    with c1:
+    with left:
         show_logo()
 
-        st.markdown(
-            """
-            <div class="home-hero">
-                <span class="badge">NEXT GENERATION AI PLATFORM</span>
+        st.caption("NEXT GENERATION AI PLATFORM")
+        st.title("MABYTE")
+        st.header("Mehr als nur eine AI.")
 
-                <h1>MABYTE</h1>
-
-                <h2>Mehr als nur eine AI.</h2>
-
-                <p>
-                    Dein persönlicher Begleiter für Ideen, Projekte und Visionen.
-                    MABYTE denkt mit, inspiriert dich und hilft dir,
-                    Gedanken in echte Ergebnisse zu verwandeln.
-                </p>
-
-                <p>
-                    Egal ob du programmierst, ein Business aufbaust,
-                    Content erschaffst oder neue Möglichkeiten entdeckst:
-                    MABYTE begleitet dich auf deinem Weg.
-                </p>
-
-                <div class="claim">
-                    Schneller. Kreativer. Grenzenloser.
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
+        st.write(
+            "Dein persönlicher Begleiter für Ideen, Projekte und Visionen. "
+            "MABYTE denkt mit, inspiriert dich und hilft dir, Gedanken in echte Ergebnisse zu verwandeln."
         )
+
+        st.write(
+            "Egal ob du programmierst, ein Business aufbaust, Content erschaffst "
+            "oder neue Möglichkeiten entdeckst: MABYTE begleitet dich auf deinem Weg."
+        )
+
+        st.subheader("Schneller. Kreativer. Grenzenloser.")
+        st.write("Denn die Zukunft entsteht nicht irgendwann. Sie entsteht genau jetzt — mit dir.")
+        st.header("MABYTE — BEYOND LIMITS.")
+
+    with right:
+        st.info("24/7 AI Tools")
+        st.success("PRO Creator Workflow")
+        st.info("Ideas to Reality")
+
+    st.divider()
+
+    c1, c2, c3 = st.columns(3)
+
+    with c1:
+        st.subheader("💬 Smart Chat")
+        st.write("Chatte mit deiner AI, speichere deinen Verlauf und arbeite schneller.")
 
     with c2:
-        st.markdown(
-            """
-            <div class="home-glass-card">
-                <div class="orbit">✦</div>
-                <h3>BEYOND LIMITS</h3>
-                <p>
-                    Chat, Coding, Images, Video, Reels, Music und Automation
-                    in einer modernen Creator-Plattform.
-                </p>
+        st.subheader("🎬 AI Media")
+        st.write("Erstelle Bilder, Videos, Musik, Prompts und kreative Assets.")
 
-                <div class="mini-stat">
-                    <b>24/7</b><span>AI Tools</span>
-                </div>
-
-                <div class="mini-stat">
-                    <b>PRO</b><span>Creator Workflow</span>
-                </div>
-
-                <div class="mini-stat">
-                    <b>∞</b><span>Ideas to Reality</span>
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    st.markdown("## Was du mit MABYTE machen kannst")
-
-    f1, f2, f3 = st.columns(3)
-
-    with f1:
-        st.markdown(
-            """
-            <div class="modern-feature">
-                <div class="feature-icon">💬</div>
-                <h3>Smart Chat</h3>
-                <p>Chatte mit deiner AI, speichere deinen Verlauf und arbeite schneller.</p>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-    with f2:
-        st.markdown(
-            """
-            <div class="modern-feature">
-                <div class="feature-icon">🎬</div>
-                <h3>AI Media</h3>
-                <p>Erstelle Bilder, Videos, Musik, Prompts und kreative Assets.</p>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-    with f3:
-        st.markdown(
-            """
-            <div class="modern-feature">
-                <div class="feature-icon">🚀</div>
-                <h3>Creator Tools</h3>
-                <p>Plane Reels, baue Workflows und automatisiere deinen Content.</p>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+    with c3:
+        st.subheader("🚀 Creator Tools")
+        st.write("Plane Reels, baue Workflows und automatisiere deinen Content.")
