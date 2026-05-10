@@ -10,17 +10,8 @@ from config import (
     OPENAI_TEXT_MODEL,
     TOKEN_COSTS,
     PLANS,
+    DAILY_VIDEO_LIMITS,
 )
-
-try:
-    from config import DAILY_VIDEO_LIMITS
-except Exception:
-    DAILY_VIDEO_LIMITS = {
-        "free": 0,
-        "pro": 0,
-        "grand": 5,
-        "elite": 25,
-    }
 
 from database import (
     spend_tokens,
@@ -32,12 +23,20 @@ from database import (
 
 from ui_helpers import require_login, sync_session_user
 
+from queue_manager import create_job, list_user_jobs
+from abuse_guard import check_generation_allowed
+from costs import record_cost
+
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 
 def user_plan():
     return st.session_state.get("plan", "free")
+
+
+def username():
+    return st.session_state.get("user")
 
 
 def plan_features():
@@ -64,7 +63,7 @@ def get_tokens():
 
 
 def sync_user():
-    user = get_user(st.session_state.get("user"))
+    user = get_user(username())
     if user:
         sync_session_user(user)
 
@@ -82,11 +81,8 @@ def get_quality_multiplier(quality):
 def calc_video_cost(seconds, quality="Standard"):
     base = int(TOKEN_COSTS.get("video_base", 10))
     per_second = int(TOKEN_COSTS.get("video_second", 5))
-
-    raw_cost = base + (int(seconds) * per_second)
-    multiplier = get_quality_multiplier(quality)
-
-    return int(math.ceil(raw_cost * multiplier))
+    raw = base + (int(seconds) * per_second)
+    return int(math.ceil(raw * get_quality_multiplier(quality)))
 
 
 def calc_tool_cost(tool, seconds=0, quality="Standard"):
@@ -104,20 +100,17 @@ def daily_video_limit():
 
 
 def videos_used_today():
-    username = st.session_state.get("user")
-    logs = list_usage(username)
-
+    logs = list_usage(username())
     today = datetime.utcnow().date().isoformat()
     count = 0
 
     for log in logs:
         tool = str(log.get("tool", ""))
         created = str(log.get("created_at", ""))
+        status = str(log.get("status", ""))
 
-        if created.startswith(today) and tool in ["video", "reels_video"]:
-            status = str(log.get("status", ""))
-            if status in ["charged", "success"]:
-                count += 1
+        if created.startswith(today) and tool in ["video", "reels_video"] and status in ["charged", "success"]:
+            count += 1
 
     return count
 
@@ -143,20 +136,24 @@ def can_afford(cost):
 
 
 def charge_tokens(tool, prompt, cost, provider="openai"):
-    username = st.session_state.get("user")
+    allowed, reason = check_generation_allowed(username(), user_plan())
+
+    if not allowed:
+        st.error(reason)
+        st.stop()
 
     if not can_afford(cost):
         st.error(f"Nicht genug Tokens. Benötigt: {cost}, verfügbar: {get_tokens()}")
         st.stop()
 
-    ok, msg = spend_tokens(username, int(cost))
+    ok, msg = spend_tokens(username(), int(cost))
 
     if not ok:
         st.error(msg)
         st.stop()
 
     save_usage(
-        username=username,
+        username=username(),
         tool=tool,
         prompt=prompt,
         tokens_used=int(cost),
@@ -165,21 +162,30 @@ def charge_tokens(tool, prompt, cost, provider="openai"):
         status="charged",
     )
 
+    job_id = create_job(
+        username=username(),
+        tool=tool,
+        prompt=prompt,
+        tokens_charged=int(cost),
+        provider=provider,
+    )
+
     sync_user()
+
+    return job_id
 
 
 def refund_tokens(cost, tool, prompt):
-    username = st.session_state.get("user")
-    user = get_user(username)
+    user = get_user(username())
 
     if not user:
         return
 
     current = int(user.get("tokens") or 0)
-    update_tokens(username, current + int(cost))
+    update_tokens(username(), current + int(cost))
 
     save_usage(
-        username=username,
+        username=username(),
         tool=tool,
         prompt=prompt,
         tokens_used=0,
@@ -212,21 +218,45 @@ def ai_text(prompt):
     return response.choices[0].message.content
 
 
-def run_paid_text_task(tool, prompt, cost, filename_prefix, provider="openai"):
-    charge_tokens(tool, prompt, cost, provider)
+def run_paid_text_task(
+    tool,
+    prompt,
+    cost,
+    filename_prefix,
+    provider="openai",
+    seconds=0,
+    quality="Standard",
+):
+    job_id = charge_tokens(tool, prompt, cost, provider)
 
     try:
         with st.spinner("MaByte arbeitet..."):
             result = ai_text(prompt)
 
         save_usage(
-            username=st.session_state.get("user"),
+            username=username(),
             tool=tool,
             prompt=prompt,
             tokens_used=0,
             cost_tokens=0,
             api_provider=provider,
             status="success",
+        )
+
+        cost_info = record_cost(
+            username=username(),
+            tool=tool,
+            provider=provider,
+            tokens_charged=int(cost),
+            seconds=int(seconds or 0),
+            quality=quality,
+        )
+
+        st.success(f"Job erstellt: {job_id}")
+        st.caption(
+            f"Geschätzte API-Kosten: {cost_info['estimated_cost_eur']}€ | "
+            f"Umsatz: {cost_info['revenue_eur']}€ | "
+            f"Marge: {cost_info['margin_eur']}€"
         )
 
         render_output(result, filename_prefix)
@@ -252,6 +282,32 @@ def render_output(result, filename_prefix):
             file_name=filename,
             use_container_width=True,
         )
+
+
+def render_recent_jobs():
+    jobs = list_user_jobs(username(), limit=8)
+
+    if not jobs:
+        return
+
+    st.divider()
+    st.subheader("🧾 Deine letzten Jobs")
+
+    clean_jobs = []
+
+    for job in jobs:
+        clean_jobs.append(
+            {
+                "Job": job.get("job_id"),
+                "Tool": job.get("tool"),
+                "Status": job.get("status"),
+                "Tokens": job.get("tokens_charged"),
+                "Provider": job.get("provider"),
+                "Erstellt": job.get("created_at"),
+            }
+        )
+
+    st.dataframe(clean_jobs, use_container_width=True, hide_index=True)
 
 
 def render_coding_ai():
@@ -283,7 +339,7 @@ Aufgabe:
 Gib vollständigen, sauberen Code aus.
 """
 
-        run_paid_text_task("coding", prompt, cost, "mabyte_code")
+        run_paid_text_task("coding", prompt, cost, "mabyte_code", provider="openai")
 
 
 def render_image_ai():
@@ -320,7 +376,7 @@ Gib aus:
 - Details
 """
 
-        run_paid_text_task("image", prompt, cost, "mabyte_image")
+        run_paid_text_task("image", prompt, cost, "mabyte_image", provider="openai")
 
 
 def render_music_generator():
@@ -363,17 +419,17 @@ Gib aus:
 - Suno/Udio Prompt
 """
 
-        run_paid_text_task("music", prompt, cost, "mabyte_music")
+        run_paid_text_task("music", prompt, cost, "mabyte_music", provider="openai")
 
 
 def render_reels_creator():
     require_feature("reels")
 
     st.header("🎬 Reels Creator")
-    st.write("Trends, Hook, Skript, Video-Prompt und Auto-Posting Vorbereitung.")
+    st.write("Trend-Ideen, Hook, Skript, Video-Prompt und Auto-Posting Vorbereitung.")
 
     used, limit = check_video_limit()
-    st.info(f"Heutiges Video-Limit: {used}/{limit} genutzt")
+    st.info(f"Heutiges Video/Reel-Limit: {used}/{limit} genutzt")
 
     topic = st.text_input("Thema", placeholder="z.B. Wie man mit AI online Geld verdient")
     niche = st.selectbox("Nische", ["AI", "Business", "Fitness", "Lifestyle", "Gaming", "Motivation", "Social Media"])
@@ -389,7 +445,11 @@ def render_reels_creator():
     quality = st.selectbox("Video Qualität", quality_options)
 
     auto_post = st.checkbox("Automatisiertes Posting vorbereiten")
-    post_time = st.text_input("Posting Zeit", placeholder="z.B. heute 18:30 oder täglich 19:00", disabled=not auto_post)
+    post_time = st.text_input(
+        "Posting Zeit",
+        placeholder="z.B. heute 18:30 oder täglich 19:00",
+        disabled=not auto_post,
+    )
 
     cost = calc_tool_cost("reels_video", seconds, quality)
 
@@ -416,8 +476,8 @@ Erstelle ein komplettes Reel-Paket für {platform}.
 
 Wichtig:
 Du hast keinen Live-Zugriff auf echte TikTok/Instagram Trends.
-Nutze deshalb aktuelle Creator-Patterns, virale Formate und typische Hype-Mechaniken.
-Wenn später TikTok/Instagram APIs verbunden sind, sollen echte Trenddaten ergänzt werden.
+Nutze aktuelle Creator-Patterns, virale Formate und typische Hype-Mechaniken.
+Später sollen TikTok/Instagram APIs echte Trenddaten ergänzen.
 
 Thema:
 {topic}
@@ -454,14 +514,22 @@ Gib aus:
 10. Negative Prompt
 """
 
-        run_paid_text_task("reels_video", prompt, cost, "mabyte_reel_video", "reels_video")
+        run_paid_text_task(
+            "reels_video",
+            prompt,
+            cost,
+            "mabyte_reel_video",
+            provider="reels_video",
+            seconds=seconds,
+            quality=quality,
+        )
 
 
 def render_video_generator():
     require_feature("video")
 
     st.header("🎞️ AI Video Generator")
-    st.write("Sekundengenaue Tokenberechnung mit Tageslimit und Schutz gegen Minus.")
+    st.write("Sekundengenaue Tokenberechnung mit Tageslimit, Queue und Kosten-Monitor.")
 
     used, limit = check_video_limit()
     st.info(f"Heutiges Video-Limit: {used}/{limit} genutzt")
@@ -529,14 +597,22 @@ Gib aus:
 - Negative Prompt
 """
 
-        run_paid_text_task("video", prompt, final_cost, "mabyte_video", "video_prompt")
+        run_paid_text_task(
+            "video",
+            prompt,
+            final_cost,
+            "mabyte_video",
+            provider="video_prompt",
+            seconds=seconds,
+            quality=quality,
+        )
 
 
 def render_media(active_tool="reels"):
     require_login()
 
     st.title("🎨 AI Media Studio")
-    st.write("Faire Token-Kosten, Tageslimit, kein Minus, Rückerstattung bei API-Fehler.")
+    st.write("Queue, Abuse-Schutz, Tageslimit, Cost Monitor und Rückerstattung bei Fehler.")
 
     if active_tool == "coding":
         render_coding_ai()
@@ -555,3 +631,5 @@ def render_media(active_tool="reels"):
 
     else:
         render_reels_creator()
+
+    render_recent_jobs()
