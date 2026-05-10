@@ -4,168 +4,172 @@ import streamlit as st
 def render_home():
     st.markdown(
         """
-        <style>
-        .home-hero {
-            background: linear-gradient(145deg, rgba(5,12,28,.98), rgba(9,30,62,.94));
-            border: 1px solid rgba(96,165,250,.28);
-            border-radius: 34px;
-            padding: 38px;
-            margin-bottom: 34px;
-            box-shadow: 0 0 55px rgba(56,189,248,.16);
-            text-align: center;
-        }
+<style>
+.hero-header {
+    text-align: center;
+    padding: 38px 30px;
+    border-radius: 34px;
+    background:
+        radial-gradient(circle at center, rgba(56,189,248,.20), transparent 38%),
+        linear-gradient(145deg, rgba(5,15,35,.98), rgba(9,35,75,.92));
+    border: 1px solid rgba(125,211,252,.28);
+    box-shadow: 0 0 55px rgba(56,189,248,.18);
+    margin-bottom: 28px;
+}
 
-        .home-badge {
-            display: inline-block;
-            padding: 10px 18px;
-            border-radius: 999px;
-            background: rgba(14,165,233,.14);
-            border: 1px solid rgba(125,211,252,.35);
-            color: #7dd3fc;
-            font-size: 13px;
-            font-weight: 900;
-            letter-spacing: .8px;
-            margin-bottom: 18px;
-        }
+.hero-badge {
+    display: inline-block;
+    padding: 12px 22px;
+    border-radius: 999px;
+    color: #7dd3fc;
+    border: 1px solid rgba(125,211,252,.45);
+    background: rgba(14,165,233,.16);
+    font-weight: 950;
+    letter-spacing: .8px;
+}
 
-        .home-logo {
-            display: flex;
-            justify-content: center;
-            margin: 6px 0 22px 0;
-        }
+.hero-title {
+    text-align: center;
+    font-size: 64px;
+    font-weight: 1000;
+    color: white;
+    margin: 24px 0 12px 0;
+    text-shadow: 0 0 30px rgba(56,189,248,.28);
+}
 
-        .home-text {
-            color: #dbeafe;
-            font-size: 22px;
-            line-height: 1.55;
-            font-weight: 750;
-            max-width: 880px;
-            margin: 0 auto 26px auto;
-        }
+.hero-sub {
+    text-align: center;
+    color: #dbeafe;
+    font-size: 23px;
+    font-weight: 750;
+    max-width: 980px;
+    margin: 0 auto 34px auto;
+    line-height: 1.55;
+}
 
-        .home-pill {
-            background: linear-gradient(135deg, #0f6fc7, #0ea5e9);
-            border: 1px solid rgba(125,211,252,.35);
-            border-radius: 18px;
-            padding: 14px 18px;
-            color: white;
-            font-weight: 900;
-            text-align: center;
-            box-shadow: 0 0 20px rgba(56,189,248,.18);
-        }
+.feature-card {
+    min-height: 210px;
+    padding: 28px;
+    border-radius: 28px;
+    background: linear-gradient(145deg, rgba(7,18,42,.98), rgba(12,38,78,.90));
+    border: 1px solid rgba(96,165,250,.25);
+    box-shadow: 0 0 34px rgba(37,99,235,.13);
+    transition: .25s ease;
+}
 
-        .section-title {
-            color: white;
-            font-size: 34px;
-            font-weight: 950;
-            margin: 10px 0 22px 0;
-        }
+.feature-card:hover {
+    transform: translateY(-6px);
+    border-color: rgba(125,211,252,.75);
+    box-shadow: 0 0 45px rgba(56,189,248,.30);
+}
 
-        .tool-card {
-            min-height: 235px;
-            background: linear-gradient(145deg, rgba(7,18,42,.98), rgba(12,36,75,.88));
-            border: 1px solid rgba(96,165,250,.24);
-            border-radius: 28px;
-            padding: 30px;
-            box-shadow: 0 0 34px rgba(37,99,235,.12);
-            transition: .25s ease;
-        }
+.feature-title {
+    color: white;
+    font-size: 28px;
+    font-weight: 950;
+    margin-bottom: 14px;
+}
 
-        .tool-card:hover {
-            transform: translateY(-6px);
-            border-color: rgba(125,211,252,.75);
-            box-shadow: 0 0 45px rgba(56,189,248,.28);
-        }
+.feature-text {
+    color: #dbeafe;
+    font-size: 17px;
+    line-height: 1.55;
+    font-weight: 700;
+}
+</style>
 
-        .tool-title {
-            color: white;
-            font-size: 32px;
-            font-weight: 950;
-            margin-bottom: 18px;
-        }
+<div class="hero-header">
+    <div class="hero-badge">NEXT GENERATION AI PLATFORM</div>
+</div>
 
-        .tool-text {
-            color: #dbeafe;
-            font-size: 18px;
-            line-height: 1.55;
-            font-weight: 700;
-        }
-        </style>
+<div class="hero-title">MaByte ist die Revolution.</div>
+
+<div class="hero-sub">
+    Ein moderner AI Hub für Chat, Coding, Bilder, Videos, Musik,
+    Social Media Content, Reels und Automation — alles in einer Plattform.
+</div>
         """,
         unsafe_allow_html=True,
     )
 
-    st.markdown(
-        """
-        <div class="home-hero">
-            <div class="home-badge">NEXT GENERATION AI PLATFORM</div>
-            <div class="home-logo">
-        """,
-        unsafe_allow_html=True,
-    )
+    r1c1, r1c2, r1c3 = st.columns(3)
 
-    st.image("logoslogan.png", width=750)
-
-    st.markdown(
-        """
-            </div>
-            <div class="home-text">
-                Deine moderne AI Plattform für Chat, Coding, Bilder, Videos,
-                Musik und Creator Workflows. Schnell. Kreativ. Übersichtlich.
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    p1, p2, p3, p4 = st.columns(4)
-
-    with p1:
-        st.markdown('<div class="home-pill">⚡ Smart AI</div>', unsafe_allow_html=True)
-    with p2:
-        st.markdown('<div class="home-pill">💎 Pro Workflow</div>', unsafe_allow_html=True)
-    with p3:
-        st.markdown('<div class="home-pill">🚀 Creator Ready</div>', unsafe_allow_html=True)
-    with p4:
-        st.markdown('<div class="home-pill">🎬 Media Suite</div>', unsafe_allow_html=True)
-
-    st.markdown('<div class="section-title">Deine Tools</div>', unsafe_allow_html=True)
-
-    c1, c2, c3 = st.columns(3)
-
-    with c1:
+    with r1c1:
         st.markdown(
             """
-            <div class="tool-card">
-                <div class="tool-title">💬 Smart Chat</div>
-                <div class="tool-text">
-                    Chatte mit Mabyte, speichere deinen Verlauf und arbeite schneller.
+            <div class="feature-card">
+                <div class="feature-title">💬 Moderner Chatbot</div>
+                <div class="feature-text">
+                    Chatte mit MaByte, speichere deinen Verlauf und arbeite smarter.
                 </div>
             </div>
             """,
             unsafe_allow_html=True,
         )
 
-    with c2:
+    with r1c2:
         st.markdown(
             """
-            <div class="tool-card">
-                <div class="tool-title">🎬 AI Media</div>
-                <div class="tool-text">
-                    Erstelle Bild-Prompts, Video-Konzepte, Musikideen und kreative Assets.
+            <div class="feature-card">
+                <div class="feature-title">💻 Coding AI</div>
+                <div class="feature-text">
+                    Code schreiben, Fehler erklären, Projekte schneller bauen.
                 </div>
             </div>
             """,
             unsafe_allow_html=True,
         )
 
-    with c3:
+    with r1c3:
         st.markdown(
             """
-            <div class="tool-card">
-                <div class="tool-title">🚀 Creator Tools</div>
-                <div class="tool-text">
-                    Plane Reels, baue Hooks und erstelle Content für deine Plattformen.
+            <div class="feature-card">
+                <div class="feature-title">🎨 Bilder & Design</div>
+                <div class="feature-text">
+                    Erstelle starke Bildideen, Prompts, Thumbnails und Branding Assets.
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    r2c1, r2c2, r2c3 = st.columns(3)
+
+    with r2c1:
+        st.markdown(
+            """
+            <div class="feature-card">
+                <div class="feature-title">🎬 Videos & Reels</div>
+                <div class="feature-text">
+                    Generiere Hooks, Skripte, Captions, Szenen und Video-Prompts.
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    with r2c2:
+        st.markdown(
+            """
+            <div class="feature-card">
+                <div class="feature-title">🎵 Musik Generator</div>
+                <div class="feature-text">
+                    Songideen, Lyrics, Hooks, Styles und kreative Musik-Konzepte.
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    with r2c3:
+        st.markdown(
+            """
+            <div class="feature-card">
+                <div class="feature-title">🚀 Social Media Automation</div>
+                <div class="feature-text">
+                    Content planen, Reels vorbereiten und später automatisiert posten.
                 </div>
             </div>
             """,
