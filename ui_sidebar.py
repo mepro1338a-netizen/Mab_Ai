@@ -55,7 +55,7 @@ def render_sidebar():
         st.markdown('<div class="sidebar-logo-box">', unsafe_allow_html=True)
 
         try:
-            st.image("LogoMAIN.png", width=260)
+            st.image("LogoMAIN.png", width=300)
         except Exception:
             st.markdown("### MaByte")
 
