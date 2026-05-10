@@ -21,7 +21,7 @@ def logout():
 def render_sidebar():
     with st.sidebar:
         try:
-            st.image("LogoMAIN.png", width=115)
+            st.image("LogoMAIN.png", width=150)
         except Exception:
             st.markdown("## Mabyte")
 
