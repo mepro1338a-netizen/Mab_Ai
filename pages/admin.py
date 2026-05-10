@@ -7,7 +7,7 @@ from datetime import datetime
 import streamlit as st
 
 
-DB_PATH = "mabai.db"
+from config import DB_PATH
 
 ROLE_NAMES = {
     0: "User",
