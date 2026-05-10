@@ -104,7 +104,7 @@ def render_home():
         unsafe_allow_html=True,
     )
 
-    st.image("logoslogan.png", width=520)
+    st.image("logoslogan.png", width=750)
 
     st.markdown(
         """
