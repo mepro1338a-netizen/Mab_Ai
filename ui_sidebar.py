@@ -2,9 +2,7 @@ import streamlit as st
 
 
 def nav(label, page):
-    active = st.session_state.get("page", "home") == page
-    prefix = "● " if active else ""
-    if st.button(prefix + label, use_container_width=True, key=f"nav_{page}"):
+    if st.button(label, use_container_width=True, key=f"nav_{page}"):
         st.session_state.page = page
         st.rerun()
 
@@ -24,6 +22,7 @@ def render_user_card():
     st.markdown(
         f"""
         <div class="sidebar-user-card">
+
             <div class="sidebar-user-name">
                 👤 {st.session_state.get("user", "User")}
             </div>
@@ -43,6 +42,7 @@ def render_user_card():
             <div class="sidebar-line">
                 🛡️ Role: {st.session_state.get("role", "user")}
             </div>
+
         </div>
         """,
         unsafe_allow_html=True,
@@ -52,14 +52,10 @@ def render_user_card():
 def render_sidebar():
     with st.sidebar:
 
-        st.markdown('<div class="sidebar-logo-box">', unsafe_allow_html=True)
-
         try:
-            st.image("LogoMAIN.png", width=300)
+            st.image("LogoMAIN.png", use_container_width=True)
         except Exception:
-            st.markdown("### MaByte")
-
-        st.markdown("</div>", unsafe_allow_html=True)
+            st.markdown("# MaByte")
 
         st.markdown(
             """
@@ -78,7 +74,14 @@ def render_sidebar():
 
         render_user_card()
 
-        st.markdown('<div class="sidebar-section">AI Tools</div>', unsafe_allow_html=True)
+        st.markdown(
+            """
+            <div class="sidebar-section-title">
+                AI Tools
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
         nav("💬 Memory Chat", "chat")
         nav("💻 Coding AI", "coding")
@@ -87,21 +90,40 @@ def render_sidebar():
         nav("🎬 Reels Creator", "reels")
         nav("🎞️ AI Video Generator", "video")
 
-        st.markdown('<div class="sidebar-section">Account</div>', unsafe_allow_html=True)
+        st.markdown(
+            """
+            <div class="sidebar-section-title">
+                Account
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
         nav("📊 Dashboard", "dashboard")
         nav("🎁 Redeem Code", "redeem")
         nav("🆘 Support Tickets", "support")
         nav("💎 Premium", "premium")
 
-        admin_level = int(st.session_state.get("admin_level", 0))
-        role = st.session_state.get("role", "user")
+        if (
+            st.session_state.get("role") in ["admin", "owner"]
+            or int(st.session_state.get("admin_level", 0)) > 0
+        ):
+            st.markdown(
+                """
+                <div class="sidebar-section-title">
+                    Admin
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
-        if role in ["admin", "owner"] or admin_level > 0:
-            st.markdown('<div class="sidebar-section">Admin</div>', unsafe_allow_html=True)
             nav("🛡️ Admin Panel", "admin")
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        if st.button("🚪 Logout", use_container_width=True, key="logout_btn"):
+        if st.button(
+            "🚪 Logout",
+            use_container_width=True,
+            key="logout_btn",
+        ):
             logout()
