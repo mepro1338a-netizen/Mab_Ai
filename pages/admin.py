@@ -436,4 +436,4 @@ def render_admin_panel():
             render_admin_actions()
 
 def render_admin():
-    admin_page()
+    render_admin_page()
