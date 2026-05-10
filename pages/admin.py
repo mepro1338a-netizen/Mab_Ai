@@ -434,3 +434,6 @@ def render_admin_panel():
     if get_level() >= 3:
         with tabs[6]:
             render_admin_actions()
+
+def render_admin():
+    admin_page()
