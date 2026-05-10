@@ -1,326 +1,235 @@
 import streamlit as st
+import pandas as pd
 
-from db_manager import execute, fetch_all
-from database import get_user, list_usage
-from redeem_tracking import redeem_code_tracked
+from config import PLANS
+from database import (
+    get_user,
+    redeem_code,
+    create_support_message,
+    list_support_messages,
+    list_usage,
+    list_purchases,
+)
 from ui_helpers import require_login, sync_session_user
-
-
-def init_support_tables():
-    execute("""
-    CREATE TABLE IF NOT EXISTS support_tickets (
-        id SERIAL PRIMARY KEY,
-        username TEXT,
-        email TEXT,
-        category TEXT,
-        subject TEXT,
-        message TEXT,
-        status TEXT DEFAULT 'open',
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-    """)
-
-    execute("""
-    CREATE TABLE IF NOT EXISTS support_replies (
-        id SERIAL PRIMARY KEY,
-        ticket_id INTEGER,
-        sender TEXT,
-        sender_role TEXT,
-        message TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-    """)
 
 
 def render_dashboard():
     require_login()
 
-    user = get_user(st.session_state.user)
-    sync_session_user(user)
+    user = get_user(st.session_state.get("user"))
 
-    st.markdown("""
-    <div class="page-card">
-        <span class="badge">ACCOUNT</span>
-        <h1>📊 Dashboard</h1>
-        <p>Deine Account-Daten, Tokens und letzte Nutzung.</p>
-    </div>
-    """, unsafe_allow_html=True)
+    if user:
+        sync_session_user(user)
+
+    st.title("📊 Dashboard")
 
     c1, c2, c3 = st.columns(3)
 
-    c1.metric("User", st.session_state.user)
-    c2.metric("Plan", st.session_state.plan)
-    c3.metric("Tokens", st.session_state.tokens)
+    with c1:
+        st.metric("Plan", st.session_state.get("plan", "free"))
 
-    st.markdown("### Letzte Nutzung")
+    with c2:
+        st.metric("Tokens", st.session_state.get("tokens", 0))
 
-    usage = list_usage(st.session_state.user)
+    with c3:
+        st.metric("Role", st.session_state.get("role", "user"))
+
+    st.divider()
+
+    st.subheader("Letzte Nutzung")
+
+    usage = list_usage(st.session_state.get("user"))
 
     if usage:
-        st.dataframe(usage[:20], use_container_width=True)
+        st.dataframe(
+            pd.DataFrame(usage),
+            use_container_width=True,
+            hide_index=True,
+        )
     else:
         st.info("Noch keine Nutzung vorhanden.")
+
+    st.subheader("Payments")
+
+    payments = list_purchases(st.session_state.get("user"))
+
+    if payments:
+        st.dataframe(
+            pd.DataFrame(payments),
+            use_container_width=True,
+            hide_index=True,
+        )
+    else:
+        st.info("Noch keine Zahlungen vorhanden.")
 
 
 def render_redeem():
     require_login()
 
-    st.markdown("""
-    <div class="page-card">
-        <span class="badge">REDEEM</span>
-        <h1>🎁 Redeem Code</h1>
-        <p>Gib hier deinen Premium-, Token- oder Bonus-Code ein.</p>
-    </div>
-    """, unsafe_allow_html=True)
+    st.title("🎁 Redeem Code")
+    st.write("Löse Codes ein und erhalte Tokens oder Plan-Upgrades.")
 
-    code = st.text_input("Code eingeben", key="redeem_page_code")
+    code = st.text_input("Code", placeholder="DEIN-CODE")
 
-    if st.button("🎁 Code einlösen", key="redeem_page_btn"):
-        if not code.strip():
-            st.error("Bitte Code eingeben.")
-        else:
-            ok, msg = redeem_code_tracked(
-                st.session_state.user,
-                code.strip(),
-            )
+    if st.button("Code einlösen", use_container_width=True):
+        if not code:
+            st.warning("Bitte Code eingeben.")
+            return
 
-            if ok:
-                user = get_user(st.session_state.user)
+        ok, msg = redeem_code(
+            st.session_state.get("user"),
+            code,
+        )
+
+        if ok:
+            user = get_user(st.session_state.get("user"))
+
+            if user:
                 sync_session_user(user)
 
-                st.success(msg)
-                st.rerun()
-            else:
-                st.error(msg)
+            st.success(msg)
+            st.rerun()
+        else:
+            st.error(msg)
 
 
 def render_support():
     require_login()
-    init_support_tables()
 
-    st.markdown("""
-    <div class="page-card">
-        <span class="badge">SUPPORT</span>
-        <h1>🆘 Support Center</h1>
-        <p>Erstelle Tickets und kommuniziere mit dem Team.</p>
-    </div>
-    """, unsafe_allow_html=True)
+    st.title("🆘 Support Tickets")
+    st.write("Erstelle ein Ticket. Unser Team hilft dir weiter.")
 
-    tab_new, tab_my = st.tabs([
-        "➕ Neues Ticket",
-        "🎫 Meine Tickets",
-    ])
-
-    with tab_new:
-        st.markdown('<div class="page-card">', unsafe_allow_html=True)
-
-        subject = st.text_input("Betreff", key="support_subject")
-
+    with st.form("support_ticket_form"):
         category = st.selectbox(
             "Kategorie",
             [
-                "Allgemein",
                 "Account",
                 "Payment",
-                "Technik",
+                "Tokens",
+                "AI Tool",
                 "Bug",
+                "Sonstiges",
             ],
-            key="support_category",
         )
 
-        message = st.text_area(
-            "Nachricht",
-            key="support_msg",
-            height=180,
+        subject = st.text_input("Betreff")
+        message = st.text_area("Nachricht", height=160)
+
+        submitted = st.form_submit_button(
+            "Ticket erstellen",
+            use_container_width=True,
         )
 
-        if st.button("Ticket senden", key="ticket_send"):
-            if not subject.strip() or not message.strip():
-                st.error("Bitte alles ausfüllen.")
+        if submitted:
+            if not subject or not message:
+                st.warning("Bitte Betreff und Nachricht ausfüllen.")
             else:
-                execute("""
-                INSERT INTO support_tickets (
-                    username,
-                    email,
+                ok, msg = create_support_message(
+                    st.session_state.get("user"),
+                    st.session_state.get("email", ""),
                     category,
                     subject,
                     message,
-                    status
                 )
-                VALUES (%s, %s, %s, %s, %s, 'open')
-                """, (
-                    st.session_state.user,
-                    st.session_state.email,
-                    category,
-                    subject,
-                    message,
-                ))
 
-                st.success("Ticket wurde erstellt.")
-                st.rerun()
+                if ok:
+                    st.success(msg)
+                    st.rerun()
+                else:
+                    st.error(msg)
 
-        st.markdown("</div>", unsafe_allow_html=True)
+    st.divider()
 
-    with tab_my:
-        tickets = fetch_all("""
-        SELECT *
-        FROM support_tickets
-        WHERE username=%s
-        ORDER BY created_at DESC
-        """, (st.session_state.user,))
+    st.subheader("Meine Tickets")
 
-        if not tickets:
-            st.info("Noch keine Tickets vorhanden.")
+    tickets = list_support_messages()
+
+    own_tickets = [
+        t for t in tickets
+        if t.get("username") == st.session_state.get("user")
+    ]
+
+    if own_tickets:
+        st.dataframe(
+            pd.DataFrame(own_tickets),
+            use_container_width=True,
+            hide_index=True,
+        )
+    else:
+        st.info("Du hast noch keine Tickets.")
+
+
+def plan_card(plan_key):
+    plan = PLANS[plan_key]
+
+    with st.container(border=True):
+        st.subheader(plan["label"])
+        st.markdown(f"## {plan['price']}")
+        st.metric("Tokens", plan["tokens"])
+
+        st.divider()
+
+        if plan_key == "pro":
+            features = [
+                "600 Tokens",
+                "Image AI",
+                "Coding AI",
+                "Music AI",
+                "Standard Support",
+            ]
+
+        elif plan_key == "grand":
+            features = [
+                "2500 Tokens",
+                "Video AI",
+                "Reels Creator",
+                "Verbesserter Support",
+                "Bessere APIs",
+                "Alles aus Pro",
+            ]
+
+        elif plan_key == "elite":
+            features = [
+                "12000 Tokens",
+                "Leistungsstarke APIs",
+                "Verbesserte Videoqualität",
+                "Business Level",
+                "Alles freigeschaltet",
+                "Priorisierter Support",
+            ]
+
         else:
-            for ticket in tickets:
-                status = ticket.get("status", "open")
+            features = plan.get("features", [])
 
-                icon = "🟢" if status == "open" else "⚫"
+        for feature in features:
+            st.write(f"✅ {feature}")
 
-                with st.expander(
-                    f"{icon} #{ticket['id']} · {ticket['subject']} · {status}"
-                ):
-                    st.markdown(f"**Kategorie:** {ticket['category']}")
-                    st.markdown(f"**Erstellt:** {ticket['created_at']}")
+        st.divider()
 
-                    st.markdown("""
-                    <div class="page-card">
-                        <b>Deine ursprüngliche Nachricht</b>
-                    </div>
-                    """, unsafe_allow_html=True)
-
-                    st.write(ticket["message"])
-
-                    replies = fetch_all("""
-                    SELECT *
-                    FROM support_replies
-                    WHERE ticket_id=%s
-                    ORDER BY created_at ASC
-                    """, (ticket["id"],))
-
-                    if replies:
-                        st.markdown("### Verlauf")
-
-                        for reply in replies:
-                            role_badge = reply.get("sender_role", "user")
-                            sender = reply.get("sender", "Unbekannt")
-
-                            st.markdown(
-                                f"""
-                                <div class="page-card">
-                                    <b>{sender}</b>
-                                    <span style="color:#ffd700;">
-                                        ({role_badge})
-                                    </span><br>
-
-                                    <small>
-                                        {reply.get("created_at")}
-                                    </small>
-
-                                    <p style="margin-top:12px;">
-                                        {reply.get("message")}
-                                    </p>
-                                </div>
-                                """,
-                                unsafe_allow_html=True,
-                            )
-                    else:
-                        st.info("Noch keine Antwort vom Team.")
-
-                    if status != "closed":
-                        reply_text = st.text_area(
-                            "Antwort hinzufügen",
-                            key=f"user_reply_{ticket['id']}",
-                            height=120,
-                        )
-
-                        if st.button(
-                            "Antwort senden",
-                            key=f"user_reply_btn_{ticket['id']}"
-                        ):
-                            if not reply_text.strip():
-                                st.error("Bitte Antwort eingeben.")
-                            else:
-                                execute("""
-                                INSERT INTO support_replies (
-                                    ticket_id,
-                                    sender,
-                                    sender_role,
-                                    message
-                                )
-                                VALUES (%s, %s, %s, %s)
-                                """, (
-                                    ticket["id"],
-                                    st.session_state.user,
-                                    st.session_state.role,
-                                    reply_text,
-                                ))
-
-                                execute("""
-                                UPDATE support_tickets
-                                SET status='open'
-                                WHERE id=%s
-                                """, (ticket["id"],))
-
-                                st.success("Antwort gesendet.")
-                                st.rerun()
-                    else:
-                        st.warning("Dieses Ticket ist geschlossen.")
+        if st.button(
+            f"Buy {plan['label']}",
+            key=f"buy_{plan_key}",
+            use_container_width=True,
+        ):
+            st.session_state.selected_plan = plan_key
+            st.success(
+                f"{plan['label']} ausgewählt. Stripe Checkout kann hier verbunden werden."
+            )
 
 
 def render_premium():
-    st.markdown("""
-    <div class="page-card">
-        <span class="badge">PREMIUM</span>
-        <h1>💳 Premium</h1>
-        <p>Upgrade deinen Account und schalte mehr AI Features frei.</p>
-    </div>
-    """, unsafe_allow_html=True)
+    require_login()
 
-    plans = [
-        (
-            "pro",
-            "Pro",
-            "9.99€ / Monat",
-            "1200 Tokens<br>Image AI<br>Coding AI<br>Music AI<br>Reels Creator"
-        ),
-        (
-            "grand",
-            "Grand",
-            "49.99€ / Monat",
-            "4000 Tokens<br>Alles aus Pro<br>Video AI<br>Stärkere Workflows"
-        ),
-        (
-            "elite",
-            "Elite",
-            "199€ / Monat",
-            "Alles freigeschaltet<br>Maximale API-Leistung"
-        ),
-    ]
+    st.title("💎 Premium")
+    st.write("Upgrade deinen Account und schalte mehr AI Features frei.")
 
-    cols = st.columns(3)
+    col1, col2, col3 = st.columns(3)
 
-    for col, item in zip(cols, plans):
-        plan_key, title, price, features = item
+    with col1:
+        plan_card("pro")
 
-        with col:
-            st.markdown(
-                f"""
-                <div class="page-card">
-                    <h2>{title}</h2>
-                    <h3 style="color:#ffd700;">
-                        {price}
-                    </h3>
-                    <p>{features}</p>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+    with col2:
+        plan_card("grand")
 
-            if st.button(
-                f"Buy {title}",
-                key=f"buy_{plan_key}"
-            ):
-                st.error(
-                    "Stripe verbinden wir später mit deiner Domain."
-                )
+    with col3:
+        plan_card("elite")
