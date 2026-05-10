@@ -21,7 +21,7 @@ from database import (
     list_usage,
 )
 
-from ui_helpers import require_login, sync_session_user
+from ui_core import require_login, sync_session_user
 
 from queue_manager import create_job, list_user_jobs
 from abuse_guard import validate_request
@@ -31,7 +31,7 @@ from social_integrations import (
     render_social_connect_panel,
     get_selected_platforms,
     build_auto_posting_note,
-    can_use_auto_posting,
+    auto_posting_unlocked,
 )
 
 
@@ -77,8 +77,10 @@ def sync_user():
 def get_quality_multiplier(quality):
     if quality == "High":
         return float(TOKEN_COSTS.get("video_quality_high", 1.35))
+
     if quality == "Business Level":
         return float(TOKEN_COSTS.get("video_quality_business", 1.75))
+
     return 1.0
 
 
@@ -86,6 +88,7 @@ def calc_video_cost(seconds, quality="Standard"):
     base = int(TOKEN_COSTS.get("video_base", 10))
     per_second = int(TOKEN_COSTS.get("video_second", 5))
     raw = base + (int(seconds) * per_second)
+
     return int(math.ceil(raw * get_quality_multiplier(quality)))
 
 
@@ -113,7 +116,11 @@ def videos_used_today():
         created = str(log.get("created_at", ""))
         status = str(log.get("status", ""))
 
-        if created.startswith(today) and tool in ["video", "reels_video"] and status in ["charged", "success"]:
+        if (
+            created.startswith(today)
+            and tool in ["video", "reels_video"]
+            and status in ["charged", "success"]
+        ):
             count += 1
 
     return count
@@ -143,7 +150,10 @@ def charge_tokens(tool, prompt, cost, provider="openai"):
     blocked, today_cost = emergency_cost_limit_reached(max_daily_cost=50)
 
     if blocked:
-        st.error(f"Systemschutz aktiv: heutige API-Kosten sind bei ca. {today_cost}€. Generierung pausiert.")
+        st.error(
+            f"Systemschutz aktiv: heutige API-Kosten sind bei ca. {today_cost}€. "
+            "Generierung pausiert."
+        )
         st.stop()
 
     allowed, reason = validate_request(username(), user_plan(), prompt)
@@ -300,23 +310,37 @@ def render_recent_jobs():
         return
 
     st.divider()
-    st.subheader("🧾 Deine letzten Jobs")
-
-    clean_jobs = []
+    st.subheader("📋 Deine letzten Jobs")
 
     for job in jobs:
-        clean_jobs.append(
-            {
-                "Job": job.get("job_id"),
-                "Tool": job.get("tool"),
-                "Status": job.get("status"),
-                "Tokens": job.get("tokens_charged"),
-                "Provider": job.get("provider"),
-                "Erstellt": job.get("created_at"),
-            }
-        )
+        status = job.get("status", "pending")
+        tool = job.get("tool", "")
+        tokens = job.get("tokens_charged", 0)
+        provider = job.get("provider", "")
+        created = job.get("created_at", "")
+        job_id = job.get("job_id", "")
 
-    st.dataframe(clean_jobs, use_container_width=True, hide_index=True)
+        with st.container(border=True):
+            c1, c2, c3 = st.columns([2, 1, 1])
+
+            with c1:
+                st.markdown(f"### {tool}")
+                st.caption(f"Job ID: {job_id}")
+
+            with c2:
+                if status in ["success", "finished"]:
+                    st.success(status)
+                elif status in ["failed", "error"]:
+                    st.error(status)
+                elif status == "processing":
+                    st.info(status)
+                else:
+                    st.warning(status)
+
+            with c3:
+                st.metric("Tokens", tokens)
+
+            st.caption(f"Provider: {provider} | Erstellt: {created}")
 
 
 def render_coding_ai():
@@ -496,6 +520,7 @@ def render_reels_creator():
     )
 
     quality_options = ["Standard", "High"]
+
     if user_plan() == "elite":
         quality_options.append("Business Level")
 
@@ -506,7 +531,7 @@ def render_reels_creator():
 
     auto_post = st.checkbox(
         "Automatisiertes Posting aktivieren",
-        disabled=not can_use_auto_posting(),
+        disabled=not auto_posting_unlocked(),
     )
 
     post_time = st.text_input(
@@ -620,6 +645,7 @@ def render_video_generator():
     )
 
     quality_options = ["Standard", "High"]
+
     if user_plan() == "elite":
         quality_options.append("Business Level")
 

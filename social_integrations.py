@@ -1,101 +1,105 @@
-# =========================================================
-# social_integrations.py
-# =========================================================
-
 import streamlit as st
 
-try:
-    from config import (
-        AUTO_POSTING_ENABLED_PLANS,
-        SOCIAL_PLATFORMS,
-    )
-except Exception:
-    AUTO_POSTING_ENABLED_PLANS = ["grand", "elite"]
+from config import TOKEN_COSTS
+from database import get_user, update_tokens, save_usage
+from ui_core import sync_session_user
 
-    SOCIAL_PLATFORMS = {
-        "instagram": {
-            "label": "Instagram Reels",
-            "enabled": True,
-        },
-        "tiktok": {
-            "label": "TikTok",
-            "enabled": True,
-        },
-        "youtube": {
-            "label": "YouTube Shorts",
-            "enabled": True,
-        },
-    }
-
-
-# =========================================================
-# USER PLAN
-# =========================================================
 
 def user_plan():
     return st.session_state.get("plan", "free")
 
 
-# =========================================================
-# ACCESS
-# =========================================================
-
-def can_use_auto_posting():
-    return user_plan() in AUTO_POSTING_ENABLED_PLANS
+def username():
+    return st.session_state.get("user")
 
 
-# =========================================================
-# CONNECT PANEL
-# =========================================================
+def can_use_auto_posting_plan():
+    return user_plan() in ["grand", "elite"]
+
+
+def auto_posting_unlocked():
+    return bool(st.session_state.get("auto_posting_unlocked", False))
+
+
+def unlock_auto_posting():
+    cost = int(TOKEN_COSTS.get("auto_posting_unlock", 1000))
+
+    user = get_user(username())
+
+    if not user:
+        return False, "User nicht gefunden."
+
+    tokens = int(user.get("tokens", 0) or 0)
+
+    if tokens < cost:
+        return False, f"Nicht genug Tokens. Benötigt: {cost}, verfügbar: {tokens}"
+
+    update_tokens(username(), tokens - cost)
+
+    save_usage(
+        username=username(),
+        tool="auto_posting_unlock",
+        prompt="Auto-Posting einmalig freigeschaltet",
+        tokens_used=cost,
+        cost_tokens=cost,
+        api_provider="internal",
+        status="success",
+    )
+
+    updated_user = get_user(username())
+
+    if updated_user:
+        sync_session_user(updated_user)
+
+    st.session_state.auto_posting_unlocked = True
+
+    return True, "Auto-Posting wurde freigeschaltet."
+
 
 def render_social_connect_panel():
-    st.subheader("🔗 Social Media Verbindungen")
+    st.subheader("🔗 Auto-Posting")
 
-    if not can_use_auto_posting():
-        st.warning(
-            "Auto-Posting ist erst ab dem Grand Plan verfügbar."
-        )
+    if not can_use_auto_posting_plan():
+        st.warning("Auto-Posting ist erst ab Grand verfügbar.")
         return False
 
-    st.success(
-        "Auto-Posting für TikTok, Instagram und YouTube ist freigeschaltet."
-    )
+    if not auto_posting_unlocked():
+        cost = int(TOKEN_COSTS.get("auto_posting_unlock", 1000))
 
-    st.caption(
-        "Verbinde deine Plattformen für automatisierte Uploads und Posting-Automation."
-    )
+        st.info(
+            f"Auto-Posting kostet einmalig {cost} Tokens zum Freischalten."
+        )
+
+        if st.button("⚡ Auto-Posting freischalten", use_container_width=True):
+            ok, msg = unlock_auto_posting()
+
+            if ok:
+                st.success(msg)
+                st.rerun()
+            else:
+                st.error(msg)
+
+        return False
+
+    st.success("Auto-Posting ist freigeschaltet.")
 
     c1, c2, c3 = st.columns(3)
 
     with c1:
-        instagram = st.checkbox(
-            "Instagram verbinden",
-            key="connect_instagram",
-        )
+        st.checkbox("Instagram Reels", key="connect_instagram")
 
     with c2:
-        tiktok = st.checkbox(
-            "TikTok verbinden",
-            key="connect_tiktok",
-        )
+        st.checkbox("TikTok", key="connect_tiktok")
 
     with c3:
-        youtube = st.checkbox(
-            "YouTube verbinden",
-            key="connect_youtube",
-        )
+        st.checkbox("YouTube Shorts", key="connect_youtube")
 
-    st.info(
-        "Momentan ist dies ein vorbereiteter Connector. "
-        "Später kannst du echte OAuth/API-Logins integrieren."
+    st.caption(
+        "Aktuell vorbereitet. Später werden hier echte OAuth/API-Verbindungen eingebaut."
     )
 
-    return instagram or tiktok or youtube
+    return True
 
-
-# =========================================================
-# SELECTED PLATFORMS
-# =========================================================
 
 def get_selected_platforms():
     platforms = []
@@ -112,10 +116,6 @@ def get_selected_platforms():
     return platforms
 
 
-# =========================================================
-# AUTO POSTING NOTE
-# =========================================================
-
 def build_auto_posting_note(enabled, post_time):
     if not enabled:
         return "Auto-Posting deaktiviert"
@@ -123,134 +123,6 @@ def build_auto_posting_note(enabled, post_time):
     platforms = get_selected_platforms()
 
     if not platforms:
-        return "Auto-Posting aktiv, aber keine Plattform ausgewählt"
+        return "Auto-Posting aktiv, aber keine Plattform gewählt"
 
-    return (
-        f"Auto-Posting aktiv | "
-        f"Plattformen: {', '.join(platforms)} | "
-        f"Zeit: {post_time}"
-    )
-
-
-# =========================================================
-# MOCK POSTING
-# =========================================================
-
-def simulate_social_upload(platforms, title):
-    results = []
-
-    for platform in platforms:
-        results.append(
-            {
-                "platform": platform,
-                "status": "queued",
-                "title": title,
-            }
-        )
-
-    return results
-
-
-# =========================================================
-# STATUS BOX
-# =========================================================
-
-def render_upload_status(results):
-    if not results:
-        return
-
-    st.subheader("📤 Upload Queue")
-
-    for result in results:
-        platform = result.get("platform")
-        status = result.get("status")
-
-        st.success(
-            f"{platform}: {status}"
-        )
-
-
-# =========================================================
-# FUTURE OAUTH PLACEHOLDER
-# =========================================================
-
-def render_future_api_info():
-    with st.expander("⚙️ Geplante API Integrationen"):
-        st.markdown(
-            """
-### Instagram
-- Meta Graph API
-- Reel Uploads
-- Geplante Posts
-
-### TikTok
-- TikTok Content Posting API
-- Auto Upload
-- Creator Automation
-
-### YouTube
-- YouTube Shorts Upload
-- Thumbnail Automation
-- Scheduled Publishing
-
-### Später möglich
-- Auto Hashtags
-- Trend Analyse
-- KI Post Zeiten
-- Multi Upload Queue
-- Vollautomatische Social Pipelines
-"""
-        )
-
-
-# =========================================================
-# AUTO POST SETTINGS
-# =========================================================
-
-def render_auto_post_settings():
-    if not can_use_auto_posting():
-        return None
-
-    st.subheader("⚡ Automation")
-
-    auto_post = st.checkbox(
-        "Automatisiertes Posting aktivieren",
-        key="enable_auto_posting",
-    )
-
-    if not auto_post:
-        return {
-            "enabled": False,
-        }
-
-    posting_mode = st.selectbox(
-        "Posting Modus",
-        [
-            "Manuell bestätigen",
-            "Automatisch posten",
-            "Geplant posten",
-        ],
-    )
-
-    best_time = st.text_input(
-        "Optimale Posting Zeit",
-        placeholder="z.B. täglich 19:00",
-    )
-
-    use_ai_caption = st.checkbox(
-        "KI soll Captions automatisch optimieren",
-        value=True,
-    )
-
-    use_ai_hashtags = st.checkbox(
-        "KI soll Hashtags automatisch generieren",
-        value=True,
-    )
-
-    return {
-        "enabled": True,
-        "mode": posting_mode,
-        "best_time": best_time,
-        "ai_caption": use_ai_caption,
-        "ai_hashtags": use_ai_hashtags,
-    }
+    return f"Auto-Posting aktiv | Plattformen: {', '.join(platforms)} | Zeit: {post_time}"
