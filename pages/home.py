@@ -82,7 +82,7 @@ def render_home():
     <div class="hero-badge">NEXT GENERATION AI PLATFORM</div>
 </div>
 
-<div class="hero-title">MaByte ist die Revolution.</div>
+<div class="hero-title">Mabyte ist die Revolution.</div>
 
 <div class="hero-sub">
     Ein moderner AI Hub für Chat, Coding, Bilder, Videos, Musik,
