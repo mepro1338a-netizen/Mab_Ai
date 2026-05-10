@@ -4,7 +4,7 @@ import streamlit as st
 
 from database import init_db
 from ui_styles import load_css
-
+from pages.auth import render_auth
 from pages.home import render_home
 from pages.chat import render_chat
 from pages.media import render_media
