@@ -1,64 +1,197 @@
+import sqlite3
+import secrets
+import string
+from datetime import datetime
 import streamlit as st
 
-from ai_service import ai_health_check
-
-from db_manager import execute, fetch_all
-from database import (
-    list_users,
-    set_plan,
-    update_tokens,
-    set_role,
-    ban_user,
-    delete_user,
-    support_counts,
-    create_redeem_code,
-    list_codes,
-    list_usage,
-    list_audit_logs,
-    list_purchases,
-    add_audit_log,
-)
-
-from redeem_tracking import list_redeem_redemptions
-
-from ui_helpers import (
-    require_login,
-    is_admin,
-    is_owner,
-)
+DB_PATH = "mabai.db"
 
 
-def init_admin_support_tables():
-    execute("""
-    CREATE TABLE IF NOT EXISTS support_replies (
-        id SERIAL PRIMARY KEY,
-        ticket_id INTEGER,
-        sender TEXT,
-        sender_role TEXT,
-        message TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+ROLE_NAMES = {
+    1: "Supporter",
+    2: "Moderator",
+    3: "Admin",
+    1337: "Owner",
+}
+
+
+def get_level():
+    return int(st.session_state.get("admin_level", 0))
+
+
+def require_admin(min_level=1):
+    if get_level() < min_level:
+        st.error("Kein Zugriff.")
+        st.stop()
+
+
+def db():
+    return sqlite3.connect(DB_PATH, check_same_thread=False)
+
+
+def query(sql, params=()):
+    conn = db()
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
+    cur.execute(sql, params)
+    rows = cur.fetchall()
+    conn.close()
+    return rows
+
+
+def execute(sql, params=()):
+    conn = db()
+    cur = conn.cursor()
+    cur.execute(sql, params)
+    conn.commit()
+    conn.close()
+
+
+def ensure_admin_columns():
+    cols = query("PRAGMA table_info(users)")
+    names = [c["name"] for c in cols]
+
+    add_cols = {
+        "last_login": "TEXT",
+        "last_ip": "TEXT",
+        "country": "TEXT",
+        "city": "TEXT",
+        "instagram_name": "TEXT",
+        "tiktok_name": "TEXT",
+        "status": "TEXT DEFAULT 'active'",
+    }
+
+    for col, typ in add_cols.items():
+        if col not in names:
+            execute(f"ALTER TABLE users ADD COLUMN {col} {typ}")
+
+
+def make_code(length=12):
+    chars = string.ascii_uppercase + string.digits
+    return "".join(secrets.choice(chars) for _ in range(length))
+
+
+def render_stat(label, value):
+    st.markdown(
+        f"""
+        <div class="admin-stat">
+            <div class="admin-stat-label">{label}</div>
+            <div class="admin-stat-value">{value}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
-    """)
 
 
-def safe_users():
+def render_admin_css():
+    st.markdown(
+        """
+        <style>
+        .admin-title {
+            font-size: 52px;
+            font-weight: 1000;
+            color: white;
+            margin-bottom: 10px;
+        }
+
+        .admin-sub {
+            color: #bfdbfe;
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 30px;
+        }
+
+        .admin-card {
+            background: linear-gradient(145deg, rgba(7,18,42,.98), rgba(12,38,78,.92));
+            border: 1px solid rgba(96,165,250,.28);
+            border-radius: 28px;
+            padding: 28px;
+            margin-bottom: 24px;
+            box-shadow: 0 0 38px rgba(56,189,248,.16);
+        }
+
+        .admin-stat {
+            background: linear-gradient(145deg, rgba(8,20,45,.98), rgba(13,45,90,.9));
+            border: 1px solid rgba(125,211,252,.28);
+            border-radius: 24px;
+            padding: 22px;
+            box-shadow: 0 0 26px rgba(56,189,248,.14);
+        }
+
+        .admin-stat-label {
+            color: #93c5fd;
+            font-size: 14px;
+            font-weight: 800;
+        }
+
+        .admin-stat-value {
+            color: white;
+            font-size: 32px;
+            font-weight: 1000;
+            margin-top: 6px;
+        }
+
+        .perm-box {
+            background: rgba(15,23,42,.85);
+            border: 1px solid rgba(96,165,250,.25);
+            border-radius: 20px;
+            padding: 18px;
+            color: #dbeafe;
+            font-weight: 700;
+            line-height: 1.8;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_overview():
+    users = query("SELECT COUNT(*) as c FROM users")[0]["c"]
+
     try:
-        users = list_users()
-
-        clean = []
-
-        for user in users:
-            user = dict(user)
-
-            user.pop("password", None)
-            user.pop("password_hash", None)
-
-            clean.append(user)
-
-        return clean
-
+        tickets = query("SELECT COUNT(*) as c FROM support_tickets")[0]["c"]
     except Exception:
-        return fetch_all("""
+        tickets = 0
+
+    try:
+        codes = query("SELECT COUNT(*) as c FROM redeem_codes")[0]["c"]
+    except Exception:
+        codes = 0
+
+    c1, c2, c3 = st.columns(3)
+
+    with c1:
+        render_stat("Users", users)
+
+    with c2:
+        render_stat("Tickets", tickets)
+
+    with c3:
+        render_stat("Redeem Codes", codes)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    st.markdown(
+        f"""
+        <div class="perm-box">
+            Dein Rang: <b>{ROLE_NAMES.get(get_level(), "User")}</b><br>
+            Admin Level: <b>{get_level()}</b>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_users():
+    require_admin(1)
+    ensure_admin_columns()
+
+    st.markdown('<div class="admin-card">', unsafe_allow_html=True)
+    st.subheader("👥 User Database")
+
+    rows = query(
+        """
         SELECT
             id,
             username,
@@ -67,482 +200,277 @@ def safe_users():
             tokens,
             role,
             admin_level,
-            created_at
+            status,
+            created_at,
+            last_login,
+            last_ip,
+            country,
+            city,
+            instagram_name,
+            tiktok_name
         FROM users
         ORDER BY id DESC
-        """)
+        """
+    )
+
+    data = [dict(r) for r in rows]
+
+    st.dataframe(
+        data,
+        use_container_width=True,
+        hide_index=True,
+    )
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+def render_tickets():
+    require_admin(1)
+
+    st.markdown('<div class="admin-card">', unsafe_allow_html=True)
+    st.subheader("🎫 Support Tickets")
+
+    try:
+        tickets = query(
+            """
+            SELECT *
+            FROM support_tickets
+            ORDER BY id DESC
+            """
+        )
+    except Exception:
+        st.warning("Support-Ticket Tabelle nicht gefunden.")
+        st.markdown("</div>", unsafe_allow_html=True)
+        return
+
+    for t in tickets:
+        with st.expander(f"#{t['id']} — {t.get('subject', 'Ticket')} — {t.get('status', 'open')}"):
+            st.write(dict(t))
+
+            answer = st.text_area(
+                "Antwort",
+                key=f"ticket_answer_{t['id']}",
+                placeholder="Antwort an User schreiben...",
+            )
+
+            c1, c2 = st.columns(2)
+
+            with c1:
+                if st.button("Antwort speichern", key=f"answer_{t['id']}"):
+                    try:
+                        execute(
+                            """
+                            UPDATE support_tickets
+                            SET admin_answer = ?, answered_at = ?
+                            WHERE id = ?
+                            """,
+                            (answer, datetime.now().isoformat(), t["id"]),
+                        )
+                        st.success("Antwort gespeichert.")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(e)
+
+            with c2:
+                if st.button("Ticket schließen", key=f"close_{t['id']}"):
+                    try:
+                        execute(
+                            """
+                            UPDATE support_tickets
+                            SET status = 'closed', closed_at = ?
+                            WHERE id = ?
+                            """,
+                            (datetime.now().isoformat(), t["id"]),
+                        )
+                        st.success("Ticket geschlossen.")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(e)
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+def render_redeem_codes():
+    require_admin(2)
+
+    st.markdown('<div class="admin-card">', unsafe_allow_html=True)
+    st.subheader("🎁 Redeem Codes erstellen")
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        tokens = st.number_input("Tokens", min_value=1, value=100, step=50)
+
+    with col2:
+        plan = st.selectbox("Plan", ["free", "pro", "elite", "admin"])
+
+    with col3:
+        amount = st.number_input("Anzahl Codes", min_value=1, max_value=100, value=1)
+
+    note = st.text_input("Notiz", placeholder="z.B. Promo, Giveaway, Admin Grant")
+
+    if st.button("Codes erstellen"):
+        created = []
+
+        for _ in range(amount):
+            code = make_code()
+
+            try:
+                execute(
+                    """
+                    INSERT INTO redeem_codes
+                    (code, tokens, plan, used, note, created_at)
+                    VALUES (?, ?, ?, 0, ?, ?)
+                    """,
+                    (code, tokens, plan, note, datetime.now().isoformat()),
+                )
+                created.append(code)
+            except Exception as e:
+                st.error(e)
+
+        if created:
+            st.success("Codes erstellt:")
+            st.code("\n".join(created))
+
+    st.markdown("---")
+    st.subheader("Bestehende Codes")
+
+    try:
+        codes = query("SELECT * FROM redeem_codes ORDER BY id DESC")
+        st.dataframe([dict(c) for c in codes], use_container_width=True, hide_index=True)
+    except Exception:
+        st.warning("Redeem-Code Tabelle nicht gefunden.")
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+def render_logs():
+    require_admin(2)
+
+    st.markdown('<div class="admin-card">', unsafe_allow_html=True)
+    st.subheader("📜 Logs")
+
+    try:
+        rows = query("SELECT * FROM logs ORDER BY id DESC LIMIT 300")
+        st.dataframe([dict(r) for r in rows], use_container_width=True, hide_index=True)
+    except Exception:
+        st.warning("Logs Tabelle nicht gefunden.")
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+def render_payments():
+    require_admin(2)
+
+    st.markdown('<div class="admin-card">', unsafe_allow_html=True)
+    st.subheader("💳 Payments")
+
+    try:
+        rows = query("SELECT * FROM payments ORDER BY id DESC LIMIT 300")
+        st.dataframe([dict(r) for r in rows], use_container_width=True, hide_index=True)
+    except Exception:
+        st.warning("Payments Tabelle nicht gefunden.")
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+def render_admin_actions():
+    require_admin(3)
+
+    st.markdown('<div class="admin-card">', unsafe_allow_html=True)
+    st.subheader("🛡️ Admin Actions")
+
+    users = query("SELECT id, username, email, role, admin_level FROM users ORDER BY username ASC")
+
+    options = {
+        f"{u['username']} | {u['email']} | Level {u['admin_level']}": u["id"]
+        for u in users
+    }
+
+    selected = st.selectbox("User auswählen", list(options.keys()))
+
+    new_level = st.selectbox(
+        "Neuer Rang",
+        [
+            ("User", 0),
+            ("Supporter", 1),
+            ("Moderator", 2),
+            ("Admin", 3),
+            ("Owner", 1337),
+        ],
+        format_func=lambda x: f"{x[0]} — Level {x[1]}",
+    )
+
+    new_role = new_level[0].lower()
+
+    if st.button("Rang setzen"):
+        execute(
+            """
+            UPDATE users
+            SET admin_level = ?, role = ?
+            WHERE id = ?
+            """,
+            (new_level[1], new_role, options[selected]),
+        )
+        st.success("Rang aktualisiert.")
+        st.rerun()
+
+    st.markdown("</div>", unsafe_allow_html=True)
 
 
 def render_admin():
-    require_login()
+    require_admin(1)
+    render_admin_css()
 
-    if not is_admin():
-        st.error("Kein Zugriff.")
-        st.stop()
-
-    init_admin_support_tables()
-
-    st.markdown("""
-    <div class="page-card">
-        <span class="badge">ADMIN</span>
-        <h1>🛡️ Admin Panel</h1>
-        <p>
-            Verwalte User, Tickets, Redeem Codes,
-            Logs und Systemstatus.
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    try:
-        counts = support_counts()
-    except Exception:
-        counts = {
-            "total": 0,
-            "open": 0,
-            "closed": 0,
-        }
-
-    try:
-        health = ai_health_check()
-    except Exception as e:
-        health = {"error": str(e)}
-
-    users = safe_users()
-
-    c1, c2, c3, c4 = st.columns(4)
-
-    c1.metric("User", len(users))
-    c2.metric("Tickets Gesamt", counts.get("total", 0))
-    c3.metric("Offen", counts.get("open", 0))
-    c4.metric("Admin Level", st.session_state.admin_level)
-
-    (
-        tab_tickets,
-        tab_users,
-        tab_codes,
-        tab_redeem_logs,
-        tab_logs,
-        tab_payments,
-        tab_system,
-    ) = st.tabs([
-        "🎫 Tickets",
-        "👥 Users",
-        "🎁 Redeem Codes",
-        "🧾 Redeem Logs",
-        "📜 Logs",
-        "💳 Payments",
-        "⚙️ System",
-    ])
-
-    with tab_tickets:
-        render_admin_tickets()
-
-    with tab_users:
-        render_admin_users()
-
-    with tab_codes:
-        render_admin_codes()
-
-    with tab_redeem_logs:
-        render_admin_redeem_logs()
-
-    with tab_logs:
-        render_admin_logs()
-
-    with tab_payments:
-        render_admin_payments()
-
-    with tab_system:
-        render_admin_system(health)
-
-
-def render_admin_tickets():
-    st.markdown("## 🎫 Support Tickets")
-
-    status_filter = st.selectbox(
-        "Status Filter",
-        ["all", "open", "closed"],
-        key="admin_ticket_filter",
+    st.markdown(
+        """
+        <div class="admin-title">🛡️ Admin Panel</div>
+        <div class="admin-sub">
+            MaByte Control Center — Users, Tickets, Tokens, Logs und Payments.
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
 
-    if status_filter == "all":
-        tickets = fetch_all("""
-        SELECT *
-        FROM support_tickets
-        ORDER BY created_at DESC
-        """)
-    else:
-        tickets = fetch_all("""
-        SELECT *
-        FROM support_tickets
-        WHERE status = %s
-        ORDER BY created_at DESC
-        """, (status_filter,))
+    level = get_level()
 
-    if not tickets:
-        st.info("Keine Tickets vorhanden.")
-        return
+    tabs = ["Overview", "Users", "Tickets"]
 
-    for ticket in tickets:
-        status = ticket.get("status", "open")
-        title = ticket.get("subject", "Ohne Betreff")
+    if level >= 2:
+        tabs += ["Redeem Codes", "Logs", "Payments"]
 
-        with st.expander(
-            f"#{ticket['id']} · {title} · {status}"
-        ):
-            st.markdown(
-                f"""
-                <div class="page-card">
-                    <b>User:</b> {ticket.get("username")}<br>
-                    <b>Email:</b> {ticket.get("email")}<br>
-                    <b>Kategorie:</b> {ticket.get("category")}<br>
-                    <b>Status:</b> {ticket.get("status")}<br>
-                    <b>Erstellt:</b> {ticket.get("created_at")}
+    if level >= 3:
+        tabs += ["Admin Actions"]
 
-                    <hr>
+    selected_tabs = st.tabs(tabs)
 
-                    <h4>Nachricht</h4>
-                    <p>{ticket.get("message")}</p>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+    idx = 0
 
-            replies = fetch_all("""
-            SELECT *
-            FROM support_replies
-            WHERE ticket_id = %s
-            ORDER BY created_at ASC
-            """, (ticket["id"],))
+    with selected_tabs[idx]:
+        render_overview()
+    idx += 1
 
-            st.markdown("### Verlauf")
+    with selected_tabs[idx]:
+        render_users()
+    idx += 1
 
-            if replies:
-                for reply in replies:
-                    st.markdown(
-                        f"""
-                        <div class="page-card">
-                            <b>{reply.get("sender")}</b>
+    with selected_tabs[idx]:
+        render_tickets()
+    idx += 1
 
-                            <span style="color:#ffd700;">
-                                ({reply.get("sender_role")})
-                            </span><br>
+    if level >= 2:
+        with selected_tabs[idx]:
+            render_redeem_codes()
+        idx += 1
 
-                            <small>
-                                {reply.get("created_at")}
-                            </small>
+        with selected_tabs[idx]:
+            render_logs()
+        idx += 1
 
-                            <p style="margin-top:12px;">
-                                {reply.get("message")}
-                            </p>
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
-            else:
-                st.info("Noch keine Antworten.")
+        with selected_tabs[idx]:
+            render_payments()
+        idx += 1
 
-            reply_text = st.text_area(
-                "Antwort schreiben",
-                key=f"reply_text_{ticket['id']}",
-                height=120,
-            )
-
-            col1, col2, col3 = st.columns(3)
-
-            if col1.button(
-                "Antwort senden",
-                key=f"send_reply_{ticket['id']}"
-            ):
-                if not reply_text.strip():
-                    st.error("Bitte Antwort eingeben.")
-                else:
-                    execute("""
-                    INSERT INTO support_replies (
-                        ticket_id,
-                        sender,
-                        sender_role,
-                        message
-                    )
-                    VALUES (%s, %s, %s, %s)
-                    """, (
-                        ticket["id"],
-                        st.session_state.user,
-                        st.session_state.role,
-                        reply_text,
-                    ))
-
-                    execute("""
-                    UPDATE support_tickets
-                    SET status = 'open'
-                    WHERE id = %s
-                    """, (ticket["id"],))
-
-                    add_audit_log(
-                        st.session_state.user,
-                        "support_reply",
-                        str(ticket["id"]),
-                        reply_text[:250],
-                    )
-
-                    st.success("Antwort gesendet.")
-                    st.rerun()
-
-            if col2.button(
-                "Ticket schließen",
-                key=f"close_ticket_{ticket['id']}"
-            ):
-                execute("""
-                UPDATE support_tickets
-                SET status = 'closed'
-                WHERE id = %s
-                """, (ticket["id"],))
-
-                st.success("Ticket geschlossen.")
-                st.rerun()
-
-            if col3.button(
-                "Ticket löschen",
-                key=f"delete_ticket_{ticket['id']}"
-            ):
-                execute("""
-                DELETE FROM support_replies
-                WHERE ticket_id = %s
-                """, (ticket["id"],))
-
-                execute("""
-                DELETE FROM support_tickets
-                WHERE id = %s
-                """, (ticket["id"],))
-
-                st.success("Ticket gelöscht.")
-                st.rerun()
-
-
-def render_admin_users():
-    st.markdown("## 👥 Users")
-
-    users = safe_users()
-
-    if users:
-        st.dataframe(
-            users,
-            use_container_width=True,
-        )
-    else:
-        st.info("Keine User vorhanden.")
-
-    st.markdown("---")
-    st.markdown("### User bearbeiten")
-
-    target_user = st.text_input(
-        "Username",
-        key="admin_target_user",
-    )
-
-    col_a, col_b = st.columns(2)
-
-    with col_a:
-        new_plan = st.selectbox(
-            "Plan",
-            ["free", "pro", "grand", "elite"],
-            key="admin_new_plan",
-        )
-
-        new_tokens = st.number_input(
-            "Tokens setzen",
-            min_value=0,
-            value=0,
-            step=100,
-            key="admin_new_tokens",
-        )
-
-    with col_b:
-        if is_owner():
-            new_role = st.selectbox(
-                "Role",
-                [
-                    "user",
-                    "supporter",
-                    "moderator",
-                    "admin",
-                    "owner",
-                ],
-                key="admin_new_role",
-            )
-
-            new_level = st.selectbox(
-                "Admin Level",
-                [0, 1, 2, 3, 999],
-                key="admin_new_level",
-            )
-        else:
-            new_role = "user"
-            new_level = 0
-
-    c1, c2, c3, c4 = st.columns(4)
-
-    if c1.button("Plan setzen"):
-        set_plan(target_user, new_plan)
-        st.success("Plan geändert.")
-        st.rerun()
-
-    if c2.button("Tokens setzen"):
-        update_tokens(target_user, new_tokens)
-        st.success("Tokens geändert.")
-        st.rerun()
-
-    if c3.button("User bannen"):
-        ban_user(target_user, True)
-        st.success("User gebannt.")
-        st.rerun()
-
-    if c4.button("User löschen"):
-        delete_user(target_user)
-        st.success("User gelöscht.")
-        st.rerun()
-
-    if is_owner():
-        if st.button("Role setzen"):
-            set_role(
-                target_user,
-                new_role,
-                new_level,
-            )
-
-            st.success("Role geändert.")
-            st.rerun()
-
-
-def render_admin_codes():
-    st.markdown("## 🎁 Redeem Codes")
-
-    if not is_owner():
-        st.info("Nur Owner kann Codes erstellen.")
-        return
-
-    with st.form("create_code_form"):
-        code_type = st.selectbox(
-            "Typ",
-            ["tokens", "plan", "mixed"]
-        )
-
-        plan = st.selectbox(
-            "Plan",
-            ["", "free", "pro", "grand", "elite"]
-        )
-
-        tokens = st.number_input(
-            "Tokens",
-            min_value=0,
-            value=100,
-            step=100,
-        )
-
-        max_uses = st.number_input(
-            "Max Uses",
-            min_value=1,
-            value=1,
-        )
-
-        days_valid = st.number_input(
-            "Gültig Tage",
-            min_value=1,
-            value=30,
-        )
-
-        submit = st.form_submit_button(
-            "Code erstellen"
-        )
-
-    if submit:
-        code = create_redeem_code(
-            code_type=code_type,
-            value="",
-            tokens=tokens,
-            plan=plan,
-            max_uses=max_uses,
-            created_by=st.session_state.user,
-            days_valid=days_valid,
-        )
-
-        st.success(f"Code erstellt: {code}")
-
-    codes = list_codes()
-
-    if codes:
-        st.dataframe(
-            codes,
-            use_container_width=True,
-        )
-    else:
-        st.info("Keine Codes vorhanden.")
-
-
-def render_admin_redeem_logs():
-    st.markdown("## 🧾 Redeem Logs")
-
-    logs = list_redeem_redemptions()
-
-    if logs:
-        st.dataframe(
-            logs,
-            use_container_width=True,
-        )
-    else:
-        st.info(
-            "Noch keine Redeem Einlösungen vorhanden."
-        )
-
-
-def render_admin_logs():
-    st.markdown("## 📜 Logs")
-
-    usage = list_usage()
-
-    if usage:
-        st.dataframe(
-            usage,
-            use_container_width=True,
-        )
-    else:
-        st.info("Keine Logs vorhanden.")
-
-    audit_logs = list_audit_logs()
-
-    if audit_logs:
-        st.dataframe(
-            audit_logs,
-            use_container_width=True,
-        )
-    else:
-        st.info("Keine Audit Logs vorhanden.")
-
-
-def render_admin_payments():
-    st.markdown("## 💳 Payments")
-
-    purchases = list_purchases()
-
-    if purchases:
-        st.dataframe(
-            purchases,
-            use_container_width=True,
-        )
-    else:
-        st.info("Keine Payments vorhanden.")
-
-
-def render_admin_system(health):
-    st.markdown("## ⚙️ System")
-
-    st.markdown("### AI Health Check")
-    st.json(health)
-
-    st.markdown("### Session")
-    st.json({
-        "user": st.session_state.get("user"),
-        "plan": st.session_state.get("plan"),
-        "role": st.session_state.get("role"),
-        "admin_level": st.session_state.get("admin_level"),
-    })
+    if level >= 3:
+        with selected_tabs[idx]:
+            render_admin_actions()
