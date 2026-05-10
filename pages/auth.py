@@ -42,74 +42,98 @@ def render_auth():
 
     st.markdown(
         """
-        <style>
-        .auth-title {
-            font-size: 56px;
-            font-weight: 1000;
-            color: white;
-            text-align: center;
-            margin-bottom: 10px;
-        }
+<style>
+.auth-wrap {
+    max-width: 720px;
+    margin: 0 auto;
+    padding-top: 25px;
+}
 
-        .auth-sub {
-            text-align: center;
-            color: #bfdbfe;
-            font-size: 18px;
-            font-weight: 700;
-            margin-bottom: 35px;
-        }
+.auth-head {
+    text-align: center;
+    margin-bottom: 28px;
+}
 
-        .auth-box {
-            max-width: 620px;
-            margin: 0 auto;
-            padding: 34px;
-            border-radius: 30px;
-            background: linear-gradient(145deg, rgba(7,18,42,.98), rgba(12,38,78,.90));
-            border: 1px solid rgba(96,165,250,.28);
-            box-shadow: 0 0 45px rgba(56,189,248,.18);
-        }
-        </style>
+.auth-title {
+    font-size: 58px;
+    font-weight: 1000;
+    color: white;
+    margin-bottom: 10px;
+    text-shadow: 0 0 30px rgba(56,189,248,.22);
+}
 
-        <div class="auth-title">🔐 Login / Register</div>
-        <div class="auth-sub">Melde dich an und starte deine MaByte AI Plattform.</div>
+.auth-sub {
+    color: #bfdbfe;
+    font-size: 18px;
+    font-weight: 800;
+}
+
+.auth-card {
+    background:
+        radial-gradient(circle at top left, rgba(56,189,248,.18), transparent 35%),
+        linear-gradient(145deg, rgba(5,15,35,.98), rgba(9,35,75,.92));
+    border: 1px solid rgba(125,211,252,.30);
+    border-radius: 34px;
+    padding: 34px;
+    box-shadow: 0 0 55px rgba(56,189,248,.18);
+}
+
+.auth-note {
+    margin-top: 18px;
+    color: #93c5fd;
+    text-align: center;
+    font-weight: 700;
+    font-size: 14px;
+}
+</style>
         """,
         unsafe_allow_html=True,
     )
 
-    tab_login, tab_register = st.tabs(["Login", "Register"])
+    st.markdown(
+        """
+<div class="auth-wrap">
+    <div class="auth-head">
+        <div class="auth-title">🔐 Login</div>
+        <div class="auth-sub">Starte deine MaByte AI Plattform.</div>
+    </div>
+    <div class="auth-card">
+        """,
+        unsafe_allow_html=True,
+    )
+
+    tab_login, tab_register = st.tabs(["🔓 Login", "🆕 Register"])
 
     with tab_login:
-        st.markdown('<div class="auth-box">', unsafe_allow_html=True)
+        with st.form("login_form", clear_on_submit=False):
+            username = st.text_input("Username", placeholder="Dein Username")
+            password = st.text_input("Password", type="password", placeholder="Dein Passwort")
 
-        with st.form("login_form"):
-            username = st.text_input("Username", key="login_username")
-            password = st.text_input("Password", type="password", key="login_password")
-
-            submitted = st.form_submit_button("Login")
+            submitted = st.form_submit_button("🚀 Einloggen", use_container_width=True)
 
             if submitted:
                 do_login(username, password)
 
-        st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown(
+            '<div class="auth-note">Enter drücken funktioniert hier automatisch.</div>',
+            unsafe_allow_html=True,
+        )
 
     with tab_register:
-        st.markdown('<div class="auth-box">', unsafe_allow_html=True)
-
-        with st.form("register_form"):
-            reg_user = st.text_input("Username", key="register_user")
-            reg_mail = st.text_input("Email", key="register_mail")
-            reg_pw = st.text_input("Password", type="password", key="register_pw")
+        with st.form("register_form", clear_on_submit=False):
+            reg_user = st.text_input("Username", placeholder="3-40 Zeichen")
+            reg_mail = st.text_input("Email", placeholder="deine@email.de")
+            reg_pw = st.text_input("Password", type="password", placeholder="Sicheres Passwort")
 
             result = st.session_state.captcha_a + st.session_state.captcha_b
             captcha = st.number_input(
-                f"Was ist {st.session_state.captcha_a} + {st.session_state.captcha_b}?",
+                f"Captcha: {st.session_state.captcha_a} + {st.session_state.captcha_b}",
                 min_value=0,
                 max_value=10,
                 step=1,
-                key="captcha_input",
             )
 
-            submitted = st.form_submit_button("Register")
+            submitted = st.form_submit_button("✨ Account erstellen", use_container_width=True)
 
             if submitted:
                 if not is_valid_username(reg_user):
@@ -132,4 +156,10 @@ def render_auth():
                     else:
                         st.error(msg)
 
-        st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown(
+        """
+    </div>
+</div>
+        """,
+        unsafe_allow_html=True,
+    )
