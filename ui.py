@@ -85,22 +85,43 @@ with st.sidebar:
 # ROUTING
 # ============================================
 
-page = st.session_state.page
+page = st.session_state.get("page", "home")
 
 if page == "home":
     render_home()
 
+elif page == "login":
+    render_auth()
+
 elif page == "chat":
     render_chat()
 
-elif page in [
-    "image",
-    "video",
-    "music",
-    "reels",
-    "coding",
-]:
-    render_media()
+elif page == "coding":
+    render_media("coding")
+
+elif page == "image":
+    render_media("image")
+
+elif page == "music":
+    render_media("music")
+
+elif page == "reels":
+    render_media("reels")
+
+elif page == "video":
+    render_media("video")
+
+elif page == "dashboard":
+    render_dashboard()
+
+elif page == "redeem":
+    render_redeem()
+
+elif page == "support":
+    render_support()
+
+elif page == "premium":
+    render_premium()
 
 elif page == "admin":
     render_admin()

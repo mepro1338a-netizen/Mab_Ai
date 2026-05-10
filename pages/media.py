@@ -1,36 +1,58 @@
-import streamlit as st
-from ui_helpers import require_login, render_download
-from openai import OpenAI
 import os
 import uuid
+import streamlit as st
+from openai import OpenAI
+
+from ui_helpers import require_login, render_download
 
 
-client = OpenAI(
-    api_key=os.getenv("OPENAI_API_KEY")
-)
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 
-def render_media():
+def ai_text(prompt):
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": prompt}],
+    )
+    return response.choices[0].message.content
 
+
+def output_result(result, filename_prefix):
+    st.markdown(
+        f"""
+        <div class="output-box">
+            {result}
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    filename = f"{filename_prefix}_{uuid.uuid4().hex[:6]}.txt"
+
+    with open(filename, "w", encoding="utf-8") as f:
+        f.write(result)
+
+    render_download(filename)
+
+
+def page_header(title, subtitle):
+    st.markdown(
+        f"""
+        <div class="media-card">
+            <div class="media-header">{title}</div>
+            <div class="media-desc">{subtitle}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_media(active_tool="reels"):
     require_login()
 
     st.markdown(
         """
         <style>
-
-        .media-title{
-            font-size:58px;
-            font-weight:800;
-            color:white;
-            margin-bottom:5px;
-        }
-
-        .media-sub{
-            font-size:18px;
-            color:#8ea3c7;
-            margin-bottom:40px;
-        }
-
         .media-card{
             background: linear-gradient(145deg,#0f172a,#111827);
             border:1px solid rgba(59,130,246,0.25);
@@ -50,7 +72,7 @@ def render_media():
         .media-desc{
             color:#9db3d8;
             font-size:18px;
-            margin-bottom:25px;
+            margin-bottom:5px;
         }
 
         .stTextInput input,
@@ -86,335 +108,285 @@ def render_media():
             border-radius:24px;
             margin-top:25px;
             color:white;
+            line-height:1.7;
         }
-
         </style>
         """,
         unsafe_allow_html=True,
     )
 
-    st.markdown(
-        """
-        <div class="media-title">AI Creator Studio</div>
-        <div class="media-sub">
-        Erstelle virale Inhalte, Videos, Hooks, Lyrics und komplette Creator Assets mit AI.
-        </div>
-        """,
-        unsafe_allow_html=True,
+    if active_tool == "coding":
+        render_coding_page()
+
+    elif active_tool == "image":
+        render_image_page()
+
+    elif active_tool == "music":
+        render_music_page()
+
+    elif active_tool == "reels":
+        render_reels_page()
+
+    elif active_tool == "video":
+        render_video_page()
+
+    else:
+        render_reels_page()
+
+
+def render_coding_page():
+    page_header(
+        "💻 Coding AI",
+        "Erstelle Code, debugge Fehler und lass dir Projekte erklären.",
     )
 
-    tab1, tab2, tab3 = st.tabs(
-        [
-            "🎬 Reels Creator",
-            "🎥 Video Generator",
-            "🎵 Music Generator"
-        ]
+    task = st.text_area(
+        "Was soll Mabyte programmieren oder fixen?",
+        height=180,
+        placeholder="z.B. Fixe diesen Python Fehler oder erstelle eine Login-Funktion...",
     )
 
-    # =========================
-    # REELS CREATOR
-    # =========================
+    language = st.selectbox(
+        "Sprache / Bereich",
+        ["Python", "Streamlit", "JavaScript", "HTML/CSS", "SQL", "Allgemein"],
+    )
 
-    with tab1:
+    if st.button("💻 Code generieren"):
+        if not task.strip():
+            st.warning("Bitte Aufgabe eingeben.")
+            return
 
-        st.markdown(
-            """
-            <div class="media-card">
-                <div class="media-header">🎬 AI Reels Creator</div>
-                <div class="media-desc">
-                    Erstelle virale Reels mit Hook, Skript, Caption,
-                    Hashtags und Video-Ideen.
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+        with st.spinner("Mabyte schreibt deinen Code..."):
+            result = ai_text(
+                f"""
+Du bist ein professioneller Coding-Assistent.
 
-        topic = st.text_input(
-            "Reel Thema",
-            placeholder="z.B. Wie man mit AI online Geld verdient"
-        )
+Sprache/Bereich:
+{language}
 
-        niche = st.selectbox(
-            "Nische",
-            [
-                "AI",
-                "Business",
-                "Fitness",
-                "Lifestyle",
-                "Gaming",
-                "Motivation",
-                "Social Media",
-            ],
-        )
+Aufgabe:
+{task}
 
-        platform = st.selectbox(
-            "Plattform",
-            [
-                "TikTok",
-                "Instagram",
-                "YouTube Shorts"
-            ],
-        )
+Gib eine klare Lösung mit vollständigem Code, falls möglich.
+"""
+            )
 
-        style = st.selectbox(
-            "Stil",
-            [
-                "Viral",
-                "Luxury",
-                "Aggressive",
-                "Funny",
-                "Professional"
-            ],
-        )
+        output_result(result, "mabyte_code")
 
-        if st.button("🚀 Reel generieren"):
 
-            if not topic:
-                st.warning("Bitte Thema eingeben.")
-            else:
+def render_image_page():
+    page_header(
+        "🎨 Image Generator",
+        "Erstelle starke Bild-Prompts für AI Art, Thumbnails, Ads und Branding.",
+    )
 
-                with st.spinner("Mabyte erstellt dein Reel-Konzept..."):
+    idea = st.text_area(
+        "Bildidee",
+        height=160,
+        placeholder="z.B. Futuristisches AI Dashboard, neon blue, luxury SaaS style...",
+    )
 
-                    prompt = f"""
-                    Erstelle ein virales Reel für {platform}.
+    style = st.selectbox(
+        "Bildstil",
+        ["Realistisch", "Cinematic", "Luxury", "Cyberpunk", "Anime", "3D Render", "Minimalistisch"],
+    )
 
-                    Thema:
-                    {topic}
+    format_type = st.selectbox(
+        "Format",
+        ["16:9", "9:16", "1:1", "4:5"],
+    )
 
-                    Nische:
-                    {niche}
+    if st.button("🎨 Bild-Prompt generieren"):
+        if not idea.strip():
+            st.warning("Bitte Bildidee eingeben.")
+            return
 
-                    Stil:
-                    {style}
+        with st.spinner("Mabyte erstellt deinen Bild-Prompt..."):
+            result = ai_text(
+                f"""
+Erstelle einen professionellen AI Image Prompt.
 
-                    Gib aus:
+Bildidee:
+{idea}
 
-                    - Hook
-                    - Vollständiges Reel Skript
-                    - Szenen Ideen
-                    - Caption
-                    - Hashtags
-                    """
+Stil:
+{style}
 
-                    response = client.chat.completions.create(
-                        model="gpt-4o-mini",
-                        messages=[
-                            {
-                                "role": "user",
-                                "content": prompt,
-                            }
-                        ],
-                    )
+Format:
+{format_type}
 
-                    result = response.choices[0].message.content
+Gib aus:
+- Final Prompt
+- Negative Prompt
+- Licht
+- Kamera
+- Details
+"""
+            )
 
-                    st.markdown(
-                        f"""
-                        <div class="output-box">
-                        {result}
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
+        output_result(result, "mabyte_image_prompt")
 
-                    filename = f"mabyte_reel_{uuid.uuid4().hex[:6]}.txt"
 
-                    with open(filename, "w", encoding="utf-8") as f:
-                        f.write(result)
+def render_music_page():
+    page_header(
+        "🎵 Music Generator",
+        "Erstelle Lyrics, Hooks, Musikideen und komplette Song-Konzepte.",
+    )
 
-                    render_download(filename)
+    music_topic = st.text_input(
+        "Song Thema",
+        placeholder="z.B. Nachtfahrten, Erfolg, Motivation...",
+    )
 
-    # =========================
-    # VIDEO GENERATOR
-    # =========================
+    genre = st.selectbox(
+        "Genre",
+        ["Rap", "Trap", "Pop", "Drill", "EDM", "Phonk", "R&B"],
+    )
 
-    with tab2:
+    mood = st.selectbox(
+        "Mood",
+        ["Dark", "Motivational", "Aggressive", "Sad", "Emotional", "Happy"],
+    )
 
-        st.markdown(
-            """
-            <div class="media-card">
-                <div class="media-header">🎥 AI Video Generator</div>
-                <div class="media-desc">
-                    Generiere AI Video Prompts für Ads, Reels,
-                    Branding und Cinematic Videos.
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+    if st.button("🎵 Song generieren"):
+        if not music_topic.strip():
+            st.warning("Bitte Thema eingeben.")
+            return
 
-        video_prompt = st.text_area(
-            "Video Prompt",
-            placeholder="z.B. Luxury neon commercial with cinematic camera movement..."
-        )
+        with st.spinner("Mabyte erstellt deinen Song..."):
+            result = ai_text(
+                f"""
+Erstelle einen kompletten Song.
 
-        video_style = st.selectbox(
-            "Video Modus",
-            [
-                "Realistisch",
-                "Cinematic",
-                "Anime",
-                "Luxury",
-                "Cyberpunk",
-                "Commercial",
-            ],
-        )
+Thema:
+{music_topic}
 
-        duration = st.selectbox(
-            "Videolänge",
-            [
-                "15 Sekunden",
-                "30 Sekunden",
-                "60 Sekunden",
-            ],
-        )
+Genre:
+{genre}
 
-        if st.button("🎬 Video Prompt generieren"):
+Mood:
+{mood}
 
-            if not video_prompt:
-                st.warning("Bitte Prompt eingeben.")
-            else:
+Gib aus:
+- Songtitel
+- Hook
+- Verse 1
+- Verse 2
+- Bridge
+- Stil Beschreibung
+"""
+            )
 
-                with st.spinner("Mabyte erstellt dein Video Konzept..."):
+        output_result(result, "mabyte_song")
 
-                    prompt = f"""
-                    Erstelle einen professionellen AI Video Prompt.
 
-                    Thema:
-                    {video_prompt}
+def render_reels_page():
+    page_header(
+        "🎬 AI Reels Creator",
+        "Erstelle virale Reels mit Hook, Skript, Caption, Hashtags und Video-Ideen.",
+    )
 
-                    Stil:
-                    {video_style}
+    topic = st.text_input(
+        "Reel Thema",
+        placeholder="z.B. Wie man mit AI online Geld verdient",
+    )
 
-                    Länge:
-                    {duration}
+    niche = st.selectbox(
+        "Nische",
+        ["AI", "Business", "Fitness", "Lifestyle", "Gaming", "Motivation", "Social Media"],
+    )
 
-                    Gib aus:
+    platform = st.selectbox(
+        "Plattform",
+        ["TikTok", "Instagram", "YouTube Shorts"],
+    )
 
-                    - Full AI Prompt
-                    - Camera Angles
-                    - Lighting
-                    - Effects
-                    - Music Style
-                    - Scene Flow
-                    """
+    style = st.selectbox(
+        "Stil",
+        ["Viral", "Luxury", "Aggressive", "Funny", "Professional"],
+    )
 
-                    response = client.chat.completions.create(
-                        model="gpt-4o-mini",
-                        messages=[
-                            {
-                                "role": "user",
-                                "content": prompt,
-                            }
-                        ],
-                    )
+    if st.button("🚀 Reel generieren"):
+        if not topic.strip():
+            st.warning("Bitte Thema eingeben.")
+            return
 
-                    result = response.choices[0].message.content
+        with st.spinner("Mabyte erstellt dein Reel-Konzept..."):
+            result = ai_text(
+                f"""
+Erstelle ein virales Reel für {platform}.
 
-                    st.markdown(
-                        f"""
-                        <div class="output-box">
-                        {result}
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
+Thema:
+{topic}
 
-    # =========================
-    # MUSIC GENERATOR
-    # =========================
+Nische:
+{niche}
 
-    with tab3:
+Stil:
+{style}
 
-        st.markdown(
-            """
-            <div class="media-card">
-                <div class="media-header">🎵 Music Generator</div>
-                <div class="media-desc">
-                    Erstelle Lyrics, Hooks, Musikideen und AI Song Konzepte.
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+Gib aus:
+- Hook
+- Vollständiges Reel Skript
+- Szenen Ideen
+- Caption
+- Hashtags
+- AI Video Prompt
+"""
+            )
 
-        music_topic = st.text_input(
-            "Song Thema",
-            placeholder="z.B. Nachtfahrten, Erfolg, Motivation..."
-        )
+        output_result(result, "mabyte_reel")
 
-        genre = st.selectbox(
-            "Genre",
-            [
-                "Rap",
-                "Trap",
-                "Pop",
-                "Drill",
-                "EDM",
-                "Phonk",
-                "R&B",
-            ],
-        )
 
-        mood = st.selectbox(
-            "Mood",
-            [
-                "Dark",
-                "Motivational",
-                "Aggressive",
-                "Sad",
-                "Emotional",
-                "Happy",
-            ],
-        )
+def render_video_page():
+    page_header(
+        "🎥 AI Video Generator",
+        "Generiere AI Video Prompts für Ads, Reels, Branding und Cinematic Videos.",
+    )
 
-        if st.button("🎵 Song generieren"):
+    video_prompt = st.text_area(
+        "Video Prompt",
+        height=170,
+        placeholder="z.B. Luxury neon commercial with cinematic camera movement...",
+    )
 
-            if not music_topic:
-                st.warning("Bitte Thema eingeben.")
-            else:
+    video_style = st.selectbox(
+        "Video Modus",
+        ["Realistisch", "Cinematic", "Anime", "Luxury", "Cyberpunk", "Commercial"],
+    )
 
-                with st.spinner("Mabyte erstellt deinen Song..."):
+    duration = st.selectbox(
+        "Videolänge",
+        ["15 Sekunden", "30 Sekunden", "60 Sekunden"],
+    )
 
-                    prompt = f"""
-                    Erstelle einen kompletten Song.
+    if st.button("🎬 Video Prompt generieren"):
+        if not video_prompt.strip():
+            st.warning("Bitte Prompt eingeben.")
+            return
 
-                    Thema:
-                    {music_topic}
+        with st.spinner("Mabyte erstellt dein Video Konzept..."):
+            result = ai_text(
+                f"""
+Erstelle einen professionellen AI Video Prompt.
 
-                    Genre:
-                    {genre}
+Thema:
+{video_prompt}
 
-                    Mood:
-                    {mood}
+Stil:
+{video_style}
 
-                    Gib aus:
+Länge:
+{duration}
 
-                    - Songtitel
-                    - Hook
-                    - Verse
-                    - Bridge
-                    - Stil Beschreibung
-                    """
+Gib aus:
+- Full AI Prompt
+- Camera Angles
+- Lighting
+- Effects
+- Music Style
+- Scene Flow
+"""
+            )
 
-                    response = client.chat.completions.create(
-                        model="gpt-4o-mini",
-                        messages=[
-                            {
-                                "role": "user",
-                                "content": prompt,
-                            }
-                        ],
-                    )
-
-                    result = response.choices[0].message.content
-
-                    st.markdown(
-                        f"""
-                        <div class="output-box">
-                        {result}
-                        </div>
-                        """,
-                        unsafe_allow_html=True,
-                    )
+        output_result(result, "mabyte_video_prompt")
