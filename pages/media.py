@@ -1,12 +1,10 @@
-import os
 import uuid
 import math
-
 import streamlit as st
 from openai import OpenAI
 
-from config import OPENAI_API_KEY, OPENAI_TEXT_MODEL, TOKEN_COSTS
-from database import spend_tokens, save_usage, get_user
+from config import OPENAI_API_KEY, OPENAI_TEXT_MODEL, TOKEN_COSTS, PLANS
+from database import spend_tokens, save_usage, get_user, update_tokens
 from ui_helpers import require_login, sync_session_user
 
 
@@ -18,12 +16,7 @@ def user_plan():
 
 
 def has_feature(tool):
-    plan = user_plan()
-
-    from config import PLANS
-
-    features = PLANS.get(plan, PLANS["free"]).get("features", [])
-
+    features = PLANS.get(user_plan(), PLANS["free"]).get("features", [])
     return "all" in features or tool in features
 
 
@@ -37,57 +30,93 @@ def require_feature(tool):
 
 
 def get_tokens():
-    return int(st.session_state.get("tokens", 0))
+    return int(st.session_state.get("tokens", 0) or 0)
 
 
-def calc_video_cost(seconds):
-    base = int(TOKEN_COSTS.get("video_base", 5))
-    per_second = int(TOKEN_COSTS.get("video_second", 1))
+def sync_user():
+    user = get_user(st.session_state.get("user"))
+    if user:
+        sync_session_user(user)
 
-    return base + math.ceil(seconds * per_second)
+
+def calc_video_cost(seconds, quality="Standard"):
+    base = int(TOKEN_COSTS.get("video_base", 10))
+    per_second = int(TOKEN_COSTS.get("video_second", 5))
+
+    cost = base + math.ceil(int(seconds) * per_second)
+
+    if quality == "High":
+        cost = math.ceil(cost * float(TOKEN_COSTS.get("video_quality_high", 1.35)))
+
+    if quality == "Business Level":
+        cost = math.ceil(cost * float(TOKEN_COSTS.get("video_quality_business", 1.75)))
+
+    return int(cost)
 
 
-def calc_tool_cost(tool, seconds=0):
+def calc_tool_cost(tool, seconds=0, quality="Standard"):
     if tool == "video":
-        return calc_video_cost(seconds)
+        return calc_video_cost(seconds, quality)
 
     return int(TOKEN_COSTS.get(tool, 1))
 
 
-def charge_tokens(tool, prompt, seconds=0, provider="openai"):
-    cost = calc_tool_cost(tool, seconds)
+def can_afford(cost):
+    return get_tokens() >= int(cost)
 
-    if get_tokens() < cost:
+
+def charge_tokens(tool, prompt, cost, provider="openai"):
+    username = st.session_state.get("user")
+
+    if not can_afford(cost):
         st.error(f"Nicht genug Tokens. Benötigt: {cost}, verfügbar: {get_tokens()}")
         st.stop()
 
-    ok, msg = spend_tokens(st.session_state.get("user"), cost)
+    ok, msg = spend_tokens(username, int(cost))
 
     if not ok:
         st.error(msg)
         st.stop()
 
     save_usage(
-        username=st.session_state.get("user"),
+        username=username,
         tool=tool,
         prompt=prompt,
-        tokens_used=cost,
-        cost_tokens=cost,
+        tokens_used=int(cost),
+        cost_tokens=int(cost),
         api_provider=provider,
-        status="success",
+        status="charged",
     )
 
-    user = get_user(st.session_state.get("user"))
+    sync_user()
 
-    if user:
-        sync_session_user(user)
 
-    return cost
+def refund_tokens(cost, tool, prompt):
+    username = st.session_state.get("user")
+    user = get_user(username)
+
+    if not user:
+        return
+
+    current = int(user.get("tokens") or 0)
+    update_tokens(username, current + int(cost))
+
+    save_usage(
+        username=username,
+        tool=tool,
+        prompt=prompt,
+        tokens_used=0,
+        cost_tokens=-int(cost),
+        api_provider="refund",
+        status="refunded",
+    )
+
+    sync_user()
 
 
 def ai_text(prompt):
     if not OPENAI_API_KEY:
-        return "OPENAI_API_KEY fehlt. Bitte in Railway setzen."
+        raise RuntimeError("OPENAI_API_KEY fehlt. Bitte in Railway setzen.")
 
     response = client.chat.completions.create(
         model=OPENAI_TEXT_MODEL,
@@ -104,6 +133,30 @@ def ai_text(prompt):
     )
 
     return response.choices[0].message.content
+
+
+def run_paid_text_task(tool, prompt, cost, filename_prefix, provider="openai"):
+    charge_tokens(tool, prompt, cost, provider)
+
+    try:
+        with st.spinner("MaByte arbeitet..."):
+            result = ai_text(prompt)
+
+        save_usage(
+            username=st.session_state.get("user"),
+            tool=tool,
+            prompt=prompt,
+            tokens_used=0,
+            cost_tokens=0,
+            api_provider=provider,
+            status="success",
+        )
+
+        render_output(result, filename_prefix)
+
+    except Exception as e:
+        refund_tokens(cost, tool, prompt)
+        st.error(f"Fehler bei der Generierung. Tokens wurden erstattet. Fehler: {e}")
 
 
 def render_output(result, filename_prefix):
@@ -124,175 +177,73 @@ def render_output(result, filename_prefix):
         )
 
 
-def render_reels_creator():
-    require_feature("reels")
+def render_coding_ai():
+    require_feature("coding")
 
-    st.header("🎬 Reels Creator")
-    st.write("Erstelle virale Hooks, Captions, Szenen und Reels-Konzepte.")
+    st.header("💻 Coding AI")
+    st.write("Code schreiben, debuggen, erklären und verbessern.")
 
-    topic = st.text_input(
-        "Thema",
-        placeholder="z.B. Wie man mit AI online Geld verdient",
-    )
+    task = st.text_area("Aufgabe", height=170, placeholder="Beschreibe deinen Code-Wunsch...")
+    language = st.selectbox("Sprache", ["Python", "Streamlit", "JavaScript", "HTML/CSS", "SQL", "Allgemein"])
 
-    platform = st.selectbox(
-        "Plattform",
-        ["TikTok", "Instagram Reels", "YouTube Shorts"],
-    )
+    cost = calc_tool_cost("coding")
+    st.info(f"Kosten: {cost} Tokens")
 
-    style = st.selectbox(
-        "Stil",
-        ["Viral", "Luxury", "Aggressiv", "Funny", "Professional"],
-    )
-
-    if st.button("Reel Konzept generieren", use_container_width=True):
-        if not topic:
-            st.warning("Bitte Thema eingeben.")
+    if st.button("Code generieren", use_container_width=True):
+        if not task.strip():
+            st.warning("Bitte Aufgabe eingeben.")
             return
 
         prompt = f"""
-        Erstelle ein professionelles virales Reel-Konzept.
+        Erstelle eine professionelle Coding-Lösung.
 
-        Thema:
-        {topic}
+        Sprache/Bereich:
+        {language}
 
-        Plattform:
-        {platform}
+        Aufgabe:
+        {task}
+
+        Gib vollständigen, sauberen Code aus.
+        """
+
+        run_paid_text_task("coding", prompt, cost, "mabyte_code")
+
+
+def render_image_ai():
+    require_feature("image")
+
+    st.header("🎨 Image AI")
+    st.write("Erstelle professionelle Prompts für Bilder, Ads, Thumbnails und Branding.")
+
+    idea = st.text_area("Bildidee", height=150, placeholder="z.B. Futuristisches AI Dashboard...")
+    style = st.selectbox("Stil", ["Realistisch", "Cinematic", "Luxury", "Cyberpunk", "Anime", "3D Render"])
+
+    cost = calc_tool_cost("image")
+    st.info(f"Kosten: {cost} Tokens")
+
+    if st.button("Image Prompt generieren", use_container_width=True):
+        if not idea.strip():
+            st.warning("Bitte Bildidee eingeben.")
+            return
+
+        prompt = f"""
+        Erstelle einen professionellen AI Image Prompt.
+
+        Idee:
+        {idea}
 
         Stil:
         {style}
 
         Gib aus:
-        - Hook
-        - Reel Skript
-        - Szenenplan
-        - Caption
-        - Hashtags
-        - Call to Action
-        """
-
-        charge_tokens("reels", prompt)
-
-        with st.spinner("MaByte erstellt dein Reel..."):
-            result = ai_text(prompt)
-
-        render_output(result, "mabyte_reel")
-
-
-def render_video_generator():
-    require_feature("video")
-
-    st.header("🎞️ AI Video Generator")
-    st.write("Generiere professionelle Video-Prompts mit sekundengenauer Tokenberechnung.")
-
-    video_prompt = st.text_area(
-        "Video Idee",
-        placeholder="z.B. Luxury AI commercial, neon city, cinematic camera...",
-        height=130,
-    )
-
-    seconds = st.slider(
-        "Videolänge in Sekunden",
-        min_value=3,
-        max_value=120,
-        value=15,
-        step=1,
-    )
-
-    video_style = st.selectbox(
-        "Video Stil",
-        [
-            "Cinematic",
-            "Realistisch",
-            "Luxury",
-            "Cyberpunk",
-            "Commercial",
-            "Anime",
-        ],
-    )
-
-    quality = st.selectbox(
-        "Qualität",
-        [
-            "Standard",
-            "High",
-            "Business Level",
-        ],
-    )
-
-    base_cost = calc_video_cost(seconds)
-
-    if quality == "High":
-        final_cost = math.ceil(base_cost * 1.35)
-    elif quality == "Business Level":
-        final_cost = math.ceil(base_cost * 1.75)
-    else:
-        final_cost = base_cost
-
-    st.info(
-        f"Kosten: {final_cost} Tokens "
-        f"({seconds} Sekunden, {quality})"
-    )
-
-    if st.button("Video Prompt generieren", use_container_width=True):
-        if not video_prompt:
-            st.warning("Bitte Video Idee eingeben.")
-            return
-
-        if get_tokens() < final_cost:
-            st.error(f"Nicht genug Tokens. Benötigt: {final_cost}, verfügbar: {get_tokens()}")
-            return
-
-        prompt = f"""
-        Erstelle einen professionellen AI Video Prompt.
-
-        Idee:
-        {video_prompt}
-
-        Länge:
-        {seconds} Sekunden
-
-        Stil:
-        {video_style}
-
-        Qualität:
-        {quality}
-
-        Gib aus:
-        - Final Video Prompt
-        - Szenenablauf pro Abschnitt
-        - Kameraeinstellungen
-        - Licht
-        - Effekte
-        - Musikstil
+        - Final Prompt
         - Negative Prompt
+        - Licht
+        - Kamera
+        - Details
         """
 
-        ok, msg = spend_tokens(st.session_state.get("user"), final_cost)
-
-        if not ok:
-            st.error(msg)
-            return
-
-        save_usage(
-            username=st.session_state.get("user"),
-            tool="video",
-            prompt=prompt,
-            tokens_used=final_cost,
-            cost_tokens=final_cost,
-            api_provider="video_prompt",
-            status="success",
-        )
-
-        user = get_user(st.session_state.get("user"))
-
-        if user:
-            sync_session_user(user)
-
-        with st.spinner("MaByte erstellt dein Video-Konzept..."):
-            result = ai_text(prompt)
-
-        render_output(result, "mabyte_video")
+        run_paid_text_task("image", prompt, cost, "mabyte_image")
 
 
 def render_music_generator():
@@ -301,20 +252,9 @@ def render_music_generator():
     st.header("🎵 Music AI")
     st.write("Erstelle Lyrics, Hooks und komplette Song-Konzepte.")
 
-    topic = st.text_input(
-        "Song Thema",
-        placeholder="z.B. Erfolg, Nachtfahrten, Motivation",
-    )
-
-    genre = st.selectbox(
-        "Genre",
-        ["Rap", "Trap", "Drill", "Pop", "EDM", "Phonk", "R&B"],
-    )
-
-    mood = st.selectbox(
-        "Mood",
-        ["Dark", "Motivational", "Aggressive", "Sad", "Emotional", "Happy"],
-    )
+    topic = st.text_input("Song Thema", placeholder="z.B. Erfolg, Nachtfahrten, Motivation")
+    genre = st.selectbox("Genre", ["Rap", "Trap", "Drill", "Pop", "EDM", "Phonk", "R&B"])
+    mood = st.selectbox("Mood", ["Dark", "Motivational", "Aggressive", "Sad", "Emotional", "Happy"])
 
     cost = calc_tool_cost("music")
     st.info(f"Kosten: {cost} Tokens")
@@ -346,33 +286,145 @@ def render_music_generator():
         - Suno/Udio Prompt
         """
 
-        charge_tokens("music", prompt)
+        run_paid_text_task("music", prompt, cost, "mabyte_music")
 
-        with st.spinner("MaByte erstellt deinen Song..."):
-            result = ai_text(prompt)
 
-        render_output(result, "mabyte_music")
+def render_reels_creator():
+    require_feature("reels")
+
+    st.header("🎬 Reels Creator")
+    st.write("Erstelle virale Hooks, Captions, Szenen und Reels-Konzepte.")
+
+    topic = st.text_input("Thema", placeholder="z.B. Wie man mit AI online Geld verdient")
+    platform = st.selectbox("Plattform", ["TikTok", "Instagram Reels", "YouTube Shorts"])
+    style = st.selectbox("Stil", ["Viral", "Luxury", "Aggressiv", "Funny", "Professional"])
+
+    cost = calc_tool_cost("reels")
+    st.info(f"Kosten: {cost} Tokens")
+
+    if st.button("Reel Konzept generieren", use_container_width=True):
+        if not topic:
+            st.warning("Bitte Thema eingeben.")
+            return
+
+        prompt = f"""
+        Erstelle ein professionelles virales Reel-Konzept.
+
+        Thema:
+        {topic}
+
+        Plattform:
+        {platform}
+
+        Stil:
+        {style}
+
+        Gib aus:
+        - Hook
+        - Reel Skript
+        - Szenenplan
+        - Caption
+        - Hashtags
+        - Call to Action
+        """
+
+        run_paid_text_task("reels", prompt, cost, "mabyte_reel")
+
+
+def render_video_generator():
+    require_feature("video")
+
+    st.header("🎞️ AI Video Generator")
+    st.write("Sekundengenaue Tokenberechnung mit Schutz gegen Minus.")
+
+    video_prompt = st.text_area(
+        "Video Idee",
+        placeholder="z.B. Luxury AI commercial, neon city, cinematic camera...",
+        height=130,
+    )
+
+    seconds = st.slider(
+        "Videolänge in Sekunden",
+        min_value=3,
+        max_value=120,
+        value=15,
+        step=1,
+    )
+
+    video_style = st.selectbox(
+        "Video Stil",
+        ["Cinematic", "Realistisch", "Luxury", "Cyberpunk", "Commercial", "Anime"],
+    )
+
+    quality_options = ["Standard", "High"]
+
+    if user_plan() == "elite":
+        quality_options.append("Business Level")
+
+    quality = st.selectbox("Qualität", quality_options)
+
+    final_cost = calc_video_cost(seconds, quality)
+
+    st.metric("Token Kosten", final_cost)
+    st.caption(f"Formel: Base {TOKEN_COSTS.get('video_base', 10)} + {seconds} × {TOKEN_COSTS.get('video_second', 5)} Tokens")
+
+    if st.button("Video Prompt generieren", use_container_width=True):
+        if not video_prompt:
+            st.warning("Bitte Video Idee eingeben.")
+            return
+
+        if not can_afford(final_cost):
+            st.error(f"Nicht genug Tokens. Benötigt: {final_cost}, verfügbar: {get_tokens()}")
+            return
+
+        prompt = f"""
+        Erstelle einen professionellen AI Video Prompt.
+
+        Idee:
+        {video_prompt}
+
+        Länge:
+        {seconds} Sekunden
+
+        Stil:
+        {video_style}
+
+        Qualität:
+        {quality}
+
+        Gib aus:
+        - Final Video Prompt
+        - Szenenablauf pro Abschnitt
+        - Kameraeinstellungen
+        - Licht
+        - Effekte
+        - Musikstil
+        - Negative Prompt
+        """
+
+        run_paid_text_task("video", prompt, final_cost, "mabyte_video", "video_prompt")
 
 
 def render_media(active_tool="reels"):
     require_login()
 
     st.title("🎨 AI Media Studio")
-    st.write("Reels, Videos und Musik mit fairem Token-System.")
+    st.write("Faire Token-Kosten, kein Minus, Rückerstattung bei API-Fehler.")
 
-    tab_reels, tab_video, tab_music = st.tabs(
-        [
-            "🎬 Reels Creator",
-            "🎞️ Video Generator",
-            "🎵 Music AI",
-        ]
-    )
+    if active_tool == "coding":
+        render_coding_ai()
 
-    with tab_reels:
+    elif active_tool == "image":
+        render_image_ai()
+
+    elif active_tool == "music":
+        render_music_generator()
+
+    elif active_tool == "reels":
         render_reels_creator()
 
-    with tab_video:
+    elif active_tool == "video":
         render_video_generator()
 
-    with tab_music:
-        render_music_generator()
+    else:
+        render_reels_creator()

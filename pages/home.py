@@ -82,11 +82,19 @@ def render_home():
     <div class="hero-badge">NEXT GENERATION AI PLATFORM</div>
 </div>
 
-<div class="hero-title">Mabyte ist die Revolution.</div>
+<div class="hero-title">Mabyte ist mehr als nur eine AI.</div>
 
 <div class="hero-sub">
-    Ein moderner AI Hub für Chat, Coding, Bilder, Videos, Musik,
-    Social Media Content, Reels und Automation — alles in einer Plattform.
+Ob du programmierst, ein Business aufbaust, Content erschaffst
+oder einfach neue Möglichkeiten entdecken willst:
+Mabyte begleitet dich auf deinem Weg.
+
+Schneller. Kreativer. Grenzenloser.
+
+Denn die Zukunft entsteht nicht irgendwann.
+Sie entsteht genau jetzt — mit dir.
+
+MABYTE — BEYOND LIMITS..
 </div>
         """,
         unsafe_allow_html=True,

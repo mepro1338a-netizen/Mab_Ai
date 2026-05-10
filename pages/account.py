@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 
-from config import PLANS
+from config import PLANS, TOKEN_COSTS
 from database import (
     get_user,
     redeem_code,
@@ -36,16 +36,30 @@ def render_dashboard():
 
     st.divider()
 
+    st.subheader("Token Kosten")
+
+    token_rows = [
+        {"Tool": "Chat", "Kosten": TOKEN_COSTS.get("chat", 1)},
+        {"Tool": "Coding AI", "Kosten": TOKEN_COSTS.get("coding", 4)},
+        {"Tool": "Image AI", "Kosten": TOKEN_COSTS.get("image", 15)},
+        {"Tool": "Music AI", "Kosten": TOKEN_COSTS.get("music", 10)},
+        {"Tool": "Reels Creator", "Kosten": TOKEN_COSTS.get("reels", 20)},
+        {"Tool": "Video Base", "Kosten": TOKEN_COSTS.get("video_base", 10)},
+        {"Tool": "Video pro Sekunde", "Kosten": TOKEN_COSTS.get("video_second", 5)},
+    ]
+
+    st.dataframe(
+        pd.DataFrame(token_rows),
+        use_container_width=True,
+        hide_index=True,
+    )
+
     st.subheader("Letzte Nutzung")
 
     usage = list_usage(st.session_state.get("user"))
 
     if usage:
-        st.dataframe(
-            pd.DataFrame(usage),
-            use_container_width=True,
-            hide_index=True,
-        )
+        st.dataframe(pd.DataFrame(usage), use_container_width=True, hide_index=True)
     else:
         st.info("Noch keine Nutzung vorhanden.")
 
@@ -54,11 +68,7 @@ def render_dashboard():
     payments = list_purchases(st.session_state.get("user"))
 
     if payments:
-        st.dataframe(
-            pd.DataFrame(payments),
-            use_container_width=True,
-            hide_index=True,
-        )
+        st.dataframe(pd.DataFrame(payments), use_container_width=True, hide_index=True)
     else:
         st.info("Noch keine Zahlungen vorhanden.")
 
@@ -76,10 +86,7 @@ def render_redeem():
             st.warning("Bitte Code eingeben.")
             return
 
-        ok, msg = redeem_code(
-            st.session_state.get("user"),
-            code,
-        )
+        ok, msg = redeem_code(st.session_state.get("user"), code)
 
         if ok:
             user = get_user(st.session_state.get("user"))
@@ -102,23 +109,13 @@ def render_support():
     with st.form("support_ticket_form"):
         category = st.selectbox(
             "Kategorie",
-            [
-                "Account",
-                "Payment",
-                "Tokens",
-                "AI Tool",
-                "Bug",
-                "Sonstiges",
-            ],
+            ["Account", "Payment", "Tokens", "AI Tool", "Bug", "Sonstiges"],
         )
 
         subject = st.text_input("Betreff")
         message = st.text_area("Nachricht", height=160)
 
-        submitted = st.form_submit_button(
-            "Ticket erstellen",
-            use_container_width=True,
-        )
+        submitted = st.form_submit_button("Ticket erstellen", use_container_width=True)
 
         if submitted:
             if not subject or not message:
@@ -150,13 +147,42 @@ def render_support():
     ]
 
     if own_tickets:
-        st.dataframe(
-            pd.DataFrame(own_tickets),
-            use_container_width=True,
-            hide_index=True,
-        )
+        st.dataframe(pd.DataFrame(own_tickets), use_container_width=True, hide_index=True)
     else:
         st.info("Du hast noch keine Tickets.")
+
+
+def plan_features(plan_key):
+    if plan_key == "pro":
+        return [
+            "600 Tokens",
+            "Image AI",
+            "Coding AI",
+            "Music AI",
+            "Standard Support",
+        ]
+
+    if plan_key == "grand":
+        return [
+            "2500 Tokens",
+            "Video AI",
+            "Reels Creator",
+            "Verbesserter Support",
+            "Bessere APIs",
+            "Alles aus Pro",
+        ]
+
+    if plan_key == "elite":
+        return [
+            "12000 Tokens",
+            "Leistungsstarke APIs",
+            "Verbesserte Videoqualität",
+            "Business Level",
+            "Alles freigeschaltet",
+            "Priorisierter Support",
+        ]
+
+    return PLANS.get(plan_key, {}).get("features", [])
 
 
 def plan_card(plan_key):
@@ -169,52 +195,14 @@ def plan_card(plan_key):
 
         st.divider()
 
-        if plan_key == "pro":
-            features = [
-                "600 Tokens",
-                "Image AI",
-                "Coding AI",
-                "Music AI",
-                "Standard Support",
-            ]
-
-        elif plan_key == "grand":
-            features = [
-                "2500 Tokens",
-                "Video AI",
-                "Reels Creator",
-                "Verbesserter Support",
-                "Bessere APIs",
-                "Alles aus Pro",
-            ]
-
-        elif plan_key == "elite":
-            features = [
-                "12000 Tokens",
-                "Leistungsstarke APIs",
-                "Verbesserte Videoqualität",
-                "Business Level",
-                "Alles freigeschaltet",
-                "Priorisierter Support",
-            ]
-
-        else:
-            features = plan.get("features", [])
-
-        for feature in features:
+        for feature in plan_features(plan_key):
             st.write(f"✅ {feature}")
 
         st.divider()
 
-        if st.button(
-            f"Buy {plan['label']}",
-            key=f"buy_{plan_key}",
-            use_container_width=True,
-        ):
+        if st.button(f"Buy {plan['label']}", key=f"buy_{plan_key}", use_container_width=True):
             st.session_state.selected_plan = plan_key
-            st.success(
-                f"{plan['label']} ausgewählt. Stripe Checkout kann hier verbunden werden."
-            )
+            st.success(f"{plan['label']} ausgewählt. Stripe Checkout kann hier verbunden werden.")
 
 
 def render_premium():
