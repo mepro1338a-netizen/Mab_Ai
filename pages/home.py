@@ -94,7 +94,7 @@ Schneller. Kreativer. Grenzenloser.
 Denn die Zukunft entsteht nicht irgendwann.
 Sie entsteht genau jetzt — mit dir.
 
-MABYTE — BEYOND LIMITS..
+MABYTE — BEYOND LIMITS.
 </div>
         """,
         unsafe_allow_html=True,
