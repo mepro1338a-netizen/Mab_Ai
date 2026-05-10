@@ -303,3 +303,15 @@ hr {
         """,
         unsafe_allow_html=True,
     )
+
+import streamlit as st
+
+def load_css():
+    st.markdown(
+        f"""
+        <style>
+        {GLOBAL_CSS}
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
