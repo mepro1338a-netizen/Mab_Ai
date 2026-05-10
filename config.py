@@ -4,14 +4,8 @@ from datetime import datetime
 
 import streamlit as st
 from openai import OpenAI
-
-from config import (
-    OPENAI_API_KEY,
-    OPENAI_TEXT_MODEL,
-    TOKEN_COSTS,
-    PLANS,
-    DAILY_VIDEO_LIMITS,
-)
+OPENAI_API_KEY =
+os.getenv("OPENAI_API_KEY","")
 
 from database import (
     spend_tokens,
