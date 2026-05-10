@@ -82,7 +82,7 @@ def render_home():
     <div class="hero-badge">NEXT GENERATION AI PLATFORM</div>
 </div>
 
-<div class="hero-title">Mabyte ist mehr als nur eine AI.</div>
+<div class="hero-title">Mabyte ist mehr als eine AI.</div>
 
 <div class="hero-sub">
 Ob du programmierst, ein Business aufbaust, Content erschaffst
