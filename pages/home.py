@@ -107,39 +107,77 @@ def render_home():
 
     st.markdown('<div class="home-wrapper">', unsafe_allow_html=True)
 
+st.markdown(
+    """
+    <div class="hero-box">
+        <div class="hero-badge">
+            NEXT GENERATION AI PLATFORM
+        </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+st.image("logoslogan.png", width=560)
+
+st.markdown(
+    """
+    <div class="hero-text">
+        Deine moderne AI Plattform für Chat, Coding,
+        Bilder, Videos, Musik und Creator Workflows.
+        Schnell. Kreativ. Übersichtlich.
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
+c1, c2, c3, c4 = st.columns(4)
+
+with c1:
     st.markdown(
         """
-        <div class="hero-box">
-
-            <div class="hero-badge">
-                NEXT GENERATION AI PLATFORM
-            </div>
-
-        """,
-        unsafe_allow_html=True,
-    )
-
-    st.image("logoslogan.png", width=760)
-
-    st.markdown(
-        """
-            <div class="hero-text">
-                Deine moderne AI Plattform für Chat, Coding,
-                Bilder, Videos, Musik und Creator Workflows.
-                Schnell. Kreativ. Übersichtlich.
-            </div>
-
-            <div class="pill-row">
-                <div class="pill">⚡ Smart AI</div>
-                <div class="pill">💎 Pro Workflow</div>
-                <div class="pill">🚀 Creator Ready</div>
-                <div class="pill">🎬 Media Suite</div>
-            </div>
-
+        <div class="pill">
+            ⚡ Smart AI
         </div>
         """,
         unsafe_allow_html=True,
     )
+
+with c2:
+    st.markdown(
+        """
+        <div class="pill">
+            💎 Pro Workflow
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+with c3:
+    st.markdown(
+        """
+        <div class="pill">
+            🚀 Creator Ready
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+with c4:
+    st.markdown(
+        """
+        <div class="pill">
+            🎬 Media Suite
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+st.markdown(
+    """
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
     st.markdown(
         """
