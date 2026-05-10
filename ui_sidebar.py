@@ -1,7 +1,3 @@
-# =========================
-# ui_sidebar.py
-# =========================
-
 import streamlit as st
 
 
@@ -19,22 +15,33 @@ def logout():
     st.session_state.tokens = 0
     st.session_state.role = "user"
     st.session_state.admin_level = 0
+    st.session_state.logged_in = False
     st.rerun()
+
+
+def render_user_card():
+    user = st.session_state.get("user", "User")
+    email = st.session_state.get("email", "")
+    plan = st.session_state.get("plan", "free")
+    tokens = st.session_state.get("tokens", 0)
+    role = st.session_state.get("role", "user")
+
+    with st.container(border=True):
+        st.subheader(f"👤 {user}")
+        st.write(f"📧 {email}")
+        st.write(f"💎 Plan: {plan}")
+        st.write(f"🪙 Tokens: {tokens}")
+        st.write(f"🛡️ Role: {role}")
 
 
 def render_sidebar():
     with st.sidebar:
-
         try:
-            st.image("LogoMAIN.png", width=220)
-        except:
+            st.image("LogoMAIN.png", width=185)
+        except Exception:
             st.title("MaByte")
 
-        st.markdown("""
-        <div class="sidebar-subtitle">
-            Next Generation AI Platform
-        </div>
-        """, unsafe_allow_html=True)
+        st.caption("Next Generation AI Platform")
 
         nav("🏠 Home", "home")
 
@@ -42,37 +49,9 @@ def render_sidebar():
             nav("🔐 Login / Register", "login")
             return
 
-        st.markdown(
-            f"""
-            <div class="sidebar-user-card">
-
-                <div class="sidebar-user-name">
-                    👤 {st.session_state.get("user", "User")}
-                </div>
-
-                <div class="sidebar-line">
-                    📧 {st.session_state.get("email", "")}
-                </div>
-
-                <div class="sidebar-line">
-                    💎 Plan: {st.session_state.get("plan", "free")}
-                </div>
-
-                <div class="sidebar-line">
-                    🪙 Tokens: {st.session_state.get("tokens", 0)}
-                </div>
-
-                <div class="sidebar-line">
-                    🛡️ Role: {st.session_state.get("role", "user")}
-                </div>
-
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+        render_user_card()
 
         st.markdown("### AI Tools")
-
         nav("💬 Memory Chat", "chat")
         nav("💻 Coding AI", "coding")
         nav("🎨 Image Generator", "image")
@@ -81,18 +60,19 @@ def render_sidebar():
         nav("🎞️ AI Video", "video")
 
         st.markdown("### Account")
-
         nav("📊 Dashboard", "dashboard")
         nav("🎁 Redeem Code", "redeem")
         nav("🆘 Support Tickets", "support")
         nav("💎 Premium", "premium")
 
-        if (
-            st.session_state.get("role") in ["admin", "owner"]
-            or int(st.session_state.get("admin_level", 0)) > 0
-        ):
+        role = st.session_state.get("role", "user")
+        level = int(st.session_state.get("admin_level", 0) or 0)
+
+        if role in ["admin", "owner"] or level > 0:
             st.markdown("### Admin")
             nav("🛡️ Admin Panel", "admin")
 
-        if st.button("🚪 Logout", use_container_width=True):
+        st.divider()
+
+        if st.button("🚪 Logout", use_container_width=True, key="logout_btn"):
             logout()
