@@ -1,3 +1,7 @@
+# =========================
+# ui_sidebar.py
+# =========================
+
 import streamlit as st
 
 
@@ -18,53 +22,19 @@ def logout():
     st.rerun()
 
 
-def render_user_card():
-    st.markdown(
-        f"""
-        <div class="sidebar-user-card">
-
-            <div class="sidebar-user-name">
-                👤 {st.session_state.get("user", "User")}
-            </div>
-
-            <div class="sidebar-line">
-                📧 {st.session_state.get("email", "")}
-            </div>
-
-            <div class="sidebar-line">
-                💎 Plan: {st.session_state.get("plan", "free")}
-            </div>
-
-            <div class="sidebar-line">
-                🪙 Tokens: {st.session_state.get("tokens", 0)}
-            </div>
-
-            <div class="sidebar-line">
-                🛡️ Role: {st.session_state.get("role", "user")}
-            </div>
-
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-
 def render_sidebar():
     with st.sidebar:
 
         try:
-            st.image("LogoMAIN.png", use_container_width=True)
-        except Exception:
-            st.markdown("# MaByte")
+            st.image("LogoMAIN.png", width=220)
+        except:
+            st.title("MaByte")
 
-        st.markdown(
-            """
-            <div class="sidebar-subtitle">
-                Next Generation AI Platform
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+        st.markdown("""
+        <div class="sidebar-subtitle">
+            Next Generation AI Platform
+        </div>
+        """, unsafe_allow_html=True)
 
         nav("🏠 Home", "home")
 
@@ -72,32 +42,45 @@ def render_sidebar():
             nav("🔐 Login / Register", "login")
             return
 
-        render_user_card()
-
         st.markdown(
-            """
-            <div class="sidebar-section-title">
-                AI Tools
+            f"""
+            <div class="sidebar-user-card">
+
+                <div class="sidebar-user-name">
+                    👤 {st.session_state.get("user", "User")}
+                </div>
+
+                <div class="sidebar-line">
+                    📧 {st.session_state.get("email", "")}
+                </div>
+
+                <div class="sidebar-line">
+                    💎 Plan: {st.session_state.get("plan", "free")}
+                </div>
+
+                <div class="sidebar-line">
+                    🪙 Tokens: {st.session_state.get("tokens", 0)}
+                </div>
+
+                <div class="sidebar-line">
+                    🛡️ Role: {st.session_state.get("role", "user")}
+                </div>
+
             </div>
             """,
             unsafe_allow_html=True,
         )
+
+        st.markdown("### AI Tools")
 
         nav("💬 Memory Chat", "chat")
         nav("💻 Coding AI", "coding")
         nav("🎨 Image Generator", "image")
         nav("🎵 Music Generator", "music")
         nav("🎬 Reels Creator", "reels")
-        nav("🎞️ AI Video Generator", "video")
+        nav("🎞️ AI Video", "video")
 
-        st.markdown(
-            """
-            <div class="sidebar-section-title">
-                Account
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+        st.markdown("### Account")
 
         nav("📊 Dashboard", "dashboard")
         nav("🎁 Redeem Code", "redeem")
@@ -108,22 +91,8 @@ def render_sidebar():
             st.session_state.get("role") in ["admin", "owner"]
             or int(st.session_state.get("admin_level", 0)) > 0
         ):
-            st.markdown(
-                """
-                <div class="sidebar-section-title">
-                    Admin
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
+            st.markdown("### Admin")
             nav("🛡️ Admin Panel", "admin")
 
-        st.markdown("<br>", unsafe_allow_html=True)
-
-        if st.button(
-            "🚪 Logout",
-            use_container_width=True,
-            key="logout_btn",
-        ):
+        if st.button("🚪 Logout", use_container_width=True):
             logout()

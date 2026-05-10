@@ -1,13 +1,16 @@
-import sqlite3
-import secrets
-import string
-from datetime import datetime
+# =========================
+# pages/admin.py
+# =========================
 
-import pandas as pd
 import streamlit as st
 
-from config import DB_PATH
-
+from database import (
+    list_users,
+    list_support_messages,
+    list_codes,
+    list_usage,
+    list_purchases,
+)
 
 ROLE_NAMES = {
     1: "Supporter",
@@ -17,391 +20,174 @@ ROLE_NAMES = {
 }
 
 
-def conn():
-    connection = sqlite3.connect(DB_PATH, check_same_thread=False)
-    connection.row_factory = sqlite3.Row
-    return connection
-
-
-def query(sql, params=()):
-    c = conn()
-    cur = c.cursor()
-
-    cur.execute(sql, params)
-
-    rows = cur.fetchall()
-
-    c.commit()
-    c.close()
-
-    return rows
-
-
-def execute(sql, params=()):
-    c = conn()
-    cur = c.cursor()
-
-    cur.execute(sql, params)
-
-    c.commit()
-    c.close()
-
-
 def get_level():
     return int(st.session_state.get("admin_level", 0))
 
 
-def require_admin(min_level=1):
-    if get_level() < min_level:
+def require_admin(level=1):
+    if get_level() < level:
         st.error("Kein Zugriff.")
         st.stop()
 
 
 def render_overview():
-    users = query("SELECT COUNT(*) as c FROM users")[0]["c"]
-    tickets = query("SELECT COUNT(*) as c FROM support_tickets")[0]["c"]
-    codes = query("SELECT COUNT(*) as c FROM redeem_codes")[0]["c"]
+    users = list_users()
+    tickets = list_support_messages()
+    codes = list_codes()
 
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        st.markdown(
-            f"""
-            <div class="admin-stat-card">
-                <div class="admin-stat-title">Users</div>
-                <div class="admin-stat-value">{users}</div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+        st.markdown(f"""
+        <div class="admin-stat-card">
+            <div class="admin-stat-title">Users</div>
+            <div class="admin-stat-value">{len(users)}</div>
+        </div>
+        """, unsafe_allow_html=True)
 
     with col2:
-        st.markdown(
-            f"""
-            <div class="admin-stat-card">
-                <div class="admin-stat-title">Tickets</div>
-                <div class="admin-stat-value">{tickets}</div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+        st.markdown(f"""
+        <div class="admin-stat-card">
+            <div class="admin-stat-title">Tickets</div>
+            <div class="admin-stat-value">{len(tickets)}</div>
+        </div>
+        """, unsafe_allow_html=True)
 
     with col3:
-        st.markdown(
-            f"""
-            <div class="admin-stat-card">
-                <div class="admin-stat-title">Redeem Codes</div>
-                <div class="admin-stat-value">{codes}</div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+        st.markdown(f"""
+        <div class="admin-stat-card">
+            <div class="admin-stat-title">Redeem Codes</div>
+            <div class="admin-stat-value">{len(codes)}</div>
+        </div>
+        """, unsafe_allow_html=True)
 
 
 def render_users():
-    require_admin(1)
+    st.subheader("👥 User Database")
 
-    st.markdown(
-        '<div class="admin-section-title">👥 User Database</div>',
-        unsafe_allow_html=True,
-    )
+    users = list_users()
 
-    rows = query("""
-        SELECT
-            id,
-            username,
-            email,
-            plan,
-            tokens,
-            role,
-            admin_level,
-            is_banned,
-            created_at,
-            last_login
-        FROM users
-        ORDER BY id DESC
-    """)
+    if not users:
+        st.info("Noch keine User gefunden.")
+        return
 
-    data = []
+    for user in users:
+        st.markdown(f"""
+        <div class="admin-user-card">
+            <div class="admin-user-top">
+                👤 {user.get("username")}
+            </div>
 
-    for r in rows:
-        item = dict(r)
-
-        item["status"] = (
-            "🟢 Active"
-            if int(item.get("is_banned") or 0) == 0
-            else "🔴 Banned"
-        )
-
-        item["admin_name"] = ROLE_NAMES.get(
-            int(item.get("admin_level") or 0),
-            "User",
-        )
-
-        item.pop("is_banned", None)
-
-        data.append(item)
-
-    if data:
-        st.dataframe(
-            pd.DataFrame(data),
-            use_container_width=True,
-            hide_index=True,
-        )
-    else:
-        st.info("Noch keine User in dieser Datenbank gefunden.")
+            <div>📧 {user.get("email")}</div>
+            <div>💎 Plan: {user.get("plan")}</div>
+            <div>🪙 Tokens: {user.get("tokens")}</div>
+            <div>🛡️ Role: {user.get("role")}</div>
+            <div>📅 Created: {user.get("created_at")}</div>
+            <div>🕓 Last Login: {user.get("last_login")}</div>
+        </div>
+        """, unsafe_allow_html=True)
 
 
 def render_tickets():
-    require_admin(1)
+    st.subheader("🎫 Support Tickets")
 
-    rows = query("""
-        SELECT *
-        FROM support_tickets
-        ORDER BY id DESC
-    """)
+    tickets = list_support_messages()
 
-    st.markdown(
-        '<div class="admin-section-title">🎫 Support Tickets</div>',
-        unsafe_allow_html=True,
-    )
-
-    if not rows:
+    if not tickets:
         st.info("Keine Tickets vorhanden.")
         return
 
-    for row in rows:
-        with st.expander(
-            f"#{row['id']} • {row['subject']} • {row['status']}"
-        ):
-            st.write(f"User: {row['username']}")
-            st.write(f"Email: {row['email']}")
-            st.write(f"Message: {row['message']}")
-
-            if st.button(
-                f"Close Ticket {row['id']}",
-                key=f"close_{row['id']}"
-            ):
-                execute(
-                    """
-                    UPDATE support_tickets
-                    SET status='closed'
-                    WHERE id=?
-                    """,
-                    (row["id"],),
-                )
-
-                st.success("Ticket geschlossen.")
-                st.rerun()
+    for ticket in tickets:
+        st.markdown(f"""
+        <div class="admin-ticket-card">
+            <div><b>#{ticket.get("id")} - {ticket.get("subject")}</b></div>
+            <div>👤 {ticket.get("username")}</div>
+            <div>📧 {ticket.get("email")}</div>
+            <div>📌 Status: {ticket.get("status")}</div>
+            <div>📝 {ticket.get("message")}</div>
+        </div>
+        """, unsafe_allow_html=True)
 
 
 def render_codes():
-    require_admin(2)
+    st.subheader("🎁 Redeem Codes")
 
-    st.markdown(
-        '<div class="admin-section-title">🎁 Redeem Codes</div>',
-        unsafe_allow_html=True,
-    )
+    codes = list_codes()
 
-    code_type = st.selectbox(
-        "Typ",
-        ["tokens", "plan"],
-    )
+    if not codes:
+        st.info("Keine Redeem Codes vorhanden.")
+        return
 
-    tokens = st.number_input(
-        "Tokens",
-        0,
-        999999,
-        1000,
-    )
-
-    plan = st.selectbox(
-        "Plan",
-        ["free", "basic", "pro", "elite"],
-    )
-
-    uses = st.number_input(
-        "Max Uses",
-        1,
-        999,
-        1,
-    )
-
-    if st.button("Code erstellen"):
-        code = secrets.token_hex(4).upper()
-
-        execute("""
-            INSERT INTO redeem_codes (
-                code,
-                code_type,
-                plan,
-                tokens,
-                max_uses,
-                used_count,
-                created_by,
-                expires_at,
-                is_active,
-                created_at
-            )
-            VALUES (?, ?, ?, ?, ?, 0, ?, '', 1, ?)
-        """, (
-            code,
-            code_type,
-            plan,
-            tokens,
-            uses,
-            st.session_state.get("user"),
-            datetime.utcnow().isoformat(),
-        ))
-
-        st.success(f"Code erstellt: {code}")
-
-    rows = query("""
-        SELECT *
-        FROM redeem_codes
-        ORDER BY id DESC
-    """)
-
-    if rows:
-        st.dataframe(
-            pd.DataFrame([dict(r) for r in rows]),
-            use_container_width=True,
-            hide_index=True,
-        )
+    for code in codes:
+        st.markdown(f"""
+        <div class="admin-code-card">
+            <div><b>{code.get("code")}</b></div>
+            <div>💎 Plan: {code.get("plan")}</div>
+            <div>🪙 Tokens: {code.get("tokens")}</div>
+            <div>📅 Expires: {code.get("expires_at")}</div>
+        </div>
+        """, unsafe_allow_html=True)
 
 
 def render_logs():
-    require_admin(2)
+    st.subheader("📜 Usage Logs")
 
-    rows = query("""
-        SELECT *
-        FROM usage_logs
-        ORDER BY id DESC
-        LIMIT 100
-    """)
+    logs = list_usage()
 
-    st.markdown(
-        '<div class="admin-section-title">📜 Logs</div>',
-        unsafe_allow_html=True,
-    )
+    if not logs:
+        st.info("Keine Logs vorhanden.")
+        return
 
-    if rows:
-        st.dataframe(
-            pd.DataFrame([dict(r) for r in rows]),
-            use_container_width=True,
-            hide_index=True,
-        )
-    else:
-        st.info("Keine Logs gefunden.")
+    for log in logs:
+        st.markdown(f"""
+        <div class="admin-log-card">
+            <div><b>{log.get("tool")}</b></div>
+            <div>👤 {log.get("username")}</div>
+            <div>🪙 Tokens: {log.get("tokens_used")}</div>
+            <div>📅 {log.get("created_at")}</div>
+        </div>
+        """, unsafe_allow_html=True)
 
 
 def render_payments():
-    require_admin(2)
+    st.subheader("💳 Payments")
 
-    st.markdown(
-        '<div class="admin-section-title">💳 Payments</div>',
-        unsafe_allow_html=True,
-    )
+    payments = list_purchases()
 
-    rows = query("""
-        SELECT *
-        FROM payments
-        ORDER BY id DESC
-    """)
+    if not payments:
+        st.info("Keine Payments vorhanden.")
+        return
 
-    if rows:
-        st.dataframe(
-            pd.DataFrame([dict(r) for r in rows]),
-            use_container_width=True,
-            hide_index=True,
-        )
-    else:
-        st.info("Keine Zahlungen gefunden.")
+    for pay in payments:
+        st.markdown(f"""
+        <div class="admin-payment-card">
+            <div><b>{pay.get("username")}</b></div>
+            <div>💎 {pay.get("plan")}</div>
+            <div>💰 {pay.get("amount")}€</div>
+            <div>📌 {pay.get("payment_status")}</div>
+        </div>
+        """, unsafe_allow_html=True)
 
 
 def render_admin_actions():
     require_admin(3)
 
-    st.markdown(
-        '<div class="admin-section-title">🛡️ Admin Actions</div>',
-        unsafe_allow_html=True,
-    )
-
-    users = query("""
-        SELECT username
-        FROM users
-        ORDER BY username ASC
-    """)
-
-    usernames = [u["username"] for u in users]
-
-    selected = st.selectbox(
-        "User auswählen",
-        usernames,
-    )
-
-    role = st.selectbox(
-        "Neuer Rang",
-        [
-            "Supporter - Level 1",
-            "Moderator - Level 2",
-            "Admin - Level 3",
-            "Owner - Level 1337",
-        ],
-    )
-
-    if st.button("Rang setzen"):
-
-        if "Supporter" in role:
-            lvl = 1
-            role_name = "supporter"
-
-        elif "Moderator" in role:
-            lvl = 2
-            role_name = "moderator"
-
-        elif "Admin" in role:
-            lvl = 3
-            role_name = "admin"
-
-        else:
-            lvl = 1337
-            role_name = "owner"
-
-        execute("""
-            UPDATE users
-            SET role=?, admin_level=?
-            WHERE username=?
-        """, (
-            role_name,
-            lvl,
-            selected,
-        ))
-
-        st.success("Rang aktualisiert.")
-        st.rerun()
+    st.subheader("🛡️ Admin Actions")
+    st.success("Nur Admin & Owner haben Zugriff.")
 
 
 def render_admin_panel():
     require_admin(1)
 
-    st.markdown(
-        """
-        <div class="admin-hero">
-            🛡️ Admin Panel
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    st.markdown("""
+    <div class="admin-title">
+        🛡️ Admin Panel
+    </div>
 
-    st.markdown(
-        """
-        <div class="admin-sub">
-            MaByte Control Center — Users, Tickets, Tokens, Logs und Payments.
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    <div class="admin-subtitle">
+        MaByte Control Center — Users, Tickets, Tokens, Logs und Payments.
+    </div>
+    """, unsafe_allow_html=True)
 
     tabs = st.tabs([
         "Overview",
@@ -435,5 +221,6 @@ def render_admin_panel():
         with tabs[6]:
             render_admin_actions()
 
+
 def render_admin():
-    render_admin_page()
+    render_admin_panel()
