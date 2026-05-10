@@ -1,9 +1,7 @@
 import streamlit as st
 
 from database import init_db
-from ui_styles import load_css
-from ui_sidebar import render_sidebar
-
+from ui_core import render_sidebar, load_css
 from pages.home import render_home
 from pages.auth import render_auth
 from pages.chat import render_chat
