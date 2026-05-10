@@ -24,24 +24,30 @@ from database import (
 from ui_helpers import require_login, sync_session_user
 
 from queue_manager import create_job, list_user_jobs
-from abuse_guard import check_generation_allowed
-from costs import record_cost
+from abuse_guard import validate_request
+from costs import record_cost, emergency_cost_limit_reached
+
+from social_integrations import (
+    render_social_connect_panel,
+    get_selected_platforms,
+    build_auto_posting_note,
+    can_use_auto_posting,
+)
 
 
 client = OpenAI(api_key=OPENAI_API_KEY)
-
-
-def user_plan():
-    return st.session_state.get("plan", "free")
 
 
 def username():
     return st.session_state.get("user")
 
 
+def user_plan():
+    return st.session_state.get("plan", "free")
+
+
 def plan_features():
-    plan = user_plan()
-    return PLANS.get(plan, PLANS["free"]).get("features", [])
+    return PLANS.get(user_plan(), PLANS["free"]).get("features", [])
 
 
 def has_feature(tool):
@@ -71,10 +77,8 @@ def sync_user():
 def get_quality_multiplier(quality):
     if quality == "High":
         return float(TOKEN_COSTS.get("video_quality_high", 1.35))
-
     if quality == "Business Level":
         return float(TOKEN_COSTS.get("video_quality_business", 1.75))
-
     return 1.0
 
 
@@ -136,7 +140,13 @@ def can_afford(cost):
 
 
 def charge_tokens(tool, prompt, cost, provider="openai"):
-    allowed, reason = check_generation_allowed(username(), user_plan())
+    blocked, today_cost = emergency_cost_limit_reached(max_daily_cost=50)
+
+    if blocked:
+        st.error(f"Systemschutz aktiv: heutige API-Kosten sind bei ca. {today_cost}€. Generierung pausiert.")
+        st.stop()
+
+    allowed, reason = validate_request(username(), user_plan(), prompt)
 
     if not allowed:
         st.error(reason)
@@ -171,7 +181,6 @@ def charge_tokens(tool, prompt, cost, provider="openai"):
     )
 
     sync_user()
-
     return job_id
 
 
@@ -316,8 +325,16 @@ def render_coding_ai():
     st.header("💻 Coding AI")
     st.write("Code schreiben, debuggen, erklären und verbessern.")
 
-    task = st.text_area("Aufgabe", height=170, placeholder="Beschreibe deinen Code-Wunsch...")
-    language = st.selectbox("Sprache", ["Python", "Streamlit", "JavaScript", "HTML/CSS", "SQL", "Allgemein"])
+    task = st.text_area(
+        "Aufgabe",
+        height=170,
+        placeholder="Beschreibe deinen Code-Wunsch...",
+    )
+
+    language = st.selectbox(
+        "Sprache",
+        ["Python", "Streamlit", "JavaScript", "HTML/CSS", "SQL", "Allgemein"],
+    )
 
     cost = calc_tool_cost("coding")
     st.info(f"Kosten: {cost} Tokens")
@@ -348,8 +365,16 @@ def render_image_ai():
     st.header("🎨 Image AI")
     st.write("Erstelle professionelle Prompts für Bilder, Ads, Thumbnails und Branding.")
 
-    idea = st.text_area("Bildidee", height=150, placeholder="z.B. Futuristisches AI Dashboard...")
-    style = st.selectbox("Stil", ["Realistisch", "Cinematic", "Luxury", "Cyberpunk", "Anime", "3D Render"])
+    idea = st.text_area(
+        "Bildidee",
+        height=150,
+        placeholder="z.B. Futuristisches AI Dashboard...",
+    )
+
+    style = st.selectbox(
+        "Stil",
+        ["Realistisch", "Cinematic", "Luxury", "Cyberpunk", "Anime", "3D Render"],
+    )
 
     cost = calc_tool_cost("image")
     st.info(f"Kosten: {cost} Tokens")
@@ -385,9 +410,20 @@ def render_music_generator():
     st.header("🎵 Music AI")
     st.write("Erstelle Lyrics, Hooks und komplette Song-Konzepte.")
 
-    topic = st.text_input("Song Thema", placeholder="z.B. Erfolg, Nachtfahrten, Motivation")
-    genre = st.selectbox("Genre", ["Rap", "Trap", "Drill", "Pop", "EDM", "Phonk", "R&B"])
-    mood = st.selectbox("Mood", ["Dark", "Motivational", "Aggressive", "Sad", "Emotional", "Happy"])
+    topic = st.text_input(
+        "Song Thema",
+        placeholder="z.B. Erfolg, Nachtfahrten, Motivation",
+    )
+
+    genre = st.selectbox(
+        "Genre",
+        ["Rap", "Trap", "Drill", "Pop", "EDM", "Phonk", "R&B"],
+    )
+
+    mood = st.selectbox(
+        "Mood",
+        ["Dark", "Motivational", "Aggressive", "Sad", "Emotional", "Happy"],
+    )
 
     cost = calc_tool_cost("music")
     st.info(f"Kosten: {cost} Tokens")
@@ -431,12 +467,33 @@ def render_reels_creator():
     used, limit = check_video_limit()
     st.info(f"Heutiges Video/Reel-Limit: {used}/{limit} genutzt")
 
-    topic = st.text_input("Thema", placeholder="z.B. Wie man mit AI online Geld verdient")
-    niche = st.selectbox("Nische", ["AI", "Business", "Fitness", "Lifestyle", "Gaming", "Motivation", "Social Media"])
-    platform = st.selectbox("Plattform", ["TikTok", "Instagram Reels", "YouTube Shorts"])
-    style = st.selectbox("Stil", ["Viral", "Luxury", "Aggressiv", "Funny", "Professional"])
+    topic = st.text_input(
+        "Thema",
+        placeholder="z.B. Wie man mit AI online Geld verdient",
+    )
 
-    seconds = st.slider("Reel Länge in Sekunden", min_value=5, max_value=60, value=15, step=1)
+    niche = st.selectbox(
+        "Nische",
+        ["AI", "Business", "Fitness", "Lifestyle", "Gaming", "Motivation", "Social Media"],
+    )
+
+    platform = st.selectbox(
+        "Plattform",
+        ["TikTok", "Instagram Reels", "YouTube Shorts"],
+    )
+
+    style = st.selectbox(
+        "Stil",
+        ["Viral", "Luxury", "Aggressiv", "Funny", "Professional"],
+    )
+
+    seconds = st.slider(
+        "Reel Länge in Sekunden",
+        min_value=5,
+        max_value=60,
+        value=15,
+        step=1,
+    )
 
     quality_options = ["Standard", "High"]
     if user_plan() == "elite":
@@ -444,12 +501,21 @@ def render_reels_creator():
 
     quality = st.selectbox("Video Qualität", quality_options)
 
-    auto_post = st.checkbox("Automatisiertes Posting vorbereiten")
+    st.divider()
+    render_social_connect_panel()
+
+    auto_post = st.checkbox(
+        "Automatisiertes Posting aktivieren",
+        disabled=not can_use_auto_posting(),
+    )
+
     post_time = st.text_input(
         "Posting Zeit",
         placeholder="z.B. heute 18:30 oder täglich 19:00",
         disabled=not auto_post,
     )
+
+    selected_platforms = get_selected_platforms()
 
     cost = calc_tool_cost("reels_video", seconds, quality)
 
@@ -495,10 +561,10 @@ Qualität:
 {quality}
 
 Automatisiertes Posting:
-{"Ja" if auto_post else "Nein"}
+{build_auto_posting_note(auto_post, post_time)}
 
-Geplante Posting Zeit:
-{post_time if auto_post else "Nicht geplant"}
+Ausgewählte Plattformen:
+{", ".join(selected_platforms) if selected_platforms else "Keine"}
 
 Gib aus:
 
@@ -540,7 +606,13 @@ def render_video_generator():
         height=130,
     )
 
-    seconds = st.slider("Videolänge in Sekunden", min_value=3, max_value=120, value=10, step=1)
+    seconds = st.slider(
+        "Videolänge in Sekunden",
+        min_value=3,
+        max_value=120,
+        value=10,
+        step=1,
+    )
 
     video_style = st.selectbox(
         "Video Stil",

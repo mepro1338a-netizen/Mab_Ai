@@ -1,77 +1,236 @@
-import streamlit as st
-from pathlib import Path
+# =========================================================
+# ui_helpers.py
+# =========================================================
 
+import streamlit as st
+
+
+# =========================================================
+# LOGIN CHECK
+# =========================================================
 
 def is_logged_in():
     return bool(st.session_state.get("user"))
 
 
+# =========================================================
+# REQUIRE LOGIN
+# =========================================================
+
 def require_login():
     if not is_logged_in():
         st.warning("Bitte zuerst einloggen.")
         st.session_state.page = "login"
-        st.rerun()
+        st.stop()
+
+
+# =========================================================
+# SESSION SYNC
+# =========================================================
+
+def sync_session_user(user):
+    if not user:
+        return
+
+    st.session_state.user = user.get("username")
+    st.session_state.email = user.get("email", "")
+
+    st.session_state.plan = user.get("plan", "free")
+
+    st.session_state.tokens = int(
+        user.get("tokens", 0) or 0
+    )
+
+    st.session_state.role = user.get("role", "user")
+
+    st.session_state.admin_level = int(
+        user.get("admin_level", 0) or 0
+    )
+
+    st.session_state.logged_in = True
+
+
+# =========================================================
+# ROLE HELPERS
+# =========================================================
+
+def current_role():
+    return st.session_state.get("role", "user")
+
+
+def current_admin_level():
+    return int(
+        st.session_state.get("admin_level", 0) or 0
+    )
+
+
+def is_supporter():
+    return current_role() in [
+        "supporter",
+        "moderator",
+        "admin",
+        "owner",
+    ]
+
+
+def is_moderator():
+    return current_role() in [
+        "moderator",
+        "admin",
+        "owner",
+    ]
 
 
 def is_admin():
-    return (
-        st.session_state.get("role") in ["supporter", "moderator", "admin", "owner"]
-        or int(st.session_state.get("admin_level", 0)) > 0
-    )
+    return current_role() in [
+        "admin",
+        "owner",
+    ]
 
 
 def is_owner():
-    return (
-        st.session_state.get("role") == "owner"
-        or int(st.session_state.get("admin_level", 0)) >= 999
+    return current_role() == "owner"
+
+
+# =========================================================
+# REQUIRE ROLES
+# =========================================================
+
+def require_supporter():
+    require_login()
+
+    if not is_supporter():
+        st.error("Keine Berechtigung.")
+        st.stop()
+
+
+def require_moderator():
+    require_login()
+
+    if not is_moderator():
+        st.error("Keine Berechtigung.")
+        st.stop()
+
+
+def require_admin():
+    require_login()
+
+    if not is_admin():
+        st.error("Keine Berechtigung.")
+        st.stop()
+
+
+def require_owner():
+    require_login()
+
+    if not is_owner():
+        st.error("Nur Owner erlaubt.")
+        st.stop()
+
+
+# =========================================================
+# NAVIGATION
+# =========================================================
+
+def go_to(page):
+    st.session_state.page = page
+    st.rerun()
+
+
+# =========================================================
+# LOGOUT
+# =========================================================
+
+def logout_user():
+    keys = [
+        "user",
+        "email",
+        "plan",
+        "tokens",
+        "role",
+        "admin_level",
+        "logged_in",
+    ]
+
+    for key in keys:
+        if key in st.session_state:
+            del st.session_state[key]
+
+    st.session_state.page = "home"
+
+    st.rerun()
+
+
+# =========================================================
+# PAGE TITLE
+# =========================================================
+
+def page_header(title, subtitle=None):
+    st.title(title)
+
+    if subtitle:
+        st.caption(subtitle)
+
+
+# =========================================================
+# INFO BOX
+# =========================================================
+
+def premium_required(feature_name="Dieses Feature"):
+    st.error(
+        f"{feature_name} ist in deinem aktuellen Plan nicht verfügbar."
     )
 
-
-def plan_rank(plan):
-    return {"free": 1, "pro": 2, "grand": 3, "elite": 4}.get(plan, 1)
-
-
-def can_use(required_plan):
-    return plan_rank(st.session_state.get("plan", "free")) >= plan_rank(required_plan) or is_admin()
-
-
-def sync_session_user(user):
-    if user:
-        st.session_state.user = user["username"]
-        st.session_state.email = user.get("email", "")
-        st.session_state.plan = user["plan"]
-        st.session_state.tokens = user["tokens"]
-        st.session_state.role = user["role"]
-        st.session_state.admin_level = user["admin_level"]
-
-
-def read_file_bytes(path):
-    path = Path(path)
-    if path.exists():
-        return path.read_bytes()
-    return None
-
-
-def render_download(path, label):
-    data = read_file_bytes(path)
-
-    if not data:
-        st.error("Datei konnte nicht gefunden werden.")
-        return
-
-    suffix = Path(path).suffix.lower()
-
-    if suffix in [".png", ".jpg", ".jpeg", ".webp"]:
-        mime = "image/png"
-    elif suffix in [".mp4", ".mov"]:
-        mime = "video/mp4"
-    else:
-        mime = "application/octet-stream"
-
-    st.download_button(
-        label=label,
-        data=data,
-        file_name=Path(path).name,
-        mime=mime,
+    if st.button(
+        "💎 Premium ansehen",
         use_container_width=True,
+    ):
+        go_to("premium")
+
+
+# =========================================================
+# TOKEN HELPERS
+# =========================================================
+
+def user_tokens():
+    return int(
+        st.session_state.get("tokens", 0) or 0
     )
+
+
+def has_tokens(cost):
+    return user_tokens() >= int(cost)
+
+
+# =========================================================
+# PLAN HELPERS
+# =========================================================
+
+def current_plan():
+    return st.session_state.get("plan", "free")
+
+
+def has_plan_feature(feature):
+    from config import PLANS
+
+    plan = current_plan()
+
+    features = PLANS.get(
+        plan,
+        PLANS["free"],
+    ).get("features", [])
+
+    return (
+        "all" in features
+        or feature in features
+    )
+
+
+# =========================================================
+# SIMPLE STATUS BOX
+# =========================================================
+
+def status_box(label, value):
+    with st.container(border=True):
+        st.caption(label)
+        st.subheader(value)
