@@ -173,9 +173,9 @@ TOKEN_COSTS = {
     "chat": 1,
 
     # AI TOOLS
-    "coding": 4,
-    "image": 15,
-    "music": 10,
+    "coding": 10,
+    "image": 10,
+    "music": 50,
     "reels": 20,
 
     # VIDEO
