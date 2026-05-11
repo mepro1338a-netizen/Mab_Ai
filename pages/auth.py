@@ -73,28 +73,18 @@ def do_register(username, email, password, captcha):
 def render_auth():
     ensure_captcha()
 
-    st.title("🔐 MaByte Access")
+    st.markdown("## 🔐 MaByte Access")
     st.caption("Login für Chat, Coding, Media Studio und AI Automation.")
 
-    left, right = st.columns([0.75, 1.25], gap="large")
+    left, center, right = st.columns([0.6, 1.4, 0.6])
 
-    with left:
-        with st.container(border=True):
-            st.subheader("AI Workspace")
-            st.write("💬 Memory Chat")
-            st.write("💻 Coding AI")
-            st.write("🎬 Reels & Video")
-            st.write("🎵 Music AI")
-            st.write("📊 Dashboard")
-
-            st.info("Einloggen und direkt starten.")
-
-    with right:
+    with center:
         with st.container(border=True):
             tab_login, tab_register = st.tabs(["👤 Login", "👥 Registrierung"])
 
             with tab_login:
                 st.subheader("Willkommen zurück")
+                st.caption("Öffne dein MaByte Control Center.")
 
                 with st.form("login_form"):
                     username = st.text_input("Username", placeholder="dein username")
@@ -119,6 +109,7 @@ def render_auth():
 
             with tab_register:
                 st.subheader("Account erstellen")
+                st.caption("Starte kostenlos mit MaByte.")
 
                 with st.form("register_form"):
                     username = st.text_input("Username", placeholder="3-40 Zeichen")
