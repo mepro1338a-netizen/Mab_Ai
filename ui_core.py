@@ -1,156 +1,81 @@
 import streamlit as st
 
 
-# =========================================================
-# GLOBAL UI
-# =========================================================
-
-def load_global_styles():
-
-    logged_in = st.session_state.get("logged_in", False)
-
-    sidebar_css = ""
-
-    # Sidebar NUR vor Login verstecken
-    if not logged_in:
-        sidebar_css = """
-        [data-testid="stSidebar"] {
-            display: none;
-        }
-
-        [data-testid="collapsedControl"] {
-            display: none;
-        }
-        """
-
+def load_css():
     st.markdown(
-        f"""
+        """
 <style>
 
-/* =========================
-   GLOBAL
-========================= */
+#MainMenu,
+footer,
+header,
+[data-testid="stToolbar"] {
+    display: none !important;
+}
 
-html, body, [class*="css"] {{
-    font-family: 'Inter', sans-serif;
-}}
-
-.stApp {{
+.stApp {
     background:
-        radial-gradient(circle at top, rgba(56,189,248,.10), transparent 30%),
-        linear-gradient(180deg, #020617 0%, #071127 100%);
-    color: white;
-}}
+        radial-gradient(circle at top left, rgba(56,189,248,.20), transparent 28%),
+        radial-gradient(circle at bottom right, rgba(37,99,235,.18), transparent 30%),
+        linear-gradient(135deg, #020617 0%, #071427 45%, #0f172a 100%) !important;
+}
 
-.block-container {{
-    padding-top: 1rem;
-    max-width: 1350px;
-}}
+.main .block-container {
+    max-width: 1450px;
+    padding-top: 2rem;
+    padding-bottom: 4rem;
+}
 
-{sidebar_css}
+[data-testid="stSidebar"] {
+    background:
+        linear-gradient(180deg, rgba(2,6,23,.98), rgba(7,20,42,.98)) !important;
+    border-right: 1px solid rgba(125,211,252,.14);
+}
 
-/* =========================
-   SIDEBAR
-========================= */
-
-[data-testid="stSidebar"] {{
-    background: linear-gradient(
-        180deg,
-        rgba(4,12,28,.98),
-        rgba(7,25,55,.98)
-    );
-    border-right: 1px solid rgba(125,211,252,.12);
-}}
-
-[data-testid="stSidebar"] * {{
+[data-testid="stSidebar"] * {
     color: white !important;
-}}
+}
 
-/* =========================
-   BUTTONS
-========================= */
-
-.stButton > button {{
+.stButton > button {
     width: 100%;
-    border: none;
-    border-radius: 18px;
-    padding: 14px;
-    font-weight: 800;
-    font-size: 15px;
-    color: white;
-    background: linear-gradient(
-        90deg,
-        #2563eb,
-        #22d3ee
-    );
-    box-shadow: 0 0 25px rgba(34,211,238,.25);
+    min-height: 50px;
+    border-radius: 18px !important;
+    border: 1px solid rgba(125,211,252,.30) !important;
+    background: linear-gradient(135deg, #1d4ed8, #38bdf8) !important;
+    color: white !important;
+    font-weight: 900 !important;
     transition: .2s ease;
-}}
+    box-shadow: 0 0 25px rgba(56,189,248,.20);
+}
 
-.stButton > button:hover {{
+.stButton > button:hover {
     transform: translateY(-2px);
-    box-shadow: 0 0 35px rgba(34,211,238,.40);
-}}
-
-/* =========================
-   INPUTS
-========================= */
+    box-shadow: 0 0 30px rgba(56,189,248,.35);
+}
 
 .stTextInput input,
-.stTextArea textarea {{
-    border-radius: 18px !important;
-    border: 1px solid rgba(125,211,252,.25) !important;
-    background: rgba(15,23,42,.92) !important;
+.stNumberInput input {
+    background: rgba(2,6,23,.88) !important;
+    border: 1px solid rgba(125,211,252,.30) !important;
     color: white !important;
-    padding: 14px !important;
-    font-size: 16px !important;
-}}
+    border-radius: 18px !important;
+    min-height: 52px !important;
+    font-weight: 700 !important;
+}
 
-.stTextInput input:focus,
-.stTextArea textarea:focus {{
-    border: 1px solid #38bdf8 !important;
-    box-shadow: 0 0 20px rgba(56,189,248,.25);
-}}
+.stTextInput input::placeholder {
+    color: #bfdbfe !important;
+    opacity: 1 !important;
+}
 
-/* =========================
-   TABS
-========================= */
+h1, h2, h3 {
+    color: white !important;
+    font-weight: 950 !important;
+}
 
-.stTabs [data-baseweb="tab"] {{
-    border-radius: 16px;
-    padding: 10px 24px;
-    background: rgba(15,23,42,.90);
-    color: white;
-    font-weight: 800;
-}}
-
-.stTabs [aria-selected="true"] {{
-    background: linear-gradient(
-        90deg,
-        #2563eb,
-        #22d3ee
-    ) !important;
-}}
-
-/* =========================
-   CARDS
-========================= */
-
-.glass-card {{
-    background: linear-gradient(
-        145deg,
-        rgba(8,15,35,.98),
-        rgba(10,35,75,.92)
-    );
-
-    border: 1px solid rgba(125,211,252,.15);
-
-    border-radius: 28px;
-
-    padding: 28px;
-
-    box-shadow: 0 0 35px rgba(56,189,248,.12);
-}}
+p, label, span {
+    color: #dbeafe !important;
+}
 
 </style>
         """,
@@ -158,11 +83,63 @@ html, body, [class*="css"] {{
     )
 
 
-# =========================================================
-# LOGIN CHECK
-# =========================================================
+def sync_session_user(user):
+    st.session_state.logged_in = True
+    st.session_state.user = user.get("username")
+    st.session_state.email = user.get("email", "")
+    st.session_state.plan = user.get("plan", "free")
+    st.session_state.tokens = user.get("tokens", 0)
+    st.session_state.role = user.get("role", "user")
+    st.session_state.admin_level = user.get("admin_level", 0)
 
-def require_login():
 
-    if not st.session_state.get("logged_in"):
-        st.switch_page("pages/auth.py")
+def logout():
+    st.session_state.logged_in = False
+    st.session_state.user = None
+    st.session_state.page = "auth"
+    st.rerun()
+
+
+def render_sidebar():
+    with st.sidebar:
+
+        st.markdown("# 🚀 MaByte")
+
+        st.caption("Next Generation AI Platform")
+
+        st.divider()
+
+        st.markdown(f"### 👤 {st.session_state.user}")
+
+        st.caption(f"💎 Plan: {st.session_state.plan}")
+
+        st.divider()
+
+        if st.button("🏠 Home"):
+            st.session_state.page = "home"
+            st.rerun()
+
+        if st.button("💬 Chat"):
+            st.session_state.page = "chat"
+            st.rerun()
+
+        if st.button("💻 Coding AI"):
+            st.session_state.page = "coding"
+            st.rerun()
+
+        if st.button("🎨 Bilder"):
+            st.session_state.page = "image"
+            st.rerun()
+
+        if st.button("🎵 Musik"):
+            st.session_state.page = "music"
+            st.rerun()
+
+        if st.button("🎬 Reels"):
+            st.session_state.page = "reels"
+            st.rerun()
+
+        st.divider()
+
+        if st.button("🚪 Logout"):
+            logout()

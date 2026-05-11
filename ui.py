@@ -29,8 +29,8 @@ init_db()
 load_css()
 
 
-DEFAULTS = {
-    "page": "login",
+defaults = {
+    "page": "auth",
     "logged_in": False,
     "user": None,
     "email": "",
@@ -40,16 +40,12 @@ DEFAULTS = {
     "admin_level": 0,
 }
 
-for key, value in DEFAULTS.items():
+for key, value in defaults.items():
     if key not in st.session_state:
         st.session_state[key] = value
 
 
-logged_in = bool(st.session_state.get("logged_in") and st.session_state.get("user"))
-
-
-if not logged_in:
-    st.session_state.page = "login"
+if not st.session_state.logged_in:
     render_auth()
     st.stop()
 
@@ -96,5 +92,4 @@ elif page == "admin":
     render_admin()
 
 else:
-    st.session_state.page = "home"
-    st.rerun()
+    render_home()
