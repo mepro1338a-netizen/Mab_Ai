@@ -76,9 +76,6 @@ def auth_css():
         """
 <style>
 
-[data-testid="stSidebar"]{
-    display:none;
-}
 
 #MainMenu,
 header,
