@@ -26,8 +26,8 @@ def do_login(username, password):
     ok, msg, user = verify_login(username, password)
 
     if ok and user:
-        st.session_state.logged_in = True
         sync_session_user(user)
+        st.session_state.logged_in = True
         st.session_state.page = "home"
         st.success(msg)
         st.rerun()
@@ -39,7 +39,7 @@ def do_register(username, email, password, captcha):
     result = st.session_state.captcha_a + st.session_state.captcha_b
 
     if not is_valid_username(username):
-        st.error("Username ungültig. Nutze 3-40 Zeichen.")
+        st.error("Username ungültig.")
         return
 
     if not is_valid_email(email):
@@ -76,7 +76,7 @@ def render_auth():
     st.title("🔐 MaByte Access")
     st.caption("Login für Chat, Coding, Media Studio und AI Automation.")
 
-    left, right = st.columns([0.8, 1.2], gap="large")
+    left, right = st.columns([0.75, 1.25], gap="large")
 
     with left:
         with st.container(border=True):
@@ -86,6 +86,7 @@ def render_auth():
             st.write("🎬 Reels & Video")
             st.write("🎵 Music AI")
             st.write("📊 Dashboard")
+
             st.info("Einloggen und direkt starten.")
 
     with right:
@@ -96,21 +97,10 @@ def render_auth():
                 st.subheader("Willkommen zurück")
 
                 with st.form("login_form"):
-                    username = st.text_input(
-                        "Username",
-                        placeholder="dein username",
-                    )
+                    username = st.text_input("Username", placeholder="dein username")
+                    password = st.text_input("Passwort", type="password", placeholder="dein Passwort")
 
-                    password = st.text_input(
-                        "Passwort",
-                        type="password",
-                        placeholder="dein Passwort",
-                    )
-
-                    submitted = st.form_submit_button(
-                        "🚀 Einloggen",
-                        use_container_width=True,
-                    )
+                    submitted = st.form_submit_button("🚀 Einloggen", use_container_width=True)
 
                     if submitted:
                         do_login(username, password)
@@ -131,21 +121,9 @@ def render_auth():
                 st.subheader("Account erstellen")
 
                 with st.form("register_form"):
-                    username = st.text_input(
-                        "Username",
-                        placeholder="3-40 Zeichen",
-                    )
-
-                    email = st.text_input(
-                        "Email",
-                        placeholder="deine@email.de",
-                    )
-
-                    password = st.text_input(
-                        "Passwort",
-                        type="password",
-                        placeholder="mindestens 6 Zeichen",
-                    )
+                    username = st.text_input("Username", placeholder="3-40 Zeichen")
+                    email = st.text_input("Email", placeholder="deine@email.de")
+                    password = st.text_input("Passwort", type="password", placeholder="mindestens 6 Zeichen")
 
                     captcha = st.number_input(
                         f"Sicherheitsfrage: {st.session_state.captcha_a} + {st.session_state.captcha_b}",
@@ -154,10 +132,7 @@ def render_auth():
                         step=1,
                     )
 
-                    submitted = st.form_submit_button(
-                        "✨ Registrieren",
-                        use_container_width=True,
-                    )
+                    submitted = st.form_submit_button("✨ Registrieren", use_container_width=True)
 
                     if submitted:
                         do_register(username, email, password, captcha)

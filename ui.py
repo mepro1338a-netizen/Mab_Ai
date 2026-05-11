@@ -25,10 +25,8 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-
 init_db()
 load_css()
-
 
 defaults = {
     "page": "login",
@@ -48,56 +46,38 @@ for key, value in defaults.items():
 
 logged_in = bool(st.session_state.get("user"))
 
-
-# Nicht eingeloggt: immer Login anzeigen
 if not logged_in:
     st.session_state.page = "login"
     render_auth()
     st.stop()
 
-
-# Eingeloggt: Sidebar anzeigen
 render_sidebar()
-
 
 page = st.session_state.get("page", "home")
 
-
 if page == "home":
     render_home()
-
 elif page == "chat":
     render_chat()
-
 elif page == "coding":
     render_media("coding")
-
 elif page == "image":
     render_media("image")
-
 elif page == "music":
     render_media("music")
-
 elif page == "reels":
     render_media("reels")
-
 elif page == "video":
     render_media("video")
-
 elif page == "dashboard":
     render_dashboard()
-
 elif page == "support":
     render_support()
-
 elif page == "premium":
     render_premium()
-
 elif page == "redeem":
     render_redeem()
-
 elif page == "admin":
     render_admin()
-
 else:
     render_home()
