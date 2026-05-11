@@ -205,55 +205,80 @@ DATAFRAME
 CHAT INPUT FIX
 ========================================================= */
 
-[data-testid="stChatInput"] {
-    background: rgba(3,7,18,.96) !important;
-    border-top: 1px solid rgba(56,189,248,.18) !important;
-}
 
-[data-testid="stChatInput"] textarea,
-[data-testid="stChatInput"] textarea:focus,
-[data-testid="stChatInput"] textarea:active {
+    [data-testid="stChatInput"] {
+        background: transparent !important;
+        border-top: none !important;
+        padding-top: 12px !important;
+    }
 
-    background:
-        linear-gradient(
-            135deg,
-            #07152e,
-            #0f2a52
-        ) !important;
+    [data-testid="stChatInput"] > div {
+        background: transparent !important;
+    }
 
-    color: #ffffff !important;
-    -webkit-text-fill-color: #ffffff !important;
-    caret-color: #ffffff !important;
+    [data-testid="stChatInput"] form {
+        background:
+            linear-gradient(
+                135deg,
+                #07152e,
+                #0f2a52
+            ) !important;
 
-    border:
-        1px solid rgba(96,165,250,.55) !important;
+        border:
+            1px solid rgba(96,165,250,.45) !important;
 
-    border-radius: 18px !important;
+        border-radius: 22px !important;
 
-    box-shadow:
-        0 0 24px rgba(56,189,248,.22) !important;
+        padding: 10px 14px !important;
 
-    font-weight: 800 !important;
-}
+        box-shadow:
+            0 0 28px rgba(56,189,248,.20) !important;
+    }
 
-[data-testid="stChatInput"] textarea::placeholder {
-    color: #ffffff !important;
-    -webkit-text-fill-color: #ffffff !important;
-    opacity: 1 !important;
-}
+    [data-testid="stChatInput"] textarea,
+    [data-testid="stChatInput"] textarea:focus,
+    [data-testid="stChatInput"] textarea:active {
 
-[data-testid="stChatInput"] button {
-    background:
-        linear-gradient(
-            135deg,
-            #155fd1,
-            #38bdf8
-        ) !important;
+        background: transparent !important;
 
-    color: #ffd95e !important;
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
 
-    border-radius: 14px !important;
-}
+        caret-color: #ffffff !important;
+
+        border: none !important;
+
+        box-shadow: none !important;
+
+        font-size: 16px !important;
+        font-weight: 700 !important;
+    }
+
+    [data-testid="stChatInput"] textarea::placeholder {
+        color: #dbeafe !important;
+        opacity: .9 !important;
+    }
+
+    [data-testid="stChatInput"] button {
+
+        background:
+            linear-gradient(
+                135deg,
+                #1d4ed8,
+                #38bdf8
+            ) !important;
+
+        color: #ffe27a !important;
+
+        border-radius: 14px !important;
+
+        border: none !important;
+
+        min-height: 44px !important;
+
+        box-shadow:
+            0 0 18px rgba(56,189,248,.25);
+    }
 
 /* =========================================================
 TEXT
