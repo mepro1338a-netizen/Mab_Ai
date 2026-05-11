@@ -3,7 +3,8 @@ from ui_core import sync_session_user
 
 
 def render_chat():
-    sync_session_user()
+    user = st.session_state.get("user")
+    sync_session_user(user)
 
     if not st.session_state.get("logged_in"):
         st.switch_page("pages/auth.py")
@@ -12,8 +13,16 @@ def render_chat():
     st.markdown(
         """
         <style>
+        .stApp{
+            background: linear-gradient(135deg,#020617,#0f172a);
+            color:white;
+        }
+
         .chat-wrap{
+            max-width:1100px;
+            margin:auto;
             padding-top:20px;
+            padding-bottom:40px;
         }
 
         .chat-hero{
@@ -44,6 +53,7 @@ def render_chat():
             border-radius:18px;
             margin-bottom:14px;
             color:white;
+            font-size:16px;
         }
 
         .msg-user{
@@ -52,6 +62,13 @@ def render_chat():
 
         .msg-ai{
             border-left:4px solid #8b5cf6;
+        }
+
+        .stChatInput input{
+            background:#111827 !important;
+            color:white !important;
+            border:1px solid rgba(59,130,246,.4) !important;
+            border-radius:14px !important;
         }
         </style>
         """,
