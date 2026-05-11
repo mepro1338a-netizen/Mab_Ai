@@ -30,8 +30,12 @@ def chat_cost():
 def ensure_chat_state():
     if "messages" not in st.session_state:
         st.session_state.messages = []
+
     if "chat_memory_enabled" not in st.session_state:
         st.session_state.chat_memory_enabled = True
+
+    if "chat_prompt_box" not in st.session_state:
+        st.session_state.chat_prompt_box = ""
 
 
 def clear_chat():
@@ -78,9 +82,20 @@ Bei Business/Content: gib strukturierte, umsetzbare Ergebnisse.
 
     if st.session_state.get("chat_memory_enabled", True):
         for msg in st.session_state.messages[-12:]:
-            messages.append({"role": msg["role"], "content": msg["content"]})
+            messages.append(
+                {
+                    "role": msg["role"],
+                    "content": msg["content"],
+                }
+            )
 
-    messages.append({"role": "user", "content": user_prompt})
+    messages.append(
+        {
+            "role": "user",
+            "content": user_prompt,
+        }
+    )
+
     return messages
 
 
@@ -105,6 +120,40 @@ OPENAI_API_KEY fehlt aktuell noch in Railway.
     return response.choices[0].message.content
 
 
+def set_prefill(text):
+    st.session_state.chat_prompt_box = text
+
+
+def send_prompt(prompt):
+    prompt = (prompt or "").strip()
+
+    if not prompt:
+        st.warning("Bitte Nachricht eingeben.")
+        return
+
+    st.session_state.messages.append(
+        {
+            "role": "user",
+            "content": prompt,
+        }
+    )
+
+    charge_chat_tokens(prompt)
+
+    with st.spinner("MaByte denkt..."):
+        response = ai_response(prompt)
+
+    st.session_state.messages.append(
+        {
+            "role": "assistant",
+            "content": response,
+        }
+    )
+
+    st.session_state.chat_prompt_box = ""
+    st.rerun()
+
+
 def render_chat_header():
     st.title("💬 Memory Chat")
     st.write("Dein persönlicher MaByte Workspace für Ideen, Code, Content und Projekte.")
@@ -124,7 +173,10 @@ def render_chat_header():
         left, right = st.columns([2, 1])
 
         with left:
-            st.toggle("🧠 Memory für diese Sitzung aktiv", key="chat_memory_enabled")
+            st.toggle(
+                "🧠 Memory für diese Sitzung aktiv",
+                key="chat_memory_enabled",
+            )
 
         with right:
             if st.button("🧹 Chat leeren", use_container_width=True):
@@ -141,35 +193,82 @@ def render_empty_state():
 
     with c1:
         if st.button("💡 Content Ideen", use_container_width=True):
-            st.session_state.chat_prefill = "Gib mir 10 virale Content-Ideen für TikTok über AI."
+            set_prefill("Gib mir 10 virale Content-Ideen für TikTok über AI.")
+            st.rerun()
 
     with c2:
         if st.button("💻 Code Hilfe", use_container_width=True):
-            st.session_state.chat_prefill = "Hilf mir, diesen Python-Code zu verbessern."
+            set_prefill("Hilf mir, diesen Python-Code zu verbessern.")
+            st.rerun()
 
     with c3:
         if st.button("📈 Business Plan", use_container_width=True):
-            st.session_state.chat_prefill = "Erstelle mir einen einfachen Businessplan für meine AI-SaaS Plattform."
+            set_prefill("Erstelle mir einen einfachen Businessplan für meine AI-SaaS Plattform.")
+            st.rerun()
 
     c4, c5, c6 = st.columns(3)
 
     with c4:
         if st.button("🎬 Reel Hook", use_container_width=True):
-            st.session_state.chat_prefill = "Schreibe mir 5 starke Hooks für ein Reel über AI Business."
+            set_prefill("Schreibe mir 5 starke Hooks für ein Reel über AI Business.")
+            st.rerun()
 
     with c5:
         if st.button("🛠️ Debugging", use_container_width=True):
-            st.session_state.chat_prefill = "Ich habe einen Fehler in meiner Streamlit App. Hilf mir beim Debuggen."
+            set_prefill("Ich habe einen Fehler in meiner Streamlit App. Hilf mir beim Debuggen.")
+            st.rerun()
 
     with c6:
         if st.button("🚀 SaaS Strategie", use_container_width=True):
-            st.session_state.chat_prefill = "Gib mir eine Roadmap, wie ich meine AI SaaS Plattform skalieren kann."
+            set_prefill("Gib mir eine Roadmap, wie ich meine AI SaaS Plattform skalieren kann.")
+            st.rerun()
 
 
 def render_messages():
+    if not st.session_state.messages:
+        return
+
+    st.divider()
+
     for msg in st.session_state.messages:
-        with st.chat_message(msg["role"]):
-            st.markdown(msg["content"])
+        role = msg.get("role", "assistant")
+        content = msg.get("content", "")
+
+        if role == "user":
+            with st.container(border=True):
+                st.markdown("#### 👤 Du")
+                st.markdown(content)
+        else:
+            with st.container(border=True):
+                st.markdown("#### 🤖 MaByte")
+                st.markdown(content)
+
+
+def render_prompt_box():
+    st.divider()
+
+    with st.container(border=True):
+        st.markdown("### ✍️ Nachricht an MaByte")
+
+        prompt = st.text_area(
+            "Prompt",
+            key="chat_prompt_box",
+            height=130,
+            placeholder="Schreibe deine Nachricht hier...",
+            label_visibility="collapsed",
+        )
+
+        c1, c2 = st.columns([3, 1])
+
+        with c1:
+            st.caption(
+                f"Kosten: {chat_cost()} Token pro Nachricht. "
+                "Memory nutzt die letzten 12 Nachrichten."
+            )
+
+        with c2:
+            if st.button("🚀 Senden", use_container_width=True):
+                send_prompt(prompt)
 
 
 def render_chat():
@@ -179,24 +278,4 @@ def render_chat():
     render_chat_header()
     render_empty_state()
     render_messages()
-
-    prefill = st.session_state.pop("chat_prefill", "")
-    prompt = st.chat_input("Schreibe eine Nachricht an MaByte...")
-
-    if prefill and not prompt:
-        prompt = prefill
-
-    if prompt:
-        st.session_state.messages.append({"role": "user", "content": prompt})
-
-        with st.chat_message("user"):
-            st.markdown(prompt)
-
-        charge_chat_tokens(prompt)
-
-        with st.chat_message("assistant"):
-            with st.spinner("MaByte denkt..."):
-                response = ai_response(prompt)
-                st.markdown(response)
-
-        st.session_state.messages.append({"role": "assistant", "content": response})
+    render_prompt_box()
