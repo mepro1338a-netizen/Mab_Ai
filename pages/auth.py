@@ -3,7 +3,7 @@ import streamlit as st
 
 from database import create_user, verify_login
 from security import is_valid_username, is_valid_email, check_login_rate
-from ui_helpers import sync_session_user
+from ui_core import sync_session_user
 
 
 def refresh_captcha():
@@ -35,72 +35,135 @@ def do_login(username, password):
         st.error(msg)
 
 
+def do_register(username, email, password, captcha):
+    result = st.session_state.captcha_a + st.session_state.captcha_b
+
+    if not is_valid_username(username):
+        st.error("Username ungültig. Nutze 3-40 Zeichen: Buchstaben, Zahlen oder _.")
+        return
+
+    if not is_valid_email(email):
+        st.error("Bitte eine gültige Email eingeben.")
+        return
+
+    if len(password or "") < 6:
+        st.error("Passwort muss mindestens 6 Zeichen haben.")
+        return
+
+    if captcha != result:
+        st.error("Captcha falsch.")
+        refresh_captcha()
+        st.rerun()
+
+    ok, msg = create_user(username, email, password)
+
+    if ok:
+        st.success("Account erstellt. Du kannst dich jetzt einloggen.")
+        refresh_captcha()
+    else:
+        st.error(msg)
+
+
+def render_login_tab():
+    with st.form("login_form"):
+        st.subheader("Willkommen zurück")
+        st.caption("Logge dich ein und öffne dein MaByte Control Center.")
+
+        username = st.text_input(
+            "Username",
+            placeholder="dein username",
+        )
+
+        password = st.text_input(
+            "Passwort",
+            type="password",
+            placeholder="dein passwort",
+        )
+
+        submitted = st.form_submit_button(
+            "🚀 Einloggen",
+            use_container_width=True,
+        )
+
+        if submitted:
+            do_login(username, password)
+
+
+def render_register_tab():
+    with st.form("register_form"):
+        st.subheader("Neuen Account erstellen")
+        st.caption("Starte kostenlos und upgrade später auf Pro, Grand oder Elite.")
+
+        username = st.text_input(
+            "Username",
+            placeholder="3-40 Zeichen",
+        )
+
+        email = st.text_input(
+            "Email",
+            placeholder="deine@email.de",
+        )
+
+        password = st.text_input(
+            "Passwort",
+            type="password",
+            placeholder="mind. 6 Zeichen",
+        )
+
+        captcha = st.number_input(
+            f"Sicherheitsfrage: {st.session_state.captcha_a} + {st.session_state.captcha_b}",
+            min_value=0,
+            max_value=10,
+            step=1,
+        )
+
+        submitted = st.form_submit_button(
+            "✨ Account erstellen",
+            use_container_width=True,
+        )
+
+        if submitted:
+            do_register(username, email, password, captcha)
+
+
 def render_auth():
     ensure_captcha()
 
-    st.markdown(
-        """
-        <div class="auth-shell">
-            <div class="auth-badge">MABYTE ACCESS</div>
-            <div class="auth-title">🔐 Login / Register</div>
-            <div class="auth-subtitle">
-                Melde dich an und starte dein AI Control Center.
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    st.title("🔐 MaByte Access")
+    st.caption("Dein Login für Chat, Coding, Media Studio und AI Automation.")
 
-    st.markdown('<div class="auth-card">', unsafe_allow_html=True)
+    c1, c2, c3 = st.columns(3)
 
-    tab_login, tab_register = st.tabs(["Login", "Register"])
+    with c1:
+        st.metric("Start", "Free")
 
-    with tab_login:
-        with st.form("login_form"):
-            username = st.text_input("Username", placeholder="dein username")
-            password = st.text_input("Password", type="password", placeholder="dein passwort")
+    with c2:
+        st.metric("Tools", "AI Hub")
 
-            submitted = st.form_submit_button("🚀 Einloggen", use_container_width=True)
+    with c3:
+        st.metric("Security", "Protected")
 
-            if submitted:
-                do_login(username, password)
+    st.divider()
 
-    with tab_register:
-        with st.form("register_form"):
-            reg_user = st.text_input("Username", placeholder="3-40 Zeichen")
-            reg_mail = st.text_input("Email", placeholder="deine@email.de")
-            reg_pw = st.text_input("Password", type="password", placeholder="mind. 6 Zeichen")
+    left, right = st.columns([1.1, 1])
 
-            result = st.session_state.captcha_a + st.session_state.captcha_b
+    with left:
+        st.subheader("Alles in einem AI Workspace")
+        st.write("💬 Memory Chat")
+        st.write("💻 Coding AI")
+        st.write("🎬 Reels & Video Studio")
+        st.write("🎵 Music AI")
+        st.write("📊 Dashboard & Tokens")
+        st.write("🛡️ Admin Panel")
 
-            captcha = st.number_input(
-                f"Captcha: {st.session_state.captcha_a} + {st.session_state.captcha_b}",
-                min_value=0,
-                max_value=10,
-                step=1,
-            )
+        st.info("Free starten. Upgrade jederzeit möglich.")
 
-            submitted = st.form_submit_button("✨ Account erstellen", use_container_width=True)
+    with right:
+        with st.container(border=True):
+            tab_login, tab_register = st.tabs(["Login", "Register"])
 
-            if submitted:
-                if not is_valid_username(reg_user):
-                    st.error("Ungültiger Username. Nutze 3-40 Zeichen: Buchstaben, Zahlen oder _.")
+            with tab_login:
+                render_login_tab()
 
-                elif not is_valid_email(reg_mail):
-                    st.error("Ungültige Email.")
-
-                elif captcha != result:
-                    st.error("Captcha falsch.")
-                    refresh_captcha()
-                    st.rerun()
-
-                else:
-                    ok, msg = create_user(reg_user, reg_mail, reg_pw)
-
-                    if ok:
-                        st.success(msg)
-                        refresh_captcha()
-                    else:
-                        st.error(msg)
-
-    st.markdown("</div>", unsafe_allow_html=True)
+            with tab_register:
+                render_register_tab()
