@@ -9,9 +9,7 @@ def load_css():
 #MainMenu,
 footer,
 header,
-[data-testid="stToolbar"] {
-    display: none !important;
-}
+
 
 .stApp {
     background:
