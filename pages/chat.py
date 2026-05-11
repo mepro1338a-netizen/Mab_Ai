@@ -1,443 +1,117 @@
 import streamlit as st
-from openai import OpenAI
+from ui_core import sync_session_user
 
-from config import OPENAI_API_KEY, OPENAI_TEXT_MODEL, TOKEN_COSTS
-from database import spend_tokens, save_usage, get_user
-from ui_core import require_login, sync_session_user
-
-
-client = OpenAI(api_key=OPENAI_API_KEY)
-
-
-# =========================================================
-# HELPERS
-# =========================================================
-
-def username():
-    return st.session_state.get("user")
-
-
-def get_tokens():
-    return int(st.session_state.get("tokens", 0) or 0)
-
-
-def chat_cost():
-    return int(TOKEN_COSTS.get("chat", 1))
-
-
-def sync_user():
-    user = get_user(username())
-
-    if user:
-        sync_session_user(user)
-
-
-# =========================================================
-# STATE
-# =========================================================
-
-def ensure_state():
-
-    st.session_state.setdefault(
-        "messages",
-        [],
-    )
-
-    st.session_state.setdefault(
-        "chat_memory_enabled",
-        True,
-    )
-
-    st.session_state.setdefault(
-        "quick_prompt_value",
-        "",
-    )
-
-
-def clear_chat():
-
-    st.session_state.messages = []
-
-    st.rerun()
-
-
-# =========================================================
-# EXPORT
-# =========================================================
-
-def export_chat():
-
-    lines = [
-        "MaByte Chat Export",
-        "=" * 30,
-        "",
-    ]
-
-    for msg in st.session_state.messages:
-
-        role = (
-            "Du"
-            if msg["role"] == "user"
-            else "MaByte"
-        )
-
-        lines.append(f"{role}:")
-        lines.append(msg["content"])
-        lines.append("")
-
-    return "\n".join(lines)
-
-
-# =========================================================
-# TOKENS
-# =========================================================
-
-def charge(prompt):
-
-    cost = chat_cost()
-
-    if get_tokens() < cost:
-
-        st.error(
-            f"Nicht genug Tokens. "
-            f"Benötigt: {cost}, verfügbar: {get_tokens()}"
-        )
-
-        st.stop()
-
-    ok, msg = spend_tokens(
-        username(),
-        cost,
-    )
-
-    if not ok:
-        st.error(msg)
-        st.stop()
-
-    save_usage(
-        username=username(),
-        tool="chat",
-        prompt=prompt[:2000],
-        tokens_used=cost,
-        cost_tokens=cost,
-        api_provider="openai",
-        status="success",
-    )
-
-    sync_user()
-
-    return cost
-
-
-# =========================================================
-# AI
-# =========================================================
-
-def build_messages(prompt):
-
-    system_prompt = """
-Du bist MaByte, ein moderner AI-Assistent.
-
-Hilf bei:
-- Business
-- SaaS
-- Content
-- Coding
-- Marketing
-- Social Media
-- Branding
-
-Antworte klar, modern und hochwertig.
-"""
-
-    messages = [
-        {
-            "role": "system",
-            "content": system_prompt,
-        }
-    ]
-
-    if st.session_state.chat_memory_enabled:
-
-        messages.extend(
-            st.session_state.messages[-10:]
-        )
-
-    messages.append(
-        {
-            "role": "user",
-            "content": prompt,
-        }
-    )
-
-    return messages
-
-
-def ai_response(prompt):
-
-    if not OPENAI_API_KEY:
-
-        return f"""
-### Demo Antwort
-
-Du hast geschrieben:
-
-> {prompt}
-
-OPENAI_API_KEY fehlt aktuell noch.
-"""
-
-    response = client.chat.completions.create(
-        model=OPENAI_TEXT_MODEL,
-        messages=build_messages(prompt),
-        temperature=0.65,
-    )
-
-    return response.choices[0].message.content
-
-
-# =========================================================
-# SEND
-# =========================================================
-
-def submit(prompt):
-
-    prompt = (prompt or "").strip()
-
-    if not prompt:
-
-        st.warning(
-            "Bitte Nachricht eingeben."
-        )
-
-        return
-
-    charged = charge(prompt)
-
-    st.session_state.messages.append(
-        {
-            "role": "user",
-            "content": prompt,
-        }
-    )
-
-    with st.spinner(
-        "MaByte denkt..."
-    ):
-
-        answer = ai_response(prompt)
-
-    answer += (
-        f"\n\n---\n"
-        f"Verbraucht: {charged} Tokens"
-    )
-
-    st.session_state.messages.append(
-        {
-            "role": "assistant",
-            "content": answer,
-        }
-    )
-
-    st.session_state.quick_prompt_value = ""
-
-    st.rerun()
-
-
-# =========================================================
-# QUICKS
-# =========================================================
-
-def quick(text):
-
-    st.session_state.quick_prompt_value = text
-
-    st.rerun()
-
-
-# =========================================================
-# UI
-# =========================================================
-
-def render_topbar():
-
-    left, right = st.columns([2, 1])
-
-    with left:
-
-        st.title("💬 Memory Chat")
-
-        st.caption(
-            "Dein persönlicher AI Workspace."
-        )
-
-    with right:
-
-        st.download_button(
-            "⬇️ Chat exportieren",
-            data=export_chat(),
-            file_name="mabyte_chat.txt",
-            mime="text/plain",
-            use_container_width=True,
-        )
-
-
-def render_stats():
-
-    a, b, c = st.columns(3)
-
-    with a:
-
-        st.metric(
-            "🪙 Guthaben",
-            get_tokens(),
-        )
-
-    with b:
-
-        st.metric(
-            "⚡ Nachricht",
-            f"{chat_cost()} Token",
-        )
-
-    with c:
-
-        st.metric(
-            "💬 Verlauf",
-            len(st.session_state.messages),
-        )
-
-
-def render_quicks():
-
-    st.caption("Quick Start")
-
-    q1, q2, q3, q4 = st.columns(4)
-
-    with q1:
-
-        if st.button(
-            "💡 Ideen",
-            use_container_width=True,
-        ):
-            quick(
-                "Gib mir 10 starke Content Ideen."
-            )
-
-    with q2:
-
-        if st.button(
-            "💻 Code",
-            use_container_width=True,
-        ):
-            quick(
-                "Verbessere meinen Code professionell."
-            )
-
-    with q3:
-
-        if st.button(
-            "📈 Wachstum",
-            use_container_width=True,
-        ):
-            quick(
-                "Wie skaliere ich mein SaaS Business?"
-            )
-
-    with q4:
-
-        if st.button(
-            "🎬 Reel",
-            use_container_width=True,
-        ):
-            quick(
-                "Schreibe mir starke Reel Hooks."
-            )
-
-
-def render_history():
-
-    if not st.session_state.messages:
-
-        st.info(
-            "Noch kein Verlauf vorhanden."
-        )
-
-        return
-
-    for msg in st.session_state.messages:
-
-        with st.chat_message(
-            "user"
-            if msg["role"] == "user"
-            else "assistant"
-        ):
-
-            st.markdown(
-                msg["content"]
-            )
-
-
-def render_composer():
-
-    with st.container(border=True):
-
-        prompt = st.text_area(
-            "Nachricht",
-            value=st.session_state.get(
-                "quick_prompt_value",
-                "",
-            ),
-            height=120,
-            placeholder="Schreibe deine Nachricht an MaByte...",
-        )
-
-        c1, c2, c3 = st.columns([2, 1, 1])
-
-        with c1:
-
-            st.toggle(
-                "🧠 Memory",
-                key="chat_memory_enabled",
-            )
-
-        with c2:
-
-            if st.button(
-                "🧹 Leeren",
-                use_container_width=True,
-            ):
-                clear_chat()
-
-        with c3:
-
-            if st.button(
-                "🚀 Senden",
-                use_container_width=True,
-            ):
-                submit(prompt)
-
-
-# =========================================================
-# MAIN
-# =========================================================
 
 def render_chat():
+    sync_session_user()
 
-    require_login()
+    if not st.session_state.get("logged_in"):
+        st.switch_page("pages/auth.py")
+        return
 
-    ensure_state()
+    st.markdown(
+        """
+        <style>
+        .chat-wrap{
+            padding-top:20px;
+        }
 
-    render_topbar()
+        .chat-hero{
+            background: linear-gradient(135deg,#0f172a,#111827);
+            border:1px solid rgba(59,130,246,.35);
+            border-radius:28px;
+            padding:38px;
+            margin-bottom:30px;
+            box-shadow:0 0 40px rgba(59,130,246,.18);
+        }
 
-    render_stats()
+        .chat-title{
+            font-size:42px;
+            font-weight:900;
+            color:white;
+            margin-bottom:10px;
+        }
 
-    render_quicks()
+        .chat-sub{
+            color:#94a3b8;
+            font-size:18px;
+        }
 
-    st.divider()
+        .msg{
+            background:#111827;
+            border:1px solid rgba(255,255,255,.08);
+            padding:18px;
+            border-radius:18px;
+            margin-bottom:14px;
+            color:white;
+        }
 
-    render_history()
+        .msg-user{
+            border-left:4px solid #38bdf8;
+        }
 
-    st.divider()
+        .msg-ai{
+            border-left:4px solid #8b5cf6;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
 
-    render_composer()
+    st.markdown('<div class="chat-wrap">', unsafe_allow_html=True)
+
+    st.markdown(
+        """
+        <div class="chat-hero">
+            <div class="chat-title">💬 MaByte Chat</div>
+            <div class="chat-sub">
+                Dein smarter AI Workspace für Ideen, Coding, Content und Automationen.
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+
+    for msg in st.session_state.messages:
+        role = msg["role"]
+        content = msg["content"]
+
+        if role == "user":
+            st.markdown(
+                f'<div class="msg msg-user">🧑 {content}</div>',
+                unsafe_allow_html=True,
+            )
+        else:
+            st.markdown(
+                f'<div class="msg msg-ai">🤖 {content}</div>',
+                unsafe_allow_html=True,
+            )
+
+    prompt = st.chat_input("Schreibe eine Nachricht...")
+
+    if prompt:
+        st.session_state.messages.append(
+            {
+                "role": "user",
+                "content": prompt,
+            }
+        )
+
+        ai_response = f"Du hast geschrieben: {prompt}"
+
+        st.session_state.messages.append(
+            {
+                "role": "assistant",
+                "content": ai_response,
+            }
+        )
+
+        st.rerun()
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+render_chat()
