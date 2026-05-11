@@ -7,29 +7,27 @@ def load_css():
 <style>
 
 html, body, [class*="css"] {
-    font-family: Inter, sans-serif;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-/* BACKGROUND */
 [data-testid="stAppViewContainer"] {
     background:
-        radial-gradient(circle at top left, rgba(59,130,246,.18), transparent 28%),
-        radial-gradient(circle at bottom right, rgba(14,165,233,.12), transparent 30%),
-        linear-gradient(135deg, #030712 0%, #071326 45%, #081a36 100%) !important;
+        radial-gradient(circle at 15% 10%, rgba(56,189,248,.18), transparent 28%),
+        radial-gradient(circle at 85% 25%, rgba(37,99,235,.16), transparent 30%),
+        radial-gradient(circle at 70% 90%, rgba(14,165,233,.12), transparent 30%),
+        linear-gradient(135deg, #020617 0%, #061224 48%, #081a33 100%) !important;
 }
 
-/* MAIN */
 .main .block-container {
     padding-top: 2rem;
     padding-bottom: 4rem;
-    max-width: 1500px;
+    max-width: 1420px;
 }
 
-/* SIDEBAR */
 [data-testid="stSidebar"] {
     background:
-        radial-gradient(circle at top, rgba(59,130,246,.18), transparent 25%),
-        linear-gradient(180deg, #06101f 0%, #08182d 100%) !important;
+        radial-gradient(circle at top, rgba(56,189,248,.18), transparent 24%),
+        linear-gradient(180deg, rgba(2,6,23,.98), rgba(7,18,36,.98)) !important;
     border-right: 1px solid rgba(96,165,250,.18);
 }
 
@@ -37,70 +35,126 @@ html, body, [class*="css"] {
     color: #f8fafc !important;
 }
 
-/* BUTTONS */
+[data-testid="stSidebar"] .stButton > button {
+    justify-content: flex-start;
+    text-align: left;
+    min-height: 48px;
+    border-radius: 16px !important;
+    background: linear-gradient(135deg, rgba(15,61,115,.88), rgba(20,132,214,.88)) !important;
+    color: #ffe27a !important;
+    border: 1px solid rgba(125,211,252,.22) !important;
+    font-weight: 900 !important;
+    box-shadow: 0 0 18px rgba(56,189,248,.12);
+}
+
+[data-testid="stSidebar"] .stButton > button:hover {
+    transform: translateX(4px);
+    border-color: rgba(125,211,252,.58) !important;
+    box-shadow: 0 0 28px rgba(56,189,248,.26);
+}
+
 .stButton > button {
     width: 100%;
     border-radius: 18px !important;
-    min-height: 52px;
-    background: linear-gradient(135deg, #0f3d73 0%, #1d7ff2 100%) !important;
-    border: 1px solid rgba(125,211,252,.28) !important;
-    color: #ffd95e !important;
-    font-size: 17px !important;
+    min-height: 50px;
+    background: linear-gradient(135deg, #0f3d73, #1d9bf0) !important;
+    border: 1px solid rgba(125,211,252,.30) !important;
+    color: #ffe27a !important;
+    font-size: 16px !important;
     font-weight: 900 !important;
-    letter-spacing: .3px;
-    box-shadow: 0 0 22px rgba(56,189,248,.18);
+    letter-spacing: .2px;
+    box-shadow: 0 0 24px rgba(56,189,248,.16);
     transition: all .18s ease;
 }
 
 .stButton > button:hover {
     transform: translateY(-2px);
-    box-shadow: 0 0 32px rgba(56,189,248,.30);
-    border-color: rgba(125,211,252,.6) !important;
+    box-shadow: 0 0 34px rgba(56,189,248,.30);
+    border-color: rgba(125,211,252,.65) !important;
 }
 
-/* INPUTS */
+[data-testid="metric-container"] {
+    background:
+        linear-gradient(135deg, rgba(15,23,42,.92), rgba(15,42,82,.72));
+    border: 1px solid rgba(96,165,250,.20);
+    border-radius: 24px;
+    padding: 20px;
+    box-shadow: 0 0 30px rgba(56,189,248,.08);
+}
+
+[data-testid="metric-container"] label {
+    color: #bfdbfe !important;
+    font-weight: 800 !important;
+}
+
+[data-testid="metric-container"] [data-testid="stMetricValue"] {
+    color: #ffffff !important;
+    font-weight: 900 !important;
+}
+
+[data-testid="stVerticalBlockBorderWrapper"] {
+    border-radius: 24px !important;
+    border: 1px solid rgba(96,165,250,.18) !important;
+    background:
+        linear-gradient(135deg, rgba(15,23,42,.72), rgba(15,42,82,.45)) !important;
+    box-shadow: 0 0 28px rgba(56,189,248,.07);
+}
+
 .stTextInput input,
 .stTextArea textarea,
 textarea,
 input {
+    background: rgba(7,18,36,.94) !important;
     color: #ffffff !important;
     -webkit-text-fill-color: #ffffff !important;
     caret-color: #ffffff !important;
+    border: 1px solid rgba(96,165,250,.35) !important;
+    border-radius: 18px !important;
+    box-shadow: 0 0 20px rgba(56,189,248,.10);
+    font-weight: 700 !important;
 }
 
 .stTextInput input::placeholder,
 .stTextArea textarea::placeholder,
 textarea::placeholder,
 input::placeholder {
-    color: #bfe8ff !important;
-    -webkit-text-fill-color: #bfe8ff !important;
+    color: #bfdbfe !important;
+    -webkit-text-fill-color: #bfdbfe !important;
     opacity: 1 !important;
 }
 
-.stTextInput input,
-.stTextArea textarea,
 .stSelectbox div[data-baseweb="select"] {
-    background: rgba(10,20,40,.92) !important;
-    border: 1px solid rgba(96,165,250,.28) !important;
-    border-radius: 16px !important;
-    box-shadow: 0 0 18px rgba(59,130,246,.10);
-    font-weight: 700 !important;
+    background: rgba(7,18,36,.94) !important;
+    border: 1px solid rgba(96,165,250,.35) !important;
+    border-radius: 18px !important;
+    color: #ffffff !important;
+    font-weight: 800 !important;
 }
 
-/* SELECTBOX TEXT */
 .stSelectbox * {
     color: #ffffff !important;
 }
 
-/* TABS */
+[data-testid="stFileUploader"] {
+    background:
+        linear-gradient(135deg, rgba(15,23,42,.75), rgba(15,42,82,.45));
+    border: 1px dashed rgba(125,211,252,.35);
+    border-radius: 22px;
+    padding: 14px;
+}
+
+[data-testid="stFileUploader"] * {
+    color: #dbeafe !important;
+}
+
 .stTabs [data-baseweb="tab"] {
-    background: rgba(255,255,255,.03);
-    border: 1px solid rgba(96,165,250,.12);
-    border-radius: 14px;
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(96,165,250,.14);
+    border-radius: 15px;
     margin-right: 8px;
     padding: 10px 18px;
     color: white !important;
-    font-weight: 800;
+    font-weight: 900;
 }
 
 .stTabs [aria-selected="true"] {
@@ -109,85 +163,51 @@ input::placeholder {
     box-shadow: 0 0 22px rgba(56,189,248,.24);
 }
 
-/* METRICS */
-[data-testid="metric-container"] {
-    background: rgba(10,20,40,.86);
-    border: 1px solid rgba(96,165,250,.18);
+[data-testid="stChatMessage"] {
+    background:
+        linear-gradient(135deg, rgba(15,23,42,.78), rgba(15,42,82,.42));
+    border: 1px solid rgba(96,165,250,.14);
     border-radius: 22px;
-    padding: 18px;
-    box-shadow: 0 0 25px rgba(56,189,248,.08);
+    padding: 12px;
+    margin-bottom: 14px;
 }
 
-/* DATAFRAME */
+[data-testid="stChatMessage"] * {
+    color: #ffffff !important;
+}
+
+.stAlert {
+    border-radius: 18px !important;
+    border: 1px solid rgba(96,165,250,.20) !important;
+}
+
 .stDataFrame {
-    border-radius: 18px;
+    border-radius: 20px;
     overflow: hidden;
     border: 1px solid rgba(96,165,250,.16);
 }
 
-/* CHAT INPUT FULL FIX */
-[data-testid="stChatInputContainer"],
-[data-testid="stChatInputContainer"] > div,
-[data-testid="stChatInputContainer"] section,
-[data-testid="stChatInputContainer"] div,
-[data-testid="stChatInput"] {
-    background: transparent !important;
-    border: none !important;
-}
-
-[data-testid="stChatInput"] {
-    padding-top: 12px !important;
-}
-
-[data-testid="stChatInput"] form {
-    background: linear-gradient(135deg, #08172f 0%, #0f2c56 100%) !important;
-    border: 1px solid rgba(59,130,246,.55) !important;
-    border-radius: 24px !important;
-    padding: 8px 12px !important;
-    box-shadow: 0 0 30px rgba(56,189,248,.22) !important;
-}
-
-[data-testid="stChatInput"] textarea,
-[data-testid="stChatInput"] textarea:focus,
-[data-testid="stChatInput"] textarea:active {
-    background: transparent !important;
+h1 {
     color: #ffffff !important;
-    -webkit-text-fill-color: #ffffff !important;
-    caret-color: #ffffff !important;
-    border: none !important;
-    outline: none !important;
-    box-shadow: none !important;
-    font-size: 16px !important;
-    font-weight: 800 !important;
+    font-weight: 950 !important;
+    letter-spacing: -.8px;
+    font-size: 3rem !important;
 }
 
-[data-testid="stChatInput"] textarea::placeholder {
-    color: #dbeafe !important;
-    -webkit-text-fill-color: #dbeafe !important;
-    opacity: 1 !important;
-}
-
-[data-testid="stChatInput"] button {
-    background: linear-gradient(135deg, #1d4ed8, #38bdf8) !important;
-    color: #ffe27a !important;
-    border-radius: 16px !important;
-    border: none !important;
-    min-height: 44px !important;
-    box-shadow: 0 0 18px rgba(56,189,248,.25);
-}
-
-/* TEXT */
-h1, h2, h3 {
+h2, h3 {
     color: #ffffff !important;
     font-weight: 900 !important;
-    letter-spacing: -.5px;
+    letter-spacing: -.4px;
 }
 
-p, span, label {
+p, span, label, .stMarkdown {
     color: #dbeafe !important;
 }
 
-/* SCROLLBAR */
+hr {
+    border-color: rgba(96,165,250,.14) !important;
+}
+
 ::-webkit-scrollbar {
     width: 10px;
 }
@@ -197,7 +217,6 @@ p, span, label {
     border-radius: 999px;
 }
 
-/* HIDE STREAMLIT */
 #MainMenu {
     visibility: hidden;
 }
@@ -271,16 +290,19 @@ def render_user_card():
 
     with st.container(border=True):
         st.markdown(f"### 👤 {user}")
-        st.write(f"📧 {email}")
-        st.write(f"💎 Plan: {plan}")
-        st.write(f"🪙 Tokens: {tokens}")
-        st.write(f"🛡️ Role: {role}")
+        st.caption(email)
+        c1, c2 = st.columns(2)
+        with c1:
+            st.metric("Plan", plan)
+        with c2:
+            st.metric("Tokens", tokens)
+        st.caption(f"Role: {role}")
 
 
 def render_sidebar():
     with st.sidebar:
         try:
-            st.image("LogoMAIN.png", width=185)
+            st.image("LogoMAIN.png", width=180)
         except Exception:
             st.markdown("## MaByte")
 
