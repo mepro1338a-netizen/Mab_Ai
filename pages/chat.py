@@ -9,6 +9,10 @@ from ui_core import require_login, sync_session_user
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 
+# =========================================================
+# HELPERS
+# =========================================================
+
 def username():
     return st.session_state.get("user")
 
@@ -17,40 +21,94 @@ def get_tokens():
     return int(st.session_state.get("tokens", 0) or 0)
 
 
-def sync_user():
-    user = get_user(username())
-    if user:
-        sync_session_user(user)
-
-
 def chat_cost():
     return int(TOKEN_COSTS.get("chat", 1))
 
 
-def ensure_chat_state():
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
+def sync_user():
+    user = get_user(username())
 
-    if "chat_memory_enabled" not in st.session_state:
-        st.session_state.chat_memory_enabled = True
+    if user:
+        sync_session_user(user)
 
-    if "chat_prompt_text" not in st.session_state:
-        st.session_state.chat_prompt_text = ""
+
+# =========================================================
+# STATE
+# =========================================================
+
+def ensure_state():
+
+    st.session_state.setdefault(
+        "messages",
+        [],
+    )
+
+    st.session_state.setdefault(
+        "chat_memory_enabled",
+        True,
+    )
+
+    st.session_state.setdefault(
+        "quick_prompt_value",
+        "",
+    )
 
 
 def clear_chat():
+
     st.session_state.messages = []
+
     st.rerun()
 
 
-def charge_chat_tokens(prompt):
+# =========================================================
+# EXPORT
+# =========================================================
+
+def export_chat():
+
+    lines = [
+        "MaByte Chat Export",
+        "=" * 30,
+        "",
+    ]
+
+    for msg in st.session_state.messages:
+
+        role = (
+            "Du"
+            if msg["role"] == "user"
+            else "MaByte"
+        )
+
+        lines.append(f"{role}:")
+        lines.append(msg["content"])
+        lines.append("")
+
+    return "\n".join(lines)
+
+
+# =========================================================
+# TOKENS
+# =========================================================
+
+def charge(prompt):
+
     cost = chat_cost()
 
     if get_tokens() < cost:
-        st.error(f"Nicht genug Tokens. Benötigt: {cost}, verfügbar: {get_tokens()}")
+
+        st.error(
+            f"Nicht genug Tokens. "
+            f"Benötigt: {cost}, verfügbar: {get_tokens()}"
+        )
+
         st.stop()
 
-    ok, msg = spend_tokens(username(), cost)
+    ok, msg = spend_tokens(
+        username(),
+        cost,
+    )
 
     if not ok:
         st.error(msg)
@@ -59,7 +117,7 @@ def charge_chat_tokens(prompt):
     save_usage(
         username=username(),
         tool="chat",
-        prompt=prompt,
+        prompt=prompt[:2000],
         tokens_used=cost,
         cost_tokens=cost,
         api_provider="openai",
@@ -68,32 +126,57 @@ def charge_chat_tokens(prompt):
 
     sync_user()
 
+    return cost
 
-def build_messages(user_prompt):
+
+# =========================================================
+# AI
+# =========================================================
+
+def build_messages(prompt):
+
     system_prompt = """
-Du bist MaByte, ein professioneller AI-Assistent.
-Antworte klar, direkt und hochwertig.
-Sprich Deutsch.
-Hilf bei Coding, Business, Content, SaaS, Social Media und Strategie.
+Du bist MaByte, ein moderner AI-Assistent.
+
+Hilf bei:
+- Business
+- SaaS
+- Content
+- Coding
+- Marketing
+- Social Media
+- Branding
+
+Antworte klar, modern und hochwertig.
 """
 
-    messages = [{"role": "system", "content": system_prompt}]
+    messages = [
+        {
+            "role": "system",
+            "content": system_prompt,
+        }
+    ]
 
-    if st.session_state.get("chat_memory_enabled", True):
-        for msg in st.session_state.messages[-12:]:
-            messages.append(
-                {
-                    "role": msg["role"],
-                    "content": msg["content"],
-                }
-            )
+    if st.session_state.chat_memory_enabled:
 
-    messages.append({"role": "user", "content": user_prompt})
+        messages.extend(
+            st.session_state.messages[-10:]
+        )
+
+    messages.append(
+        {
+            "role": "user",
+            "content": prompt,
+        }
+    )
+
     return messages
 
 
 def ai_response(prompt):
+
     if not OPENAI_API_KEY:
+
         return f"""
 ### Demo Antwort
 
@@ -101,24 +184,35 @@ Du hast geschrieben:
 
 > {prompt}
 
-OPENAI_API_KEY fehlt aktuell noch in Railway.
+OPENAI_API_KEY fehlt aktuell noch.
 """
 
     response = client.chat.completions.create(
         model=OPENAI_TEXT_MODEL,
         messages=build_messages(prompt),
-        temperature=0.7,
+        temperature=0.65,
     )
 
     return response.choices[0].message.content
 
 
-def send_prompt(prompt):
+# =========================================================
+# SEND
+# =========================================================
+
+def submit(prompt):
+
     prompt = (prompt or "").strip()
 
     if not prompt:
-        st.warning("Bitte Nachricht eingeben.")
+
+        st.warning(
+            "Bitte Nachricht eingeben."
+        )
+
         return
+
+    charged = charge(prompt)
 
     st.session_state.messages.append(
         {
@@ -127,152 +221,223 @@ def send_prompt(prompt):
         }
     )
 
-    charge_chat_tokens(prompt)
+    with st.spinner(
+        "MaByte denkt..."
+    ):
 
-    with st.spinner("MaByte denkt..."):
-        response = ai_response(prompt)
+        answer = ai_response(prompt)
+
+    answer += (
+        f"\n\n---\n"
+        f"Verbraucht: {charged} Tokens"
+    )
 
     st.session_state.messages.append(
         {
             "role": "assistant",
-            "content": response,
+            "content": answer,
         }
     )
 
+    st.session_state.quick_prompt_value = ""
+
     st.rerun()
 
 
-def quick_prompt(text):
-    st.session_state.chat_prompt_text = text
+# =========================================================
+# QUICKS
+# =========================================================
+
+def quick(text):
+
+    st.session_state.quick_prompt_value = text
+
     st.rerun()
 
 
-def render_header():
-    st.title("💬 Memory Chat")
-    st.write("Dein AI Workspace für Ideen, Code, Content, Business und Projekte.")
+# =========================================================
+# UI
+# =========================================================
 
-    c1, c2, c3 = st.columns(3)
+def render_topbar():
 
-    with c1:
-        st.metric("🪙 Tokens", get_tokens())
+    left, right = st.columns([2, 1])
 
-    with c2:
-        st.metric("⚡ Kosten", f"{chat_cost()} Token")
+    with left:
 
-    with c3:
-        st.metric("💬 Nachrichten", len(st.session_state.messages))
+        st.title("💬 Memory Chat")
+
+        st.caption(
+            "Dein persönlicher AI Workspace."
+        )
+
+    with right:
+
+        st.download_button(
+            "⬇️ Chat exportieren",
+            data=export_chat(),
+            file_name="mabyte_chat.txt",
+            mime="text/plain",
+            use_container_width=True,
+        )
 
 
-def render_controls():
+def render_stats():
+
+    a, b, c = st.columns(3)
+
+    with a:
+
+        st.metric(
+            "🪙 Guthaben",
+            get_tokens(),
+        )
+
+    with b:
+
+        st.metric(
+            "⚡ Nachricht",
+            f"{chat_cost()} Token",
+        )
+
+    with c:
+
+        st.metric(
+            "💬 Verlauf",
+            len(st.session_state.messages),
+        )
+
+
+def render_quicks():
+
+    st.caption("Quick Start")
+
+    q1, q2, q3, q4 = st.columns(4)
+
+    with q1:
+
+        if st.button(
+            "💡 Ideen",
+            use_container_width=True,
+        ):
+            quick(
+                "Gib mir 10 starke Content Ideen."
+            )
+
+    with q2:
+
+        if st.button(
+            "💻 Code",
+            use_container_width=True,
+        ):
+            quick(
+                "Verbessere meinen Code professionell."
+            )
+
+    with q3:
+
+        if st.button(
+            "📈 Wachstum",
+            use_container_width=True,
+        ):
+            quick(
+                "Wie skaliere ich mein SaaS Business?"
+            )
+
+    with q4:
+
+        if st.button(
+            "🎬 Reel",
+            use_container_width=True,
+        ):
+            quick(
+                "Schreibe mir starke Reel Hooks."
+            )
+
+
+def render_history():
+
+    if not st.session_state.messages:
+
+        st.info(
+            "Noch kein Verlauf vorhanden."
+        )
+
+        return
+
+    for msg in st.session_state.messages:
+
+        with st.chat_message(
+            "user"
+            if msg["role"] == "user"
+            else "assistant"
+        ):
+
+            st.markdown(
+                msg["content"]
+            )
+
+
+def render_composer():
+
     with st.container(border=True):
-        c1, c2 = st.columns([2, 1])
+
+        prompt = st.text_area(
+            "Nachricht",
+            value=st.session_state.get(
+                "quick_prompt_value",
+                "",
+            ),
+            height=120,
+            placeholder="Schreibe deine Nachricht an MaByte...",
+        )
+
+        c1, c2, c3 = st.columns([2, 1, 1])
 
         with c1:
+
             st.toggle(
-                "🧠 Memory für diese Sitzung aktiv",
+                "🧠 Memory",
                 key="chat_memory_enabled",
             )
 
         with c2:
-            if st.button("🧹 Chat leeren", use_container_width=True):
+
+            if st.button(
+                "🧹 Leeren",
+                use_container_width=True,
+            ):
                 clear_chat()
 
+        with c3:
 
-def render_quick_prompts():
-    st.subheader("⚡ Quick Prompts")
-
-    c1, c2, c3 = st.columns(3)
-
-    with c1:
-        if st.button("💡 Content Ideen", use_container_width=True):
-            quick_prompt("Gib mir 10 virale Content-Ideen für TikTok über AI.")
-
-    with c2:
-        if st.button("💻 Code Hilfe", use_container_width=True):
-            quick_prompt("Hilf mir, diesen Python-Code zu verbessern.")
-
-    with c3:
-        if st.button("📈 Business Plan", use_container_width=True):
-            quick_prompt("Erstelle mir einen einfachen Businessplan für meine AI-SaaS Plattform.")
-
-    c4, c5, c6 = st.columns(3)
-
-    with c4:
-        if st.button("🎬 Reel Hooks", use_container_width=True):
-            quick_prompt("Schreibe mir 5 starke Hooks für ein Reel über AI Business.")
-
-    with c5:
-        if st.button("🛠️ Debugging", use_container_width=True):
-            quick_prompt("Ich habe einen Fehler in meiner Streamlit App. Hilf mir beim Debuggen.")
-
-    with c6:
-        if st.button("🚀 SaaS Strategie", use_container_width=True):
-            quick_prompt("Gib mir eine Roadmap, wie ich meine AI SaaS Plattform skalieren kann.")
-
-
-def render_messages():
-    st.subheader("💬 Verlauf")
-
-    if not st.session_state.messages:
-        st.info("Noch keine Nachrichten. Starte unten deinen Chat.")
-        return
-
-    for msg in st.session_state.messages:
-        role = msg.get("role", "")
-        content = msg.get("content", "")
-
-        if role == "user":
-            with st.chat_message("user"):
-                st.markdown(content)
-        else:
-            with st.chat_message("assistant"):
-                st.markdown(content)
-
-
-def render_prompt_box():
-    st.subheader("✍️ Nachricht")
-
-    with st.form("chat_form", clear_on_submit=True):
-        prompt = st.text_area(
-            "Nachricht",
-            value=st.session_state.get("chat_prompt_text", ""),
-            height=140,
-            placeholder="Schreibe deine Nachricht an MaByte...",
-        )
-
-        c1, c2 = st.columns([3, 1])
-
-        with c1:
-            st.caption(
-                f"Kosten: {chat_cost()} Token pro Nachricht. "
-                "Memory nutzt die letzten 12 Nachrichten."
-            )
-
-        with c2:
-            submitted = st.form_submit_button(
+            if st.button(
                 "🚀 Senden",
                 use_container_width=True,
-            )
+            ):
+                submit(prompt)
 
-        if submitted:
-            st.session_state.chat_prompt_text = ""
-            send_prompt(prompt)
 
+# =========================================================
+# MAIN
+# =========================================================
 
 def render_chat():
+
     require_login()
-    ensure_chat_state()
 
-    render_header()
+    ensure_state()
+
+    render_topbar()
+
+    render_stats()
+
+    render_quicks()
+
     st.divider()
 
-    render_controls()
+    render_history()
+
     st.divider()
 
-    render_quick_prompts()
-    st.divider()
-
-    render_messages()
-    st.divider()
-
-    render_prompt_box()
+    render_composer()
