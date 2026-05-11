@@ -1,129 +1,165 @@
-import random
 import streamlit as st
 
 from database import create_user, verify_login
-from security import is_valid_username, is_valid_email, check_login_rate
-from ui_core import sync_session_user
+from ui_helpers import sync_session_user
 
 
-def refresh_captcha():
-    st.session_state.captcha_a = random.randint(1, 5)
-    st.session_state.captcha_b = random.randint(1, 5)
-
-
-def ensure_captcha():
-    if "captcha_a" not in st.session_state:
-        refresh_captcha()
-
+# =========================================================
+# LOGIN
+# =========================================================
 
 def do_login(username, password):
-    allowed, rate_msg = check_login_rate(username)
 
-    if not allowed:
-        st.error(rate_msg)
-        return
-
-    ok, msg, user = verify_login(username, password)
-
-    if ok and user:
-        sync_session_user(user)
-        st.session_state.logged_in = True
-        st.session_state.page = "home"
-        st.success(msg)
-        st.rerun()
-    else:
-        st.error(msg)
-
-
-def do_register(username, email, password, captcha):
-    result = st.session_state.captcha_a + st.session_state.captcha_b
-
-    if not is_valid_username(username):
-        st.error("Username ungültig.")
-        return
-
-    if not is_valid_email(email):
-        st.error("Ungültige Email.")
-        return
-
-    if len(password or "") < 6:
-        st.error("Passwort muss mindestens 6 Zeichen haben.")
-        return
-
-    if captcha != result:
-        st.error("Captcha falsch.")
-        refresh_captcha()
-        st.rerun()
-
-    ok, msg = create_user(
-        username=username,
-        email=email,
-        password=password,
-        role="user",
-        plan="free",
+    ok, msg, user = verify_login(
+        username,
+        password,
     )
 
-    if ok:
-        st.success("Account erstellt. Du kannst dich jetzt einloggen.")
-        refresh_captcha()
+    if ok and user:
+
+        st.session_state.logged_in = True
+
+        sync_session_user(user)
+
+        st.success("Login erfolgreich")
+
+        st.switch_page("ui.py")
+
     else:
         st.error(msg)
 
 
+# =========================================================
+# PAGE
+# =========================================================
+
 def render_auth():
-    ensure_captcha()
 
-    st.markdown("## 🔐 MaByte Access")
-    st.caption("Login für Chat, Coding, Media Studio und AI Automation.")
+    st.markdown(
+        """
+<div style="max-width:1100px;margin:auto;padding-top:40px;">
 
-    left, center, right = st.columns([0.6, 1.4, 0.6])
+<div class="glass-card">
 
-    with center:
-        with st.container(border=True):
-            tab_login, tab_register = st.tabs(["👤 Login", "👥 Registrierung"])
+<h1 style="
+font-size:64px;
+font-weight:1000;
+margin-bottom:10px;
+">
+🔐 MaByte Access
+</h1>
 
-            with tab_login:
-                st.subheader("Willkommen zurück")
-                st.caption("Öffne dein MaByte Control Center.")
+<p style="
+font-size:22px;
+color:#cbd5e1;
+margin-bottom:40px;
+">
+Login für Chat, Coding, Media Studio und AI Tools.
+</p>
 
-                with st.form("login_form"):
-                    username = st.text_input("Username", placeholder="dein username")
-                    password = st.text_input("Passwort", type="password", placeholder="dein Passwort")
+</div>
 
-                    submitted = st.form_submit_button("🚀 Einloggen", use_container_width=True)
+<div style="height:25px"></div>
+        """,
+        unsafe_allow_html=True,
+    )
 
-                    if submitted:
-                        do_login(username, password)
+    left, right = st.columns([1, 1])
 
-                st.divider()
+    with left:
 
-                c1, c2 = st.columns(2)
+        st.markdown(
+            """
+<div class="glass-card">
 
-                with c1:
-                    if st.button("🌐 Google", use_container_width=True):
-                        st.info("Google Login wird vorbereitet.")
+<h2 style="font-size:42px;">
+AI Workspace
+</h2>
 
-                with c2:
-                    if st.button("📸 Instagram", use_container_width=True):
-                        st.info("Instagram Login wird vorbereitet.")
+<p style="
+font-size:20px;
+line-height:1.7;
+color:#dbeafe;
+">
+• 💬 Memory Chat<br><br>
+• 💻 Coding AI<br><br>
+• 🎬 Reels & Video<br><br>
+• 🎵 Music AI<br><br>
+• 📊 Dashboard
+</p>
 
-            with tab_register:
-                st.subheader("Account erstellen")
-                st.caption("Starte kostenlos mit MaByte.")
+</div>
+            """,
+            unsafe_allow_html=True,
+        )
 
-                with st.form("register_form"):
-                    username = st.text_input("Username", placeholder="3-40 Zeichen")
-                    email = st.text_input("Email", placeholder="deine@email.de")
-                    password = st.text_input("Passwort", type="password", placeholder="mindestens 6 Zeichen")
+    with right:
 
-                    captcha = st.number_input(
-                        f"Sicherheitsfrage: {st.session_state.captcha_a} + {st.session_state.captcha_b}",
-                        min_value=0,
-                        max_value=10,
-                        step=1,
-                    )
+        tabs = st.tabs(
+            [
+                "👤 Login",
+                "🧾 Registrierung",
+            ]
+        )
 
-                    submitted = st.form_submit_button("✨ Registrieren", use_container_width=True)
+        with tabs[0]:
 
-                    if submitted:
-                        do_register(username, email, password, captcha)
+            st.markdown("## Willkommen zurück")
+
+            username = st.text_input(
+                "Username",
+                placeholder="dein username",
+            )
+
+            password = st.text_input(
+                "Passwort",
+                type="password",
+                placeholder="dein Passwort",
+            )
+
+            if st.button(
+                "🚀 Einloggen",
+                use_container_width=True,
+            ):
+                do_login(username, password)
+
+        with tabs[1]:
+
+            st.markdown("## Account erstellen")
+
+            reg_user = st.text_input(
+                "Username",
+                key="reg_user",
+            )
+
+            reg_email = st.text_input(
+                "Email",
+                key="reg_email",
+            )
+
+            reg_pw = st.text_input(
+                "Passwort",
+                type="password",
+                key="reg_pw",
+            )
+
+            if st.button(
+                "✨ Registrieren",
+                use_container_width=True,
+            ):
+
+                ok, msg = create_user(
+                    reg_user,
+                    reg_email,
+                    reg_pw,
+                )
+
+                if ok:
+                    st.success(msg)
+                else:
+                    st.error(msg)
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+render_auth()

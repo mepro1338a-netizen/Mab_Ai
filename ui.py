@@ -1,155 +1,36 @@
-# ui.py
-
 import streamlit as st
 
-from database import init_db
-from ui_core import (
-    load_css,
-    render_sidebar,
-)
-
-from pages.auth import render_auth
-from pages.home import render_home
-from pages.chat import render_chat
-from pages.media import render_media
-
-from pages.account import (
-    render_dashboard,
-    render_support,
-    render_premium,
-    render_redeem,
-)
-
-from pages.admin import render_admin
-
-
-# =========================================================
-# PAGE CONFIG
-# =========================================================
+from ui_core import load_global_styles
 
 st.set_page_config(
     page_title="MaByte",
     page_icon="🚀",
     layout="wide",
-    initial_sidebar_state="expanded",
 )
 
+load_global_styles()
 
-# =========================================================
-# INIT
-# =========================================================
+# Nicht eingeloggt → direkt Login
+if not st.session_state.get("logged_in"):
+    st.switch_page("pages/auth.py")
 
-init_db()
-load_css()
+# Eingeloggt → normale App
+st.sidebar.title("🚀 MaByte")
 
-
-# =========================================================
-# SESSION DEFAULTS
-# =========================================================
-
-DEFAULTS = {
-    "page": "login",
-    "logged_in": False,
-    "user": None,
-    "email": "",
-    "plan": "free",
-    "tokens": 0,
-    "role": "user",
-    "admin_level": 0,
-}
-
-for key, value in DEFAULTS.items():
-
-    if key not in st.session_state:
-        st.session_state[key] = value
-
-
-# =========================================================
-# LOGIN STATE FIX
-# =========================================================
-
-logged_in = bool(
-    st.session_state.get("logged_in")
-    and st.session_state.get("user")
+st.sidebar.success(
+    f"Angemeldet als: {st.session_state.get('user')}"
 )
 
+page = st.sidebar.radio(
+    "Navigation",
+    [
+        "Home",
+        "Chat",
+    ]
+)
 
-# =========================================================
-# LOGIN PAGE ONLY
-# =========================================================
+if page == "Home":
+    st.switch_page("pages/home.py")
 
-if not logged_in:
-
-    st.session_state.page = "login"
-
-    render_auth()
-
-    st.stop()
-
-
-# =========================================================
-# SIDEBAR AFTER LOGIN
-# =========================================================
-
-render_sidebar()
-
-
-# =========================================================
-# ROUTER
-# =========================================================
-
-page = st.session_state.get("page", "home")
-
-
-if page == "home":
-
-    render_home()
-
-elif page == "chat":
-
-    render_chat()
-
-elif page == "coding":
-
-    render_media("coding")
-
-elif page == "image":
-
-    render_media("image")
-
-elif page == "music":
-
-    render_media("music")
-
-elif page == "reels":
-
-    render_media("reels")
-
-elif page == "video":
-
-    render_media("video")
-
-elif page == "dashboard":
-
-    render_dashboard()
-
-elif page == "support":
-
-    render_support()
-
-elif page == "premium":
-
-    render_premium()
-
-elif page == "redeem":
-
-    render_redeem()
-
-elif page == "admin":
-
-    render_admin()
-
-else:
-
-    st.session_state.page = "home"
-    st.rerun()
+if page == "Chat":
+    st.switch_page("pages/chat.py")
