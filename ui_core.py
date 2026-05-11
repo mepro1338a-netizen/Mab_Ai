@@ -6,6 +6,47 @@ import streamlit as st
 # =========================================================
 
 def load_css():
+/* =========================================================
+    FINAL STREAMLIT CHAT FIX
+    ========================================================= */
+
+    [data-testid="stChatInputContainer"] {
+        background: transparent !important;
+    }
+
+    [data-testid="stChatInputContainer"] > div {
+        background: transparent !important;
+    }
+
+    [data-testid="stChatInputContainer"] section {
+        background: transparent !important;
+    }
+
+    [data-testid="stChatInput"] {
+        background: transparent !important;
+    }
+
+    [data-testid="stChatInput"] form {
+        background:
+            linear-gradient(
+                135deg,
+                #08172f 0%,
+                #0f2c56 100%
+            ) !important;
+
+        border:
+            1px solid rgba(59,130,246,.45) !important;
+
+        border-radius: 22px !important;
+
+        box-shadow:
+            0 0 30px rgba(56,189,248,.18) !important;
+    }
+
+    [data-testid="stChatInput"] textarea {
+        background: transparent !important;
+    }
+
     st.markdown(
         """
 <style>
