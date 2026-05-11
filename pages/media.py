@@ -21,7 +21,7 @@ from database import (
     list_usage,
 )
 
-from ui_core import require_login, sync_session_user
+from ui_core import sync_session_user
 
 from queue_manager import create_job, list_user_jobs
 from abuse_guard import validate_request
@@ -36,6 +36,16 @@ from social_integrations import (
 
 
 client = OpenAI(api_key=OPENAI_API_KEY)
+
+
+# =========================================================
+# USER / PLAN
+# =========================================================
+
+def ensure_logged_in():
+    if not st.session_state.get("logged_in"):
+        st.session_state.page = "auth"
+        st.rerun()
 
 
 def username():
@@ -56,7 +66,7 @@ def has_feature(tool):
 
 
 def require_feature(tool):
-    require_login()
+    ensure_logged_in()
 
     if not has_feature(tool):
         st.error("Dieses Tool ist in deinem Plan nicht freigeschaltet.")
@@ -73,6 +83,10 @@ def sync_user():
     if user:
         sync_session_user(user)
 
+
+# =========================================================
+# COSTS
+# =========================================================
 
 def get_quality_multiplier(quality):
     if quality == "High":
@@ -216,6 +230,10 @@ def refund_tokens(cost, tool, prompt):
     sync_user()
 
 
+# =========================================================
+# AI
+# =========================================================
+
 def ai_text(prompt):
     if not OPENAI_API_KEY:
         raise RuntimeError("OPENAI_API_KEY fehlt. Bitte in Railway setzen.")
@@ -235,6 +253,41 @@ def ai_text(prompt):
     )
 
     return response.choices[0].message.content
+
+
+def extension_for_prefix(prefix):
+    if "code_python" in prefix:
+        return "py"
+
+    if "code_javascript" in prefix:
+        return "js"
+
+    if "code_html" in prefix:
+        return "html"
+
+    if "code_sql" in prefix:
+        return "sql"
+
+    if "code_streamlit" in prefix:
+        return "py"
+
+    return "txt"
+
+
+def render_output(result, filename_prefix):
+    st.success("Fertig generiert.")
+    st.markdown(result)
+
+    ext = extension_for_prefix(filename_prefix)
+    filename = f"{filename_prefix}_{uuid.uuid4().hex[:6]}.{ext}"
+
+    st.download_button(
+        "⬇️ Download",
+        data=result.encode("utf-8"),
+        file_name=filename,
+        mime="text/plain",
+        use_container_width=True,
+    )
 
 
 def run_paid_text_task(
@@ -285,23 +338,9 @@ def run_paid_text_task(
         st.error(f"Fehler bei der Generierung. Tokens wurden erstattet. Fehler: {e}")
 
 
-def render_output(result, filename_prefix):
-    st.success("Fertig generiert.")
-    st.markdown(result)
-
-    filename = f"{filename_prefix}_{uuid.uuid4().hex[:6]}.txt"
-
-    with open(filename, "w", encoding="utf-8") as f:
-        f.write(result)
-
-    with open(filename, "rb") as f:
-        st.download_button(
-            "⬇️ Download",
-            data=f,
-            file_name=filename,
-            use_container_width=True,
-        )
-
+# =========================================================
+# JOBS
+# =========================================================
 
 def render_recent_jobs():
     jobs = list_user_jobs(username(), limit=8)
@@ -343,6 +382,10 @@ def render_recent_jobs():
             st.caption(f"Provider: {provider} | Erstellt: {created}")
 
 
+# =========================================================
+# TOOLS
+# =========================================================
+
 def render_coding_ai():
     require_feature("coding")
 
@@ -363,6 +406,15 @@ def render_coding_ai():
     cost = calc_tool_cost("coding")
     st.info(f"Kosten: {cost} Tokens")
 
+    filename_map = {
+        "Python": "mabyte_code_python",
+        "Streamlit": "mabyte_code_streamlit",
+        "JavaScript": "mabyte_code_javascript",
+        "HTML/CSS": "mabyte_code_html",
+        "SQL": "mabyte_code_sql",
+        "Allgemein": "mabyte_code",
+    }
+
     if st.button("Code generieren", use_container_width=True):
         if not task.strip():
             st.warning("Bitte Aufgabe eingeben.")
@@ -380,7 +432,13 @@ Aufgabe:
 Gib vollständigen, sauberen Code aus.
 """
 
-        run_paid_text_task("coding", prompt, cost, "mabyte_code", provider="openai")
+        run_paid_text_task(
+            "coding",
+            prompt,
+            cost,
+            filename_map.get(language, "mabyte_code"),
+            provider="openai",
+        )
 
 
 def render_image_ai():
@@ -706,8 +764,12 @@ Gib aus:
         )
 
 
+# =========================================================
+# MAIN
+# =========================================================
+
 def render_media(active_tool="reels"):
-    require_login()
+    ensure_logged_in()
 
     st.title("🎨 AI Media Studio")
     st.write("Queue, Abuse-Schutz, Tageslimit, Cost Monitor und Rückerstattung bei Fehler.")

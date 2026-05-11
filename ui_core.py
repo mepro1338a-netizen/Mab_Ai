@@ -54,17 +54,23 @@ header,
 }
 
 .stTextInput input,
-.stNumberInput input {
+.stTextArea textarea,
+.stNumberInput input,
+textarea {
     background: rgba(2,6,23,.88) !important;
     border: 1px solid rgba(125,211,252,.30) !important;
     color: white !important;
+    -webkit-text-fill-color: white !important;
     border-radius: 18px !important;
     min-height: 52px !important;
     font-weight: 700 !important;
 }
 
-.stTextInput input::placeholder {
+.stTextInput input::placeholder,
+.stTextArea textarea::placeholder,
+textarea::placeholder {
     color: #bfdbfe !important;
+    -webkit-text-fill-color: #bfdbfe !important;
     opacity: 1 !important;
 }
 
@@ -83,63 +89,83 @@ p, label, span {
     )
 
 
+def is_logged_in():
+    return bool(st.session_state.get("logged_in") and st.session_state.get("user"))
+
+
+def require_login():
+    if not is_logged_in():
+        st.session_state.page = "auth"
+        st.rerun()
+
+
 def sync_session_user(user):
+    if not user:
+        return
+
     st.session_state.logged_in = True
     st.session_state.user = user.get("username")
     st.session_state.email = user.get("email", "")
     st.session_state.plan = user.get("plan", "free")
-    st.session_state.tokens = user.get("tokens", 0)
+    st.session_state.tokens = int(user.get("tokens", 0) or 0)
     st.session_state.role = user.get("role", "user")
-    st.session_state.admin_level = user.get("admin_level", 0)
+    st.session_state.admin_level = int(user.get("admin_level", 0) or 0)
 
 
 def logout():
     st.session_state.logged_in = False
     st.session_state.user = None
+    st.session_state.email = ""
+    st.session_state.plan = "free"
+    st.session_state.tokens = 0
+    st.session_state.role = "user"
+    st.session_state.admin_level = 0
     st.session_state.page = "auth"
     st.rerun()
 
 
+def nav(label, page):
+    if st.button(label, use_container_width=True, key=f"nav_{page}"):
+        st.session_state.page = page
+        st.rerun()
+
+
 def render_sidebar():
     with st.sidebar:
-
         st.markdown("# 🚀 MaByte")
-
         st.caption("Next Generation AI Platform")
 
         st.divider()
 
-        st.markdown(f"### 👤 {st.session_state.user}")
-
-        st.caption(f"💎 Plan: {st.session_state.plan}")
-
-        st.divider()
-
-        if st.button("🏠 Home"):
-            st.session_state.page = "home"
-            st.rerun()
-
-        if st.button("💬 Chat"):
-            st.session_state.page = "chat"
-            st.rerun()
-
-        if st.button("💻 Coding AI"):
-            st.session_state.page = "coding"
-            st.rerun()
-
-        if st.button("🎨 Bilder"):
-            st.session_state.page = "image"
-            st.rerun()
-
-        if st.button("🎵 Musik"):
-            st.session_state.page = "music"
-            st.rerun()
-
-        if st.button("🎬 Reels"):
-            st.session_state.page = "reels"
-            st.rerun()
+        st.markdown(f"### 👤 {st.session_state.get('user', '')}")
+        st.caption(f"💎 Plan: {st.session_state.get('plan', 'free')}")
+        st.caption(f"🪙 Tokens: {st.session_state.get('tokens', 0)}")
 
         st.divider()
 
-        if st.button("🚪 Logout"):
+        nav("🏠 Home", "home")
+        nav("💬 Chat", "chat")
+        nav("💻 Coding AI", "coding")
+        nav("🎨 Bilder", "image")
+        nav("🎵 Musik", "music")
+        nav("🎬 Reels", "reels")
+        nav("🎞️ Video", "video")
+
+        st.divider()
+
+        nav("📊 Dashboard", "dashboard")
+        nav("🎁 Redeem", "redeem")
+        nav("🆘 Support", "support")
+        nav("💎 Premium", "premium")
+
+        role = st.session_state.get("role", "user")
+        level = int(st.session_state.get("admin_level", 0) or 0)
+
+        if role in ["admin", "owner"] or level > 0:
+            st.divider()
+            nav("🛡️ Admin", "admin")
+
+        st.divider()
+
+        if st.button("🚪 Logout", use_container_width=True, key="logout_btn"):
             logout()
