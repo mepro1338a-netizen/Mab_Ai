@@ -142,9 +142,6 @@ header {
     visibility: hidden;
 }
 
-[data-testid="stToolbar"] {
-    display: none !important;
-}
 </style>
         """,
         unsafe_allow_html=True,
