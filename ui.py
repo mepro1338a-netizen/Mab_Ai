@@ -7,6 +7,7 @@ from pages.auth import render_auth
 from pages.home import render_home
 from pages.chat import render_chat
 from pages.media import render_media
+from pages.football import render_football
 
 from pages.account import (
     render_dashboard,
@@ -45,7 +46,7 @@ for key, value in defaults.items():
         st.session_state[key] = value
 
 
-if not st.session_state.logged_in:
+if not st.session_state.get("logged_in"):
     render_auth()
     st.stop()
 
@@ -60,6 +61,21 @@ if page == "home":
 
 elif page == "chat":
     render_chat()
+
+elif page == "football":
+    render_football()
+
+elif page == "automation_lab":
+    st.title("🧪 Automation Lab")
+    st.info("Automation Lab wird vorbereitet.")
+
+elif page == "projects":
+    st.title("📁 Projects")
+    st.info("Projects Workspace wird vorbereitet.")
+
+elif page == "automations":
+    st.title("⚙️ Automations")
+    st.info("Automations werden vorbereitet.")
 
 elif page == "coding":
     render_media("coding")
