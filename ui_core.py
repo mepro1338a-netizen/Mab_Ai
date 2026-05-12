@@ -151,7 +151,7 @@ def render_sidebar():
         nav("💻 Developer OS", "coding")
         nav("🎬 Media Studio", "video")
         nav("⚽ Football Intelligence", "football")
-        nav("🧪 Automation Lab", "automations")
+        nav("🧪 Automation Lab", "automation_lab")
 
         st.divider()
 
