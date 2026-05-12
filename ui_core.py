@@ -5,17 +5,15 @@ def load_css():
     st.markdown(
         """
 <style>
-
-#MainMenu,
-footer,
-header,
-
+#MainMenu, header, footer, [data-testid="stToolbar"] {
+    display: none !important;
+}
 
 .stApp {
     background:
-        radial-gradient(circle at top left, rgba(56,189,248,.20), transparent 28%),
-        radial-gradient(circle at bottom right, rgba(37,99,235,.18), transparent 30%),
-        linear-gradient(135deg, #020617 0%, #071427 45%, #0f172a 100%) !important;
+        radial-gradient(circle at top left, rgba(56,189,248,.18), transparent 28%),
+        radial-gradient(circle at bottom right, rgba(37,99,235,.16), transparent 30%),
+        linear-gradient(135deg, #020617 0%, #071427 48%, #0f172a 100%) !important;
 }
 
 .main .block-container {
@@ -25,8 +23,7 @@ header,
 }
 
 [data-testid="stSidebar"] {
-    background:
-        linear-gradient(180deg, rgba(2,6,23,.98), rgba(7,20,42,.98)) !important;
+    background: linear-gradient(180deg, rgba(2,6,23,.98), rgba(7,20,42,.98)) !important;
     border-right: 1px solid rgba(125,211,252,.14);
 }
 
@@ -36,40 +33,30 @@ header,
 
 .stButton > button {
     width: 100%;
-    min-height: 50px;
-    border-radius: 18px !important;
-    border: 1px solid rgba(125,211,252,.30) !important;
+    min-height: 48px;
+    border-radius: 16px !important;
+    border: 1px solid rgba(125,211,252,.28) !important;
     background: linear-gradient(135deg, #1d4ed8, #38bdf8) !important;
     color: white !important;
     font-weight: 900 !important;
-    transition: .2s ease;
-    box-shadow: 0 0 25px rgba(56,189,248,.20);
+    box-shadow: 0 0 22px rgba(56,189,248,.18);
 }
 
 .stButton > button:hover {
     transform: translateY(-2px);
-    box-shadow: 0 0 30px rgba(56,189,248,.35);
+    box-shadow: 0 0 30px rgba(56,189,248,.30);
 }
 
 .stTextInput input,
 .stTextArea textarea,
-.stNumberInput input,
-textarea {
+.stNumberInput input {
     background: rgba(2,6,23,.88) !important;
     border: 1px solid rgba(125,211,252,.30) !important;
     color: white !important;
     -webkit-text-fill-color: white !important;
-    border-radius: 18px !important;
-    min-height: 52px !important;
+    border-radius: 16px !important;
+    min-height: 50px !important;
     font-weight: 700 !important;
-}
-
-.stTextInput input::placeholder,
-.stTextArea textarea::placeholder,
-textarea::placeholder {
-    color: #bfdbfe !important;
-    -webkit-text-fill-color: #bfdbfe !important;
-    opacity: 1 !important;
 }
 
 h1, h2, h3 {
@@ -81,6 +68,11 @@ p, label, span {
     color: #dbeafe !important;
 }
 
+[data-testid="stVerticalBlockBorderWrapper"] {
+    border-radius: 24px !important;
+    border: 1px solid rgba(125,211,252,.16) !important;
+    background: linear-gradient(145deg, rgba(5,15,35,.72), rgba(9,35,75,.45)) !important;
+}
 </style>
         """,
         unsafe_allow_html=True,
@@ -128,39 +120,51 @@ def nav(label, page):
         st.rerun()
 
 
+def section(title):
+    st.caption(title)
+
+
 def render_sidebar():
     with st.sidebar:
-        st.markdown("# 🚀 MaByte")
-        st.caption("Next Generation AI Platform")
+        st.markdown("## 🚀 MaByte OS")
+        st.caption("One AI system. Infinite workflows.")
 
         st.divider()
 
         st.markdown(f"### 👤 {st.session_state.get('user', '')}")
-        st.caption(f"💎 Plan: {st.session_state.get('plan', 'free')}")
-        st.caption(f"🪙 Tokens: {st.session_state.get('tokens', 0)}")
+        st.caption(f"💎 {st.session_state.get('plan', 'free')}")
+        st.caption(f"🪙 {st.session_state.get('tokens', 0)} Tokens")
 
         st.divider()
 
-        nav("🏠 Home", "home")
-        nav("💬 Chat", "chat")
-        nav("💻 Coding AI", "coding")
-        nav("🎨 Bilder", "image")
-        nav("🎵 Musik", "music")
-        nav("🎬 Reels", "reels")
-        nav("🎞️ Video", "video")
+        section("CORE")
+        nav("🏠 Mission Control", "home")
+        nav("🧠 AI Assistant", "chat")
+        nav("📁 Projects", "projects")
+        nav("⚙️ Automations", "automations")
 
         st.divider()
 
+        section("WORKSPACES")
+        nav("🎨 Creative Workspace", "image")
+        nav("📣 Content Engine", "reels")
+        nav("💻 Developer OS", "coding")
+        nav("🎬 Media Studio", "video")
+        nav("⚽ Football Intelligence", "football")
+        nav("🧪 Automation Lab", "automations")
+
+        st.divider()
+
+        section("SYSTEM")
         nav("📊 Dashboard", "dashboard")
         nav("🎁 Redeem", "redeem")
         nav("🆘 Support", "support")
-        nav("💎 Premium", "premium")
+        nav("💎 Billing", "premium")
 
         role = st.session_state.get("role", "user")
         level = int(st.session_state.get("admin_level", 0) or 0)
 
         if role in ["admin", "owner"] or level > 0:
-            st.divider()
             nav("🛡️ Admin", "admin")
 
         st.divider()
