@@ -141,7 +141,7 @@ def render_sidebar():
         nav("🏠 Mission Control", "home")
         nav("🧠 AI Assistant", "chat")
         nav("📁 Projects", "projects")
-        nav("⚙️ Automations", "automations")
+        nav("🧪 Automation Lab", "automations")
 
         st.divider()
 
