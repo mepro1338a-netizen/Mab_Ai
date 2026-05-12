@@ -1,4 +1,5 @@
 import streamlit as st
+from datetime import datetime
 
 
 def open_page(page):
@@ -6,162 +7,173 @@ def open_page(page):
     st.rerun()
 
 
-def tool_button(icon, title, subtitle, page):
+def workspace_card(icon, title, desc, page):
     with st.container(border=True):
-        st.markdown(f"### {icon} {title}")
-        st.caption(subtitle)
+
+        st.markdown(f"## {icon} {title}")
+        st.caption(desc)
+
+        st.write("")
 
         st.button(
-            "Öffnen",
+            f"{title} öffnen",
             use_container_width=True,
-            key=f"open_{page}",
+            key=f"workspace_{page}",
             on_click=open_page,
             args=(page,),
         )
 
 
-def quick_action(label, page):
-    st.button(
-        label,
-        use_container_width=True,
-        key=f"quick_{page}",
-        on_click=open_page,
-        args=(page,),
-    )
+def activity_item(title, text):
+    with st.container(border=True):
+        st.markdown(f"### {title}")
+        st.caption(text)
 
 
 def render_home():
+
     user = st.session_state.get("user", "User")
     plan = st.session_state.get("plan", "free")
     tokens = st.session_state.get("tokens", 0)
 
-    st.title("🚀 MaByte Control Center")
-    st.caption("Next Generation AI Workspace für Chat, Coding, Media, Content und Automation.")
+    st.markdown("# 🚀 MaByte Mission Control")
+    st.caption("The AI Operating System for creators, analysts and modern teams.")
 
     st.write("")
 
-    k1, k2, k3 = st.columns(3)
-
-    with k1:
-        st.metric("👤 Account", user)
-
-    with k2:
-        st.metric("💎 Plan", plan)
-
-    with k3:
-        st.metric("🪙 Tokens", tokens)
-
-    st.divider()
-
-    left, right = st.columns([1.45, 1], gap="large")
-
-    with left:
-        with st.container(border=True):
-            st.subheader("Willkommen zurück")
-            st.write(
-                "Starte direkt mit deinen wichtigsten AI-Workflows. "
-                "Nutze MaByte für Projekte, Content, Code, Reels und Automation."
-            )
-
-            c1, c2, c3 = st.columns(3)
-
-            with c1:
-                quick_action("💬 Chat starten", "chat")
-
-            with c2:
-                quick_action("💻 Code erstellen", "coding")
-
-            with c3:
-                quick_action("🎬 Reel planen", "reels")
-
-    with right:
-        with st.container(border=True):
-            st.subheader("Systemstatus")
-            st.write("✅ Login aktiv")
-            st.write("✅ Tokens synchronisiert")
-            st.write("✅ AI Tools bereit")
-            st.write("✅ Sidebar aktiv")
-
-    st.divider()
-
-    st.subheader("AI Tools")
-
-    c1, c2, c3 = st.columns(3)
+    c1, c2, c3, c4 = st.columns(4)
 
     with c1:
-        tool_button(
-            "💬",
-            "Memory Chat",
-            "Ideen, Planung, Code und Content im Chat.",
-            "chat",
-        )
+        st.metric("👤 User", user)
 
     with c2:
-        tool_button(
-            "💻",
-            "Coding AI",
-            "Code schreiben, debuggen und exportieren.",
-            "coding",
-        )
+        st.metric("💎 Plan", plan)
 
     with c3:
-        tool_button(
+        st.metric("🪙 Tokens", tokens)
+
+    with c4:
+        st.metric("🟢 System", "Online")
+
+    st.divider()
+
+    left, right = st.columns([1.7, 1])
+
+    with left:
+
+        st.subheader("⚡ AI Activity Feed")
+
+        activity_item(
+            "🎬 Reel Generation completed",
+            "Short-form content package rendered successfully.",
+        )
+
+        activity_item(
+            "⚽ Football Intelligence updated",
+            "New tactical insights generated for Arsenal vs City.",
+        )
+
+        activity_item(
+            "💻 Developer OS",
+            "AI fixed and optimized active coding workspace.",
+        )
+
+        activity_item(
+            "🧠 Automation Agent",
+            "Cross-platform posting pipeline executed.",
+        )
+
+    with right:
+
+        with st.container(border=True):
+
+            st.subheader("🧠 Smart Recommendations")
+
+            st.info("Turn football analysis into viral shorts.")
+            st.info("Generate content package from latest AI outputs.")
+            st.info("Create automated TikTok posting workflow.")
+            st.info("Build scouting report from match insights.")
+
+    st.divider()
+
+    st.subheader("🧩 Workspaces")
+
+    a, b, c = st.columns(3)
+
+    with a:
+        workspace_card(
+            "⚽",
+            "Football Intelligence",
+            "Advanced tactical AI, match analytics and automated sports content.",
+            "football",
+        )
+
+    with b:
+        workspace_card(
             "🎨",
-            "Image AI",
-            "Prompts, Bildideen und Branding Assets.",
+            "Creative Workspace",
+            "Images, prompts, design systems and visual AI workflows.",
             "image",
         )
 
-    c4, c5, c6 = st.columns(3)
-
-    with c4:
-        tool_button(
-            "🎵",
-            "Music AI",
-            "Lyrics, Hooks und Song-Konzepte.",
-            "music",
-        )
-
-    with c5:
-        tool_button(
-            "🎬",
-            "Reels Creator",
-            "Hooks, Skripte, Captions und Video-Prompts.",
+    with c:
+        workspace_card(
+            "📣",
+            "Content Engine",
+            "Reels, social content, captions and automation pipelines.",
             "reels",
         )
 
-    with c6:
-        tool_button(
-            "🎞️",
-            "Video AI",
-            "Szenenpläne und professionelle Video-Prompts.",
+    d, e, f = st.columns(3)
+
+    with d:
+        workspace_card(
+            "💻",
+            "Developer OS",
+            "AI coding, debugging and software workflow acceleration.",
+            "coding",
+        )
+
+    with e:
+        workspace_card(
+            "🎬",
+            "Media Studio",
+            "AI video systems, cinematic prompting and production workflows.",
             "video",
+        )
+
+    with f:
+        workspace_card(
+            "🧪",
+            "Automation Lab",
+            "AI agents, workflows and intelligent task execution.",
+            "automations",
         )
 
     st.divider()
 
-    c1, c2, c3 = st.columns(3)
+    x, y = st.columns([1.3, 1])
 
-    with c1:
-        tool_button(
-            "📊",
-            "Dashboard",
-            "Tokens, Nutzung und Account verwalten.",
-            "dashboard",
-        )
+    with x:
 
-    with c2:
-        tool_button(
-            "🎁",
-            "Redeem Codes",
-            "Codes einlösen und Tokens freischalten.",
-            "redeem",
-        )
+        with st.container(border=True):
 
-    with c3:
-        tool_button(
-            "🆘",
-            "Support",
-            "Tickets erstellen und Hilfe bekommen.",
-            "support",
-        )
+            st.subheader("🛰️ Active AI Systems")
+
+            st.success("AI Core connected")
+            st.success("Memory Engine online")
+            st.success("Automation Queue active")
+            st.success("Realtime Workspace sync enabled")
+            st.success("Football Intelligence loaded")
+
+    with y:
+
+        with st.container(border=True):
+
+            st.subheader("📡 System Status")
+
+            st.write(f"Current Time: {datetime.utcnow().strftime('%H:%M UTC')}")
+            st.write("Render Queue: Stable")
+            st.write("AI Nodes: Operational")
+            st.write("Automation Engine: Running")
+            st.write("Realtime Sync: Connected")
