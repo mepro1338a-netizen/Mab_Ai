@@ -105,6 +105,48 @@ section[data-testid="stSidebar"] .block-container{
 
 
 # =========================================================
+# SESSION SYNC
+# =========================================================
+
+def sync_session_user(user):
+
+    if not user:
+        return
+
+    st.session_state.logged_in = True
+
+    st.session_state.user = user.get(
+        "username",
+        "User",
+    )
+
+    st.session_state.email = user.get(
+        "email",
+        "",
+    )
+
+    st.session_state.plan = user.get(
+        "plan",
+        "free",
+    )
+
+    st.session_state.tokens = user.get(
+        "tokens",
+        0,
+    )
+
+    st.session_state.role = user.get(
+        "role",
+        "user",
+    )
+
+    st.session_state.admin_level = user.get(
+        "admin_level",
+        0,
+    )
+
+
+# =========================================================
 # NAV BUTTON
 # =========================================================
 
