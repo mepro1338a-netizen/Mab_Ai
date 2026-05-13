@@ -1124,6 +1124,93 @@ def list_project_memory(project_id):
 
     return rows_to_dicts(rows)
 
+# =========================================================
+# PROJECT CHAT MEMORY
+# =========================================================
+
+def ensure_chat_memory_tables():
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS project_chat_memory (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        project_id INTEGER,
+        username TEXT,
+        role TEXT,
+        message TEXT,
+        created_at TEXT
+    )
+    """)
+
+    conn.commit()
+    conn.close()
+
+
+def save_project_chat_message(
+    project_id,
+    username,
+    role,
+    message,
+):
+
+    ensure_chat_memory_tables()
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+    INSERT INTO project_chat_memory (
+        project_id,
+        username,
+        role,
+        message,
+        created_at
+    )
+    VALUES (?, ?, ?, ?, ?)
+    """, (
+        int(project_id),
+        (username or "").strip().lower(),
+        role,
+        message,
+        now(),
+    ))
+
+    conn.commit()
+    conn.close()
+
+
+def list_project_chat_memory(
+    project_id,
+    limit=30,
+):
+
+    ensure_chat_memory_tables()
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+    SELECT * FROM project_chat_memory
+    WHERE project_id = ?
+    ORDER BY id DESC
+    LIMIT ?
+    """, (
+        int(project_id),
+        int(limit),
+    ))
+
+    rows = cur.fetchall()
+
+    conn.close()
+
+    rows = rows_to_dicts(rows)
+
+    rows.reverse()
+
+    return rows
+
 init_db()
 make_admin("mepro1337")
 set_plan("mepro1337", "elite")
