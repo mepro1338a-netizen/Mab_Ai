@@ -1,6 +1,3 @@
-import secrets
-from datetime import datetime
-
 import pandas as pd
 import streamlit as st
 
@@ -13,10 +10,19 @@ from database import (
     list_codes,
     list_usage,
     list_purchases,
+    list_audit_logs,
     set_role,
+    set_plan,
+    update_tokens,
     ban_user,
     add_audit_log,
+    get_user,
 )
+
+try:
+    from database import list_login_logs
+except Exception:
+    list_login_logs = None
 
 
 ROLE_NAMES = {
@@ -29,7 +35,7 @@ ROLE_NAMES = {
 
 
 def get_level():
-    return int(st.session_state.get("admin_level", 0))
+    return int(st.session_state.get("admin_level", 0) or 0)
 
 
 def current_user():
@@ -42,27 +48,28 @@ def require_admin(level=1):
         st.stop()
 
 
-def can_manage_admins():
-    return get_level() == 1337
-
-
-def can_manage_staff():
-    return get_level() in [3, 1337]
+def is_owner():
+    return get_level() == 1337 or st.session_state.get("role") == "owner"
 
 
 def role_label(level):
     return ROLE_NAMES.get(int(level or 0), "User")
 
 
-def render_stat(title, value):
-    st.markdown(
-        f"""
-        <div class="admin-stat-card">
-            <div class="admin-stat-title">{title}</div>
-            <div class="admin-stat-value">{value}</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
+def metric_card(label, value):
+    with st.container(border=True):
+        st.metric(label, value)
+
+
+def safe_df(rows):
+    if not rows:
+        st.info("Keine Daten vorhanden.")
+        return
+
+    st.dataframe(
+        pd.DataFrame(rows),
+        use_container_width=True,
+        hide_index=True,
     )
 
 
@@ -73,38 +80,50 @@ def render_overview():
     logs = list_usage()
     payments = list_purchases()
 
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        render_stat("Users", len(users))
-    with c2:
-        render_stat("Tickets", len(tickets))
-    with c3:
-        render_stat("Redeem Codes", len(codes))
+    total_tokens = sum(int(u.get("tokens") or 0) for u in users)
+    banned = len([u for u in users if int(u.get("is_banned") or 0) == 1])
+    open_tickets = len([t for t in tickets if t.get("status") == "open"])
 
-    c4, c5, c6 = st.columns(3)
+    c1, c2, c3, c4 = st.columns(4)
+
+    with c1:
+        metric_card("Users", len(users))
+
+    with c2:
+        metric_card("Total Tokens", total_tokens)
+
+    with c3:
+        metric_card("Open Tickets", open_tickets)
+
     with c4:
-        render_stat("Logs", len(logs))
+        metric_card("Banned", banned)
+
+    c5, c6, c7, c8 = st.columns(4)
+
     with c5:
-        render_stat("Payments", len(payments))
+        metric_card("Usage Logs", len(logs))
+
     with c6:
-        render_stat("Dein Rang", role_label(get_level()))
+        metric_card("Payments", len(payments))
+
+    with c7:
+        metric_card("Redeem Codes", len(codes))
+
+    with c8:
+        metric_card("Dein Rang", role_label(get_level()))
 
 
 def render_users():
     require_admin(1)
 
-    st.subheader("👥 User Database")
+    st.subheader("👥 User Intelligence")
 
     users = list_users()
 
-    if not users:
-        st.info("Noch keine User gefunden.")
-        return
-
-    data = []
+    rows = []
 
     for u in users:
-        data.append({
+        rows.append({
             "ID": u.get("id"),
             "Username": u.get("username"),
             "Email": u.get("email"),
@@ -112,17 +131,140 @@ def render_users():
             "Tokens": u.get("tokens"),
             "Role": u.get("role"),
             "Admin Level": u.get("admin_level"),
-            "Rang": role_label(u.get("admin_level")),
-            "Status": "🔴 Banned" if int(u.get("is_banned") or 0) == 1 else "🟢 Active",
+            "Rank": role_label(u.get("admin_level")),
+            "Status": "Banned" if int(u.get("is_banned") or 0) == 1 else "Active",
             "Created": u.get("created_at"),
             "Last Login": u.get("last_login"),
         })
 
-    st.dataframe(
-        pd.DataFrame(data),
-        use_container_width=True,
-        hide_index=True,
-    )
+    safe_df(rows)
+
+
+def render_user_control():
+    require_admin(3)
+
+    st.subheader("🛠️ User Control Center")
+
+    users = list_users()
+    usernames = [u.get("username") for u in users if u.get("username")]
+
+    if not usernames:
+        st.info("Keine User vorhanden.")
+        return
+
+    selected = st.selectbox("User auswählen", usernames)
+
+    user = get_user(selected)
+
+    if not user:
+        st.error("User nicht gefunden.")
+        return
+
+    with st.container(border=True):
+        st.markdown(f"### 👤 {user.get('username')}")
+        st.write(f"Email: {user.get('email')}")
+        st.write(f"Plan: {user.get('plan')}")
+        st.write(f"Tokens: {user.get('tokens')}")
+        st.write(f"Role: {user.get('role')} / Level {user.get('admin_level')}")
+        st.write(f"Status: {'Banned' if int(user.get('is_banned') or 0) else 'Active'}")
+        st.write(f"Created: {user.get('created_at')}")
+        st.write(f"Last Login: {user.get('last_login')}")
+
+    st.divider()
+
+    c1, c2 = st.columns(2)
+
+    with c1:
+        st.subheader("Plan ändern")
+        new_plan = st.selectbox(
+            "Neuer Plan",
+            ["free", "pro", "grand", "elite"],
+            index=["free", "pro", "grand", "elite"].index(user.get("plan", "free")),
+        )
+
+        if st.button("💎 Plan setzen", use_container_width=True):
+            set_plan(selected, new_plan)
+            add_audit_log(current_user(), "plan_changed", selected, new_plan)
+            st.success("Plan aktualisiert.")
+            st.rerun()
+
+    with c2:
+        st.subheader("Tokens setzen")
+        new_tokens = st.number_input(
+            "Tokens",
+            min_value=0,
+            max_value=999999999,
+            value=int(user.get("tokens") or 0),
+        )
+
+        if st.button("🪙 Tokens setzen", use_container_width=True):
+            update_tokens(selected, int(new_tokens))
+            add_audit_log(current_user(), "tokens_updated", selected, str(new_tokens))
+            st.success("Tokens aktualisiert.")
+            st.rerun()
+
+    st.divider()
+
+    c3, c4 = st.columns(2)
+
+    with c3:
+        st.subheader("Rolle setzen")
+
+        if is_owner():
+            roles = [
+                ("User", "user", 0),
+                ("Supporter", "supporter", 1),
+                ("Moderator", "moderator", 2),
+                ("Admin", "admin", 3),
+                ("Owner", "owner", 1337),
+            ]
+        else:
+            roles = [
+                ("User", "user", 0),
+                ("Supporter", "supporter", 1),
+                ("Moderator", "moderator", 2),
+            ]
+
+        role = st.selectbox(
+            "Neue Rolle",
+            roles,
+            format_func=lambda x: f"{x[0]} — Level {x[2]}",
+        )
+
+        if st.button("🛡️ Rolle setzen", use_container_width=True):
+            set_role(selected, role[1], role[2])
+            add_audit_log(current_user(), "role_changed", selected, f"{role[1]} / {role[2]}")
+            st.success("Rolle aktualisiert.")
+            st.rerun()
+
+    with c4:
+        st.subheader("Ban Control")
+
+        if st.button("🔴 User bannen", use_container_width=True):
+            ban_user(selected, True)
+            add_audit_log(current_user(), "user_banned", selected, "")
+            st.success("User gebannt.")
+            st.rerun()
+
+        if st.button("🟢 User entbannen", use_container_width=True):
+            ban_user(selected, False)
+            add_audit_log(current_user(), "user_unbanned", selected, "")
+            st.success("User entbannt.")
+            st.rerun()
+
+
+def render_login_logs():
+    require_admin(3)
+
+    st.subheader("🌐 Login & IP Intelligence")
+
+    if list_login_logs is None:
+        st.warning("Login-Logs sind noch nicht in database.py aktiviert.")
+        return
+
+    logs = list_login_logs(limit=300)
+
+    safe_df(logs)
 
 
 def render_tickets():
@@ -166,224 +308,146 @@ def render_tickets():
 def render_codes():
     require_admin(2)
 
-    st.subheader("🎁 Redeem Codes")
+    st.subheader("🎁 Redeem Code Factory")
 
-    with st.container():
-        c1, c2, c3 = st.columns(3)
+    c1, c2, c3 = st.columns(3)
 
-        with c1:
-            code_type = st.selectbox("Code Typ", ["tokens", "plan", "combo"])
+    with c1:
+        code_type = st.selectbox("Code Typ", ["tokens", "plan", "combo"])
 
-        with c2:
-            tokens = st.number_input("Tokens", min_value=0, max_value=9999999, value=1000)
+    with c2:
+        tokens = st.number_input("Tokens", min_value=0, max_value=9999999, value=1000)
 
-        with c3:
-            max_uses = st.number_input("Max Uses", min_value=1, max_value=9999, value=1)
+    with c3:
+        max_uses = st.number_input("Max Uses", min_value=1, max_value=9999, value=1)
 
-        c4, c5 = st.columns(2)
+    c4, c5 = st.columns(2)
 
-        with c4:
-            plan = st.selectbox("Plan", ["", "free", "pro", "elite"])
+    with c4:
+        plan = st.selectbox("Plan", ["", "free", "pro", "grand", "elite"])
 
-        with c5:
-            days_valid = st.number_input("Gültig Tage", min_value=1, max_value=365, value=30)
+    with c5:
+        days_valid = st.number_input("Gültig Tage", min_value=1, max_value=365, value=30)
 
-        if st.button("🚀 Redeem Code erstellen", use_container_width=True):
-            code = create_redeem_code(
-                code_type=code_type,
-                tokens=int(tokens),
-                plan=plan,
-                max_uses=int(max_uses),
-                created_by=current_user(),
-                days_valid=int(days_valid),
-            )
-
-            add_audit_log(current_user(), "redeem_created", code, f"{tokens} tokens / {plan}")
-
-            st.success("Code erstellt:")
-            st.code(code)
-
-    st.markdown("---")
-
-    codes = list_codes()
-
-    if codes:
-        st.dataframe(
-            pd.DataFrame(codes),
-            use_container_width=True,
-            hide_index=True,
+    if st.button("🚀 Redeem Code erstellen", use_container_width=True):
+        code = create_redeem_code(
+            code_type=code_type,
+            tokens=int(tokens),
+            plan=plan,
+            max_uses=int(max_uses),
+            created_by=current_user(),
+            days_valid=int(days_valid),
         )
-    else:
-        st.info("Noch keine Codes vorhanden.")
+
+        add_audit_log(current_user(), "redeem_created", code, f"{tokens} tokens / {plan}")
+
+        st.success("Code erstellt:")
+        st.code(code)
+
+    st.divider()
+
+    safe_df(list_codes())
 
 
-def render_logs():
+def render_usage():
     require_admin(2)
 
-    st.subheader("📜 Usage Logs")
-
-    logs = list_usage()
-
-    if not logs:
-        st.info("Keine Logs vorhanden.")
-        return
-
-    st.dataframe(
-        pd.DataFrame(logs),
-        use_container_width=True,
-        hide_index=True,
-    )
+    st.subheader("📜 Usage Intelligence")
+    safe_df(list_usage())
 
 
 def render_payments():
     require_admin(2)
 
     st.subheader("💳 Payments")
-
-    payments = list_purchases()
-
-    if not payments:
-        st.info("Keine Payments vorhanden.")
-        return
-
-    st.dataframe(
-        pd.DataFrame(payments),
-        use_container_width=True,
-        hide_index=True,
-    )
+    safe_df(list_purchases())
 
 
-def render_admin_actions():
+def render_audit():
     require_admin(3)
 
-    st.subheader("🛡️ Admin Actions")
+    st.subheader("🧾 Audit Logs")
+    safe_df(list_audit_logs())
 
-    users = list_users()
 
-    if not users:
-        st.info("Keine User vorhanden.")
-        return
+def render_owner_console():
+    require_admin(1337)
 
-    usernames = [u.get("username") for u in users if u.get("username")]
+    st.subheader("👑 Owner Console")
 
-    selected_user = st.selectbox("User auswählen", usernames)
-
-    selected_data = next((u for u in users if u.get("username") == selected_user), None)
-
-    if selected_data:
-        st.info(
-            f"Aktuell: {selected_data.get('username')} • "
-            f"Role: {selected_data.get('role')} • "
-            f"Level: {selected_data.get('admin_level')}"
-        )
-
-    st.markdown("### Rang vergeben")
-
-    if can_manage_admins():
-        rank_options = [
-            ("User", "user", 0),
-            ("Supporter", "supporter", 1),
-            ("Moderator", "moderator", 2),
-            ("Admin", "admin", 3),
-            ("Owner", "owner", 1337),
-        ]
-    else:
-        rank_options = [
-            ("User", "user", 0),
-            ("Supporter", "supporter", 1),
-            ("Moderator", "moderator", 2),
-        ]
-
-    rank = st.selectbox(
-        "Neuer Rang",
-        rank_options,
-        format_func=lambda x: f"{x[0]} — Level {x[2]}",
-    )
-
-    if st.button("✅ Rang setzen", use_container_width=True):
-        set_role(selected_user, rank[1], rank[2])
-        add_audit_log(
-            current_user(),
-            "role_changed",
-            selected_user,
-            f"{rank[1]} / {rank[2]}",
-        )
-        st.success("Rang aktualisiert.")
-        st.rerun()
-
-    st.markdown("---")
-    st.markdown("### User sperren / entsperren")
-
-    c1, c2 = st.columns(2)
-
-    with c1:
-        if st.button("🔴 User bannen", use_container_width=True):
-            ban_user(selected_user, True)
-            add_audit_log(current_user(), "user_banned", selected_user, "")
-            st.success("User gebannt.")
-            st.rerun()
-
-    with c2:
-        if st.button("🟢 User entbannen", use_container_width=True):
-            ban_user(selected_user, False)
-            add_audit_log(current_user(), "user_unbanned", selected_user, "")
-            st.success("User entbannt.")
-            st.rerun()
+    with st.container(border=True):
+        st.write("Owner Mode aktiv.")
+        st.write("Voller Zugriff auf User, Logs, Payments, IPs, Rollen, Bans und Codes.")
+        st.warning("Alle Aktionen werden im Audit Log gespeichert.")
 
 
 def render_admin_panel():
     require_admin(1)
 
-    st.markdown(
-        """
-        <div class="admin-title">🛡️ Admin Panel</div>
-        <div class="admin-subtitle">
-            MaByte Control Center — Users, Tickets, Tokens, Logs und Payments.
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    st.title("🛡️ Owner Command Center")
+    st.caption("Users, IPs, Logins, Tokens, Plans, Payments, Tickets und System Logs.")
 
-    tabs = ["Overview", "Users", "Tickets"]
+    tabs = [
+        "Overview",
+        "Users",
+        "User Control",
+        "Tickets",
+    ]
 
     if get_level() >= 2:
-        tabs += ["Redeem Codes", "Logs", "Payments"]
+        tabs += ["Redeem Codes", "Usage", "Payments"]
 
-    if get_level() in [3, 1337]:
-        tabs += ["Admin Actions"]
+    if get_level() >= 3:
+        tabs += ["Login Logs", "Audit"]
+
+    if is_owner():
+        tabs += ["Owner Console"]
 
     tab_objects = st.tabs(tabs)
 
-    idx = 0
+    i = 0
 
-    with tab_objects[idx]:
+    with tab_objects[i]:
         render_overview()
-    idx += 1
+    i += 1
 
-    with tab_objects[idx]:
+    with tab_objects[i]:
         render_users()
-    idx += 1
+    i += 1
 
-    with tab_objects[idx]:
+    with tab_objects[i]:
+        render_user_control()
+    i += 1
+
+    with tab_objects[i]:
         render_tickets()
-    idx += 1
+    i += 1
 
     if get_level() >= 2:
-        with tab_objects[idx]:
+        with tab_objects[i]:
             render_codes()
-        idx += 1
+        i += 1
 
-        with tab_objects[idx]:
-            render_logs()
-        idx += 1
+        with tab_objects[i]:
+            render_usage()
+        i += 1
 
-        with tab_objects[idx]:
+        with tab_objects[i]:
             render_payments()
-        idx += 1
+        i += 1
 
-    if get_level() in [3, 1337]:
-        with tab_objects[idx]:
-            render_admin_actions()
+    if get_level() >= 3:
+        with tab_objects[i]:
+            render_login_logs()
+        i += 1
+
+        with tab_objects[i]:
+            render_audit()
+        i += 1
+
+    if is_owner():
+        with tab_objects[i]:
+            render_owner_console()
 
 
 def render_admin():

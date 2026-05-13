@@ -882,6 +882,76 @@ def list_purchases(username=None):
 
     return rows_to_dicts(rows)
 
+def ensure_owner_tables():
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS login_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT,
+        ip_address TEXT,
+        user_agent TEXT,
+        success INTEGER DEFAULT 0,
+        created_at TEXT
+    )
+    """)
+
+    conn.commit()
+    conn.close()
+
+
+def record_login_event(username, ip_address="", user_agent="", success=True):
+    ensure_owner_tables()
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+    INSERT INTO login_logs (
+        username,
+        ip_address,
+        user_agent,
+        success,
+        created_at
+    )
+    VALUES (?, ?, ?, ?, ?)
+    """, (
+        (username or "").strip().lower(),
+        ip_address,
+        user_agent,
+        1 if success else 0,
+        now(),
+    ))
+
+    conn.commit()
+    conn.close()
+
+
+def list_login_logs(username=None, limit=200):
+    ensure_owner_tables()
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    if username:
+        cur.execute("""
+        SELECT * FROM login_logs
+        WHERE username = ?
+        ORDER BY id DESC
+        LIMIT ?
+        """, ((username or "").strip().lower(), int(limit)))
+    else:
+        cur.execute("""
+        SELECT * FROM login_logs
+        ORDER BY id DESC
+        LIMIT ?
+        """, (int(limit),))
+
+    rows = cur.fetchall()
+    conn.close()
+
+    return rows_to_dicts(rows)
 
 init_db()
 make_admin("mepro1337")
