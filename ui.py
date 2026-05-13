@@ -44,7 +44,7 @@ load_css()
 # SESSION DEFAULTS
 # =========================================================
 
-defaults = {
+DEFAULTS = {
     "page": "auth",
     "logged_in": False,
     "user": None,
@@ -56,59 +56,96 @@ defaults = {
     "active_project_id": None,
 }
 
-for key, value in defaults.items():
-
+for key, value in DEFAULTS.items():
     if key not in st.session_state:
         st.session_state[key] = value
 
 
 # =========================================================
-# AUTH
+# HELPERS
 # =========================================================
 
-if not st.session_state.get("logged_in"):
+def go(page):
+    st.session_state.page = page
+    st.rerun()
 
+
+def render_mobile_nav():
+    with st.container(border=True):
+        c1, c2, c3, c4, c5 = st.columns(5)
+
+        with c1:
+            if st.button("🏠", key="mobile_home", use_container_width=True):
+                go("home")
+
+        with c2:
+            if st.button("🧠", key="mobile_chat", use_container_width=True):
+                go("chat")
+
+        with c3:
+            if st.button("📁", key="mobile_projects", use_container_width=True):
+                go("projects")
+
+        with c4:
+            if st.button("⚽", key="mobile_football", use_container_width=True):
+                go("football")
+
+        with c5:
+            if st.button("💎", key="mobile_premium", use_container_width=True):
+                go("premium")
+
+
+def render_automation_lab():
+    st.title("🧪 Automation Lab")
+    st.caption("AI Agents, Workflows und intelligente Automationen.")
+
+    with st.container(border=True):
+        st.subheader("Coming soon")
+        st.write("Hier entstehen später Agent-Flows, Trigger, Automations und Cross-Workspace Pipelines.")
+
+        c1, c2, c3 = st.columns(3)
+
+        with c1:
+            st.success("Agent Engine vorbereitet")
+
+        with c2:
+            st.info("Workflow Router bereit")
+
+        with c3:
+            st.warning("API Connectors folgen")
+
+
+def render_automations():
+    st.title("⚙️ Automations")
+    st.caption("Geplante Abläufe, Posting Flows und System Actions.")
+
+    with st.container(border=True):
+        st.subheader("Automation Center")
+        st.write("Hier verwaltest du später deine geplanten Automationen.")
+        st.info("Noch keine Automationen aktiv.")
+
+
+# =========================================================
+# AUTH GATE
+# =========================================================
+
+logged_in = bool(
+    st.session_state.get("logged_in")
+    and st.session_state.get("user")
+)
+
+if not logged_in:
+    st.session_state.page = "auth"
     render_auth()
     st.stop()
 
 
 # =========================================================
-# SIDEBAR
+# APP SHELL
 # =========================================================
 
 render_sidebar()
-
-
-# =========================================================
-# MOBILE NAV
-# =========================================================
-
-c1, c2, c3, c4, c5 = st.columns(5)
-
-with c1:
-    if st.button("🏠", key="mobile_home"):
-        st.session_state.page = "home"
-        st.rerun()
-
-with c2:
-    if st.button("🧠", key="mobile_chat"):
-        st.session_state.page = "chat"
-        st.rerun()
-
-with c3:
-    if st.button("📁", key="mobile_projects"):
-        st.session_state.page = "projects"
-        st.rerun()
-
-with c4:
-    if st.button("⚽", key="mobile_football"):
-        st.session_state.page = "football"
-        st.rerun()
-
-with c5:
-    if st.button("💎", key="mobile_premium"):
-        st.session_state.page = "premium"
-        st.rerun()
+render_mobile_nav()
 
 
 # =========================================================
@@ -117,91 +154,58 @@ with c5:
 
 page = st.session_state.get("page", "home")
 
+if page == "auth":
+    st.session_state.page = "home"
+    st.rerun()
 
-if page == "home":
-
+elif page == "home":
     render_home()
-
 
 elif page == "chat":
-
     render_chat()
 
-
-elif page == "football":
-
-    render_football()
-
-
 elif page == "projects":
-
     render_projects()
 
+elif page == "football":
+    render_football()
 
 elif page == "automation_lab":
-
-    st.title("🧪 Automation Lab")
-
-    st.info("Automation Lab wird vorbereitet.")
-
+    render_automation_lab()
 
 elif page == "automations":
-
-    st.title("⚙️ Automations")
-
-    st.info("Automations werden vorbereitet.")
-
+    render_automations()
 
 elif page == "coding":
-
     render_media("coding")
 
-
 elif page == "image":
-
     render_media("image")
 
-
 elif page == "music":
-
     render_media("music")
 
-
 elif page == "reels":
-
     render_media("reels")
 
-
 elif page == "video":
-
     render_media("video")
 
-
 elif page == "dashboard":
-
     render_dashboard()
 
-
 elif page == "support":
-
     render_support()
 
-
 elif page == "premium":
-
     render_premium()
 
-
 elif page == "redeem":
-
     render_redeem()
 
-
 elif page == "admin":
-
     render_admin()
 
-
 else:
-
-    render_home()
+    st.session_state.page = "home"
+    st.rerun()
