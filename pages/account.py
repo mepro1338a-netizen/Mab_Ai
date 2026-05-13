@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 
-from config import PLANS, TOKEN_COSTS
+from config import PLANS, TOKEN_COSTS, DAILY_LIMITS
 from database import (
     get_user,
     redeem_code,
@@ -10,7 +10,7 @@ from database import (
     list_usage,
     list_purchases,
 )
-from ui_helpers import require_login, sync_session_user
+from ui_core import require_login, sync_session_user
 
 
 def refresh_user():
@@ -27,42 +27,93 @@ def current_plan():
     return PLANS.get(current_plan_key(), PLANS["free"])
 
 
+def plan_is_current(plan_key):
+    return current_plan_key() == plan_key
+
+
+def usage_count(tool):
+    usage = list_usage(st.session_state.get("user"))
+    return len([u for u in usage if str(u.get("tool", "")) == tool])
+
+
 def render_dashboard():
     require_login()
     refresh_user()
 
+    plan_key = current_plan_key()
     plan = current_plan()
     tokens = int(st.session_state.get("tokens", 0) or 0)
 
-    st.title("📊 Dashboard")
-    st.write("Dein MaByte Account, Tokens, Nutzung und Plan-Status.")
+    st.title("📊 Account Command Center")
+    st.caption("Plan, Tokens, Nutzung, Limits und Workspace Access.")
 
     c1, c2, c3, c4 = st.columns(4)
 
     with c1:
-        st.metric("Plan", plan.get("label", current_plan_key()))
+        st.metric("Plan", plan.get("label", plan_key))
 
     with c2:
         st.metric("Tokens", tokens)
 
     with c3:
-        st.metric("Role", st.session_state.get("role", "user"))
+        st.metric("Tier", plan.get("badge", "Starter"))
 
     with c4:
-        st.metric("Plan Tokens", plan.get("tokens", 0))
+        st.metric("Role", st.session_state.get("role", "user"))
 
     st.divider()
 
-    st.subheader("⚡ Token Kosten")
+    left, right = st.columns([1.35, 1], gap="large")
+
+    with left:
+        with st.container(border=True):
+            st.subheader("🧩 Workspace Access")
+
+            features = plan.get("features", [])
+
+            rows = [
+                ["AI Assistant", "chat"],
+                ["Developer OS", "coding"],
+                ["Creative Workspace", "image"],
+                ["Music Studio", "music"],
+                ["Content Engine", "reels"],
+                ["Media Studio", "video"],
+                ["Football Intelligence", "football"],
+                ["Automation Lab", "automation"],
+            ]
+
+            for label, feature in rows:
+                allowed = "all" in features or feature in features
+                st.write(("✅ " if allowed else "🔒 ") + label)
+
+    with right:
+        with st.container(border=True):
+            st.subheader("⚡ Current Limits")
+
+            limits = DAILY_LIMITS.get(plan_key, DAILY_LIMITS["free"])
+
+            st.write(f"Chat: {limits.get('chat', 0)} / Tag")
+            st.write(f"Coding: {limits.get('coding', 0)} / Tag")
+            st.write(f"Images: {limits.get('image', 0)} / Tag")
+            st.write(f"Reels: {limits.get('reels', 0)} / Tag")
+            st.write(f"Videos: {limits.get('video', 0)} / Tag")
+            st.write(f"Football Reports: {limits.get('football_report', 0)} / Tag")
+            st.write(f"Automation Jobs: {limits.get('automation_job', 0)} / Tag")
+
+    st.divider()
+
+    st.subheader("💰 Token Costs")
 
     token_rows = [
-        {"Tool": "Memory Chat", "Kosten": TOKEN_COSTS.get("chat", 1), "Freigabe": "Alle Pläne"},
-        {"Tool": "Coding AI", "Kosten": TOKEN_COSTS.get("coding", 4), "Freigabe": "Pro+"},
-        {"Tool": "Image AI", "Kosten": TOKEN_COSTS.get("image", 15), "Freigabe": "Pro+"},
-        {"Tool": "Music AI", "Kosten": TOKEN_COSTS.get("music", 10), "Freigabe": "Pro+"},
-        {"Tool": "Reels Creator", "Kosten": TOKEN_COSTS.get("reels", 20), "Freigabe": "Grand+"},
-        {"Tool": "Video Base", "Kosten": TOKEN_COSTS.get("video_base", 10), "Freigabe": "Grand+"},
-        {"Tool": "Video pro Sekunde", "Kosten": TOKEN_COSTS.get("video_second", 5), "Freigabe": "Grand+"},
+        {"Workspace": "AI Assistant", "Action": "Prompt", "Cost": TOKEN_COSTS.get("chat", 1)},
+        {"Workspace": "Developer OS", "Action": "Coding Prompt", "Cost": TOKEN_COSTS.get("coding", 10)},
+        {"Workspace": "Creative Workspace", "Action": "Image Prompt", "Cost": TOKEN_COSTS.get("image", 10)},
+        {"Workspace": "Music Studio", "Action": "Song Concept", "Cost": TOKEN_COSTS.get("music", 50)},
+        {"Workspace": "Content Engine", "Action": "Reel Package", "Cost": TOKEN_COSTS.get("reels", 20)},
+        {"Workspace": "Media Studio", "Action": "Video Base", "Cost": TOKEN_COSTS.get("video_base", 10)},
+        {"Workspace": "Media Studio", "Action": "Video Second", "Cost": TOKEN_COSTS.get("video_second", 5)},
+        {"Workspace": "Football Intelligence", "Action": "Report", "Cost": TOKEN_COSTS.get("football_report", 80)},
+        {"Workspace": "Automation Lab", "Action": "Automation Job", "Cost": TOKEN_COSTS.get("automation_job", 100)},
     ]
 
     st.dataframe(
@@ -76,7 +127,7 @@ def render_dashboard():
     col_a, col_b = st.columns(2)
 
     with col_a:
-        st.subheader("🧾 Letzte Nutzung")
+        st.subheader("🧾 Latest Usage")
         usage = list_usage(st.session_state.get("user"))
 
         if usage:
@@ -105,8 +156,8 @@ def render_dashboard():
 def render_redeem():
     require_login()
 
-    st.title("🎁 Redeem Code")
-    st.write("Löse Codes ein und erhalte Tokens oder Plan-Upgrades.")
+    st.title("🎁 Redeem Center")
+    st.caption("Codes einlösen und Tokens oder Plan-Upgrades freischalten.")
 
     with st.container(border=True):
         code = st.text_input("Code", placeholder="DEIN-CODE")
@@ -129,21 +180,14 @@ def render_redeem():
 def render_support():
     require_login()
 
-    st.title("🆘 Support Tickets")
-    st.write("Erstelle ein Ticket. Unser Team hilft dir weiter.")
+    st.title("🆘 Support Center")
+    st.caption("Tickets erstellen, Bugs melden und Hilfe bekommen.")
 
     with st.container(border=True):
         with st.form("support_ticket_form"):
             category = st.selectbox(
                 "Kategorie",
-                [
-                    "Account",
-                    "Payment",
-                    "Tokens",
-                    "AI Tool",
-                    "Bug",
-                    "Sonstiges",
-                ],
+                ["Account", "Payment", "Tokens", "Workspace", "Bug", "Sonstiges"],
             )
 
             subject = st.text_input("Betreff")
@@ -193,60 +237,29 @@ def render_support():
         st.info("Du hast noch keine Tickets.")
 
 
-def plan_features(plan_key):
-    if plan_key == "pro":
-        return [
-            "600 Tokens",
-            "Image AI",
-            "Coding AI",
-            "Music AI",
-            "Standard Support",
-        ]
-
-    if plan_key == "grand":
-        return [
-            "4000 Tokens",
-            "Video AI",
-            "Reels Creator",
-            "Auto-Posting Vorbereitung",
-            "Verbesserter Support",
-            "Bessere APIs",
-            "Alles aus Pro",
-        ]
-
-    if plan_key == "elite":
-        return [
-            "14000 Tokens",
-            "Leistungsstarke APIs",
-            "Verbesserte Videoqualität",
-            "Business Level",
-            "Alles freigeschaltet",
-            "Priorisierter Support",
-        ]
-
-    return PLANS.get(plan_key, {}).get("features", [])
-
-
 def plan_card(plan_key):
     plan = PLANS[plan_key]
-    current = current_plan_key() == plan_key
+    current = plan_is_current(plan_key)
 
     with st.container(border=True):
         if current:
             st.success("Aktueller Plan")
 
-        st.subheader(plan["label"])
-        st.markdown(f"## {plan['price']}")
-        st.metric("Tokens", plan["tokens"])
+        st.subheader(plan.get("label", plan_key))
+        st.caption(plan.get("badge", ""))
+        st.markdown(f"## {plan.get('price', '')}")
+        st.write(plan.get("description", ""))
+
+        st.metric("Tokens", plan.get("tokens", 0))
 
         st.divider()
 
-        for feature in plan_features(plan_key):
-            st.write(f"✅ {feature}")
+        for item in plan.get("highlights", []):
+            st.write(f"✅ {item}")
 
         st.divider()
 
-        button_label = "Aktiv" if current else f"Buy {plan['label']}"
+        button_label = "Aktiv" if current else f"{plan.get('label', plan_key)} auswählen"
 
         if st.button(
             button_label,
@@ -256,7 +269,7 @@ def plan_card(plan_key):
         ):
             st.session_state.selected_plan = plan_key
             st.success(
-                f"{plan['label']} ausgewählt. Stripe Checkout kann hier verbunden werden."
+                f"{plan.get('label', plan_key)} ausgewählt. Stripe Checkout wird später verbunden."
             )
 
 
@@ -264,20 +277,30 @@ def render_premium():
     require_login()
     refresh_user()
 
-    st.title("💎 Premium")
-    st.write("Upgrade deinen Account und schalte mehr AI Features frei.")
+    st.title("💎 MaByte Premium")
+    st.caption("Upgrade dein AI Operating System mit Workspaces, Limits und Agent Capacity.")
 
-    st.info(
-        "Pro = Creator Tools. Grand = Video, Reels & Auto-Posting. Elite = Business Level mit höchster Leistung."
-    )
+    st.info("Pro = Creator OS. Grand = Content Engine & Automation. Elite = Full AI Operating System.")
 
-    col1, col2, col3 = st.columns(3)
+    st.divider()
 
-    with col1:
+    c1, c2, c3, c4 = st.columns(4)
+
+    with c1:
+        plan_card("free")
+
+    with c2:
         plan_card("pro")
 
-    with col2:
+    with c3:
         plan_card("grand")
 
-    with col3:
+    with c4:
         plan_card("elite")
+
+    st.divider()
+
+    with st.container(border=True):
+        st.subheader("🚀 Premium Roadmap")
+        st.write("Stripe Checkout, automatische Plan-Upgrades und Webhooks werden als nächster Schritt verbunden.")
+        st.write("Bis dahin können Pläne über Admin oder Redeem Codes freigeschaltet werden.")
