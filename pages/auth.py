@@ -1,10 +1,24 @@
 import random
 import streamlit as st
 
-from database import create_user, verify_login
-from security import is_valid_username, is_valid_email, check_login_rate
+from database import (
+    create_user,
+    verify_login,
+    record_login_event,
+)
+
+from security import (
+    is_valid_username,
+    is_valid_email,
+    check_login_rate,
+)
+
 from ui_core import sync_session_user
 
+
+# =========================================================
+# CAPTCHA
+# =========================================================
 
 def refresh_captcha():
     st.session_state.captcha_a = random.randint(1, 5)
@@ -16,24 +30,76 @@ def ensure_captcha():
         refresh_captcha()
 
 
+# =========================================================
+# LOGIN
+# =========================================================
+
 def do_login(username, password):
 
     allowed, msg = check_login_rate(username)
 
     if not allowed:
         st.error(msg)
+
+        try:
+            record_login_event(
+                username=username,
+                ip_address="rate_limited",
+                user_agent="blocked",
+                success=False,
+            )
+        except Exception:
+            pass
+
         return
 
     ok, msg, user = verify_login(username, password)
 
+    ip_address = "unknown"
+    user_agent = "streamlit-client"
+
+    try:
+        from streamlit.runtime.scriptrunner import get_script_run_ctx
+
+        ctx = get_script_run_ctx()
+
+        if ctx:
+            headers = getattr(ctx, "request_headers", {})
+
+            if headers:
+                ip_address = headers.get("X-Forwarded-For", "unknown")
+                user_agent = headers.get("User-Agent", "streamlit-client")
+
+    except Exception:
+        pass
+
+    try:
+        record_login_event(
+            username=username,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            success=ok,
+        )
+    except Exception:
+        pass
+
     if ok and user:
+
         sync_session_user(user)
+
         st.session_state.page = "home"
+
         st.success("Login erfolgreich")
+
         st.rerun()
+
     else:
         st.error(msg)
 
+
+# =========================================================
+# REGISTER
+# =========================================================
 
 def do_register(username, email, password, captcha):
 
@@ -60,22 +126,24 @@ def do_register(username, email, password, captcha):
         username=username,
         email=email,
         password=password,
-        role="user",
-        plan="free",
     )
 
     if ok:
         st.success("Registrierung erfolgreich")
+        refresh_captcha()
     else:
         st.error(msg)
 
+
+# =========================================================
+# CSS
+# =========================================================
 
 def auth_css():
 
     st.markdown(
         """
 <style>
-
 
 #MainMenu,
 header,
@@ -150,6 +218,10 @@ p,span{
     )
 
 
+# =========================================================
+# PAGE
+# =========================================================
+
 def render_auth():
 
     ensure_captcha()
@@ -158,11 +230,11 @@ def render_auth():
     st.markdown(
         """
 <div class="auth-title">
-🔒 MaByte Access
+🚀 MaByte Access
 </div>
 
 <div class="auth-sub">
-Dein Login für Chat, Coding, Media Studio und AI Automation.
+The AI Operating System for creators, analysts and modern teams.
 </div>
         """,
         unsafe_allow_html=True,
@@ -176,16 +248,17 @@ Dein Login für Chat, Coding, Media Studio und AI Automation.
             """
 <div class="auth-box">
 
-## 🚀 MaByte
+## 🧠 AI Operating System
 
-Deine moderne AI Plattform für:
+Next-generation workspace infrastructure for:
 
-- 💬 AI Memory Chat
-- 💻 Coding AI
-- 🎨 Image & Design AI
-- 🎬 Reels & Video AI
-- 🎵 Music AI
-- 🤖 Automation
+- 💬 AI Assistant
+- 💻 Developer OS
+- 🎨 Creative Workspace
+- 📣 Content Engine
+- 🎬 Media Studio
+- ⚽ Football Intelligence
+- 🧪 Automation Lab
 
 </div>
             """,
@@ -197,6 +270,10 @@ Deine moderne AI Plattform für:
         st.markdown('<div class="auth-box">', unsafe_allow_html=True)
 
         tab1, tab2 = st.tabs(["👤 Login", "📝 Registrierung"])
+
+        # =====================================================
+        # LOGIN
+        # =====================================================
 
         with tab1:
 
@@ -222,6 +299,10 @@ Deine moderne AI Plattform für:
 
             if st.button("🌐 Google Login", use_container_width=True):
                 st.info("Google Login wird vorbereitet.")
+
+        # =====================================================
+        # REGISTER
+        # =====================================================
 
         with tab2:
 
