@@ -85,6 +85,46 @@ FEEDBACK:
 
 
 # =========================================================
+# OPTIMIZER
+# =========================================================
+
+def improve_package(original_content):
+
+    if not OPENAI_API_KEY:
+        return original_content + "\n\n[Improved Version Demo]"
+
+    response = client.chat.completions.create(
+        model=OPENAI_TEXT_MODEL,
+        messages=[
+            {
+                "role": "system",
+                "content": """
+Du bist ein Elite Viral Football Growth Strategist.
+
+Verbessere:
+- Hook Stärke
+- Emotionalität
+- Engagement
+- Watchtime
+- Viralität
+- CTA Stärke
+- Plattform Optimierung
+
+Mache den Content aggressiver, moderner und creator-orientierter.
+"""
+            },
+            {
+                "role": "user",
+                "content": original_content[:7000],
+            }
+        ],
+        temperature=0.95,
+    )
+
+    return response.choices[0].message.content
+
+
+# =========================================================
 # HELPERS
 # =========================================================
 
@@ -548,6 +588,10 @@ def render_football():
             )
 
             st.write(
+                "✅ AI Optimization"
+            )
+
+            st.write(
                 "✅ Export System"
             )
 
@@ -626,6 +670,53 @@ def render_football():
         with c2:
 
             st.markdown(feedback)
+
+        st.divider()
+
+        improve = st.button(
+            "⚡ Improve Package",
+            use_container_width=True,
+        )
+
+        if improve:
+
+            with st.spinner(
+                "MaByte optimiert Viralität..."
+            ):
+
+                improved = improve_package(
+                    result
+                )
+
+            st.subheader(
+                "🚀 Optimized Package"
+            )
+
+            render_package_tabs(
+                improved
+            )
+
+            st.divider()
+
+            render_full_export(
+                improved
+            )
+
+            if project:
+
+                save_project_memory(
+                    project_id=project.get("id"),
+                    username=st.session_state.get(
+                        "user"
+                    ),
+                    workspace="football",
+                    memory_type="optimized_package",
+                    content=improved[:5000],
+                )
+
+                st.success(
+                    "Optimized Package gespeichert."
+                )
 
         st.divider()
 
