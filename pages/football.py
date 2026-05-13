@@ -1,3 +1,4 @@
+import re
 import streamlit as st
 from openai import OpenAI
 
@@ -10,12 +11,7 @@ from database import (
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 
-# =========================================================
-# HELPERS
-# =========================================================
-
 def active_project():
-
     project_id = st.session_state.get("active_project_id")
 
     if not project_id:
@@ -24,31 +20,32 @@ def active_project():
     return get_project(project_id)
 
 
-def generate_matchday_package(
-    club,
-    opponent,
-    platform,
-    tone,
-):
-
+def generate_matchday_package(club, opponent, platform, tone):
     if not OPENAI_API_KEY:
-
         return f"""
-# Demo Matchday Package
+## Viral Hook
+Demo Hook für {club} gegen {opponent}.
 
-Club:
-{club}
+## Reel Script
+Demo Reel Script für {platform}.
 
-Opponent:
-{opponent}
+## Caption
+Demo Caption.
 
-Platform:
-{platform}
+## Twitter Thread
+1. Demo Thread.
 
-Tone:
-{tone}
+## Thumbnail Prompt
+Demo Thumbnail Prompt.
 
-OPENAI_API_KEY fehlt aktuell.
+## Hashtags
+#{club} #Football #Matchday
+
+## CTA
+Folge für mehr Matchday Content.
+
+## Posting Strategy
+Poste 2 Stunden vor Kickoff.
 """
 
     prompt = f"""
@@ -66,16 +63,16 @@ Plattform:
 Ton:
 {tone}
 
-Erstelle:
+Nutze EXAKT diese Überschriften:
 
-1. Viral Hook
-2. Reel Script
-3. TikTok Caption
-4. X/Twitter Thread
-5. Thumbnail Prompt
-6. Hashtags
-7. CTA
-8. Posting Strategy
+## Viral Hook
+## Reel Script
+## Caption
+## Twitter Thread
+## Thumbnail Prompt
+## Hashtags
+## CTA
+## Posting Strategy
 
 Antworte hochwertig, kreativ und modern.
 """
@@ -94,7 +91,7 @@ Denke wie große Football Creator auf TikTok, Instagram und X.
             {
                 "role": "user",
                 "content": prompt,
-            }
+            },
         ],
         temperature=0.9,
     )
@@ -102,77 +99,129 @@ Denke wie große Football Creator auf TikTok, Instagram und X.
     return response.choices[0].message.content
 
 
-# =========================================================
-# MAIN
-# =========================================================
+def split_sections(result):
+    section_map = {
+        "viral hook": "🎣 Viral Hook",
+        "reel script": "🎬 Reel Script",
+        "caption": "📝 Caption",
+        "twitter thread": "🧵 Twitter Thread",
+        "x/twitter thread": "🧵 Twitter Thread",
+        "thumbnail prompt": "🖼️ Thumbnail Prompt",
+        "hashtags": "#️⃣ Hashtags",
+        "cta": "📢 CTA",
+        "posting strategy": "📈 Posting Strategy",
+    }
+
+    sections = {
+        "🎣 Viral Hook": "",
+        "🎬 Reel Script": "",
+        "📝 Caption": "",
+        "🧵 Twitter Thread": "",
+        "🖼️ Thumbnail Prompt": "",
+        "#️⃣ Hashtags": "",
+        "📢 CTA": "",
+        "📈 Posting Strategy": "",
+    }
+
+    current = None
+
+    for line in result.splitlines():
+        clean = line.strip()
+        lower = clean.lower()
+        lower = re.sub(r"^[#\-\d\.\)\s]+", "", lower).strip()
+
+        matched = None
+
+        for key, title in section_map.items():
+            if lower.startswith(key):
+                matched = title
+                break
+
+        if matched:
+            current = matched
+            continue
+
+        if current:
+            sections[current] += line + "\n"
+
+    fallback_empty = all(not value.strip() for value in sections.values())
+
+    if fallback_empty:
+        sections["🎣 Viral Hook"] = result
+
+    return sections
+
+
+def render_package_tabs(result):
+    sections = split_sections(result)
+    tabs = st.tabs(list(sections.keys()))
+
+    for i, title in enumerate(sections.keys()):
+        with tabs[i]:
+            content = sections[title].strip()
+
+            if not content:
+                content = "Kein Inhalt generiert."
+
+            st.markdown(content)
+
+            st.divider()
+
+            st.code(content)
+
+            safe_name = (
+                title.replace(" ", "_")
+                .replace("🎣", "hook")
+                .replace("🎬", "reel")
+                .replace("📝", "caption")
+                .replace("🧵", "thread")
+                .replace("🖼️", "thumbnail")
+                .replace("#️⃣", "hashtags")
+                .replace("📢", "cta")
+                .replace("📈", "strategy")
+            )
+
+            st.download_button(
+                f"⬇️ Download {title}",
+                data=content.encode("utf-8"),
+                file_name=f"mabyte_{safe_name}.txt",
+                mime="text/plain",
+                use_container_width=True,
+            )
+
 
 def render_football():
-
     if not st.session_state.get("logged_in"):
-
         st.session_state.page = "auth"
         st.rerun()
         return
 
     st.title("⚽ Football Intelligence")
-
-    st.caption(
-        "AI Matchday Engine für viralen Football Content."
-    )
+    st.caption("AI Matchday Engine für viralen Football Content.")
 
     project = active_project()
 
     if project:
-
-        st.success(
-            f"Aktives Projekt: {project.get('title')}"
-        )
-
+        st.success(f"Aktives Projekt: {project.get('title')}")
     else:
-
-        st.info(
-            "Kein aktives Projekt ausgewählt. Memory wird nicht gespeichert."
-        )
+        st.info("Kein aktives Projekt ausgewählt. Memory wird nicht gespeichert.")
 
     st.divider()
 
-    left, right = st.columns(
-        [1, 1],
-        gap="large",
-    )
+    left, right = st.columns([1, 1], gap="large")
 
     with left:
-
-        club = st.text_input(
-            "Club",
-            placeholder="Arsenal",
-        )
-
-        opponent = st.text_input(
-            "Opponent",
-            placeholder="Manchester City",
-        )
+        club = st.text_input("Club", placeholder="Arsenal")
+        opponent = st.text_input("Opponent", placeholder="Manchester City")
 
         platform = st.selectbox(
             "Platform",
-            [
-                "TikTok",
-                "Instagram",
-                "X/Twitter",
-                "YouTube Shorts",
-            ],
+            ["TikTok", "Instagram", "X/Twitter", "YouTube Shorts"],
         )
 
         tone = st.selectbox(
             "Tone",
-            [
-                "Viral",
-                "Aggressive",
-                "Emotional",
-                "Funny",
-                "Professional",
-                "Tactical",
-            ],
+            ["Viral", "Aggressive", "Emotional", "Funny", "Professional", "Tactical"],
         )
 
         generate = st.button(
@@ -181,40 +230,26 @@ def render_football():
         )
 
     with right:
-
-        st.markdown(
-            """
-### ⚡ Package Output
-
-Der AI Agent erstellt:
-
-- Viral Hook
-- Reel Script
-- Caption
-- Twitter Thread
-- Thumbnail Prompt
-- Hashtags
-- CTA
-- Posting Strategy
-"""
-        )
+        with st.container(border=True):
+            st.markdown("### ⚡ Package Output")
+            st.write("Der AI Agent erstellt:")
+            st.write("✅ Viral Hook")
+            st.write("✅ Reel Script")
+            st.write("✅ Caption")
+            st.write("✅ Twitter Thread")
+            st.write("✅ Thumbnail Prompt")
+            st.write("✅ Hashtags")
+            st.write("✅ CTA")
+            st.write("✅ Posting Strategy")
 
     st.divider()
 
     if generate:
-
         if not club or not opponent:
-
-            st.warning(
-                "Bitte Club und Gegner eingeben."
-            )
-
+            st.warning("Bitte Club und Gegner eingeben.")
             return
 
-        with st.spinner(
-            "MaByte generiert virales Matchday Package..."
-        ):
-
+        with st.spinner("MaByte generiert virales Matchday Package..."):
             result = generate_matchday_package(
                 club,
                 opponent,
@@ -222,10 +257,15 @@ Der AI Agent erstellt:
                 tone,
             )
 
-        st.markdown(result)
+        st.subheader("🚀 Matchday Package")
+        render_package_tabs(result)
+
+        st.divider()
+
+        with st.expander("Raw Output anzeigen"):
+            st.markdown(result)
 
         if project:
-
             save_project_memory(
                 project_id=project.get("id"),
                 username=st.session_state.get("user"),
@@ -234,6 +274,4 @@ Der AI Agent erstellt:
                 content=result[:5000],
             )
 
-            st.success(
-                "Package in Projekt-Memory gespeichert."
-            )
+            st.success("Package in Projekt-Memory gespeichert.")
