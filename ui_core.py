@@ -105,6 +105,25 @@ section[data-testid="stSidebar"] .block-container{
 
 
 # =========================================================
+# REQUIRE LOGIN
+# =========================================================
+
+def require_login():
+
+    logged_in = bool(
+        st.session_state.get("logged_in")
+        and st.session_state.get("user")
+    )
+
+    if not logged_in:
+
+        st.session_state.page = "auth"
+
+        st.warning("Bitte zuerst einloggen.")
+        st.stop()
+
+
+# =========================================================
 # SESSION SYNC
 # =========================================================
 
@@ -234,10 +253,6 @@ def render_sidebar():
 
     with st.sidebar:
 
-        # =================================================
-        # LOGO
-        # =================================================
-
         st.markdown(
             """
 <div style="
@@ -252,10 +267,6 @@ letter-spacing:-1px;
             """,
             unsafe_allow_html=True,
         )
-
-        # =================================================
-        # MAIN
-        # =================================================
 
         nav_button(
             "Mission Control",
@@ -286,10 +297,6 @@ letter-spacing:-1px;
             "football",
             "⚽",
         )
-
-        # =================================================
-        # MEDIA TOOLS
-        # =================================================
 
         st.write("")
         st.caption("MEDIA TOOLS")
@@ -324,10 +331,6 @@ letter-spacing:-1px;
             "💻",
         )
 
-        # =================================================
-        # ACCOUNT
-        # =================================================
-
         st.write("")
         st.caption("ACCOUNT")
 
@@ -355,10 +358,6 @@ letter-spacing:-1px;
             "🛟",
         )
 
-        # =================================================
-        # ADMIN
-        # =================================================
-
         if st.session_state.get("role") == "admin":
 
             st.write("")
@@ -369,10 +368,6 @@ letter-spacing:-1px;
                 "admin",
                 "🛠️",
             )
-
-        # =================================================
-        # USER CARD
-        # =================================================
 
         st.write("")
         st.write("")
