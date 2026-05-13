@@ -952,6 +952,177 @@ def list_login_logs(username=None, limit=200):
     conn.close()
 
     return rows_to_dicts(rows)
+# =========================================================
+# PROJECTS
+# =========================================================
+
+def ensure_project_tables():
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS projects (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT,
+        title TEXT,
+        description TEXT,
+        workspace TEXT,
+        created_at TEXT,
+        updated_at TEXT
+    )
+    """)
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS project_memory (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        project_id INTEGER,
+        username TEXT,
+        workspace TEXT,
+        memory_type TEXT,
+        content TEXT,
+        created_at TEXT
+    )
+    """)
+
+    conn.commit()
+    conn.close()
+
+
+def create_project(username, title, description="", workspace="general"):
+
+    ensure_project_tables()
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+    INSERT INTO projects (
+        username,
+        title,
+        description,
+        workspace,
+        created_at,
+        updated_at
+    )
+    VALUES (?, ?, ?, ?, ?, ?)
+    """, (
+        (username or "").strip().lower(),
+        title,
+        description,
+        workspace,
+        now(),
+        now(),
+    ))
+
+    conn.commit()
+
+    project_id = cur.lastrowid
+
+    conn.close()
+
+    return project_id
+
+
+def list_projects(username):
+
+    ensure_project_tables()
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+    SELECT * FROM projects
+    WHERE username = ?
+    ORDER BY id DESC
+    """, (
+        (username or "").strip().lower(),
+    ))
+
+    rows = cur.fetchall()
+
+    conn.close()
+
+    return rows_to_dicts(rows)
+
+
+def get_project(project_id):
+
+    ensure_project_tables()
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+    SELECT * FROM projects
+    WHERE id = ?
+    """, (
+        int(project_id),
+    ))
+
+    row = cur.fetchone()
+
+    conn.close()
+
+    return row_to_dict(row)
+
+
+def save_project_memory(
+    project_id,
+    username,
+    workspace,
+    memory_type,
+    content,
+):
+
+    ensure_project_tables()
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+    INSERT INTO project_memory (
+        project_id,
+        username,
+        workspace,
+        memory_type,
+        content,
+        created_at
+    )
+    VALUES (?, ?, ?, ?, ?, ?)
+    """, (
+        int(project_id),
+        (username or "").strip().lower(),
+        workspace,
+        memory_type,
+        content,
+        now(),
+    ))
+
+    conn.commit()
+    conn.close()
+
+
+def list_project_memory(project_id):
+
+    ensure_project_tables()
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+    SELECT * FROM project_memory
+    WHERE project_id = ?
+    ORDER BY id DESC
+    """, (
+        int(project_id),
+    ))
+
+    rows = cur.fetchall()
+
+    conn.close()
+
+    return rows_to_dicts(rows)
 
 init_db()
 make_admin("mepro1337")
