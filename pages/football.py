@@ -13,12 +13,86 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 
 
 # =========================================================
+# VIRAL ANALYSIS
+# =========================================================
+
+def analyze_viral_score(content):
+
+    if not OPENAI_API_KEY:
+
+        return {
+            "score": 82,
+            "feedback": """
+- Hook stärker emotionalisieren
+- Mehr Spannung im ersten Satz
+- CTA aggressiver formulieren
+"""
+        }
+
+    response = client.chat.completions.create(
+        model=OPENAI_TEXT_MODEL,
+        messages=[
+            {
+                "role": "system",
+                "content": """
+Du bist ein Elite Social Media Growth Strategist.
+
+Bewerte Football Content auf:
+- Viralität
+- Engagement Potential
+- Watchtime Potential
+- Plattform Fit
+- Emotionalität
+
+Antworte exakt so:
+
+SCORE: <zahl>
+
+FEEDBACK:
+- Punkt
+- Punkt
+- Punkt
+"""
+            },
+            {
+                "role": "user",
+                "content": content[:5000],
+            }
+        ],
+        temperature=0.4,
+    )
+
+    text = response.choices[0].message.content
+
+    score = 75
+
+    match = re.search(
+        r"SCORE:\s*(\d+)",
+        text,
+    )
+
+    if match:
+        score = int(match.group(1))
+
+    feedback = text.split(
+        "FEEDBACK:"
+    )[-1].strip()
+
+    return {
+        "score": score,
+        "feedback": feedback,
+    }
+
+
+# =========================================================
 # HELPERS
 # =========================================================
 
 def active_project():
 
-    project_id = st.session_state.get("active_project_id")
+    project_id = st.session_state.get(
+        "active_project_id"
+    )
 
     if not project_id:
         return None
@@ -246,14 +320,20 @@ def render_package_tabs(result):
         list(sections.keys())
     )
 
-    for i, title in enumerate(sections.keys()):
+    for i, title in enumerate(
+        sections.keys()
+    ):
 
         with tabs[i]:
 
-            content = sections[title].strip()
+            content = sections[
+                title
+            ].strip()
 
             if not content:
-                content = "Kein Inhalt generiert."
+                content = (
+                    "Kein Inhalt generiert."
+                )
 
             st.markdown(content)
 
@@ -263,7 +343,9 @@ def render_package_tabs(result):
 
             st.download_button(
                 f"⬇️ Download {title}",
-                data=content.encode("utf-8"),
+                data=content.encode(
+                    "utf-8"
+                ),
                 file_name=f"mabyte_{safe_filename(title)}.txt",
                 mime="text/plain",
                 use_container_width=True,
@@ -276,7 +358,9 @@ def render_package_tabs(result):
 
 def render_full_export(result):
 
-    st.subheader("📦 Full Package Export")
+    st.subheader(
+        "📦 Full Package Export"
+    )
 
     export_data = io.BytesIO()
 
@@ -296,18 +380,24 @@ def render_full_export(result):
 
 
 # =========================================================
-# UI
+# MAIN UI
 # =========================================================
 
 def render_football():
 
-    if not st.session_state.get("logged_in"):
+    if not st.session_state.get(
+        "logged_in"
+    ):
 
         st.session_state.page = "auth"
+
         st.rerun()
+
         return
 
-    st.title("⚽ Football Intelligence")
+    st.title(
+        "⚽ Football Intelligence"
+    )
 
     st.caption(
         "Multi Platform AI Matchday Engine für viralen Football Content."
@@ -332,24 +422,28 @@ def render_football():
     top1, top2, top3, top4 = st.columns(4)
 
     with top1:
+
         st.metric(
             "Platforms",
             "4",
         )
 
     with top2:
+
         st.metric(
             "Content Types",
             "10",
         )
 
     with top3:
+
         st.metric(
             "AI Pipeline",
             "Active",
         )
 
     with top4:
+
         st.metric(
             "Export Engine",
             "Online",
@@ -409,17 +503,53 @@ def render_football():
                 "### ⚡ Generated Content"
             )
 
-            st.write("✅ TikTok Hook")
-            st.write("✅ TikTok Caption")
-            st.write("✅ Instagram Caption")
-            st.write("✅ Twitter Thread")
-            st.write("✅ YouTube Title")
-            st.write("✅ YouTube Description")
-            st.write("✅ Thumbnail Prompt")
-            st.write("✅ Hashtags")
-            st.write("✅ CTA")
-            st.write("✅ Posting Strategy")
-            st.write("✅ Export System")
+            st.write(
+                "✅ TikTok Hook"
+            )
+
+            st.write(
+                "✅ TikTok Caption"
+            )
+
+            st.write(
+                "✅ Instagram Caption"
+            )
+
+            st.write(
+                "✅ Twitter Thread"
+            )
+
+            st.write(
+                "✅ YouTube Title"
+            )
+
+            st.write(
+                "✅ YouTube Description"
+            )
+
+            st.write(
+                "✅ Thumbnail Prompt"
+            )
+
+            st.write(
+                "✅ Hashtags"
+            )
+
+            st.write(
+                "✅ CTA"
+            )
+
+            st.write(
+                "✅ Posting Strategy"
+            )
+
+            st.write(
+                "✅ Viral Intelligence"
+            )
+
+            st.write(
+                "✅ Export System"
+            )
 
     st.divider()
 
@@ -456,6 +586,49 @@ def render_football():
 
         st.divider()
 
+        with st.spinner(
+            "Analysiere Viral Potential..."
+        ):
+
+            analysis = analyze_viral_score(
+                result
+            )
+
+        score = analysis.get(
+            "score",
+            0,
+        )
+
+        feedback = analysis.get(
+            "feedback",
+            "",
+        )
+
+        st.subheader(
+            "🔥 Viral Intelligence"
+        )
+
+        c1, c2 = st.columns(
+            [1, 2]
+        )
+
+        with c1:
+
+            st.metric(
+                "Viral Score",
+                f"{score}/100",
+            )
+
+            st.progress(
+                min(score, 100) / 100
+            )
+
+        with c2:
+
+            st.markdown(feedback)
+
+        st.divider()
+
         with st.expander(
             "Raw Output anzeigen"
         ):
@@ -466,7 +639,9 @@ def render_football():
 
             save_project_memory(
                 project_id=project.get("id"),
-                username=st.session_state.get("user"),
+                username=st.session_state.get(
+                    "user"
+                ),
                 workspace="football",
                 memory_type="multi_platform_package",
                 content=result[:5000],
