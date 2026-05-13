@@ -1,7 +1,12 @@
 import streamlit as st
 from openai import OpenAI
 
-from config import OPENAI_API_KEY, OPENAI_TEXT_MODEL, TOKEN_COSTS
+from config import (
+    OPENAI_API_KEY,
+    OPENAI_TEXT_MODEL,
+    TOKEN_COSTS,
+)
+
 from database import (
     get_project,
     list_projects,
@@ -11,12 +16,19 @@ from database import (
     spend_tokens,
     save_usage,
     get_user,
+    workspace_activity_score,
+    latest_tool_used,
 )
+
 from ui_core import sync_session_user
 
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 
+
+# =========================================================
+# HELPERS
+# =========================================================
 
 def username():
     return st.session_state.get("user")
@@ -32,11 +44,13 @@ def chat_cost():
 
 def sync_user():
     user = get_user(username())
+
     if user:
         sync_session_user(user)
 
 
 def ensure_state():
+
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
@@ -46,20 +60,33 @@ def active_project_id():
 
 
 def get_active_project():
+
     project_id = active_project_id()
+
     if not project_id:
         return None
+
     return get_project(project_id)
 
 
+# =========================================================
+# PROJECT SELECTOR
+# =========================================================
+
 def project_selector():
+
     projects = list_projects(username())
 
     if not projects:
-        st.info("Kein Projekt aktiv. Du kannst unter Projects eins erstellen.")
+        st.info(
+            "Kein Projekt aktiv. Erstelle unter Projects ein Projekt für persistent AI Memory."
+        )
         return None
 
-    options = {f"{p.get('title')} · {p.get('workspace')}": p.get("id") for p in projects}
+    options = {
+        f"{p.get('title')} · {p.get('workspace')}": p.get("id")
+        for p in projects
+    }
 
     current_id = active_project_id()
 
@@ -68,12 +95,13 @@ def project_selector():
 
     if current_id:
         for i, label in enumerate(labels):
+
             if int(options[label]) == int(current_id):
                 default_index = i
                 break
 
     selected = st.selectbox(
-        "Aktives Projekt",
+        "🛰️ Aktives Projekt",
         labels,
         index=default_index,
     )
@@ -83,11 +111,18 @@ def project_selector():
     return get_project(options[selected])
 
 
+# =========================================================
+# TOKEN SYSTEM
+# =========================================================
+
 def charge_chat(prompt):
+
     cost = chat_cost()
 
     if get_tokens() < cost:
-        st.error(f"Nicht genug Tokens. Benötigt: {cost}, verfügbar: {get_tokens()}")
+        st.error(
+            f"Nicht genug Tokens. Benötigt: {cost}, verfügbar: {get_tokens()}"
+        )
         st.stop()
 
     ok, msg = spend_tokens(username(), cost)
@@ -107,41 +142,133 @@ def charge_chat(prompt):
     )
 
     sync_user()
+
     return cost
 
 
+# =========================================================
+# PROJECT MEMORY
+# =========================================================
+
 def build_project_context(project):
+
     if not project:
         return "Kein aktives Projekt."
 
     memories = list_project_memory(project.get("id"))
 
+    grouped = {}
+
+    for memory in memories[:20]:
+
+        memory_type = memory.get("memory_type", "memory")
+
+        if memory_type not in grouped:
+            grouped[memory_type] = []
+
+        grouped[memory_type].append(memory.get("content", ""))
+
     memory_text = ""
 
-    for m in memories[:12]:
-        memory_text += f"- {m.get('memory_type')}: {m.get('content')}\n"
+    for memory_type, entries in grouped.items():
+
+        memory_text += f"\n[{memory_type.upper()}]\n"
+
+        for entry in entries[:5]:
+            memory_text += f"- {entry}\n"
 
     if not memory_text:
         memory_text = "Keine gespeicherte Projekt-Memory vorhanden."
 
     return f"""
-Aktives Projekt:
-Titel: {project.get('title')}
-Workspace: {project.get('workspace')}
-Beschreibung: {project.get('description')}
+AKTIVES PROJEKT
 
-Gespeicherte Projekt-Memory:
+Titel:
+{project.get('title')}
+
+Workspace:
+{project.get('workspace')}
+
+Beschreibung:
+{project.get('description')}
+
+GESPEICHERTE MEMORY:
 {memory_text}
 """
 
 
+# =========================================================
+# CHAT HISTORY
+# =========================================================
+
+def build_chat_history(project):
+
+    history_messages = []
+
+    if project:
+
+        history = list_project_chat_memory(
+            project.get("id"),
+            limit=20,
+        )
+
+        for msg in history:
+
+            role = msg.get("role", "assistant")
+            content = msg.get("message", "")
+
+            if role in ["user", "assistant"]:
+
+                history_messages.append(
+                    {
+                        "role": role,
+                        "content": content,
+                    }
+                )
+
+    else:
+
+        for msg in st.session_state.messages[-12:]:
+
+            history_messages.append(
+                {
+                    "role": msg.get("role"),
+                    "content": msg.get("content"),
+                }
+            )
+
+    return history_messages
+
+
+# =========================================================
+# MESSAGE BUILDER
+# =========================================================
+
 def build_messages(prompt, project):
-    system_prompt = """
-Du bist MaByte, der zentrale AI Assistant eines AI Operating Systems.
-Du arbeitest projektbezogen, strategisch, präzise und professionell.
-Nutze den Projektkontext aktiv.
-Antworte auf Deutsch, klar und hochwertig.
-Wenn sinnvoll: gib konkrete nächste Schritte.
+
+    system_prompt = f"""
+Du bist MaByte.
+
+Ein professioneller AI Operating System Assistant.
+
+WICHTIG:
+- Nutze Projektkontext aktiv
+- Nutze gespeicherte Memory
+- Arbeite strategisch
+- Denke wie ein Senior AI Operator
+- Antworte hochwertig und klar
+- Gib konkrete nächste Schritte
+- Arbeite workflow-orientiert
+- Verbinde Bereiche intelligent
+
+User:
+{username()}
+
+Workspace Activity Score:
+{workspace_activity_score(username())}/100
+
+Zuletzt genutztes Tool:
+{latest_tool_used(username())}
 """
 
     messages = [
@@ -151,23 +278,9 @@ Wenn sinnvoll: gib konkrete nächste Schritte.
         }
     ]
 
-    if project:
-        history = list_project_chat_memory(project.get("id"), limit=16)
+    history = build_chat_history(project)
 
-        for msg in history:
-            role = msg.get("role", "assistant")
-            content = msg.get("message", "")
-
-            if role in ["user", "assistant"]:
-                messages.append(
-                    {
-                        "role": role,
-                        "content": content,
-                    }
-                )
-    else:
-        for msg in st.session_state.messages[-12:]:
-            messages.append(msg)
+    messages.extend(history)
 
     messages.append(
         {
@@ -179,38 +292,54 @@ Wenn sinnvoll: gib konkrete nächste Schritte.
     return messages
 
 
+# =========================================================
+# OPENAI
+# =========================================================
+
 def ai_response(prompt, project):
+
     if not OPENAI_API_KEY:
+
         return f"""
-### Demo Antwort
+# Demo Antwort
 
 Aktives Projekt:
 {project.get('title') if project else 'Kein Projekt'}
 
-Du hast geschrieben:
+Prompt:
 {prompt}
 
-OPENAI_API_KEY fehlt aktuell noch.
+OPENAI_API_KEY fehlt aktuell.
 """
 
     response = client.chat.completions.create(
         model=OPENAI_TEXT_MODEL,
         messages=build_messages(prompt, project),
-        temperature=0.65,
+        temperature=0.7,
     )
 
     return response.choices[0].message.content
 
 
+# =========================================================
+# HISTORY RENDER
+# =========================================================
+
 def render_history(project):
+
     if project:
-        history = list_project_chat_memory(project.get("id"), limit=30)
+
+        history = list_project_chat_memory(
+            project.get("id"),
+            limit=40,
+        )
 
         if not history:
             st.info("Noch kein Projekt-Chat vorhanden.")
             return
 
         for msg in history:
+
             role = msg.get("role", "assistant")
             content = msg.get("message", "")
 
@@ -218,36 +347,92 @@ def render_history(project):
                 st.markdown(content)
 
     else:
+
         if not st.session_state.messages:
             st.info("Noch kein Chat vorhanden.")
             return
 
         for msg in st.session_state.messages:
+
             with st.chat_message(msg.get("role", "assistant")):
                 st.markdown(msg.get("content", ""))
 
 
+# =========================================================
+# PROJECT PANEL
+# =========================================================
+
 def render_project_panel(project):
+
     with st.container(border=True):
-        st.subheader("🧠 Project Context")
+
+        st.subheader("🧠 Project Intelligence")
 
         if not project:
-            st.write("Kein Projekt aktiv.")
-            st.caption("Öffne Projects und erstelle ein Projekt, um projektbezogene Memory zu nutzen.")
+
+            st.write("Kein aktives Projekt.")
+            st.caption(
+                "Nutze Projects für persistente AI Memory und Workspace Intelligence."
+            )
+
             return
 
         st.write(f"**Projekt:** {project.get('title')}")
         st.write(f"**Workspace:** {project.get('workspace')}")
+
         st.caption(project.get("description", ""))
 
         memories = list_project_memory(project.get("id"))
 
-        st.write(f"Memory Items: {len(memories)}")
-        st.write(f"Chat Memory: {len(list_project_chat_memory(project.get('id'), limit=999))}")
+        st.divider()
 
+        c1, c2 = st.columns(2)
+
+        with c1:
+            st.metric("Memory Items", len(memories))
+
+        with c2:
+            st.metric(
+                "Chat Memory",
+                len(
+                    list_project_chat_memory(
+                        project.get("id"),
+                        limit=999,
+                    )
+                ),
+            )
+
+        st.divider()
+
+        score = workspace_activity_score(username())
+
+        st.progress(score / 100)
+
+        st.caption(f"Workspace Activity Score: {score}/100")
+
+        if memories:
+
+            st.write("### Letzte Memory")
+
+            for memory in memories[:3]:
+
+                st.markdown(
+                    f"""
+                    **{memory.get('memory_type', 'memory').title()}**
+
+                    {memory.get('content', '')[:120]}
+                    """
+                )
+
+
+# =========================================================
+# MAIN CHAT
+# =========================================================
 
 def render_chat():
+
     if not st.session_state.get("logged_in"):
+
         st.session_state.page = "auth"
         st.rerun()
         return
@@ -255,33 +440,47 @@ def render_chat():
     ensure_state()
 
     st.title("🧠 AI Assistant")
-    st.caption("Central AI Layer mit Project Memory und Workspace Awareness.")
 
-    left, right = st.columns([1.5, 1], gap="large")
+    st.caption(
+        "Persistent AI Memory, Project Intelligence und Workspace Awareness."
+    )
+
+    left, right = st.columns(
+        [1.6, 1],
+        gap="large",
+    )
 
     with left:
+
         project = project_selector()
 
     with right:
+
         render_project_panel(project)
 
     st.divider()
 
     render_history(project)
 
-    prompt = st.chat_input("Schreibe an MaByte...")
+    prompt = st.chat_input(
+        "Schreibe an MaByte..."
+    )
 
     if prompt:
+
         cost = charge_chat(prompt)
 
         if project:
+
             save_project_chat_message(
                 project_id=project.get("id"),
                 username=username(),
                 role="user",
                 message=prompt,
             )
+
         else:
+
             st.session_state.messages.append(
                 {
                     "role": "user",
@@ -289,19 +488,26 @@ def render_chat():
                 }
             )
 
-        with st.spinner("MaByte denkt im Projektkontext..."):
-            answer = ai_response(prompt, project)
+        with st.spinner("MaByte analysiert Projektkontext..."):
 
-        answer += f"\n\n---\nVerbraucht: {cost} Token"
+            answer = ai_response(
+                prompt,
+                project,
+            )
+
+        answer += f"\n\n---\n🪙 Verbrauchte Tokens: {cost}"
 
         if project:
+
             save_project_chat_message(
                 project_id=project.get("id"),
                 username=username(),
                 role="assistant",
                 message=answer,
             )
+
         else:
+
             st.session_state.messages.append(
                 {
                     "role": "assistant",
