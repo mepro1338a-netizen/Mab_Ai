@@ -84,13 +84,9 @@ def do_login(username, password):
         pass
 
     if ok and user:
-
         sync_session_user(user)
-
         st.session_state.page = "home"
-
         st.success("Login erfolgreich")
-
         st.rerun()
 
     else:
@@ -147,61 +143,23 @@ def auth_css():
 
 #MainMenu,
 header,
-footer{
-    display:none;
+footer,
+[data-testid="stToolbar"]{
+    display:none!important;
 }
 
 .stApp{
     background:
-        radial-gradient(circle at top, rgba(56,189,248,.15), transparent 30%),
-        linear-gradient(135deg,#020617 0%,#071427 55%,#020617 100%);
+        radial-gradient(circle at 18% 12%, rgba(56,189,248,.20), transparent 28%),
+        radial-gradient(circle at 82% 18%, rgba(168,85,247,.18), transparent 30%),
+        radial-gradient(circle at 50% 100%, rgba(14,165,233,.10), transparent 34%),
+        linear-gradient(135deg,#020617 0%,#061225 48%,#020617 100%)!important;
 }
 
 .main .block-container{
-    max-width:1100px;
-    padding-top:3rem;
-}
-
-.auth-title{
-    text-align:center;
-    color:white;
-    font-size:68px;
-    font-weight:900;
-    margin-bottom:10px;
-}
-
-.auth-sub{
-    text-align:center;
-    color:#cbd5e1;
-    font-size:20px;
-    margin-bottom:40px;
-}
-
-.auth-box{
-    background:rgba(2,6,23,.85);
-    border:1px solid rgba(96,165,250,.25);
-    border-radius:30px;
-    padding:40px;
-    box-shadow:0 0 40px rgba(59,130,246,.20);
-}
-
-.stTextInput input{
-    background:rgba(2,6,23,.95)!important;
-    border:1px solid rgba(96,165,250,.35)!important;
-    color:white!important;
-    border-radius:18px!important;
-    min-height:55px!important;
-    font-weight:700!important;
-}
-
-.stButton > button{
-    min-height:55px!important;
-    border-radius:18px!important;
-    border:none!important;
-    background:linear-gradient(135deg,#2563eb,#38bdf8)!important;
-    color:white!important;
-    font-weight:900!important;
-    box-shadow:0 0 25px rgba(56,189,248,.25);
+    max-width:1280px;
+    padding-top:2.2rem;
+    padding-bottom:4rem;
 }
 
 h1,h2,h3,label{
@@ -210,6 +168,254 @@ h1,h2,h3,label{
 
 p,span{
     color:#cbd5e1!important;
+}
+
+.auth-nav{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:42px;
+}
+
+.auth-brand{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    color:white;
+    font-size:26px;
+    font-weight:950;
+}
+
+.auth-logo{
+    width:42px;
+    height:42px;
+    border-radius:14px;
+    background:linear-gradient(135deg,#2563eb,#38bdf8,#a855f7);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:0 0 34px rgba(56,189,248,.35);
+}
+
+.auth-pill{
+    padding:10px 16px;
+    border-radius:999px;
+    border:1px solid rgba(125,211,252,.20);
+    background:rgba(15,23,42,.55);
+    color:#dbeafe;
+    font-weight:800;
+    font-size:14px;
+}
+
+.hero-eyebrow{
+    display:inline-block;
+    padding:10px 16px;
+    border-radius:999px;
+    background:rgba(59,130,246,.14);
+    border:1px solid rgba(96,165,250,.28);
+    color:#93c5fd;
+    font-weight:900;
+    margin-bottom:18px;
+}
+
+.hero-title{
+    color:white;
+    font-size:66px;
+    line-height:1.02;
+    font-weight:1000;
+    letter-spacing:-.055em;
+    margin-bottom:22px;
+}
+
+.hero-gradient{
+    background:linear-gradient(135deg,#38bdf8,#818cf8,#e879f9);
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+}
+
+.hero-sub{
+    color:#cbd5e1;
+    font-size:20px;
+    line-height:1.55;
+    max-width:680px;
+    font-weight:650;
+    margin-bottom:26px;
+}
+
+.hero-points{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:12px;
+    margin:26px 0 30px 0;
+}
+
+.point{
+    border:1px solid rgba(125,211,252,.16);
+    background:linear-gradient(145deg,rgba(15,23,42,.75),rgba(30,41,90,.42));
+    padding:14px 16px;
+    border-radius:18px;
+    color:#dbeafe;
+    font-weight:850;
+}
+
+.auth-box{
+    background:
+        linear-gradient(145deg,rgba(8,19,45,.88),rgba(10,25,55,.76));
+    border:1px solid rgba(125,211,252,.18);
+    border-radius:30px;
+    padding:34px;
+    box-shadow:
+        0 24px 80px rgba(0,0,0,.32),
+        inset 0 1px 0 rgba(255,255,255,.05);
+}
+
+.login-box{
+    position:sticky;
+    top:24px;
+}
+
+.feature-grid{
+    display:grid;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:16px;
+    margin-top:40px;
+}
+
+.feature-card{
+    min-height:150px;
+    border:1px solid rgba(125,211,252,.16);
+    background:
+        linear-gradient(145deg,rgba(15,23,42,.82),rgba(7,27,58,.54));
+    border-radius:24px;
+    padding:22px;
+    box-shadow:0 18px 45px rgba(0,0,0,.20);
+}
+
+.feature-icon{
+    font-size:30px;
+    margin-bottom:14px;
+}
+
+.feature-title{
+    color:white;
+    font-size:18px;
+    font-weight:950;
+    margin-bottom:8px;
+}
+
+.feature-text{
+    color:#9fb3d1;
+    font-size:14px;
+    line-height:1.45;
+    font-weight:650;
+}
+
+.pricing-grid{
+    display:grid;
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:18px;
+    margin-top:22px;
+}
+
+.price-card{
+    border:1px solid rgba(125,211,252,.16);
+    background:
+        linear-gradient(145deg,rgba(8,19,45,.90),rgba(15,23,42,.72));
+    border-radius:26px;
+    padding:26px;
+}
+
+.price-card.highlight{
+    border-color:rgba(168,85,247,.55);
+    box-shadow:0 0 40px rgba(168,85,247,.18);
+}
+
+.price-title{
+    color:white;
+    font-size:23px;
+    font-weight:950;
+}
+
+.price{
+    color:white;
+    font-size:38px;
+    font-weight:1000;
+    margin:14px 0;
+}
+
+.price-sub{
+    color:#93a4bd;
+    font-size:14px;
+    margin-bottom:18px;
+}
+
+.price-feature{
+    color:#dbeafe;
+    margin:9px 0;
+    font-weight:750;
+}
+
+.section-title{
+    color:white;
+    font-size:36px;
+    font-weight:1000;
+    margin-top:54px;
+    margin-bottom:10px;
+}
+
+.section-sub{
+    color:#9fb3d1;
+    font-size:17px;
+    margin-bottom:24px;
+}
+
+.stTextInput input,
+.stNumberInput input{
+    background:rgba(2,6,23,.92)!important;
+    border:1px solid rgba(96,165,250,.30)!important;
+    color:white!important;
+    -webkit-text-fill-color:white!important;
+    border-radius:16px!important;
+    min-height:52px!important;
+    font-weight:750!important;
+}
+
+.stButton > button{
+    min-height:52px!important;
+    border-radius:16px!important;
+    border:1px solid rgba(96,165,250,.26)!important;
+    background:linear-gradient(135deg,#2563eb,#38bdf8)!important;
+    color:white!important;
+    font-weight:950!important;
+    box-shadow:0 0 28px rgba(56,189,248,.24);
+}
+
+.stButton > button:hover{
+    transform:translateY(-1px);
+    box-shadow:0 0 36px rgba(56,189,248,.34);
+}
+
+[data-testid="stTabs"] button{
+    color:#dbeafe!important;
+    font-weight:850!important;
+}
+
+@media(max-width:900px){
+    .hero-title{
+        font-size:44px;
+    }
+
+    .hero-points,
+    .feature-grid,
+    .pricing-grid{
+        grid-template-columns:1fr;
+    }
+
+    .auth-nav{
+        flex-direction:column;
+        align-items:flex-start;
+        gap:14px;
+    }
 }
 
 </style>
@@ -229,37 +435,41 @@ def render_auth():
 
     st.markdown(
         """
-<div class="auth-title">
-🚀 MaByte Access
-</div>
-
-<div class="auth-sub">
-The AI Operating System for creators, analysts and modern teams.
+<div class="auth-nav">
+    <div class="auth-brand">
+        <div class="auth-logo">M</div>
+        <div>MaByte</div>
+    </div>
+    <div class="auth-pill">AI Creator Operating System</div>
 </div>
         """,
         unsafe_allow_html=True,
     )
 
-    left, right = st.columns([1, 1])
+    left, right = st.columns([1.35, .85], gap="large")
 
     with left:
 
         st.markdown(
             """
-<div class="auth-box">
+<div class="hero-eyebrow">🚀 Built for creators, brands, agencies and football media teams</div>
 
-## 🧠 AI Operating System
+<div class="hero-title">
+Create viral content with <span class="hero-gradient">AI workflows</span>.
+</div>
 
-Next-generation workspace infrastructure for:
+<div class="hero-sub">
+MaByte is the AI Creator Operating System for social media growth.
+Generate hooks, reels, captions, thumbnails, threads, automation flows and creator-ready content packages in seconds.
+</div>
 
-- 💬 AI Assistant
-- 💻 Developer OS
-- 🎨 Creative Workspace
-- 📣 Content Engine
-- 🎬 Media Studio
-- ⚽ Football Intelligence
-- 🧪 Automation Lab
-
+<div class="hero-points">
+    <div class="point">⚽ Football Intelligence</div>
+    <div class="point">📣 Multi-Platform Content</div>
+    <div class="point">🔥 Viral Score Engine</div>
+    <div class="point">🧪 AI Automation Lab</div>
+    <div class="point">🖼️ Thumbnail Intelligence</div>
+    <div class="point">🧠 Project Memory</div>
 </div>
             """,
             unsafe_allow_html=True,
@@ -267,17 +477,14 @@ Next-generation workspace infrastructure for:
 
     with right:
 
-        st.markdown('<div class="auth-box">', unsafe_allow_html=True)
+        st.markdown('<div class="auth-box login-box">', unsafe_allow_html=True)
 
-        tab1, tab2 = st.tabs(["👤 Login", "📝 Registrierung"])
+        st.markdown("### 🔐 Access MaByte")
+        st.caption("Login or create your creator workspace.")
 
-        # =====================================================
-        # LOGIN
-        # =====================================================
+        tab1, tab2 = st.tabs(["👤 Login", "✨ Start Free"])
 
         with tab1:
-
-            st.subheader("Willkommen zurück")
 
             username = st.text_input(
                 "Username",
@@ -295,18 +502,9 @@ Next-generation workspace infrastructure for:
             if st.button("🚀 Einloggen", use_container_width=True):
                 do_login(username, password)
 
-            st.write("")
-
-            if st.button("🌐 Google Login", use_container_width=True):
-                st.info("Google Login wird vorbereitet.")
-
-        # =====================================================
-        # REGISTER
-        # =====================================================
+            st.caption("Google Login wird später verbunden.")
 
         with tab2:
-
-            st.subheader("Account erstellen")
 
             reg_user = st.text_input(
                 "Username",
@@ -331,8 +529,7 @@ Next-generation workspace infrastructure for:
                 step=1,
             )
 
-            if st.button("✨ Registrieren", use_container_width=True):
-
+            if st.button("✨ Kostenlos starten", use_container_width=True):
                 do_register(
                     reg_user,
                     reg_email,
@@ -341,3 +538,79 @@ Next-generation workspace infrastructure for:
                 )
 
         st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown(
+        """
+<div class="section-title">One system. Infinite creator workflows.</div>
+<div class="section-sub">
+From football content to influencer campaigns, MaByte turns ideas into platform-ready assets.
+</div>
+
+<div class="feature-grid">
+
+    <div class="feature-card">
+        <div class="feature-icon">⚽</div>
+        <div class="feature-title">Football Creator OS</div>
+        <div class="feature-text">Generate matchday packages, viral hooks, threads, captions and thumbnail prompts.</div>
+    </div>
+
+    <div class="feature-card">
+        <div class="feature-icon">📣</div>
+        <div class="feature-title">Content Engine</div>
+        <div class="feature-text">Create TikTok, Instagram, YouTube Shorts and X content from one workflow.</div>
+    </div>
+
+    <div class="feature-card">
+        <div class="feature-icon">🔥</div>
+        <div class="feature-title">Viral Intelligence</div>
+        <div class="feature-text">Score, analyze and improve your content before you publish.</div>
+    </div>
+
+    <div class="feature-card">
+        <div class="feature-icon">🧪</div>
+        <div class="feature-title">Automation Lab</div>
+        <div class="feature-text">Build AI workflows, agents and cross-platform content pipelines.</div>
+    </div>
+
+</div>
+
+<div class="section-title">Built for serious creators.</div>
+<div class="section-sub">
+Start free. Upgrade when MaByte becomes part of your daily content system.
+</div>
+
+<div class="pricing-grid">
+
+    <div class="price-card">
+        <div class="price-title">Free</div>
+        <div class="price">0€</div>
+        <div class="price-sub">For testing MaByte</div>
+        <div class="price-feature">✅ Basic AI Assistant</div>
+        <div class="price-feature">✅ Limited tokens</div>
+        <div class="price-feature">✅ Creator workspace preview</div>
+    </div>
+
+    <div class="price-card highlight">
+        <div class="price-title">Creator Pro</div>
+        <div class="price">19€</div>
+        <div class="price-sub">For creators and football pages</div>
+        <div class="price-feature">✅ Football Intelligence</div>
+        <div class="price-feature">✅ Viral Score Engine</div>
+        <div class="price-feature">✅ Thumbnail Intelligence</div>
+        <div class="price-feature">✅ Multi-platform packages</div>
+    </div>
+
+    <div class="price-card">
+        <div class="price-title">Elite</div>
+        <div class="price">79€</div>
+        <div class="price-sub">For agencies, teams and power users</div>
+        <div class="price-feature">✅ Automation Lab</div>
+        <div class="price-feature">✅ Project Memory</div>
+        <div class="price-feature">✅ Priority AI Power</div>
+        <div class="price-feature">✅ Advanced workflows</div>
+    </div>
+
+</div>
+        """,
+        unsafe_allow_html=True,
+    )
