@@ -18,75 +18,72 @@ def open_page(page):
     st.rerun()
 
 
-def workspace_card(icon, title, desc, page):
+def stat_card(icon, label, value, sub=""):
     with st.container(border=True):
+        st.markdown(f"### {icon}")
+        st.caption(label)
+        st.markdown(f"## {value}")
+        if sub:
+            st.caption(sub)
 
-        st.markdown(f"### {icon} {title}")
-        st.caption(desc)
 
-        if st.button(
-            "Open Workspace",
-            use_container_width=True,
-            key=f"workspace_{page}",
-        ):
+def quick_card(icon, title, page):
+    with st.container(border=True):
+        st.markdown(f"## {icon}")
+        st.markdown(f"### {title}")
+        if st.button("Öffnen", key=f"quick_{page}", use_container_width=True):
             open_page(page)
 
 
-def activity_item(icon, title, text):
+def activity_row(icon, title, text):
     with st.container(border=True):
         st.markdown(f"### {icon} {title}")
         st.caption(text)
 
 
-def render_activity_feed(username):
-    activity = recent_activity(username=username, limit=6)
+def recommendation(title, text, button, page):
+    with st.container(border=True):
+        st.markdown(f"### {title}")
+        st.caption(text)
+        if st.button(button, key=f"rec_{page}_{title}", use_container_width=True):
+            open_page(page)
+
+
+def render_activity(user):
+    activity = recent_activity(username=user, limit=5)
 
     if not activity:
-        st.info("Noch keine AI Aktivitäten vorhanden.")
+        activity_row("🧠", "AI Assistant", "Noch keine Aktivität vorhanden.")
         return
 
     for item in activity:
-
-        tool = str(item.get("tool", "system")).replace("_", " ").title()
-        status = item.get("status", "success")
-        provider = item.get("api_provider", "system")
-        tokens = item.get("cost_tokens", 0)
-
+        tool = str(item.get("tool", "AI")).replace("_", " ").title()
         created = str(item.get("created_at", ""))[:16]
+        tokens = item.get("cost_tokens", 0)
+        status = item.get("status", "success")
 
         icon = "⚡"
-
-        if "video" in tool.lower():
-            icon = "🎬"
-
-        elif "coding" in tool.lower():
-            icon = "💻"
-
+        if "chat" in tool.lower():
+            icon = "💬"
         elif "image" in tool.lower():
             icon = "🎨"
-
-        elif "music" in tool.lower():
-            icon = "🎵"
-
+        elif "video" in tool.lower():
+            icon = "🎬"
+        elif "coding" in tool.lower():
+            icon = "💻"
         elif "reels" in tool.lower():
             icon = "📣"
-
         elif "football" in tool.lower():
             icon = "⚽"
 
-        activity_item(
+        activity_row(
             icon,
             tool,
-            f"Status: {status} | Provider: {provider} | Tokens: {tokens} | {created}",
+            f"Status: {status} · Tokens: {tokens} · {created}",
         )
 
 
-def recommendation_card(text):
-    st.info(text)
-
-
 def render_home():
-
     if not st.session_state.get("logged_in"):
         st.session_state.page = "auth"
         st.rerun()
@@ -98,186 +95,113 @@ def render_home():
 
     plan_data = PLANS.get(plan, PLANS["free"])
 
-    total_used = total_tokens_used(user)
-    jobs_success = successful_jobs_count(user)
-    jobs_failed = failed_jobs_count(user)
-    activity_score = workspace_activity_score(user)
-    latest_tool = latest_tool_used(user)
+    used_tokens = total_tokens_used(user)
+    jobs = successful_jobs_count(user)
+    failed = failed_jobs_count(user)
+    score = workspace_activity_score(user)
+    latest = latest_tool_used(user)
 
-    st.title("🚀 MaByte Mission Control")
-    st.caption("The AI Operating System for creators, analysts and modern teams.")
+    st.markdown("# Welcome back,")
+    st.markdown(f"# {user} ` {plan_data.get('label', plan)} `")
+    st.caption("Dein AI Operating System für maximale Performance.")
 
     st.write("")
 
-    c1, c2, c3, c4, c5 = st.columns(5)
-
-    with c1:
-        st.metric("👤 User", user)
-
-    with c2:
-        st.metric("💎 Plan", plan_data.get("label", plan))
-
-    with c3:
-        st.metric("🪙 Tokens", tokens)
-
-    with c4:
-        st.metric("⚡ Jobs", jobs_success)
-
-    with c5:
-        st.metric("🧠 Activity", f"{activity_score}/100")
-
-    st.divider()
-
-    left, right = st.columns([1.7, 1], gap="large")
-
-    with left:
-
-        st.subheader("⚡ Live AI Activity")
-
-        render_activity_feed(user)
-
-    with right:
-
-        with st.container(border=True):
-
-            st.subheader("🧠 Smart Recommendations")
-
-            recommendation_card(
-                "Turn your latest workflow into a Content Engine package."
-            )
-
-            recommendation_card(
-                "Generate short-form clips from your AI outputs."
-            )
-
-            recommendation_card(
-                "Use Developer OS to accelerate current coding tasks."
-            )
-
-            recommendation_card(
-                "Open Football Intelligence for tactical analysis."
-            )
-
-    st.divider()
-
-    k1, k2, k3, k4 = st.columns(4)
-
-    with k1:
-        with st.container(border=True):
-            st.metric("Total Tokens Used", total_used)
-
-    with k2:
-        with st.container(border=True):
-            st.metric("Successful Jobs", jobs_success)
-
-    with k3:
-        with st.container(border=True):
-            st.metric("Failed Jobs", jobs_failed)
-
-    with k4:
-        with st.container(border=True):
-            st.metric("Latest Workspace", latest_tool)
-
-    st.divider()
-
-    st.subheader("🧩 Workspaces")
-
-    a, b, c = st.columns(3)
+    a, b, c, d, e = st.columns(5)
 
     with a:
-        workspace_card(
-            "💬",
-            "AI Assistant",
-            "Central intelligence layer for planning, strategy and execution.",
-            "chat",
-        )
+        quick_card("💬", "AI Assistant", "chat")
 
     with b:
-        workspace_card(
-            "📣",
-            "Content Engine",
-            "Reels, captions, hooks and social AI workflows.",
-            "reels",
-        )
+        quick_card("📁", "Projects", "projects")
 
     with c:
-        workspace_card(
-            "💻",
-            "Developer OS",
-            "Coding, debugging and AI software acceleration.",
-            "coding",
-        )
-
-    d, e, f = st.columns(3)
+        quick_card("⚡", "Automations", "automation_lab")
 
     with d:
-        workspace_card(
-            "🎨",
-            "Creative Workspace",
-            "Images, prompts, branding and visual generation.",
-            "image",
-        )
+        quick_card("⚽", "Football AI", "football")
 
     with e:
-        workspace_card(
-            "🎬",
-            "Media Studio",
-            "Video prompting and cinematic AI workflows.",
-            "video",
-        )
-
-    with f:
-        workspace_card(
-            "⚽",
-            "Football Intelligence",
-            "Elite tactical analysis and automated sports content.",
-            "football",
-        )
-
-    g, h = st.columns(2)
-
-    with g:
-        workspace_card(
-            "🧪",
-            "Automation Lab",
-            "Agents, automations and intelligent workflows.",
-            "automation_lab",
-        )
-
-    with h:
-        workspace_card(
-            "📊",
-            "Account Command",
-            "Plans, billing, usage and premium management.",
-            "dashboard",
-        )
+        quick_card("🎬", "Media Tools", "video")
 
     st.divider()
 
-    x, y = st.columns([1.4, 1], gap="large")
+    s1, s2, s3, s4, s5 = st.columns(5)
 
-    with x:
+    with s1:
+        stat_card("👤", "User", user, "Active Account")
 
+    with s2:
+        stat_card("💎", "Plan", plan_data.get("label", plan), "Max Access")
+
+    with s3:
+        stat_card("🪙", "Tokens", f"{tokens:,}".replace(",", "."), "Verfügbar")
+
+    with s4:
+        stat_card("⚡", "Jobs", jobs, "Gesamt")
+
+    with s5:
+        stat_card("📈", "Activity", f"{score}/100", f"Latest: {latest}")
+
+    st.divider()
+
+    left, right = st.columns([1.15, 1], gap="large")
+
+    with left:
         with st.container(border=True):
+            st.subheader("⚡ Live AI Activity")
+            render_activity(user)
 
-            st.subheader("🛰️ Active AI Systems")
+            if st.button("Alle Aktivitäten anzeigen →", use_container_width=True):
+                open_page("dashboard")
 
-            st.success("AI Core connected")
-            st.success("Workspace Router online")
-            st.success("Mission Control synchronized")
-            st.success("Realtime Usage Tracking active")
-            st.success("Premium Engine connected")
-            st.success("Automation Queue operational")
-
-    with y:
-
+    with right:
         with st.container(border=True):
+            st.subheader("🧠 Smart Recommendations")
 
-            st.subheader("📡 System Status")
+            recommendation(
+                "Optimize Your Workflow",
+                "Erstelle Automationen für wiederkehrende Aufgaben und spare Zeit.",
+                "Automation erstellen",
+                "automation_lab",
+            )
 
-            st.write(f"UTC Time: {datetime.utcnow().strftime('%H:%M UTC')}")
-            st.write("AI Nodes: Operational")
-            st.write("Queue Status: Stable")
-            st.write("Sync Layer: Connected")
-            st.write("Activity Engine: Live")
-            st.write("Workspace State: Healthy")
+            recommendation(
+                "Upgrade auf Elite+",
+                "Mehr Tokens, mehr Power, mehr Möglichkeiten.",
+                "Premium öffnen",
+                "premium",
+            )
+
+            recommendation(
+                "Project Boost",
+                "Füge mehr Memory zu deinen Projekten hinzu für bessere AI Ergebnisse.",
+                "Projekt optimieren",
+                "projects",
+            )
+
+    st.divider()
+
+    with st.container(border=True):
+        st.subheader("💎 MaByte Elite")
+
+        c1, c2, c3, c4, c5 = st.columns(5)
+
+        with c1:
+            st.metric("Tokens", f"{tokens:,}".replace(",", "."))
+
+        with c2:
+            st.metric("Used", used_tokens)
+
+        with c3:
+            st.metric("Daily Limit", "100/100")
+
+        with c4:
+            st.metric("Failed", failed)
+
+        with c5:
+            st.metric("System", "Online")
+
+        st.success("Du nutzt den stärksten MaByte Plan. Bereit für große Workflows.")
+
+    st.caption(f"© {datetime.utcnow().year} MaByte AI Operating System")
