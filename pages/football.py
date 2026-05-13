@@ -1,151 +1,239 @@
 import streamlit as st
-from datetime import datetime
+from openai import OpenAI
+
+from config import OPENAI_API_KEY, OPENAI_TEXT_MODEL
+from database import (
+    save_project_memory,
+    get_project,
+)
+
+client = OpenAI(api_key=OPENAI_API_KEY)
 
 
-def render_metric(label, value):
-    with st.container(border=True):
-        st.metric(label, value)
+# =========================================================
+# HELPERS
+# =========================================================
+
+def active_project():
+
+    project_id = st.session_state.get("active_project_id")
+
+    if not project_id:
+        return None
+
+    return get_project(project_id)
 
 
-def insight_card(title, text, action=None):
-    with st.container(border=True):
-        st.markdown(f"### {title}")
-        st.caption(text)
+def generate_matchday_package(
+    club,
+    opponent,
+    platform,
+    tone,
+):
 
-        if action:
-            st.button(action, use_container_width=True, key=f"football_{title}")
+    if not OPENAI_API_KEY:
 
+        return f"""
+# Demo Matchday Package
+
+Club:
+{club}
+
+Opponent:
+{opponent}
+
+Platform:
+{platform}
+
+Tone:
+{tone}
+
+OPENAI_API_KEY fehlt aktuell.
+"""
+
+    prompt = f"""
+Erstelle ein komplettes virales Matchday Content Package.
+
+Club:
+{club}
+
+Gegner:
+{opponent}
+
+Plattform:
+{platform}
+
+Ton:
+{tone}
+
+Erstelle:
+
+1. Viral Hook
+2. Reel Script
+3. TikTok Caption
+4. X/Twitter Thread
+5. Thumbnail Prompt
+6. Hashtags
+7. CTA
+8. Posting Strategy
+
+Antworte hochwertig, kreativ und modern.
+"""
+
+    response = client.chat.completions.create(
+        model=OPENAI_TEXT_MODEL,
+        messages=[
+            {
+                "role": "system",
+                "content": """
+Du bist ein Elite Football Content Strategist.
+Du erstellst viralen modernen Social Media Football Content.
+Denke wie große Football Creator auf TikTok, Instagram und X.
+""",
+            },
+            {
+                "role": "user",
+                "content": prompt,
+            }
+        ],
+        temperature=0.9,
+    )
+
+    return response.choices[0].message.content
+
+
+# =========================================================
+# MAIN
+# =========================================================
 
 def render_football():
+
+    if not st.session_state.get("logged_in"):
+
+        st.session_state.page = "auth"
+        st.rerun()
+        return
+
     st.title("⚽ Football Intelligence")
-    st.caption("Elite Workspace für Match Analysis, Tactics, Scouting und Content Creation.")
 
-    c1, c2, c3, c4 = st.columns(4)
+    st.caption(
+        "AI Matchday Engine für viralen Football Content."
+    )
 
-    with c1:
-        render_metric("Match Engine", "Online")
+    project = active_project()
 
-    with c2:
-        render_metric("Reports", "0")
+    if project:
 
-    with c3:
-        render_metric("Clips Ready", "0")
+        st.success(
+            f"Aktives Projekt: {project.get('title')}"
+        )
 
-    with c4:
-        render_metric("AI Agents", "Idle")
+    else:
+
+        st.info(
+            "Kein aktives Projekt ausgewählt. Memory wird nicht gespeichert."
+        )
 
     st.divider()
 
-    left, right = st.columns([1.55, 1], gap="large")
+    left, right = st.columns(
+        [1, 1],
+        gap="large",
+    )
 
     with left:
-        with st.container(border=True):
-            st.subheader("🎯 Match Analysis Console")
 
-            match = st.text_input(
-                "Match",
-                placeholder="z.B. Arsenal vs Manchester City",
-            )
+        club = st.text_input(
+            "Club",
+            placeholder="Arsenal",
+        )
 
-            focus = st.selectbox(
-                "Analyse Fokus",
-                [
-                    "Tactical Breakdown",
-                    "Player Performance",
-                    "Scouting Report",
-                    "Content Package",
-                    "Match Preview",
-                    "Post Match Report",
-                ],
-            )
+        opponent = st.text_input(
+            "Opponent",
+            placeholder="Manchester City",
+        )
 
-            depth = st.selectbox(
-                "Analyse Tiefe",
-                [
-                    "Quick Insight",
-                    "Professional Report",
-                    "Elite Tactical Analysis",
-                ],
-            )
+        platform = st.selectbox(
+            "Platform",
+            [
+                "TikTok",
+                "Instagram",
+                "X/Twitter",
+                "YouTube Shorts",
+            ],
+        )
 
-            if st.button("⚽ Analyse starten", use_container_width=True):
-                if not match:
-                    st.warning("Bitte Match eingeben.")
-                else:
-                    st.success(f"Analyse vorbereitet: {match}")
-                    st.info("Live-Daten/API werden später verbunden. Aktuell wird der Workspace vorbereitet.")
+        tone = st.selectbox(
+            "Tone",
+            [
+                "Viral",
+                "Aggressive",
+                "Emotional",
+                "Funny",
+                "Professional",
+                "Tactical",
+            ],
+        )
+
+        generate = st.button(
+            "🚀 Generate Matchday Package",
+            use_container_width=True,
+        )
 
     with right:
-        with st.container(border=True):
-            st.subheader("🧠 AI Recommendations")
 
-            st.info("Generate tactical breakdown from this match.")
-            st.info("Turn analysis into TikTok/Reels package.")
-            st.info("Create scouting report for key players.")
-            st.info("Build YouTube breakdown script.")
+        st.markdown(
+            """
+### ⚡ Package Output
 
-    st.divider()
+Der AI Agent erstellt:
 
-    st.subheader("⚡ Cross-Workflow Intelligence")
-
-    a, b, c = st.columns(3)
-
-    with a:
-        insight_card(
-            "🎬 Content Engine",
-            "Convert match analysis into short-form content, captions and hooks.",
-            "Create Content Package",
-        )
-
-    with b:
-        insight_card(
-            "🧾 Scouting Layer",
-            "Generate player profiles, strengths, weaknesses and transfer fit.",
-            "Generate Scouting Report",
-        )
-
-    with c:
-        insight_card(
-            "📊 Tactical Layer",
-            "Create formations, pressing patterns, chance creation and risk zones.",
-            "Create Tactical Report",
+- Viral Hook
+- Reel Script
+- Caption
+- Twitter Thread
+- Thumbnail Prompt
+- Hashtags
+- CTA
+- Posting Strategy
+"""
         )
 
     st.divider()
 
-    st.subheader("🛰️ Football Agents")
+    if generate:
 
-    x, y = st.columns(2)
+        if not club or not opponent:
 
-    with x:
-        with st.container(border=True):
-            st.markdown("### 🤖 Football Content Agent")
-            st.caption("Analysiert Spiele und erstellt daraus Social Content.")
-            st.success("Status: Ready")
+            st.warning(
+                "Bitte Club und Gegner eingeben."
+            )
 
-            st.write("Output:")
-            st.write("• TikTok Hook")
-            st.write("• YouTube Short Script")
-            st.write("• Instagram Carousel")
-            st.write("• Twitter/X Thread")
+            return
 
-    with y:
-        with st.container(border=True):
-            st.markdown("### 📡 Match Intelligence Agent")
-            st.caption("Erkennt wichtige Match-Momente und taktische Muster.")
-            st.success("Status: Ready")
+        with st.spinner(
+            "MaByte generiert virales Matchday Package..."
+        ):
 
-            st.write("Signals:")
-            st.write("• Pressing Triggers")
-            st.write("• Chance Creation")
-            st.write("• Key Players")
-            st.write("• Tactical Shifts")
+            result = generate_matchday_package(
+                club,
+                opponent,
+                platform,
+                tone,
+            )
 
-    st.divider()
+        st.markdown(result)
 
-    with st.container(border=True):
-        st.subheader("📡 System Status")
-        st.write(f"Workspace Time: {datetime.utcnow().strftime('%H:%M UTC')}")
-        st.write("Football Data Layer: Prepared")
-        st.write("Content Engine Link: Ready")
-        st.write("Automation Pipeline: Ready")
+        if project:
+
+            save_project_memory(
+                project_id=project.get("id"),
+                username=st.session_state.get("user"),
+                workspace="football",
+                memory_type="matchday_package",
+                content=result[:5000],
+            )
+
+            st.success(
+                "Package in Projekt-Memory gespeichert."
+            )
