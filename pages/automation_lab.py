@@ -4,9 +4,10 @@ from database import (
     list_projects,
     create_automation,
     list_automations,
-    create_automation_run,
     list_automation_runs,
 )
+
+from agent_runner import run_automation
 
 
 def current_user():
@@ -28,7 +29,11 @@ def render_agent_card(icon, title, desc, agent_type):
         st.markdown(f"### {icon} {title}")
         st.caption(desc)
 
-        if st.button("Agent auswählen", key=f"agent_{agent_type}", use_container_width=True):
+        if st.button(
+            "Agent auswählen",
+            key=f"agent_{agent_type}",
+            use_container_width=True,
+        ):
             st.session_state.selected_agent_type = agent_type
             st.success(f"{title} ausgewählt")
 
@@ -47,15 +52,29 @@ def render_create_automation():
         project_label = st.selectbox("Projekt", list(options.keys()))
         project_id = options[project_label]
 
+        selected_agent = st.session_state.get(
+            "selected_agent_type",
+            "football_content_agent",
+        )
+
+        agent_options = [
+            "football_content_agent",
+            "content_repurpose_agent",
+            "developer_report_agent",
+            "creative_asset_agent",
+            "social_posting_agent",
+        ]
+
+        default_index = (
+            agent_options.index(selected_agent)
+            if selected_agent in agent_options
+            else 0
+        )
+
         automation_type = st.selectbox(
             "Agent Type",
-            [
-                "football_content_agent",
-                "content_repurpose_agent",
-                "developer_report_agent",
-                "creative_asset_agent",
-                "social_posting_agent",
-            ],
+            agent_options,
+            index=default_index,
             format_func=lambda x: x.replace("_", " ").title(),
         )
 
@@ -85,12 +104,19 @@ def render_create_automation():
         trigger = st.text_area(
             "Trigger / Instruction",
             height=140,
-            placeholder="Wenn eine Match Analyse fertig ist, erstelle daraus TikTok Hook, Reel Script, Caption und Posting Plan.",
+            placeholder=(
+                "Wenn eine Match Analyse fertig ist, erstelle daraus TikTok Hook, "
+                "Reel Script, Caption und Posting Plan."
+            ),
         )
 
         if st.button("🚀 Automation erstellen", use_container_width=True):
             if not name or not trigger:
                 st.warning("Bitte Name und Trigger ausfüllen.")
+                return
+
+            if project_id == 0:
+                st.warning("Bitte ein Projekt auswählen.")
                 return
 
             automation_id = create_automation(
@@ -119,7 +145,9 @@ def render_automations():
     for item in automations:
         with st.container(border=True):
             st.markdown(f"### ⚡ {item.get('name')}")
-            st.caption(f"{item.get('source_workspace')} → {item.get('target_workspace')}")
+            st.caption(
+                f"{item.get('source_workspace')} → {item.get('target_workspace')}"
+            )
             st.write(item.get("trigger_text", ""))
 
             c1, c2, c3 = st.columns(3)
@@ -131,15 +159,21 @@ def render_automations():
                 st.write(f"Status: {item.get('status')}")
 
             with c3:
-                if st.button("▶️ Test Run", key=f"run_{item.get('id')}", use_container_width=True):
-                    run_id = create_automation_run(
-                        automation_id=item.get("id"),
-                        username=current_user(),
-                        status="success",
-                        result="Demo run completed. Real agent execution wird später verbunden.",
-                    )
+                if st.button(
+                    "▶️ Agent starten",
+                    key=f"run_{item.get('id')}",
+                    use_container_width=True,
+                ):
+                    with st.spinner("Agent läuft..."):
+                        result = run_automation(item)
 
-                    st.success(f"Run erstellt: #{run_id}")
+                    if result.get("success"):
+                        st.success(
+                            f"Agent Run abgeschlossen: #{result.get('run_id')}"
+                        )
+                    else:
+                        st.error(result.get("result"))
+
                     st.rerun()
 
 
