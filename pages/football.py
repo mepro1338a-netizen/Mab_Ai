@@ -1,3 +1,4 @@
+import io
 import re
 import streamlit as st
 from openai import OpenAI
@@ -152,6 +153,24 @@ def split_sections(result):
     return sections
 
 
+def safe_filename(title):
+    return (
+        title.lower()
+        .replace(" ", "_")
+        .replace("🎣", "hook")
+        .replace("🎬", "reel")
+        .replace("📝", "caption")
+        .replace("🧵", "thread")
+        .replace("🖼️", "thumbnail")
+        .replace("#️⃣", "hashtags")
+        .replace("📢", "cta")
+        .replace("📈", "strategy")
+        .replace("/", "_")
+        .replace("\\", "_")
+        .replace(":", "")
+    )
+
+
 def render_package_tabs(result):
     sections = split_sections(result)
     tabs = st.tabs(list(sections.keys()))
@@ -164,30 +183,32 @@ def render_package_tabs(result):
                 content = "Kein Inhalt generiert."
 
             st.markdown(content)
-
             st.divider()
-
             st.code(content)
-
-            safe_name = (
-                title.replace(" ", "_")
-                .replace("🎣", "hook")
-                .replace("🎬", "reel")
-                .replace("📝", "caption")
-                .replace("🧵", "thread")
-                .replace("🖼️", "thumbnail")
-                .replace("#️⃣", "hashtags")
-                .replace("📢", "cta")
-                .replace("📈", "strategy")
-            )
 
             st.download_button(
                 f"⬇️ Download {title}",
                 data=content.encode("utf-8"),
-                file_name=f"mabyte_{safe_name}.txt",
+                file_name=f"mabyte_{safe_filename(title)}.txt",
                 mime="text/plain",
                 use_container_width=True,
             )
+
+
+def render_full_export(result):
+    st.subheader("📦 Full Package Export")
+
+    export_data = io.BytesIO()
+    export_data.write(result.encode("utf-8"))
+    export_data.seek(0)
+
+    st.download_button(
+        "⬇️ Download Full Matchday Package",
+        data=export_data,
+        file_name="mabyte_matchday_package.txt",
+        mime="text/plain",
+        use_container_width=True,
+    )
 
 
 def render_football():
@@ -241,6 +262,7 @@ def render_football():
             st.write("✅ Hashtags")
             st.write("✅ CTA")
             st.write("✅ Posting Strategy")
+            st.write("✅ Full Package Export")
 
     st.divider()
 
@@ -258,7 +280,12 @@ def render_football():
             )
 
         st.subheader("🚀 Matchday Package")
+
         render_package_tabs(result)
+
+        st.divider()
+
+        render_full_export(result)
 
         st.divider()
 
