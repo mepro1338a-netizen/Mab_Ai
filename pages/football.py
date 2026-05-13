@@ -17,9 +17,7 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 # =========================================================
 
 def analyze_viral_score(content):
-
     if not OPENAI_API_KEY:
-
         return {
             "score": 82,
             "feedback": """
@@ -63,20 +61,14 @@ FEEDBACK:
     )
 
     text = response.choices[0].message.content
-
     score = 75
 
-    match = re.search(
-        r"SCORE:\s*(\d+)",
-        text,
-    )
+    match = re.search(r"SCORE:\s*(\d+)", text)
 
     if match:
         score = int(match.group(1))
 
-    feedback = text.split(
-        "FEEDBACK:"
-    )[-1].strip()
+    feedback = text.split("FEEDBACK:")[-1].strip()
 
     return {
         "score": score,
@@ -89,7 +81,6 @@ FEEDBACK:
 # =========================================================
 
 def improve_package(original_content):
-
     if not OPENAI_API_KEY:
         return original_content + "\n\n[Improved Version Demo]"
 
@@ -125,14 +116,91 @@ Mache den Content aggressiver, moderner und creator-orientierter.
 
 
 # =========================================================
+# THUMBNAIL ENGINE
+# =========================================================
+
+def generate_thumbnail_system(club, opponent):
+    if not OPENAI_API_KEY:
+        return f"""
+## YouTube Thumbnail
+Ultra emotional football thumbnail of {club} vs {opponent}, cinematic stadium lights, dramatic facial expressions, high contrast, viral sports YouTube thumbnail, intense atmosphere, red and blue lighting, shocked fans, modern football media style
+
+## TikTok Cover
+Vertical football cover art for {club} vs {opponent}, modern typography, aggressive emotions, high saturation, creator-style football graphics
+
+## Instagram Cover
+Modern football reel cover with dynamic action pose, clean bold text, elite football creator aesthetic
+
+## Text Overlay Ideas
+- THIS MATCH CHANGES EVERYTHING
+- THEY ARE FINISHED
+- THE BIGGEST MATCH YET
+
+## Negative Prompt
+low quality, blurry, ugly face, distorted anatomy, bad typography, watermark, low contrast
+"""
+
+    prompt = f"""
+Erstelle ein Football Thumbnail System für:
+
+Club:
+{club}
+
+Gegner:
+{opponent}
+
+Erstelle:
+
+## YouTube Thumbnail
+
+## TikTok Cover
+
+## Instagram Cover
+
+## Text Overlay Ideas
+
+## Negative Prompt
+
+Sehr modern, viral und creator-orientiert.
+"""
+
+    response = client.chat.completions.create(
+        model=OPENAI_TEXT_MODEL,
+        messages=[
+            {
+                "role": "system",
+                "content": """
+Du bist ein Elite Sports Thumbnail Designer.
+
+Du erstellst:
+- virale Thumbnail Prompts
+- CTR optimierte Cover
+- moderne Creator Designs
+- aggressive Football Visuals
+
+Denke wie:
+- große YouTube Football Creator
+- TikTok Sports Creators
+- moderne Sports Media Brands
+"""
+            },
+            {
+                "role": "user",
+                "content": prompt,
+            }
+        ],
+        temperature=0.95,
+    )
+
+    return response.choices[0].message.content
+
+
+# =========================================================
 # HELPERS
 # =========================================================
 
 def active_project():
-
-    project_id = st.session_state.get(
-        "active_project_id"
-    )
+    project_id = st.session_state.get("active_project_id")
 
     if not project_id:
         return None
@@ -144,15 +212,8 @@ def active_project():
 # AI GENERATION
 # =========================================================
 
-def generate_matchday_package(
-    club,
-    opponent,
-    platform,
-    tone,
-):
-
+def generate_matchday_package(club, opponent, platform, tone):
     if not OPENAI_API_KEY:
-
         return f"""
 ## TikTok Hook
 Demo Hook für {club} gegen {opponent}
@@ -263,7 +324,6 @@ Denke wie:
 # =========================================================
 
 def split_sections(result):
-
     section_map = {
         "tiktok hook": "🎣 TikTok Hook",
         "tiktok caption": "📱 TikTok Caption",
@@ -294,28 +354,18 @@ def split_sections(result):
     current = None
 
     for line in result.splitlines():
-
         clean = line.strip()
-
         lower = clean.lower()
-
-        lower = re.sub(
-            r"^[#\-\d\.\)\s]+",
-            "",
-            lower,
-        ).strip()
+        lower = re.sub(r"^[#\-\d\.\)\s]+", "", lower).strip()
 
         matched = None
 
         for key, title in section_map.items():
-
             if lower.startswith(key):
-
                 matched = title
                 break
 
         if matched:
-
             current = matched
             continue
 
@@ -338,7 +388,6 @@ def split_sections(result):
 # =========================================================
 
 def safe_filename(title):
-
     return (
         title.lower()
         .replace(" ", "_")
@@ -353,27 +402,16 @@ def safe_filename(title):
 # =========================================================
 
 def render_package_tabs(result):
-
     sections = split_sections(result)
 
-    tabs = st.tabs(
-        list(sections.keys())
-    )
+    tabs = st.tabs(list(sections.keys()))
 
-    for i, title in enumerate(
-        sections.keys()
-    ):
-
+    for i, title in enumerate(sections.keys()):
         with tabs[i]:
-
-            content = sections[
-                title
-            ].strip()
+            content = sections[title].strip()
 
             if not content:
-                content = (
-                    "Kein Inhalt generiert."
-                )
+                content = "Kein Inhalt generiert."
 
             st.markdown(content)
 
@@ -383,9 +421,7 @@ def render_package_tabs(result):
 
             st.download_button(
                 f"⬇️ Download {title}",
-                data=content.encode(
-                    "utf-8"
-                ),
+                data=content.encode("utf-8"),
                 file_name=f"mabyte_{safe_filename(title)}.txt",
                 mime="text/plain",
                 use_container_width=True,
@@ -396,24 +432,17 @@ def render_package_tabs(result):
 # FULL EXPORT
 # =========================================================
 
-def render_full_export(result):
-
-    st.subheader(
-        "📦 Full Package Export"
-    )
+def render_full_export(result, filename="mabyte_matchday_package.txt"):
+    st.subheader("📦 Full Package Export")
 
     export_data = io.BytesIO()
-
-    export_data.write(
-        result.encode("utf-8")
-    )
-
+    export_data.write(result.encode("utf-8"))
     export_data.seek(0)
 
     st.download_button(
-        "⬇️ Download Full Matchday Package",
+        "⬇️ Download Full Package",
         data=export_data,
-        file_name="mabyte_matchday_package.txt",
+        file_name=filename,
         mime="text/plain",
         use_container_width=True,
     )
@@ -424,20 +453,12 @@ def render_full_export(result):
 # =========================================================
 
 def render_football():
-
-    if not st.session_state.get(
-        "logged_in"
-    ):
-
+    if not st.session_state.get("logged_in"):
         st.session_state.page = "auth"
-
         st.rerun()
-
         return
 
-    st.title(
-        "⚽ Football Intelligence"
-    )
+    st.title("⚽ Football Intelligence")
 
     st.caption(
         "Multi Platform AI Matchday Engine für viralen Football Content."
@@ -446,67 +467,34 @@ def render_football():
     project = active_project()
 
     if project:
-
-        st.success(
-            f"Aktives Projekt: {project.get('title')}"
-        )
-
+        st.success(f"Aktives Projekt: {project.get('title')}")
     else:
-
-        st.info(
-            "Kein aktives Projekt ausgewählt. Memory wird nicht gespeichert."
-        )
+        st.info("Kein aktives Projekt ausgewählt. Memory wird nicht gespeichert.")
 
     st.divider()
 
     top1, top2, top3, top4 = st.columns(4)
 
     with top1:
-
-        st.metric(
-            "Platforms",
-            "4",
-        )
+        st.metric("Platforms", "4")
 
     with top2:
-
-        st.metric(
-            "Content Types",
-            "10",
-        )
+        st.metric("Content Types", "10+")
 
     with top3:
-
-        st.metric(
-            "AI Pipeline",
-            "Active",
-        )
+        st.metric("AI Pipeline", "Active")
 
     with top4:
-
-        st.metric(
-            "Export Engine",
-            "Online",
-        )
+        st.metric("Export Engine", "Online")
 
     st.divider()
 
-    left, right = st.columns(
-        [1, 1],
-        gap="large",
-    )
+    left, right = st.columns([1, 1], gap="large")
 
     with left:
+        club = st.text_input("Club", placeholder="Arsenal")
 
-        club = st.text_input(
-            "Club",
-            placeholder="Arsenal",
-        )
-
-        opponent = st.text_input(
-            "Opponent",
-            placeholder="Manchester City",
-        )
+        opponent = st.text_input("Opponent", placeholder="Manchester City")
 
         platform = st.selectbox(
             "Primary Platform",
@@ -536,81 +524,30 @@ def render_football():
         )
 
     with right:
-
         with st.container(border=True):
-
-            st.markdown(
-                "### ⚡ Generated Content"
-            )
-
-            st.write(
-                "✅ TikTok Hook"
-            )
-
-            st.write(
-                "✅ TikTok Caption"
-            )
-
-            st.write(
-                "✅ Instagram Caption"
-            )
-
-            st.write(
-                "✅ Twitter Thread"
-            )
-
-            st.write(
-                "✅ YouTube Title"
-            )
-
-            st.write(
-                "✅ YouTube Description"
-            )
-
-            st.write(
-                "✅ Thumbnail Prompt"
-            )
-
-            st.write(
-                "✅ Hashtags"
-            )
-
-            st.write(
-                "✅ CTA"
-            )
-
-            st.write(
-                "✅ Posting Strategy"
-            )
-
-            st.write(
-                "✅ Viral Intelligence"
-            )
-
-            st.write(
-                "✅ AI Optimization"
-            )
-
-            st.write(
-                "✅ Export System"
-            )
+            st.markdown("### ⚡ Generated Content")
+            st.write("✅ TikTok Hook")
+            st.write("✅ TikTok Caption")
+            st.write("✅ Instagram Caption")
+            st.write("✅ Twitter Thread")
+            st.write("✅ YouTube Title")
+            st.write("✅ YouTube Description")
+            st.write("✅ Thumbnail Intelligence")
+            st.write("✅ Hashtags")
+            st.write("✅ CTA")
+            st.write("✅ Posting Strategy")
+            st.write("✅ Viral Intelligence")
+            st.write("✅ AI Optimization")
+            st.write("✅ Export System")
 
     st.divider()
 
     if generate:
-
         if not club or not opponent:
-
-            st.warning(
-                "Bitte Club und Gegner eingeben."
-            )
-
+            st.warning("Bitte Club und Gegner eingeben.")
             return
 
-        with st.spinner(
-            "MaByte generiert Multi Platform Matchday Package..."
-        ):
-
+        with st.spinner("MaByte generiert Multi Platform Matchday Package..."):
             result = generate_matchday_package(
                 club,
                 opponent,
@@ -618,57 +555,63 @@ def render_football():
                 tone,
             )
 
-        st.subheader(
-            "🚀 Matchday Content Package"
-        )
+        st.subheader("🚀 Matchday Content Package")
 
         render_package_tabs(result)
 
         st.divider()
 
-        render_full_export(result)
+        render_full_export(
+            result,
+            filename="mabyte_matchday_package.txt",
+        )
 
         st.divider()
 
-        with st.spinner(
-            "Analysiere Viral Potential..."
-        ):
-
-            analysis = analyze_viral_score(
-                result
+        with st.spinner("Generiere Thumbnail System..."):
+            thumbnails = generate_thumbnail_system(
+                club,
+                opponent,
             )
 
-        score = analysis.get(
-            "score",
-            0,
+        st.subheader("🖼️ Thumbnail Intelligence")
+
+        st.markdown(thumbnails)
+
+        st.download_button(
+            "⬇️ Download Thumbnail System",
+            data=thumbnails.encode("utf-8"),
+            file_name="mabyte_thumbnail_system.txt",
+            mime="text/plain",
+            use_container_width=True,
         )
 
-        feedback = analysis.get(
-            "feedback",
-            "",
-        )
+        if project:
+            save_project_memory(
+                project_id=project.get("id"),
+                username=st.session_state.get("user"),
+                workspace="football",
+                memory_type="thumbnail_system",
+                content=thumbnails[:5000],
+            )
 
-        st.subheader(
-            "🔥 Viral Intelligence"
-        )
+        st.divider()
 
-        c1, c2 = st.columns(
-            [1, 2]
-        )
+        with st.spinner("Analysiere Viral Potential..."):
+            analysis = analyze_viral_score(result)
+
+        score = analysis.get("score", 0)
+        feedback = analysis.get("feedback", "")
+
+        st.subheader("🔥 Viral Intelligence")
+
+        c1, c2 = st.columns([1, 2])
 
         with c1:
-
-            st.metric(
-                "Viral Score",
-                f"{score}/100",
-            )
-
-            st.progress(
-                min(score, 100) / 100
-            )
+            st.metric("Viral Score", f"{score}/100")
+            st.progress(min(score, 100) / 100)
 
         with c2:
-
             st.markdown(feedback)
 
         st.divider()
@@ -679,65 +622,43 @@ def render_football():
         )
 
         if improve:
+            with st.spinner("MaByte optimiert Viralität..."):
+                improved = improve_package(result)
 
-            with st.spinner(
-                "MaByte optimiert Viralität..."
-            ):
+            st.subheader("🚀 Optimized Package")
 
-                improved = improve_package(
-                    result
-                )
-
-            st.subheader(
-                "🚀 Optimized Package"
-            )
-
-            render_package_tabs(
-                improved
-            )
+            render_package_tabs(improved)
 
             st.divider()
 
             render_full_export(
-                improved
+                improved,
+                filename="mabyte_optimized_matchday_package.txt",
             )
 
             if project:
-
                 save_project_memory(
                     project_id=project.get("id"),
-                    username=st.session_state.get(
-                        "user"
-                    ),
+                    username=st.session_state.get("user"),
                     workspace="football",
                     memory_type="optimized_package",
                     content=improved[:5000],
                 )
 
-                st.success(
-                    "Optimized Package gespeichert."
-                )
+                st.success("Optimized Package gespeichert.")
 
         st.divider()
 
-        with st.expander(
-            "Raw Output anzeigen"
-        ):
-
+        with st.expander("Raw Output anzeigen"):
             st.markdown(result)
 
         if project:
-
             save_project_memory(
                 project_id=project.get("id"),
-                username=st.session_state.get(
-                    "user"
-                ),
+                username=st.session_state.get("user"),
                 workspace="football",
                 memory_type="multi_platform_package",
                 content=result[:5000],
             )
 
-            st.success(
-                "Package in Projekt-Memory gespeichert."
-            )
+            st.success("Package in Projekt-Memory gespeichert.")
