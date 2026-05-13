@@ -1476,6 +1476,41 @@ def list_global_memory(username, limit=100):
 
     return rows_to_dicts(rows)
 
+# =========================================================
+# SMART MEMORY SEARCH
+# =========================================================
+
+def search_global_memory(
+    username,
+    query,
+    limit=10,
+):
+
+    ensure_global_memory_tables()
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    q = f"%{(query or '').lower()}%"
+
+    cur.execute("""
+    SELECT * FROM global_memory
+    WHERE username = ?
+    AND LOWER(content) LIKE ?
+    ORDER BY importance DESC, id DESC
+    LIMIT ?
+    """, (
+        (username or "").strip().lower(),
+        q,
+        int(limit),
+    ))
+
+    rows = cur.fetchall()
+
+    conn.close()
+
+    return rows_to_dicts(rows)
+
 init_db()
 
 user = get_user("mepro1337")
