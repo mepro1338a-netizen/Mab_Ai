@@ -116,3 +116,12 @@ def list_jobs(username=None, limit=100):
     conn.close()
 
     return rows_to_dicts(rows)
+
+def list_user_jobs(username, limit=50):
+
+    jobs = list_jobs(
+        username=username,
+        limit=limit,
+    )
+
+    return jobs
