@@ -1396,6 +1396,85 @@ def list_automation_runs(username=None, limit=100):
     conn.close()
 
     return rows_to_dicts(rows)
+# =========================================================
+# GLOBAL MEMORY ENGINE
+# =========================================================
+
+def ensure_global_memory_tables():
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS global_memory (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT,
+        memory_type TEXT,
+        content TEXT,
+        importance INTEGER DEFAULT 1,
+        created_at TEXT
+    )
+    """)
+
+    conn.commit()
+    conn.close()
+
+
+def save_global_memory(
+    username,
+    memory_type,
+    content,
+    importance=1,
+):
+
+    ensure_global_memory_tables()
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+    INSERT INTO global_memory (
+        username,
+        memory_type,
+        content,
+        importance,
+        created_at
+    )
+    VALUES (?, ?, ?, ?, ?)
+    """, (
+        (username or "").strip().lower(),
+        memory_type,
+        content,
+        int(importance),
+        now(),
+    ))
+
+    conn.commit()
+    conn.close()
+
+
+def list_global_memory(username, limit=100):
+
+    ensure_global_memory_tables()
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+    SELECT * FROM global_memory
+    WHERE username = ?
+    ORDER BY importance DESC, id DESC
+    LIMIT ?
+    """, (
+        (username or "").strip().lower(),
+        int(limit),
+    ))
+
+    rows = cur.fetchall()
+
+    conn.close()
+
+    return rows_to_dicts(rows)
 
 init_db()
 
