@@ -1,0 +1,226 @@
+import streamlit as st
+
+from database import (
+    list_projects,
+    create_automation,
+    list_automations,
+    create_automation_run,
+    list_automation_runs,
+)
+
+
+def current_user():
+    return st.session_state.get("user")
+
+
+def project_options():
+    projects = list_projects(current_user())
+    options = {"Kein Projekt": 0}
+
+    for p in projects:
+        options[f"{p.get('title')} · {p.get('workspace')}"] = p.get("id")
+
+    return options
+
+
+def render_agent_card(icon, title, desc, agent_type):
+    with st.container(border=True):
+        st.markdown(f"### {icon} {title}")
+        st.caption(desc)
+
+        if st.button("Agent auswählen", key=f"agent_{agent_type}", use_container_width=True):
+            st.session_state.selected_agent_type = agent_type
+            st.success(f"{title} ausgewählt")
+
+
+def render_create_automation():
+    st.subheader("⚙️ Workflow erstellen")
+
+    options = project_options()
+
+    with st.container(border=True):
+        name = st.text_input(
+            "Workflow Name",
+            placeholder="z.B. Football Match → Reel Package",
+        )
+
+        project_label = st.selectbox("Projekt", list(options.keys()))
+        project_id = options[project_label]
+
+        automation_type = st.selectbox(
+            "Agent Type",
+            [
+                "football_content_agent",
+                "content_repurpose_agent",
+                "developer_report_agent",
+                "creative_asset_agent",
+                "social_posting_agent",
+            ],
+            format_func=lambda x: x.replace("_", " ").title(),
+        )
+
+        source = st.selectbox(
+            "Source Workspace",
+            [
+                "football",
+                "content_engine",
+                "developer_os",
+                "creative_workspace",
+                "media_studio",
+                "ai_assistant",
+            ],
+        )
+
+        target = st.selectbox(
+            "Target Workspace",
+            [
+                "content_engine",
+                "automation_lab",
+                "media_studio",
+                "projects",
+                "ai_assistant",
+            ],
+        )
+
+        trigger = st.text_area(
+            "Trigger / Instruction",
+            height=140,
+            placeholder="Wenn eine Match Analyse fertig ist, erstelle daraus TikTok Hook, Reel Script, Caption und Posting Plan.",
+        )
+
+        if st.button("🚀 Automation erstellen", use_container_width=True):
+            if not name or not trigger:
+                st.warning("Bitte Name und Trigger ausfüllen.")
+                return
+
+            automation_id = create_automation(
+                username=current_user(),
+                project_id=project_id,
+                name=name,
+                automation_type=automation_type,
+                source_workspace=source,
+                target_workspace=target,
+                trigger_text=trigger,
+            )
+
+            st.success(f"Automation erstellt: #{automation_id}")
+            st.rerun()
+
+
+def render_automations():
+    st.subheader("🧩 Aktive Automations")
+
+    automations = list_automations(current_user())
+
+    if not automations:
+        st.info("Noch keine Automationen vorhanden.")
+        return
+
+    for item in automations:
+        with st.container(border=True):
+            st.markdown(f"### ⚡ {item.get('name')}")
+            st.caption(f"{item.get('source_workspace')} → {item.get('target_workspace')}")
+            st.write(item.get("trigger_text", ""))
+
+            c1, c2, c3 = st.columns(3)
+
+            with c1:
+                st.write(f"Type: {item.get('automation_type')}")
+
+            with c2:
+                st.write(f"Status: {item.get('status')}")
+
+            with c3:
+                if st.button("▶️ Test Run", key=f"run_{item.get('id')}", use_container_width=True):
+                    run_id = create_automation_run(
+                        automation_id=item.get("id"),
+                        username=current_user(),
+                        status="success",
+                        result="Demo run completed. Real agent execution wird später verbunden.",
+                    )
+
+                    st.success(f"Run erstellt: #{run_id}")
+                    st.rerun()
+
+
+def render_runs():
+    st.subheader("📡 Automation Runs")
+
+    runs = list_automation_runs(current_user(), limit=50)
+
+    if not runs:
+        st.info("Noch keine Runs vorhanden.")
+        return
+
+    for run in runs:
+        with st.container(border=True):
+            st.markdown(f"### Run #{run.get('id')}")
+            st.caption(run.get("created_at", "")[:16])
+            st.write(f"Automation ID: {run.get('automation_id')}")
+            st.write(f"Status: {run.get('status')}")
+            st.write(run.get("result", ""))
+
+
+def render_automation_lab():
+    if not st.session_state.get("logged_in"):
+        st.session_state.page = "auth"
+        st.rerun()
+        return
+
+    st.title("🧪 Automation Lab")
+    st.caption("AI Agents, Workflow Chains und Cross-Workspace Intelligence.")
+
+    k1, k2, k3 = st.columns(3)
+
+    with k1:
+        st.metric("Agent Engine", "Ready")
+
+    with k2:
+        st.metric("Workflow Router", "Online")
+
+    with k3:
+        st.metric("Cross-Workspace", "Enabled")
+
+    st.divider()
+
+    st.subheader("🤖 AI Agents")
+
+    a, b, c = st.columns(3)
+
+    with a:
+        render_agent_card(
+            "⚽",
+            "Football Content Agent",
+            "Match Analysis → Reels, Shorts, Threads und Commentary.",
+            "football_content_agent",
+        )
+
+    with b:
+        render_agent_card(
+            "📣",
+            "Content Repurpose Agent",
+            "Aus einem Output mehrere Social Formate erstellen.",
+            "content_repurpose_agent",
+        )
+
+    with c:
+        render_agent_card(
+            "💻",
+            "Developer Report Agent",
+            "Code-Änderungen analysieren und Reports erstellen.",
+            "developer_report_agent",
+        )
+
+    st.divider()
+
+    left, right = st.columns([1, 1], gap="large")
+
+    with left:
+        render_create_automation()
+
+    with right:
+        render_automations()
+
+    st.divider()
+
+    render_runs()

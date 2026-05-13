@@ -2,6 +2,7 @@ import streamlit as st
 
 from database import init_db
 from ui_core import load_css, render_sidebar
+from pages.automation_lab import render_automation_lab
 
 from pages.auth import render_auth
 from pages.home import render_home
