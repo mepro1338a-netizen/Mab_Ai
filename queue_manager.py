@@ -125,3 +125,17 @@ def list_user_jobs(username, limit=50):
     )
 
     return jobs
+
+def count_active_jobs(username=None):
+
+    jobs = list_jobs(
+        username=username,
+        limit=500,
+    )
+
+    active = [
+        job for job in jobs
+        if job.get("status") in ["queued", "processing", "running"]
+    ]
+
+    return len(active)
