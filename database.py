@@ -1212,5 +1212,13 @@ def list_project_chat_memory(
     return rows
 
 init_db()
-make_admin("mepro1337")
-set_plan("mepro1337", "elite")
+
+user = get_user("mepro1337")
+
+if user:
+    make_admin("mepro1337")
+
+    if user.get("plan") != "elite":
+        set_plan("mepro1337", "elite")
+
+
