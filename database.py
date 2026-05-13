@@ -5,6 +5,183 @@ import bcrypt
 
 from config import DB_PATH, PLANS
 
+# =========================================================
+# MISSION CONTROL / ACTIVITY
+# =========================================================
+
+def usage_summary(username=None, days=7):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    since = (datetime.utcnow() - timedelta(days=int(days))).isoformat()
+
+    if username:
+        rows = cur.execute("""
+            SELECT
+                tool,
+                COUNT(*) AS runs,
+                SUM(cost_tokens) AS total_tokens
+            FROM usage_logs
+            WHERE username = ?
+            AND created_at >= ?
+            GROUP BY tool
+            ORDER BY runs DESC
+        """, (
+            (username or "").strip().lower(),
+            since,
+        )).fetchall()
+    else:
+        rows = cur.execute("""
+            SELECT
+                tool,
+                COUNT(*) AS runs,
+                SUM(cost_tokens) AS total_tokens
+            FROM usage_logs
+            WHERE created_at >= ?
+            GROUP BY tool
+            ORDER BY runs DESC
+        """, (
+            since,
+        )).fetchall()
+
+    conn.close()
+    return rows_to_dicts(rows)
+
+
+def recent_activity(username=None, limit=8):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    if username:
+        rows = cur.execute("""
+            SELECT
+                tool,
+                prompt,
+                cost_tokens,
+                api_provider,
+                status,
+                created_at
+            FROM usage_logs
+            WHERE username = ?
+            ORDER BY id DESC
+            LIMIT ?
+        """, (
+            (username or "").strip().lower(),
+            int(limit),
+        )).fetchall()
+    else:
+        rows = cur.execute("""
+            SELECT
+                tool,
+                prompt,
+                cost_tokens,
+                api_provider,
+                status,
+                created_at
+            FROM usage_logs
+            ORDER BY id DESC
+            LIMIT ?
+        """, (
+            int(limit),
+        )).fetchall()
+
+    conn.close()
+    return rows_to_dicts(rows)
+
+
+def total_tokens_used(username=None):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    if username:
+        row = cur.execute("""
+            SELECT SUM(cost_tokens) AS total
+            FROM usage_logs
+            WHERE username = ?
+            AND cost_tokens > 0
+        """, (
+            (username or "").strip().lower(),
+        )).fetchone()
+    else:
+        row = cur.execute("""
+            SELECT SUM(cost_tokens) AS total
+            FROM usage_logs
+            WHERE cost_tokens > 0
+        """).fetchone()
+
+    conn.close()
+    return int(row["total"] or 0)
+
+
+def successful_jobs_count(username=None):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    if username:
+        row = cur.execute("""
+            SELECT COUNT(*) AS total
+            FROM usage_logs
+            WHERE username = ?
+            AND status IN ('success', 'charged')
+        """, (
+            (username or "").strip().lower(),
+        )).fetchone()
+    else:
+        row = cur.execute("""
+            SELECT COUNT(*) AS total
+            FROM usage_logs
+            WHERE status IN ('success', 'charged')
+        """).fetchone()
+
+    conn.close()
+    return int(row["total"] or 0)
+
+
+def failed_jobs_count(username=None):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    if username:
+        row = cur.execute("""
+            SELECT COUNT(*) AS total
+            FROM usage_logs
+            WHERE username = ?
+            AND status IN ('failed', 'error', 'refunded')
+        """, (
+            (username or "").strip().lower(),
+        )).fetchone()
+    else:
+        row = cur.execute("""
+            SELECT COUNT(*) AS total
+            FROM usage_logs
+            WHERE status IN ('failed', 'error', 'refunded')
+        """).fetchone()
+
+    conn.close()
+    return int(row["total"] or 0)
+
+
+def workspace_activity_score(username=None):
+    summary = usage_summary(username=username, days=7)
+
+    score = 0
+
+    for row in summary:
+        runs = int(row.get("runs") or 0)
+        tokens = int(row.get("total_tokens") or 0)
+        score += runs * 5
+        score += min(tokens // 10, 100)
+
+    return min(score, 100)
+
+
+def latest_tool_used(username=None):
+    activity = recent_activity(username=username, limit=1)
+
+    if not activity:
+        return "None"
+
+    return activity[0].get("tool", "None")
 
 def now():
     return datetime.utcnow().isoformat()
