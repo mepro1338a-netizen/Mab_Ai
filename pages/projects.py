@@ -1,5 +1,4 @@
 import streamlit as st
-import pandas as pd
 
 from database import (
     create_project,
@@ -10,12 +9,13 @@ from database import (
 )
 
 
-# =========================================================
-# HELPERS
-# =========================================================
-
 def current_user():
     return st.session_state.get("user")
+
+
+def open_page(page):
+    st.session_state.page = page
+    st.rerun()
 
 
 def open_project(project_id):
@@ -23,29 +23,37 @@ def open_project(project_id):
     st.rerun()
 
 
-# =========================================================
-# CREATE PROJECT
-# =========================================================
+def workspace_label(workspace):
+    labels = {
+        "general": "🛰️ General",
+        "football": "⚽ Football Intelligence",
+        "content_engine": "📣 Content Engine",
+        "developer_os": "💻 Developer OS",
+        "creative_workspace": "🎨 Creative Workspace",
+        "media_studio": "🎬 Media Studio",
+        "automation_lab": "🧪 Automation Lab",
+    }
+
+    return labels.get(workspace, workspace)
+
 
 def render_create_project():
-
-    st.subheader("🚀 Create New Project")
+    st.subheader("🚀 Neues Projekt")
 
     with st.container(border=True):
-
         title = st.text_input(
-            "Project Name",
-            placeholder="e.g. Arsenal Content Campaign",
+            "Projektname",
+            placeholder="z.B. Arsenal Content Campaign",
         )
 
         description = st.text_area(
-            "Description",
+            "Beschreibung",
             height=120,
-            placeholder="Describe your workflow, campaign or project...",
+            placeholder="Beschreibe Ziel, Workflow oder Kampagne...",
         )
 
         workspace = st.selectbox(
-            "Primary Workspace",
+            "Primärer Workspace",
             [
                 "general",
                 "football",
@@ -55,12 +63,12 @@ def render_create_project():
                 "media_studio",
                 "automation_lab",
             ],
+            format_func=workspace_label,
         )
 
-        if st.button("✨ Create Project", use_container_width=True):
-
+        if st.button("✨ Projekt erstellen", use_container_width=True):
             if not title:
-                st.warning("Please enter a project title.")
+                st.warning("Bitte Projektnamen eingeben.")
                 return
 
             project_id = create_project(
@@ -71,68 +79,85 @@ def render_create_project():
             )
 
             st.session_state.active_project_id = project_id
-
-            st.success("Project created.")
+            st.success("Projekt erstellt.")
             st.rerun()
 
 
-# =========================================================
-# PROJECT LIST
-# =========================================================
+def render_project_card(project):
+    project_id = project.get("id")
+    title = project.get("title", "Untitled")
+    workspace = project.get("workspace", "general")
+
+    with st.container(border=True):
+        st.markdown(f"### 🚀 {title}")
+        st.caption(workspace_label(workspace))
+        st.write(project.get("description", ""))
+
+        c1, c2 = st.columns(2)
+
+        with c1:
+            st.caption(f"Created: {project.get('created_at', '')[:16]}")
+
+        with c2:
+            st.caption(f"Updated: {project.get('updated_at', '')[:16]}")
+
+        c3, c4, c5 = st.columns(3)
+
+        with c3:
+            if st.button("Öffnen", key=f"open_project_{project_id}", use_container_width=True):
+                open_project(project_id)
+
+        with c4:
+            if st.button("AI Chat", key=f"chat_project_{project_id}", use_container_width=True):
+                st.session_state.active_project_id = int(project_id)
+                open_page("chat")
+
+        with c5:
+            if st.button("Automation", key=f"auto_project_{project_id}", use_container_width=True):
+                st.session_state.active_project_id = int(project_id)
+                open_page("automation_lab")
+
 
 def render_project_list():
-
-    st.subheader("📂 Your Projects")
+    st.subheader("📂 Deine Projekte")
 
     projects = list_projects(current_user())
 
     if not projects:
-        st.info("No projects yet.")
+        st.info("Noch keine Projekte vorhanden.")
         return
 
     for project in projects:
+        render_project_card(project)
 
-        with st.container(border=True):
-
-            st.markdown(f"### 🚀 {project.get('title')}")
-
-            st.caption(project.get("workspace", "general"))
-
-            st.write(project.get("description", ""))
-
-            c1, c2, c3 = st.columns(3)
-
-            with c1:
-                st.write(f"Created: {project.get('created_at', '')[:16]}")
-
-            with c2:
-                st.write(f"Updated: {project.get('updated_at', '')[:16]}")
-
-            with c3:
-                if st.button(
-                    "Open",
-                    key=f"open_project_{project.get('id')}",
-                    use_container_width=True,
-                ):
-                    open_project(project.get("id"))
-
-
-# =========================================================
-# PROJECT MEMORY
-# =========================================================
 
 def render_project_memory(project_id):
-
     project = get_project(project_id)
 
     if not project:
-        st.error("Project not found.")
+        st.error("Projekt nicht gefunden.")
         return
 
     st.subheader(f"🧠 Workspace Memory — {project.get('title')}")
 
-    with st.container(border=True):
+    c1, c2, c3 = st.columns(3)
 
+    with c1:
+        if st.button("🧠 Mit AI öffnen", use_container_width=True):
+            open_page("chat")
+
+    with c2:
+        if st.button("🧪 Automation bauen", use_container_width=True):
+            open_page("automation_lab")
+
+    with c3:
+        if project.get("workspace") == "football":
+            if st.button("⚽ Football öffnen", use_container_width=True):
+                open_page("football")
+        else:
+            st.button("⚡ Workspace aktiv", use_container_width=True, disabled=True)
+
+    with st.container(border=True):
         memory_type = st.selectbox(
             "Memory Type",
             [
@@ -142,18 +167,21 @@ def render_project_memory(project_id):
                 "workflow",
                 "analysis",
                 "content",
+                "brand",
+                "target_audience",
+                "agent_instruction",
             ],
         )
 
         content = st.text_area(
             "Memory Content",
             height=180,
+            placeholder="Speichere Kontext, Ziele, Stil, Strategie oder Agent-Anweisungen...",
         )
 
-        if st.button("💾 Save Memory", use_container_width=True):
-
+        if st.button("💾 Memory speichern", use_container_width=True):
             if not content:
-                st.warning("Please enter content.")
+                st.warning("Bitte Inhalt eingeben.")
                 return
 
             save_project_memory(
@@ -164,7 +192,7 @@ def render_project_memory(project_id):
                 content=content,
             )
 
-            st.success("Memory saved.")
+            st.success("Memory gespeichert.")
             st.rerun()
 
     st.divider()
@@ -172,39 +200,26 @@ def render_project_memory(project_id):
     memories = list_project_memory(project_id)
 
     if not memories:
-        st.info("No workspace memory yet.")
+        st.info("Noch keine Workspace Memory gespeichert.")
         return
 
     for memory in memories:
-
         with st.container(border=True):
-
-            st.markdown(
-                f"### 🧠 {memory.get('memory_type', 'memory').title()}"
-            )
-
+            st.markdown(f"### 🧠 {memory.get('memory_type', 'memory').title()}")
             st.caption(memory.get("created_at", "")[:16])
-
             st.write(memory.get("content", ""))
 
 
-# =========================================================
-# MAIN
-# =========================================================
-
 def render_projects():
-
     if not st.session_state.get("logged_in"):
         st.session_state.page = "auth"
         st.rerun()
         return
 
-    st.title("🛰️ Projects Workspace")
-    st.caption(
-        "Persistent AI workflows, workspace memory and project intelligence."
-    )
+    st.title("🛰️ Projects")
+    st.caption("Persistent AI workflows, Workspace Memory und Project Intelligence.")
 
-    left, right = st.columns([1, 1])
+    left, right = st.columns([1, 1.2], gap="large")
 
     with left:
         render_create_project()
@@ -215,7 +230,5 @@ def render_projects():
     active_project = st.session_state.get("active_project_id")
 
     if active_project:
-
         st.divider()
-
         render_project_memory(active_project)
