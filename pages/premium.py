@@ -7,203 +7,243 @@ def premium_css():
         """
 <style>
 
-/* ===== HARD RESET PREMIUM PAGE ===== */
+/* =========================================================
+   PAGE
+========================================================= */
 
 .stApp{
     background:
-        linear-gradient(180deg,#eaf6ff 0%,#f8fafc 45%,#ffffff 100%) !important;
+        radial-gradient(circle at top right, rgba(56,189,248,.25), transparent 25%),
+        radial-gradient(circle at left, rgba(37,99,235,.18), transparent 30%),
+        linear-gradient(180deg,#071426 0%,#0b1f3a 40%,#10284d 100%) !important;
+}
+
+[data-testid="stAppViewContainer"]{
+    background:
+        radial-gradient(circle at top right, rgba(56,189,248,.25), transparent 25%),
+        radial-gradient(circle at left, rgba(37,99,235,.18), transparent 30%),
+        linear-gradient(180deg,#071426 0%,#0b1f3a 40%,#10284d 100%) !important;
 }
 
 .main .block-container{
     max-width:1280px !important;
-    padding-top:6.5rem !important;
+    padding-top:6rem !important;
     padding-bottom:4rem !important;
 }
 
-/* falls globales Dark CSS reinfunkt */
-[data-testid="stAppViewContainer"]{
+/* =========================================================
+   HERO
+========================================================= */
+
+.hero-box{
     background:
-        linear-gradient(180deg,#eaf6ff 0%,#f8fafc 45%,#ffffff 100%) !important;
-}
+        radial-gradient(circle at top right, rgba(56,189,248,.22), transparent 25%),
+        linear-gradient(135deg,#0f172a 0%,#1d4ed8 100%);
 
-[data-testid="stHeader"]{
-    background:transparent !important;
-}
-
-/* ===== HERO ===== */
-
-.premium-hero{
-    background:
-        radial-gradient(circle at 85% 10%,rgba(56,189,248,.26),transparent 30%),
-        linear-gradient(135deg,#0f6bff 0%,#00c2ff 100%) !important;
+    border:1px solid rgba(255,255,255,.12);
 
     border-radius:34px;
-    padding:34px 38px;
-    margin-bottom:32px;
 
-    color:white;
+    padding:42px;
+
+    margin-bottom:42px;
 
     box-shadow:
-        0 24px 55px rgba(37,99,235,.28);
-
-    border:1px solid rgba(255,255,255,.24);
+        0 30px 60px rgba(0,0,0,.35);
 }
 
 .hero-kicker{
-    font-size:13px;
-    font-weight:950;
-    letter-spacing:.12em;
+    color:#7dd3fc;
+    font-size:14px;
+    font-weight:900;
     text-transform:uppercase;
-    opacity:.9;
+    letter-spacing:.12em;
 }
 
 .hero-title{
-    font-size:48px;
+    color:white;
+    font-size:54px;
     font-weight:1000;
-    letter-spacing:-1.5px;
+    letter-spacing:-2px;
     line-height:1.05;
     margin-top:10px;
 }
 
 .hero-sub{
-    max-width:850px;
-    margin-top:14px;
+    color:rgba(255,255,255,.82);
     font-size:17px;
-    line-height:1.65;
-    color:rgba(255,255,255,.88);
+    line-height:1.7;
+    max-width:900px;
+    margin-top:14px;
 }
 
-/* ===== SECTION ===== */
+/* =========================================================
+   SECTION
+========================================================= */
 
 .section-title{
-    color:#0f172a !important;
-    font-size:32px;
+    color:white;
+    font-size:34px;
     font-weight:1000;
-    letter-spacing:-.8px;
-    margin-top:34px;
+    letter-spacing:-1px;
+    margin-top:24px;
     margin-bottom:4px;
 }
 
 .section-sub{
-    color:#475569 !important;
+    color:#cbd5e1;
     font-size:15px;
-    margin-bottom:20px;
+    margin-bottom:22px;
 }
 
-/* ===== STREAMLIT CARD WRAPPER ===== */
+/* =========================================================
+   PLAN CARDS
+========================================================= */
 
 div[data-testid="stVerticalBlockBorderWrapper"]{
-    background:
-        linear-gradient(180deg,#0b8dff 0%,#075bcc 100%) !important;
 
-    border:1px solid rgba(255,255,255,.35) !important;
+    background:
+        linear-gradient(180deg,#0f6bff 0%,#1d4ed8 100%) !important;
+
+    border:1px solid rgba(255,255,255,.12) !important;
+
     border-radius:30px !important;
 
-    box-shadow:
-        0 22px 50px rgba(37,99,235,.24) !important;
+    padding:10px !important;
 
-    overflow:hidden !important;
+    box-shadow:
+        0 20px 50px rgba(0,0,0,.35),
+        0 0 25px rgba(37,99,235,.18) !important;
 }
 
-/* text in container */
+/* text */
 div[data-testid="stVerticalBlockBorderWrapper"] *{
     color:white !important;
 }
 
-/* captions */
+/* caption */
 div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stCaptionContainer"]{
-    color:rgba(255,255,255,.78) !important;
+    color:#bfdbfe !important;
+    font-weight:700 !important;
 }
 
-/* metric cards */
+/* =========================================================
+   METRICS
+========================================================= */
+
 div[data-testid="stMetric"]{
-    background:rgba(255,255,255,.16) !important;
-    border:1px solid rgba(255,255,255,.22) !important;
+    background:rgba(255,255,255,.12) !important;
+
+    border:1px solid rgba(255,255,255,.15) !important;
+
     border-radius:20px !important;
+
     padding:16px !important;
+
     backdrop-filter:blur(12px);
 }
 
-div[data-testid="stMetric"] label,
-div[data-testid="stMetric"] [data-testid="stMetricLabel"]{
-    color:rgba(255,255,255,.78) !important;
+div[data-testid="stMetricLabel"]{
+    color:#dbeafe !important;
     font-size:12px !important;
     font-weight:900 !important;
+    text-transform:uppercase;
 }
 
 div[data-testid="stMetricValue"]{
     color:white !important;
-    font-size:30px !important;
+    font-size:32px !important;
     font-weight:1000 !important;
 }
 
-/* headings */
-h1,h2,h3{
-    color:inherit !important;
-}
+/* =========================================================
+   BUTTONS
+========================================================= */
 
-/* dividers */
-hr{
-    border-color:rgba(255,255,255,.18) !important;
-}
-
-/* buttons */
 .stButton > button{
-    border-radius:17px !important;
-    min-height:48px !important;
-    font-weight:950 !important;
+
+    width:100% !important;
+
     border:none !important;
 
+    border-radius:18px !important;
+
+    min-height:52px !important;
+
+    font-size:15px !important;
+
+    font-weight:900 !important;
+
     background:
-        linear-gradient(135deg,#0f172a,#1e293b) !important;
+        linear-gradient(135deg,#020617,#0f172a) !important;
 
     color:white !important;
 
     box-shadow:
-        0 12px 25px rgba(15,23,42,.22) !important;
+        0 12px 25px rgba(0,0,0,.25) !important;
 }
 
 .stButton > button:hover{
-    transform:translateY(-1px);
-    opacity:.94;
+    transform:translateY(-2px);
+    opacity:.96;
 }
 
-/* info box */
+/* =========================================================
+   ALERT
+========================================================= */
+
 div[data-testid="stAlert"]{
-    background:#dbeafe !important;
-    color:#0f172a !important;
-    border:1px solid rgba(37,99,235,.18) !important;
-    border-radius:20px !important;
+    border-radius:18px !important;
+
+    background:
+        linear-gradient(135deg,#0f172a,#1e3a8a) !important;
+
+    color:white !important;
+
+    border:1px solid rgba(255,255,255,.10) !important;
 }
 
-/* B2B */
+/* =========================================================
+   B2B
+========================================================= */
+
 .b2b-box{
+
     background:
-        radial-gradient(circle at 90% 15%,rgba(56,189,248,.22),transparent 35%),
-        linear-gradient(135deg,#0f172a,#1d4ed8) !important;
+        radial-gradient(circle at top right, rgba(56,189,248,.20), transparent 25%),
+        linear-gradient(135deg,#020617,#0f172a);
 
-    color:white;
-    border-radius:32px;
-    padding:34px;
-    margin-top:30px;
+    border-radius:34px;
 
-    box-shadow:0 24px 55px rgba(15,23,42,.24);
+    padding:40px;
+
+    margin-top:36px;
+
+    border:1px solid rgba(255,255,255,.08);
+
+    box-shadow:
+        0 24px 55px rgba(0,0,0,.35);
 }
 
 .b2b-title{
-    font-size:34px;
+    color:white;
+    font-size:36px;
     font-weight:1000;
-    letter-spacing:-.7px;
+    letter-spacing:-1px;
 }
 
 .b2b-sub{
-    color:rgba(255,255,255,.82);
-    line-height:1.65;
-    max-width:880px;
-    margin-top:10px;
+    color:#cbd5e1;
+    font-size:16px;
+    line-height:1.7;
+    max-width:900px;
+    margin-top:12px;
 }
 
-/* sidebar bleibt wie sie ist */
+/* =========================================================
+   SIDEBAR
+========================================================= */
+
 section[data-testid="stSidebar"]{
     background:#06111f !important;
 }
@@ -217,14 +257,16 @@ section[data-testid="stSidebar"]{
 def choose_plan(plan_key, category):
     st.session_state.selected_plan = plan_key
     st.session_state.selected_plan_category = category
-    st.success("Plan ausgewählt. Stripe Checkout verbinden wir als nächstes.")
+    st.success("Plan ausgewählt.")
 
 
 def normal_card(plan_key):
     plan = PLANS[plan_key]
 
     with st.container(border=True):
+
         st.caption(plan.get("badge", "Plan"))
+
         st.subheader(plan.get("label", plan_key))
 
         st.write(plan.get("description", ""))
@@ -232,8 +274,8 @@ def normal_card(plan_key):
         st.markdown(f"## {plan.get('price', '')}")
 
         st.metric(
-            label="Tokens",
-            value=f"{int(plan.get('tokens', 0)):,}".replace(",", "."),
+            "Tokens",
+            f"{int(plan.get('tokens', 0)):,}".replace(",", ".")
         )
 
         st.divider()
@@ -244,9 +286,8 @@ def normal_card(plan_key):
         st.divider()
 
         if st.button(
-            f"{plan.get('label', plan_key)} auswählen",
+            f"{plan.get('label')} auswählen",
             key=f"normal_{plan_key}",
-            use_container_width=True,
         ):
             choose_plan(plan_key, "normal")
 
@@ -257,29 +298,40 @@ def football_card(plan_key):
     actions = plan.get("ai_actions")
     requests = plan.get("api_requests")
 
-    actions_text = "Custom" if actions is None else f"{actions:,}".replace(",", ".")
-    requests_text = "Custom" if requests is None else f"{requests:,}".replace(",", ".")
+    actions_text = (
+        "Custom"
+        if actions is None
+        else f"{actions:,}".replace(",", ".")
+    )
+
+    requests_text = (
+        "Custom"
+        if requests is None
+        else f"{requests:,}".replace(",", ".")
+    )
 
     with st.container(border=True):
+
         st.caption(plan.get("badge", "Football"))
+
         st.subheader(plan.get("label", plan_key))
 
         st.write(plan.get("description", ""))
 
         st.markdown(f"## {plan.get('price', '')}")
 
-        m1, m2 = st.columns(2)
+        col1, col2 = st.columns(2)
 
-        with m1:
+        with col1:
             st.metric(
-                label="AI Actions",
-                value=actions_text,
+                "AI Actions",
+                actions_text
             )
 
-        with m2:
+        with col2:
             st.metric(
-                label="API Requests",
-                value=requests_text,
+                "API Requests",
+                requests_text
             )
 
         st.divider()
@@ -290,25 +342,34 @@ def football_card(plan_key):
         st.divider()
 
         if st.button(
-            f"{plan.get('label', plan_key)} wählen",
+            f"{plan.get('label')} wählen",
             key=f"football_{plan_key}",
-            use_container_width=True,
         ):
             choose_plan(plan_key, "football")
 
 
 def render_premium():
+
     premium_css()
 
     st.markdown(
         """
-<div class="premium-hero">
-    <div class="hero-kicker">MaByte Premium</div>
-    <div class="hero-title">Wähle deinen AI Plan.</div>
-    <div class="hero-sub">
-        Normale MaByte-Pläne laufen über Tokens. Football Premium ist getrennt und nutzt
-        AI Actions, API Limits und B2B Infrastruktur.
-    </div>
+<div class="hero-box">
+
+<div class="hero-kicker">
+MABYTE PREMIUM
+</div>
+
+<div class="hero-title">
+One System. Infinite Intelligence.
+</div>
+
+<div class="hero-sub">
+Normale MaByte-Pläne laufen über Tokens.
+Football Premium ist komplett getrennt und nutzt
+AI Actions, API Requests, Automation und B2B Infrastruktur.
+</div>
+
 </div>
         """,
         unsafe_allow_html=True,
@@ -316,8 +377,13 @@ def render_premium():
 
     st.markdown(
         """
-<div class="section-title">🚀 MaByte AI Plans</div>
-<div class="section-sub">Für Chat, Coding, Images, Reels, Video und Automation.</div>
+<div class="section-title">
+🚀 MaByte AI Plans
+</div>
+
+<div class="section-sub">
+Für Chat, Coding, Images, Reels, Video und Automation.
+</div>
         """,
         unsafe_allow_html=True,
     )
@@ -333,12 +399,23 @@ def render_premium():
     with c3:
         normal_card("elite")
 
-    st.info("Token-System: 1€ = 100 Tokens. Normale Tokens bleiben für MaByte AI Actions.")
+    st.info(
+        "Token-System: 1€ = 100 Tokens. "
+        "Normale Tokens bleiben für MaByte AI Actions."
+    )
+
+    st.markdown("<br>", unsafe_allow_html=True)
 
     st.markdown(
         """
-<div class="section-title">⚽ Football AI Premium</div>
-<div class="section-sub">Getrennte Football-Pläne für Creator, Seiten, Apps und automatisierte Content Systeme.</div>
+<div class="section-title">
+⚽ Football AI Premium
+</div>
+
+<div class="section-sub">
+Getrennte Football-Pläne für Creator,
+Seiten, Apps und automatisierte Content Systeme.
+</div>
         """,
         unsafe_allow_html=True,
     )
@@ -357,16 +434,25 @@ def render_premium():
     st.markdown(
         """
 <div class="b2b-box">
-    <div class="b2b-title">🏢 Football B2B / Enterprise</div>
-    <div class="b2b-sub">
-        Für Agenturen, Football Apps, Seiten-Netzwerke und Teams mit Custom API Limits,
-        White Label, Webhooks, Team Access und Dedicated Support.
-    </div>
+
+<div class="b2b-title">
+🏢 Football B2B / Enterprise
+</div>
+
+<div class="b2b-sub">
+Für Agenturen, Football Apps, Seiten-Netzwerke und Teams
+mit Custom API Limits, White Label, Webhooks,
+Dedicated Infrastructure und Priority Support.
+</div>
+
 </div>
         """,
         unsafe_allow_html=True,
     )
 
-    if st.button("Enterprise Anfrage starten", key="enterprise_request", use_container_width=True):
+    if st.button(
+        "Enterprise Anfrage starten",
+        key="enterprise_request",
+    ):
         st.session_state.page = "support"
         st.rerun()
