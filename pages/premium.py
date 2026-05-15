@@ -6,76 +6,208 @@ def premium_css():
     st.markdown(
         """
 <style>
-.main .block-container{
-    max-width:1250px;
-    padding-top:7rem;
-    padding-bottom:3rem;
-}
+
+/* ===== HARD RESET PREMIUM PAGE ===== */
 
 .stApp{
     background:
-        radial-gradient(circle at top, rgba(59,130,246,.10), transparent 28%),
-        linear-gradient(180deg,#06111f 0%, #020617 100%);
+        linear-gradient(180deg,#eaf6ff 0%,#f8fafc 45%,#ffffff 100%) !important;
 }
 
+.main .block-container{
+    max-width:1280px !important;
+    padding-top:6.5rem !important;
+    padding-bottom:4rem !important;
+}
+
+/* falls globales Dark CSS reinfunkt */
+[data-testid="stAppViewContainer"]{
+    background:
+        linear-gradient(180deg,#eaf6ff 0%,#f8fafc 45%,#ffffff 100%) !important;
+}
+
+[data-testid="stHeader"]{
+    background:transparent !important;
+}
+
+/* ===== HERO ===== */
+
 .premium-hero{
-    background:#f8fafc;
-    border-radius:28px;
-    padding:32px;
-    margin-bottom:30px;
-    border:1px solid rgba(15,23,42,.08);
-    box-shadow:0 20px 60px rgba(0,0,0,.22);
+    background:
+        radial-gradient(circle at 85% 10%,rgba(56,189,248,.26),transparent 30%),
+        linear-gradient(135deg,#0f6bff 0%,#00c2ff 100%) !important;
+
+    border-radius:34px;
+    padding:34px 38px;
+    margin-bottom:32px;
+
+    color:white;
+
+    box-shadow:
+        0 24px 55px rgba(37,99,235,.28);
+
+    border:1px solid rgba(255,255,255,.24);
+}
+
+.hero-kicker{
+    font-size:13px;
+    font-weight:950;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    opacity:.9;
 }
 
 .hero-title{
-    color:#0f172a;
-    font-size:42px;
-    font-weight:900;
-    letter-spacing:-1px;
+    font-size:48px;
+    font-weight:1000;
+    letter-spacing:-1.5px;
+    line-height:1.05;
+    margin-top:10px;
 }
 
 .hero-sub{
-    color:#475569;
-    font-size:16px;
-    margin-top:10px;
-    line-height:1.6;
+    max-width:850px;
+    margin-top:14px;
+    font-size:17px;
+    line-height:1.65;
+    color:rgba(255,255,255,.88);
 }
 
+/* ===== SECTION ===== */
+
 .section-title{
-    color:#ffffff;
-    font-size:30px;
-    font-weight:900;
-    margin-top:28px;
+    color:#0f172a !important;
+    font-size:32px;
+    font-weight:1000;
+    letter-spacing:-.8px;
+    margin-top:34px;
+    margin-bottom:4px;
 }
 
 .section-sub{
-    color:#94a3b8;
+    color:#475569 !important;
     font-size:15px;
-    margin-bottom:16px;
+    margin-bottom:20px;
 }
+
+/* ===== STREAMLIT CARD WRAPPER ===== */
 
 div[data-testid="stVerticalBlockBorderWrapper"]{
-    background:#f8fafc!important;
-    border:1px solid rgba(15,23,42,.10)!important;
-    border-radius:26px!important;
-    box-shadow:0 16px 40px rgba(0,0,0,.22)!important;
+    background:
+        linear-gradient(180deg,#0b8dff 0%,#075bcc 100%) !important;
+
+    border:1px solid rgba(255,255,255,.35) !important;
+    border-radius:30px !important;
+
+    box-shadow:
+        0 22px 50px rgba(37,99,235,.24) !important;
+
+    overflow:hidden !important;
 }
 
+/* text in container */
+div[data-testid="stVerticalBlockBorderWrapper"] *{
+    color:white !important;
+}
+
+/* captions */
+div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stCaptionContainer"]{
+    color:rgba(255,255,255,.78) !important;
+}
+
+/* metric cards */
 div[data-testid="stMetric"]{
-    background:#ffffff;
-    border:1px solid rgba(15,23,42,.08);
-    border-radius:18px;
-    padding:14px;
+    background:rgba(255,255,255,.16) !important;
+    border:1px solid rgba(255,255,255,.22) !important;
+    border-radius:20px !important;
+    padding:16px !important;
+    backdrop-filter:blur(12px);
 }
 
-.stButton > button{
-    border-radius:16px!important;
-    min-height:46px!important;
-    font-weight:900!important;
-    border:none!important;
-    background:linear-gradient(135deg,#2563eb,#06b6d4)!important;
-    color:white!important;
+div[data-testid="stMetric"] label,
+div[data-testid="stMetric"] [data-testid="stMetricLabel"]{
+    color:rgba(255,255,255,.78) !important;
+    font-size:12px !important;
+    font-weight:900 !important;
 }
+
+div[data-testid="stMetricValue"]{
+    color:white !important;
+    font-size:30px !important;
+    font-weight:1000 !important;
+}
+
+/* headings */
+h1,h2,h3{
+    color:inherit !important;
+}
+
+/* dividers */
+hr{
+    border-color:rgba(255,255,255,.18) !important;
+}
+
+/* buttons */
+.stButton > button{
+    border-radius:17px !important;
+    min-height:48px !important;
+    font-weight:950 !important;
+    border:none !important;
+
+    background:
+        linear-gradient(135deg,#0f172a,#1e293b) !important;
+
+    color:white !important;
+
+    box-shadow:
+        0 12px 25px rgba(15,23,42,.22) !important;
+}
+
+.stButton > button:hover{
+    transform:translateY(-1px);
+    opacity:.94;
+}
+
+/* info box */
+div[data-testid="stAlert"]{
+    background:#dbeafe !important;
+    color:#0f172a !important;
+    border:1px solid rgba(37,99,235,.18) !important;
+    border-radius:20px !important;
+}
+
+/* B2B */
+.b2b-box{
+    background:
+        radial-gradient(circle at 90% 15%,rgba(56,189,248,.22),transparent 35%),
+        linear-gradient(135deg,#0f172a,#1d4ed8) !important;
+
+    color:white;
+    border-radius:32px;
+    padding:34px;
+    margin-top:30px;
+
+    box-shadow:0 24px 55px rgba(15,23,42,.24);
+}
+
+.b2b-title{
+    font-size:34px;
+    font-weight:1000;
+    letter-spacing:-.7px;
+}
+
+.b2b-sub{
+    color:rgba(255,255,255,.82);
+    line-height:1.65;
+    max-width:880px;
+    margin-top:10px;
+}
+
+/* sidebar bleibt wie sie ist */
+section[data-testid="stSidebar"]{
+    background:#06111f !important;
+}
+
 </style>
         """,
         unsafe_allow_html=True,
@@ -100,7 +232,7 @@ def normal_card(plan_key):
         st.markdown(f"## {plan.get('price', '')}")
 
         st.metric(
-            label="Tokens inklusive",
+            label="Tokens",
             value=f"{int(plan.get('tokens', 0)):,}".replace(",", "."),
         )
 
@@ -171,10 +303,11 @@ def render_premium():
     st.markdown(
         """
 <div class="premium-hero">
-    <div class="hero-title">💎 MaByte Premium</div>
+    <div class="hero-kicker">MaByte Premium</div>
+    <div class="hero-title">Wähle deinen AI Plan.</div>
     <div class="hero-sub">
-        Wähle deinen Plan. Normale MaByte-Pläne laufen über Tokens.
-        Football Premium ist getrennt und nutzt AI Actions, API Limits und B2B Infrastruktur.
+        Normale MaByte-Pläne laufen über Tokens. Football Premium ist getrennt und nutzt
+        AI Actions, API Limits und B2B Infrastruktur.
     </div>
 </div>
         """,
@@ -221,10 +354,17 @@ def render_premium():
     with f3:
         football_card("football_elite")
 
-    st.markdown("## 🏢 Football B2B / Enterprise")
-    st.write(
-        "Für Agenturen, Football Apps, Seiten-Netzwerke und Teams mit Custom API Limits, "
-        "White Label, Webhooks, Team Access und Dedicated Support."
+    st.markdown(
+        """
+<div class="b2b-box">
+    <div class="b2b-title">🏢 Football B2B / Enterprise</div>
+    <div class="b2b-sub">
+        Für Agenturen, Football Apps, Seiten-Netzwerke und Teams mit Custom API Limits,
+        White Label, Webhooks, Team Access und Dedicated Support.
+    </div>
+</div>
+        """,
+        unsafe_allow_html=True,
     )
 
     if st.button("Enterprise Anfrage starten", key="enterprise_request", use_container_width=True):
