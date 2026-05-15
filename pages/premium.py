@@ -1,161 +1,121 @@
 import streamlit as st
-
 from config import PLANS, FOOTBALL_PLANS
 
-
-# =========================================================
-# CSS
-# =========================================================
 
 def premium_css():
     st.markdown(
         """
 <style>
-
 .main .block-container{
-    max-width:1280px;
+    max-width:1320px;
     padding-top:7rem;
     padding-bottom:3rem;
 }
 
-.premium-page{
+.premium-wrap{
     background:#f8fafc;
     border-radius:34px;
     padding:34px;
-    border:1px solid rgba(15,23,42,.08);
-    box-shadow:0 18px 55px rgba(0,0,0,.16);
 }
 
 .premium-hero{
-    background:
-        radial-gradient(circle at 15% 20%, rgba(59,130,246,.18), transparent 28%),
-        linear-gradient(135deg,#ffffff,#eef6ff);
-    border:1px solid rgba(37,99,235,.10);
+    background:linear-gradient(135deg,#ffffff,#eef6ff);
+    border:1px solid rgba(15,23,42,.08);
     border-radius:30px;
     padding:34px;
-    margin-bottom:28px;
-}
-
-.hero-kicker{
-    color:#2563eb;
-    font-size:14px;
-    font-weight:900;
-    letter-spacing:.08em;
-    text-transform:uppercase;
+    margin-bottom:30px;
 }
 
 .hero-title{
     color:#0f172a;
-    font-size:46px;
+    font-size:48px;
     font-weight:950;
-    letter-spacing:-1.4px;
-    line-height:1.05;
-    margin-top:10px;
+    letter-spacing:-1.5px;
 }
 
 .hero-sub{
     color:#475569;
     font-size:17px;
-    line-height:1.65;
-    max-width:850px;
-    margin-top:14px;
-}
-
-.section-head{
-    display:flex;
-    align-items:flex-end;
-    justify-content:space-between;
-    gap:20px;
-    margin-top:26px;
-    margin-bottom:18px;
+    line-height:1.6;
+    margin-top:12px;
 }
 
 .section-title{
     color:#0f172a;
-    font-size:30px;
+    font-size:32px;
     font-weight:950;
-    letter-spacing:-.8px;
+    margin:34px 0 6px 0;
 }
 
 .section-sub{
     color:#64748b;
     font-size:15px;
-    margin-top:5px;
+    margin-bottom:20px;
 }
 
 .plan-card{
     background:#ffffff;
+    color:#0f172a;
     border:1px solid rgba(15,23,42,.08);
     border-radius:28px;
     padding:26px;
-    min-height:520px;
-    box-shadow:0 14px 35px rgba(15,23,42,.08);
-    position:relative;
+    min-height:560px;
+    box-shadow:0 14px 35px rgba(15,23,42,.10);
 }
 
 .plan-card.popular{
     border:2px solid #2563eb;
-    box-shadow:0 18px 45px rgba(37,99,235,.18);
 }
 
 .plan-card.elite{
     border:2px solid #7c3aed;
-    box-shadow:0 18px 45px rgba(124,58,237,.16);
 }
 
-.plan-badge{
+.badge{
     display:inline-block;
-    padding:7px 12px;
+    padding:7px 13px;
     border-radius:999px;
     background:#eff6ff;
     color:#2563eb;
     font-size:12px;
     font-weight:900;
-    margin-bottom:15px;
+    margin-bottom:16px;
 }
 
-.plan-badge.purple{
+.badge.purple{
     background:#f3e8ff;
     color:#7c3aed;
 }
 
 .plan-name{
-    color:#0f172a;
-    font-size:27px;
+    font-size:30px;
     font-weight:950;
-    letter-spacing:-.5px;
+    line-height:1.12;
 }
 
 .plan-desc{
     color:#64748b;
     font-size:14px;
     line-height:1.55;
-    min-height:66px;
-    margin-top:10px;
+    min-height:64px;
+    margin-top:12px;
 }
 
 .plan-price{
-    color:#0f172a;
-    font-size:39px;
+    font-size:42px;
     font-weight:950;
-    letter-spacing:-1px;
-    margin-top:18px;
+    margin-top:20px;
+    line-height:1.15;
 }
 
-.plan-price span{
-    color:#64748b;
-    font-size:15px;
-    font-weight:800;
-}
-
-.metric-row{
+.metric-grid{
     display:grid;
     grid-template-columns:1fr 1fr;
-    gap:10px;
-    margin-top:18px;
+    gap:12px;
+    margin-top:20px;
 }
 
-.metric-box{
+.metric{
     background:#f8fafc;
     border:1px solid rgba(15,23,42,.07);
     border-radius:18px;
@@ -187,35 +147,31 @@ def premium_css():
     border-bottom:1px solid rgba(15,23,42,.06);
 }
 
-.note-box{
+.note{
     background:#ecfeff;
-    border:1px solid rgba(6,182,212,.18);
+    border:1px solid rgba(6,182,212,.20);
     color:#0f172a;
     border-radius:22px;
     padding:20px;
-    margin:20px 0 8px 0;
+    margin:24px 0;
 }
 
-.b2b-box{
-    background:
-        linear-gradient(135deg,#111827,#1e1b4b);
+.b2b{
+    background:linear-gradient(135deg,#111827,#1e1b4b);
+    color:white;
     border-radius:30px;
     padding:32px;
-    margin-top:20px;
-    color:white;
-    box-shadow:0 18px 50px rgba(15,23,42,.22);
+    margin-top:30px;
 }
 
-.b2b-title{
-    font-size:31px;
-    font-weight:950;
+.b2b h2{
+    font-size:32px;
+    margin:0;
 }
 
-.b2b-sub{
+.b2b p{
     color:#cbd5e1;
-    margin-top:10px;
-    line-height:1.65;
-    max-width:850px;
+    line-height:1.6;
 }
 
 .stButton > button{
@@ -225,17 +181,13 @@ def premium_css():
     border:0!important;
     background:linear-gradient(135deg,#2563eb,#06b6d4)!important;
     color:white!important;
+    margin-top:12px!important;
 }
-
 </style>
         """,
         unsafe_allow_html=True,
     )
 
-
-# =========================================================
-# HELPERS
-# =========================================================
 
 def select_plan(plan_key, category):
     st.session_state.selected_plan = plan_key
@@ -245,60 +197,67 @@ def select_plan(plan_key, category):
 
 def normal_plan_card(plan_key, popular=False, elite=False):
     plan = PLANS[plan_key]
-    card_class = "plan-card"
 
+    card_class = "plan-card"
     if popular:
         card_class += " popular"
-
     if elite:
         card_class += " elite"
 
-    badge_class = "plan-badge purple" if elite else "plan-badge"
+    badge_class = "badge purple" if elite else "badge"
 
-    st.markdown(
-        f"""
+    features_html = "".join(
+        [f'<div class="feature">✅ {item}</div>' for item in plan.get("highlights", [])]
+    )
+
+    html = f"""
 <div class="{card_class}">
     <div class="{badge_class}">{plan.get("badge", "")}</div>
+
     <div class="plan-name">{plan.get("label", plan_key)}</div>
+
     <div class="plan-desc">{plan.get("description", "")}</div>
+
     <div class="plan-price">{plan.get("price", "")}</div>
 
-    <div class="metric-row">
-        <div class="metric-box">
+    <div class="metric-grid">
+        <div class="metric">
             <div class="metric-label">Tokens</div>
             <div class="metric-value">{int(plan.get("tokens", 0)):,}</div>
         </div>
-        <div class="metric-box">
-            <div class="metric-label">Plan</div>
-            <div class="metric-value">{plan.get("label", plan_key)}</div>
+
+        <div class="metric">
+            <div class="metric-label">Kategorie</div>
+            <div class="metric-value">AI</div>
         </div>
     </div>
 
     <div class="features">
-        """,
-        unsafe_allow_html=True,
-    )
+        {features_html}
+    </div>
+</div>
+"""
 
-    for item in plan.get("highlights", []):
-        st.markdown(f'<div class="feature">✅ {item}</div>', unsafe_allow_html=True)
+    st.markdown(html, unsafe_allow_html=True)
 
-    st.markdown("</div></div>", unsafe_allow_html=True)
-
-    if st.button(f"{plan.get('label', plan_key)} auswählen", key=f"normal_{plan_key}", use_container_width=True):
+    if st.button(
+        f"{plan.get('label', plan_key)} auswählen",
+        key=f"normal_{plan_key}",
+        use_container_width=True,
+    ):
         select_plan(plan_key, "normal")
 
 
 def football_plan_card(plan_key, popular=False, elite=False):
     plan = FOOTBALL_PLANS[plan_key]
-    card_class = "plan-card"
 
+    card_class = "plan-card"
     if popular:
         card_class += " popular"
-
     if elite:
         card_class += " elite"
 
-    badge_class = "plan-badge purple" if elite else "plan-badge"
+    badge_class = "badge purple" if elite else "badge"
 
     actions = plan.get("ai_actions")
     requests = plan.get("api_requests")
@@ -306,61 +265,60 @@ def football_plan_card(plan_key, popular=False, elite=False):
     actions_text = "Custom" if actions is None else f"{actions:,}"
     requests_text = "Custom" if requests is None else f"{requests:,}"
 
-    st.markdown(
-        f"""
+    features_html = "".join(
+        [f'<div class="feature">⚽ {item}</div>' for item in plan.get("highlights", [])]
+    )
+
+    html = f"""
 <div class="{card_class}">
     <div class="{badge_class}">{plan.get("badge", "")}</div>
+
     <div class="plan-name">{plan.get("label", plan_key)}</div>
+
     <div class="plan-desc">{plan.get("description", "")}</div>
+
     <div class="plan-price">{plan.get("price", "")}</div>
 
-    <div class="metric-row">
-        <div class="metric-box">
+    <div class="metric-grid">
+        <div class="metric">
             <div class="metric-label">AI Actions</div>
             <div class="metric-value">{actions_text}</div>
         </div>
-        <div class="metric-box">
+
+        <div class="metric">
             <div class="metric-label">API Requests</div>
             <div class="metric-value">{requests_text}</div>
         </div>
     </div>
 
     <div class="features">
-        """,
-        unsafe_allow_html=True,
-    )
+        {features_html}
+    </div>
+</div>
+"""
 
-    for item in plan.get("highlights", []):
-        st.markdown(f'<div class="feature">⚽ {item}</div>', unsafe_allow_html=True)
+    st.markdown(html, unsafe_allow_html=True)
 
-    st.markdown("</div></div>", unsafe_allow_html=True)
+    if st.button(
+        f"{plan.get('label', plan_key)} wählen",
+        key=f"football_{plan_key}",
+        use_container_width=True,
+    ):
+        select_plan(plan_key, "football")
 
-    if plan_key == "football_b2b":
-        if st.button("B2B Anfrage stellen", key="football_b2b", use_container_width=True):
-            st.session_state.page = "support"
-            st.rerun()
-    else:
-        if st.button(f"{plan.get('label', plan_key)} wählen", key=f"football_{plan_key}", use_container_width=True):
-            select_plan(plan_key, "football")
-
-
-# =========================================================
-# MAIN
-# =========================================================
 
 def render_premium():
     premium_css()
 
-    st.markdown('<div class="premium-page">', unsafe_allow_html=True)
+    st.markdown('<div class="premium-wrap">', unsafe_allow_html=True)
 
     st.markdown(
         """
 <div class="premium-hero">
-    <div class="hero-kicker">MaByte Premium</div>
-    <div class="hero-title">Wähle deinen AI Plan.</div>
+    <div class="hero-title">💎 MaByte Premium</div>
     <div class="hero-sub">
-        Normale MaByte-Pläne bleiben für Chat, Coding, Creator Tools und Automation.
-        Football Premium ist getrennt und läuft über AI Actions, API Limits und B2B Infrastruktur.
+        Wähle deinen Plan. Normale MaByte-Pläne laufen über Tokens.
+        Football Premium ist getrennt und nutzt AI Actions, API Limits und B2B Infrastruktur.
     </div>
 </div>
         """,
@@ -369,12 +327,8 @@ def render_premium():
 
     st.markdown(
         """
-<div class="section-head">
-    <div>
-        <div class="section-title">💎 MaByte AI Plans</div>
-        <div class="section-sub">Für normale AI Nutzung, Content, Coding und Media Workflows.</div>
-    </div>
-</div>
+<div class="section-title">🚀 MaByte AI Plans</div>
+<div class="section-sub">Für Chat, Coding, Images, Reels, Video und Automation.</div>
         """,
         unsafe_allow_html=True,
     )
@@ -392,8 +346,8 @@ def render_premium():
 
     st.markdown(
         """
-<div class="note-box">
-    <b>Token-Wert:</b> 1€ = 100 Tokens. Normale Tokens sind für MaByte AI, Content, Coding und Media gedacht.
+<div class="note">
+    <b>Token-System:</b> 1€ = 100 Tokens. Deine normalen Tokens bleiben für MaByte AI Actions.
 </div>
         """,
         unsafe_allow_html=True,
@@ -401,12 +355,8 @@ def render_premium():
 
     st.markdown(
         """
-<div class="section-head">
-    <div>
-        <div class="section-title">⚽ Football AI Premium</div>
-        <div class="section-sub">Für Football Creator, Seiten, Apps und automatisierte Content Systeme.</div>
-    </div>
-</div>
+<div class="section-title">⚽ Football AI Premium</div>
+<div class="section-sub">Getrennte Football-Pläne für Creator, Seiten, Apps und automatisierte Content Systeme.</div>
         """,
         unsafe_allow_html=True,
     )
@@ -424,12 +374,12 @@ def render_premium():
 
     st.markdown(
         """
-<div class="b2b-box">
-    <div class="b2b-title">🏢 Football B2B / Enterprise</div>
-    <div class="b2b-sub">
+<div class="b2b">
+    <h2>🏢 Football B2B / Enterprise</h2>
+    <p>
         Für Agenturen, Football Apps, Seiten-Netzwerke und Teams mit Custom API Limits,
         White Label, Webhooks, Team Access und Dedicated Support.
-    </div>
+    </p>
 </div>
         """,
         unsafe_allow_html=True,
