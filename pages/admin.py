@@ -34,10 +34,6 @@ ROLE_NAMES = {
 }
 
 
-# =========================================================
-# HELPERS
-# =========================================================
-
 def get_level():
     return int(st.session_state.get("admin_level", 0) or 0)
 
@@ -60,9 +56,22 @@ def role_label(level):
     return ROLE_NAMES.get(int(level or 0), "User")
 
 
-def metric_card(label, value):
-    with st.container(border=True):
-        st.metric(label, value)
+def safe_int(value):
+    try:
+        return int(value or 0)
+    except Exception:
+        return 0
+
+
+def safe_float(value):
+    try:
+        return float(value or 0)
+    except Exception:
+        return 0.0
+
+
+def money(value):
+    return f"{safe_float(value):,.2f}€".replace(",", "X").replace(".", ",").replace("X", ".")
 
 
 def safe_df(rows):
@@ -77,22 +86,15 @@ def safe_df(rows):
     )
 
 
-def money(value):
-    try:
-        return f"{float(value):,.2f}€".replace(",", "X").replace(".", ",").replace("X", ".")
-    except Exception:
-        return "0,00€"
+def metric_card(label, value):
+    with st.container(border=True):
+        st.metric(label, value)
 
-
-# =========================================================
-# CSS
-# =========================================================
 
 def admin_css():
     st.markdown(
         """
 <style>
-
 .main .block-container{
     max-width:1380px;
     padding-top:5.5rem;
@@ -149,9 +151,7 @@ div[data-testid="stMetric"]{
     border:1px solid rgba(255,255,255,.30)!important;
     border-radius:22px!important;
     padding:16px!important;
-    box-shadow:
-        0 14px 30px rgba(0,102,255,.28),
-        inset 0 1px 0 rgba(255,255,255,.32)!important;
+    box-shadow:0 14px 30px rgba(0,102,255,.28)!important;
 }
 
 div[data-testid="stMetricLabel"]{
@@ -175,16 +175,11 @@ div[data-testid="stMetricValue"]{
     background:linear-gradient(135deg,#ffd36a,#f59e0b)!important;
     color:#111827!important;
 }
-
 </style>
         """,
         unsafe_allow_html=True,
     )
 
-
-# =========================================================
-# OVERVIEW
-# =========================================================
 
 def render_overview():
     users = list_users()
@@ -193,132 +188,111 @@ def render_overview():
     logs = list_usage()
     payments = list_purchases()
 
-    total_tokens = sum(int(u.get("tokens") or 0) for u in users)
-    banned = len([u for u in users if int(u.get("is_banned") or 0) == 1])
+    total_tokens = sum(safe_int(u.get("tokens")) for u in users)
+    banned = len([u for u in users if safe_int(u.get("is_banned")) == 1])
     open_tickets = len([t for t in tickets if t.get("status") == "open"])
 
-    revenue = 0
-    for p in payments:
-        try:
-            revenue += float(p.get("amount") or 0)
-        except Exception:
-            pass
+    revenue = sum(safe_float(p.get("amount") or p.get("price")) for p in payments)
 
-    plan_counts = {}
-    for u in users:
-        plan = str(u.get("plan") or "free")
-        plan_counts[plan] = plan_counts.get(plan, 0) + 1
+    c1, c2, c3, c4, c5 = st.columns(5)
 
-    st.markdown('<div class="section-title">Platform Intelligence</div>', unsafe_allow_html=True)
-
-    row1 = st.columns(5)
-
-    with row1[0]:
+    with c1:
         metric_card("Users", len(users))
-
-    with row1[1]:
+    with c2:
         metric_card("Revenue", money(revenue))
-
-    with row1[2]:
+    with c3:
         metric_card("Tokens", f"{total_tokens:,}".replace(",", "."))
-
-    with row1[3]:
-        metric_card("Open Tickets", open_tickets)
-
-    with row1[4]:
+    with c4:
+        metric_card("Tickets", open_tickets)
+    with c5:
         metric_card("Banned", banned)
-
-    row2 = st.columns(5)
-
-    with row2[0]:
-        metric_card("Usage Logs", len(logs))
-
-    with row2[1]:
-        metric_card("Redeem Codes", len(codes))
-
-    with row2[2]:
-        metric_card("Payments", len(payments))
-
-    with row2[3]:
-        metric_card("Your Rank", role_label(get_level()))
-
-    with row2[4]:
-        metric_card("System", "Online")
 
     st.divider()
 
     left, right = st.columns([1.3, 1], gap="large")
 
     with left:
+        st.markdown("### Plan Distribution")
+        plan_counts = {}
+
+        for u in users:
+            plan = str(u.get("plan") or "free")
+            plan_counts[plan] = plan_counts.get(plan, 0) + 1
+
+        plan_df = pd.DataFrame(
+            [{"Plan": k, "Users": v} for k, v in plan_counts.items()]
+        )
+
+        if not plan_df.empty:
+            st.bar_chart(plan_df.set_index("Plan"))
+
+    with right:
         st.markdown("### System Status")
 
-        status_rows = [
+        safe_df([
             {"Service": "OpenAI", "Status": "Online"},
             {"Service": "Stripe", "Status": "Ready"},
             {"Service": "Database", "Status": "Healthy"},
             {"Service": "Railway", "Status": "Running"},
             {"Service": "Football Engine", "Status": "Prepared"},
-        ]
-
-        safe_df(status_rows)
-
-    with right:
-        st.markdown("### Quick Actions")
-
-        if st.button("Refresh Dashboard", use_container_width=True):
-            st.rerun()
-
-        if st.button("Clear Session Cache", use_container_width=True):
-            st.session_state.clear()
-            st.success("Session Cache geleert.")
-
-        if st.button("Broadcast Placeholder", use_container_width=True):
-            st.info("Broadcast System kommt als nächstes.")
+        ])
 
     st.divider()
 
-    st.markdown("### Plan Distribution")
+    st.markdown("### Recent Activity")
 
-    plan_rows = [
-        {"Plan": plan, "Users": count}
-        for plan, count in plan_counts.items()
-    ]
+    safe_df(logs[:12] if logs else [])
 
-    safe_df(plan_rows)
+
+def render_analytics():
+    require_admin(2)
+
+    st.subheader("Analytics Center")
+
+    logs = list_usage()
+    payments = list_purchases()
+    users = list_users()
+
+    c1, c2, c3, c4 = st.columns(4)
+
+    total_usage = len(logs)
+    total_payments = len(payments)
+    total_revenue = sum(safe_float(p.get("amount") or p.get("price")) for p in payments)
+    total_users = len(users)
+
+    with c1:
+        metric_card("Usage Events", total_usage)
+    with c2:
+        metric_card("Payments", total_payments)
+    with c3:
+        metric_card("Revenue", money(total_revenue))
+    with c4:
+        metric_card("Users", total_users)
 
     st.divider()
 
-    st.markdown("### Feature Flags")
+    if logs:
+        df = pd.DataFrame(logs)
 
-    f1, f2, f3, f4 = st.columns(4)
+        if "tool" in df.columns:
+            st.markdown("### Usage by Tool")
+            tool_counts = df["tool"].fillna("unknown").value_counts()
+            st.bar_chart(tool_counts)
 
-    with f1:
-        st.toggle("Football API", value=True, disabled=True)
+        if "status" in df.columns:
+            st.markdown("### Status Distribution")
+            status_counts = df["status"].fillna("unknown").value_counts()
+            st.bar_chart(status_counts)
 
-    with f2:
-        st.toggle("AI Video", value=True, disabled=True)
+        if "cost_tokens" in df.columns and "tool" in df.columns:
+            st.markdown("### Token Burn by Tool")
+            df["cost_tokens"] = pd.to_numeric(df["cost_tokens"], errors="coerce").fillna(0)
+            burn = df.groupby("tool")["cost_tokens"].sum().sort_values(ascending=False)
+            st.bar_chart(burn)
 
-    with f3:
-        st.toggle("Maintenance", value=False, disabled=True)
-
-    with f4:
-        st.toggle("Beta Features", value=True, disabled=True)
-
-    st.divider()
-
-    st.markdown("### Recent Platform Activity")
-
-    recent_logs = logs[:10] if logs else []
-
-    if recent_logs:
-        safe_df(recent_logs)
     else:
-        st.info("Keine Usage Logs vorhanden.")
+        st.info("Noch keine Analytics-Daten vorhanden.")
 
-
-# =========================================================
-# USERS
-# =========================================================
 
 def render_users():
     require_admin(1)
@@ -326,7 +300,6 @@ def render_users():
     st.subheader("User Intelligence")
 
     users = list_users()
-
     search = st.text_input("User suchen", placeholder="Username oder Email")
 
     rows = []
@@ -349,17 +322,13 @@ def render_users():
             "Role": u.get("role"),
             "Admin Level": u.get("admin_level"),
             "Rank": role_label(u.get("admin_level")),
-            "Status": "Banned" if int(u.get("is_banned") or 0) == 1 else "Active",
+            "Status": "Banned" if safe_int(u.get("is_banned")) == 1 else "Active",
             "Created": u.get("created_at"),
             "Last Login": u.get("last_login"),
         })
 
     safe_df(rows)
 
-
-# =========================================================
-# USER CONTROL
-# =========================================================
 
 def render_user_control():
     require_admin(3)
@@ -374,32 +343,32 @@ def render_user_control():
         return
 
     selected = st.selectbox("User auswählen", usernames)
-
     user = get_user(selected)
 
     if not user:
         st.error("User nicht gefunden.")
         return
 
-    with st.container(border=True):
-        st.markdown(f"### {user.get('username')}")
-        st.write(f"Email: {user.get('email')}")
-        st.write(f"Plan: {user.get('plan')}")
-        st.write(f"Tokens: {user.get('tokens')}")
-        st.write(f"Role: {user.get('role')} / Level {user.get('admin_level')}")
-        st.write(f"Status: {'Banned' if int(user.get('is_banned') or 0) else 'Active'}")
-        st.write(f"Created: {user.get('created_at')}")
-        st.write(f"Last Login: {user.get('last_login')}")
+    c0, c1, c2, c3 = st.columns(4)
+
+    with c0:
+        metric_card("User", user.get("username"))
+    with c1:
+        metric_card("Plan", user.get("plan"))
+    with c2:
+        metric_card("Tokens", user.get("tokens"))
+    with c3:
+        status = "Banned" if safe_int(user.get("is_banned")) else "Active"
+        metric_card("Status", status)
 
     st.divider()
 
-    c1, c2 = st.columns(2)
+    col1, col2 = st.columns(2)
 
-    with c1:
+    with col1:
         st.subheader("Plan ändern")
 
         plans = ["free", "pro", "grand", "elite"]
-
         current_plan = user.get("plan", "free")
 
         if current_plan not in plans:
@@ -417,14 +386,14 @@ def render_user_control():
             st.success("Plan aktualisiert.")
             st.rerun()
 
-    with c2:
+    with col2:
         st.subheader("Tokens setzen")
 
         new_tokens = st.number_input(
             "Tokens",
             min_value=0,
             max_value=999999999,
-            value=int(user.get("tokens") or 0),
+            value=safe_int(user.get("tokens")),
         )
 
         if st.button("Tokens setzen", use_container_width=True):
@@ -435,9 +404,9 @@ def render_user_control():
 
     st.divider()
 
-    c3, c4 = st.columns(2)
+    col3, col4 = st.columns(2)
 
-    with c3:
+    with col3:
         st.subheader("Rolle setzen")
 
         if is_owner():
@@ -467,7 +436,7 @@ def render_user_control():
             st.success("Rolle aktualisiert.")
             st.rerun()
 
-    with c4:
+    with col4:
         st.subheader("Ban Control")
 
         if st.button("User bannen", use_container_width=True):
@@ -483,9 +452,95 @@ def render_user_control():
             st.rerun()
 
 
-# =========================================================
-# LOGIN LOGS
-# =========================================================
+def render_system_tools():
+    require_admin(3)
+
+    st.subheader("System Tools")
+
+    if "maintenance_mode" not in st.session_state:
+        st.session_state.maintenance_mode = False
+
+    if "feature_flags" not in st.session_state:
+        st.session_state.feature_flags = {
+            "football_api": False,
+            "stripe_live": False,
+            "beta_dashboard": True,
+            "automation_lab": False,
+        }
+
+    c1, c2 = st.columns(2)
+
+    with c1:
+        st.markdown("### Maintenance")
+
+        st.session_state.maintenance_mode = st.toggle(
+            "Maintenance Mode",
+            value=bool(st.session_state.maintenance_mode),
+        )
+
+        if st.session_state.maintenance_mode:
+            st.warning("Maintenance Mode aktiv.")
+        else:
+            st.success("System normal.")
+
+    with c2:
+        st.markdown("### Feature Flags")
+
+        flags = st.session_state.feature_flags
+
+        for key in list(flags.keys()):
+            flags[key] = st.toggle(
+                key,
+                value=bool(flags[key]),
+                key=f"flag_{key}",
+            )
+
+        st.session_state.feature_flags = flags
+
+    st.divider()
+
+    st.markdown("### Broadcast")
+
+    message = st.text_area(
+        "Nachricht vorbereiten",
+        placeholder="Neue Features, Wartung, Football API Launch...",
+    )
+
+    if st.button("Broadcast speichern", use_container_width=True):
+        st.session_state.broadcast_message = message
+        add_audit_log(current_user(), "broadcast_saved", "system", message[:200])
+        st.success("Broadcast gespeichert.")
+
+
+def render_football_admin():
+    require_admin(2)
+
+    st.subheader("Football Intelligence Admin")
+
+    usage = list_usage()
+
+    football_rows = []
+    for row in usage:
+        tool = str(row.get("tool", "")).lower()
+        if "football" in tool or "match" in tool:
+            football_rows.append(row)
+
+    users = set([r.get("username") for r in football_rows if r.get("username")])
+    tokens = sum(safe_int(r.get("cost_tokens")) for r in football_rows)
+
+    c1, c2, c3 = st.columns(3)
+
+    with c1:
+        metric_card("Football Logs", len(football_rows))
+    with c2:
+        metric_card("Football Users", len(users))
+    with c3:
+        metric_card("Football Tokens", f"{tokens:,}".replace(",", "."))
+
+    st.divider()
+
+    safe_df(football_rows)
+
 
 def render_login_logs():
     require_admin(3)
@@ -496,14 +551,8 @@ def render_login_logs():
         st.warning("Login-Logs sind noch nicht in database.py aktiviert.")
         return
 
-    logs = list_login_logs(limit=300)
+    safe_df(list_login_logs(limit=300))
 
-    safe_df(logs)
-
-
-# =========================================================
-# TICKETS
-# =========================================================
 
 def render_tickets():
     require_admin(1)
@@ -542,10 +591,6 @@ def render_tickets():
                         st.success("Ticket gelöscht.")
                         st.rerun()
 
-
-# =========================================================
-# REDEEM CODES
-# =========================================================
 
 def render_codes():
     require_admin(2)
@@ -587,38 +632,26 @@ def render_codes():
         st.code(code)
 
     st.divider()
-
     safe_df(list_codes())
 
 
-# =========================================================
-# USAGE / PAYMENTS / AUDIT
-# =========================================================
-
 def render_usage():
     require_admin(2)
-
     st.subheader("Usage Intelligence")
     safe_df(list_usage())
 
 
 def render_payments():
     require_admin(2)
-
     st.subheader("Payments")
     safe_df(list_purchases())
 
 
 def render_audit():
     require_admin(3)
-
     st.subheader("Audit Logs")
     safe_df(list_audit_logs())
 
-
-# =========================================================
-# OWNER
-# =========================================================
 
 def render_owner_console():
     require_admin(1337)
@@ -627,19 +660,8 @@ def render_owner_console():
 
     with st.container(border=True):
         st.write("Owner Mode aktiv.")
-        st.write("Voller Zugriff auf User, Logs, Payments, IPs, Rollen, Bans und Codes.")
         st.warning("Alle Aktionen werden im Audit Log gespeichert.")
 
-    st.divider()
-
-    st.markdown("### Owner Quick Notes")
-
-    st.info("Als nächstes sinnvoll: Maintenance Mode, Feature Flags in DB, Broadcasts, Football Analytics und Cost Tracking.")
-
-
-# =========================================================
-# MAIN
-# =========================================================
 
 def render_admin_panel():
     require_admin(1)
@@ -651,7 +673,8 @@ def render_admin_panel():
     <div class="admin-kicker">MABYTE INTERNAL</div>
     <div class="admin-title">Owner Command Center</div>
     <div class="admin-sub">
-        Users, Tokens, Plans, Payments, Tickets, Login Intelligence, Audit Logs und System Controls.
+        Verwalte User, Tokens, Plans, Payments, Tickets, Football Usage,
+        Feature Flags, Broadcasts und System Logs.
     </div>
 </div>
         """,
@@ -660,16 +683,17 @@ def render_admin_panel():
 
     tabs = [
         "Overview",
+        "Analytics",
         "Users",
         "User Control",
         "Tickets",
     ]
 
     if get_level() >= 2:
-        tabs += ["Redeem Codes", "Usage", "Payments"]
+        tabs += ["Redeem Codes", "Usage", "Payments", "Football"]
 
     if get_level() >= 3:
-        tabs += ["Login Logs", "Audit"]
+        tabs += ["Login Logs", "Audit", "System Tools"]
 
     if is_owner():
         tabs += ["Owner Console"]
@@ -680,6 +704,10 @@ def render_admin_panel():
 
     with tab_objects[i]:
         render_overview()
+    i += 1
+
+    with tab_objects[i]:
+        render_analytics()
     i += 1
 
     with tab_objects[i]:
@@ -707,6 +735,10 @@ def render_admin_panel():
             render_payments()
         i += 1
 
+        with tab_objects[i]:
+            render_football_admin()
+        i += 1
+
     if get_level() >= 3:
         with tab_objects[i]:
             render_login_logs()
@@ -714,6 +746,10 @@ def render_admin_panel():
 
         with tab_objects[i]:
             render_audit()
+        i += 1
+
+        with tab_objects[i]:
+            render_system_tools()
         i += 1
 
     if is_owner():
