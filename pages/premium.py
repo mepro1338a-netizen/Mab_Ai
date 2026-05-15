@@ -1,288 +1,798 @@
 import streamlit as st
-
 from config import PLANS, FOOTBALL_PLANS
 
+# =========================================================
+# PAGE CONFIG
+# =========================================================
 
-def premium_css():
-    st.markdown(
-        """
+st.set_page_config(
+    page_title="MaByte Premium",
+    layout="wide"
+)
+
+# =========================================================
+# PREMIUM CSS
+# =========================================================
+
+st.markdown("""
 <style>
-.premium-hero{
-    border-radius:28px;
-    padding:34px;
-    margin-bottom:28px;
+
+/* ======================================================
+BACKGROUND
+====================================================== */
+
+.stApp{
     background:
-        radial-gradient(circle at 20% 20%, rgba(56,189,248,.20), transparent 28%),
-        linear-gradient(135deg, rgba(15,23,42,.96), rgba(10,25,55,.82));
-    border:1px solid rgba(125,211,252,.16);
+        radial-gradient(circle at top left, rgba(88,28,135,.22), transparent 30%),
+        radial-gradient(circle at top right, rgba(37,99,235,.18), transparent 25%),
+        linear-gradient(180deg,#030712 0%, #07111f 100%);
 }
 
-.premium-title{
+/* ======================================================
+GLOBAL
+====================================================== */
+
+html, body, [class*="css"]{
     color:white;
-    font-size:42px;
-    font-weight:950;
-    letter-spacing:-1px;
+    font-family:Inter;
 }
 
-.premium-sub{
-    color:#cbd5e1;
-    font-size:17px;
-    margin-top:10px;
+/* ======================================================
+HERO
+====================================================== */
+
+.hero-box{
+    padding:42px;
+    border-radius:34px;
+
+    background:
+        linear-gradient(135deg,
+            rgba(15,23,42,.98),
+            rgba(17,24,39,.92)
+        );
+
+    border:1px solid rgba(148,163,184,.12);
+
+    margin-bottom:30px;
+
+    box-shadow:
+        0 0 40px rgba(59,130,246,.08),
+        0 20px 60px rgba(0,0,0,.45);
 }
+
+.hero-title{
+    font-size:64px;
+    font-weight:900;
+    line-height:1;
+    letter-spacing:-2px;
+
+    background:linear-gradient(
+        90deg,
+        #ffffff,
+        #93c5fd,
+        #c084fc
+    );
+
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+}
+
+.hero-sub{
+    margin-top:18px;
+    font-size:19px;
+    color:#cbd5e1;
+    line-height:1.7;
+    max-width:900px;
+}
+
+.hero-badge{
+    display:inline-block;
+    margin-top:26px;
+    padding:12px 18px;
+    border-radius:999px;
+
+    background:
+        linear-gradient(
+            90deg,
+            rgba(37,99,235,.25),
+            rgba(168,85,247,.25)
+        );
+
+    border:1px solid rgba(96,165,250,.18);
+
+    font-size:14px;
+    font-weight:800;
+
+    color:#dbeafe;
+}
+
+/* ======================================================
+SECTION
+====================================================== */
 
 .section-title{
+    font-size:38px;
+    font-weight:900;
+    margin-top:20px;
+    margin-bottom:10px;
     color:white;
-    font-size:30px;
-    font-weight:950;
-    margin-top:30px;
-    margin-bottom:8px;
 }
 
 .section-sub{
     color:#94a3b8;
-    font-size:15px;
-    margin-bottom:22px;
+    font-size:16px;
+    margin-bottom:28px;
 }
+
+/* ======================================================
+PLAN CARDS
+====================================================== */
 
 .plan-card{
-    min-height:430px;
-    border-radius:26px;
-    padding:26px;
-    background:linear-gradient(145deg,rgba(10,20,40,.95),rgba(15,30,60,.72));
-    border:1px solid rgba(96,165,250,.12);
-    box-shadow:0 18px 50px rgba(0,0,0,.22);
+    border-radius:30px;
+
+    padding:30px;
+
+    background:
+        linear-gradient(
+            145deg,
+            rgba(15,23,42,.98),
+            rgba(15,23,42,.84)
+        );
+
+    border:1px solid rgba(148,163,184,.12);
+
+    min-height:720px;
+
+    position:relative;
+
+    overflow:hidden;
+
+    box-shadow:
+        0 15px 50px rgba(0,0,0,.35);
 }
 
-.plan-card.highlight{
-    border-color:rgba(168,85,247,.42);
-    box-shadow:0 0 45px rgba(168,85,247,.18);
+.plan-card.popular{
+    border:1px solid rgba(168,85,247,.35);
+
+    box-shadow:
+        0 0 35px rgba(168,85,247,.16),
+        0 15px 50px rgba(0,0,0,.45);
 }
 
-.plan-label{
+.plan-card::before{
+    content:"";
+
+    position:absolute;
+
+    top:-100px;
+    right:-100px;
+
+    width:220px;
+    height:220px;
+
+    background:
+        radial-gradient(
+            circle,
+            rgba(59,130,246,.14),
+            transparent 70%
+        );
+}
+
+.plan-name{
+    font-size:34px;
+    font-weight:900;
     color:white;
-    font-size:25px;
-    font-weight:950;
 }
 
 .plan-badge{
     display:inline-block;
-    margin-top:10px;
-    padding:6px 12px;
+
+    margin-top:12px;
+
+    padding:8px 14px;
+
     border-radius:999px;
-    background:linear-gradient(135deg,#2563eb,#38bdf8);
-    color:white;
-    font-size:12px;
-    font-weight:900;
-}
 
-.plan-price{
-    color:white;
-    font-size:38px;
-    font-weight:1000;
-    margin-top:18px;
-}
+    background:
+        linear-gradient(
+            90deg,
+            rgba(59,130,246,.25),
+            rgba(168,85,247,.25)
+        );
 
-.plan-desc{
-    color:#94a3b8;
-    font-size:14px;
-    min-height:42px;
-    margin-top:8px;
-}
+    border:1px solid rgba(96,165,250,.14);
 
-.plan-feature{
     color:#dbeafe;
-    font-size:14px;
-    font-weight:700;
-    margin:9px 0;
-}
 
-.plan-metric{
-    border-radius:18px;
-    padding:14px;
-    background:rgba(15,23,42,.62);
-    border:1px solid rgba(125,211,252,.10);
-    margin-top:14px;
-}
-
-.metric-label{
-    color:#94a3b8;
     font-size:12px;
     font-weight:800;
 }
 
-.metric-value{
-    color:white;
-    font-size:22px;
-    font-weight:950;
+.plan-price{
+    margin-top:26px;
+
+    font-size:52px;
+    font-weight:1000;
+    line-height:1;
 }
 
-.b2b-card{
-    border-radius:28px;
-    padding:32px;
+.plan-price-small{
+    font-size:16px;
+    color:#94a3b8;
+    margin-top:10px;
+}
+
+.token-box{
     margin-top:24px;
+
+    padding:20px;
+
+    border-radius:22px;
+
     background:
-        radial-gradient(circle at 85% 30%, rgba(168,85,247,.20), transparent 30%),
-        linear-gradient(135deg,rgba(15,23,42,.96),rgba(30,20,70,.78));
-    border:1px solid rgba(168,85,247,.28);
-    box-shadow:0 0 50px rgba(168,85,247,.14);
+        rgba(15,23,42,.55);
+
+    border:1px solid rgba(148,163,184,.08);
 }
+
+.token-label{
+    color:#94a3b8;
+    font-size:13px;
+    font-weight:700;
+}
+
+.token-value{
+    margin-top:8px;
+    font-size:34px;
+    font-weight:900;
+}
+
+.plan-description{
+    margin-top:22px;
+    color:#cbd5e1;
+    line-height:1.7;
+    min-height:85px;
+}
+
+.feature-title{
+    margin-top:28px;
+    margin-bottom:16px;
+
+    color:white;
+    font-size:18px;
+    font-weight:900;
+}
+
+.feature-item{
+    padding:12px 0;
+
+    color:#dbeafe;
+
+    border-bottom:
+        1px solid rgba(148,163,184,.06);
+
+    font-size:15px;
+}
+
+/* ======================================================
+FOOTBALL
+====================================================== */
+
+.football-hero{
+    margin-top:70px;
+
+    padding:38px;
+
+    border-radius:34px;
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(22,101,52,.22),
+            rgba(15,23,42,.95)
+        );
+
+    border:1px solid rgba(34,197,94,.14);
+
+    box-shadow:
+        0 0 40px rgba(34,197,94,.08);
+}
+
+.football-title{
+    font-size:52px;
+    font-weight:1000;
+    line-height:1;
+}
+
+.football-sub{
+    margin-top:16px;
+
+    color:#d1fae5;
+
+    line-height:1.7;
+
+    max-width:900px;
+}
+
+/* ======================================================
+B2B
+====================================================== */
+
+.b2b-box{
+    margin-top:40px;
+
+    padding:38px;
+
+    border-radius:30px;
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(88,28,135,.25),
+            rgba(15,23,42,.96)
+        );
+
+    border:1px solid rgba(168,85,247,.20);
+}
+
+.b2b-title{
+    font-size:36px;
+    font-weight:900;
+}
+
+.b2b-sub{
+    margin-top:16px;
+
+    color:#d8b4fe;
+
+    line-height:1.7;
+}
+
+/* ======================================================
+BUTTONS
+====================================================== */
+
+.stButton button{
+    width:100%;
+
+    border:none !important;
+
+    border-radius:18px !important;
+
+    padding:16px !important;
+
+    background:
+        linear-gradient(
+            90deg,
+            #2563eb,
+            #7c3aed
+        ) !important;
+
+    color:white !important;
+
+    font-size:15px !important;
+
+    font-weight:800 !important;
+
+    transition:.25s;
+}
+
+.stButton button:hover{
+    transform:translateY(-2px);
+    opacity:.92;
+}
+
 </style>
-        """,
-        unsafe_allow_html=True,
-    )
+""", unsafe_allow_html=True)
 
+# =========================================================
+# HERO
+# =========================================================
 
-def select_plan(plan_key, category="normal"):
-    st.session_state.selected_plan = plan_key
-    st.session_state.selected_plan_category = category
-    st.success("Plan ausgewählt. Stripe Checkout wird als nächstes verbunden.")
+st.markdown("""
+<div class="hero-box">
 
+<div class="hero-title">
+One System.<br>
+Infinite Intelligence.
+</div>
 
-def normal_plan_card(plan_key, highlight=False):
+<div class="hero-sub">
+MaByte kombiniert AI, Content Engines, Coding,
+Football Intelligence, Video Generation und Automation
+in einer skalierbaren Plattform für Creator,
+Founder und moderne Teams.
+</div>
+
+<div class="hero-badge">
+⚡ Creator OS • AI Automation • Football Intelligence • Content Engine
+</div>
+
+</div>
+""", unsafe_allow_html=True)
+
+# =========================================================
+# NORMAL PREMIUM
+# =========================================================
+
+st.markdown("""
+<div class="section-title">
+💎 MaByte Premium
+</div>
+
+<div class="section-sub">
+Die normalen AI-Pläne für Chat, Coding,
+Media, Automation und Creator Workflows.
+</div>
+""", unsafe_allow_html=True)
+
+# =========================================================
+# PLAN CARD
+# =========================================================
+
+def render_plan(plan_key, popular=False):
+
     plan = PLANS[plan_key]
-    css_class = "plan-card highlight" if highlight else "plan-card"
 
-    st.markdown(
-        f"""
-<div class="{css_class}">
-    <div class="plan-label">{plan.get("label", plan_key)}</div>
-    <div class="plan-badge">{plan.get("badge", "")}</div>
-    <div class="plan-price">{plan.get("price", "")}</div>
-    <div class="plan-desc">{plan.get("description", "")}</div>
+    card_class = "plan-card popular" if popular else "plan-card"
 
-    <div class="plan-metric">
-        <div class="metric-label">Tokens inklusive</div>
-        <div class="metric-value">{int(plan.get("tokens", 0)):,}</div>
-    </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    st.markdown(f"""
+<div class="{card_class}">
 
-    for item in plan.get("highlights", []):
-        st.markdown(f'<div class="plan-feature">✅ {item}</div>', unsafe_allow_html=True)
+<div class="plan-name">
+{plan["label"]}
+</div>
+
+<div class="plan-badge">
+{plan["badge"]}
+</div>
+
+<div class="plan-price">
+{plan["price"]}
+</div>
+
+<div class="plan-price-small">
+monatlich
+</div>
+
+<div class="token-box">
+
+<div class="token-label">
+AI TOKENS
+</div>
+
+<div class="token-value">
+{plan["tokens"]:,}
+</div>
+
+</div>
+
+<div class="plan-description">
+{plan["description"]}
+</div>
+
+<div class="feature-title">
+Features
+</div>
+
+""", unsafe_allow_html=True)
+
+    for feature in plan["highlights"]:
+        st.markdown(
+            f'<div class="feature-item">✅ {feature}</div>',
+            unsafe_allow_html=True
+        )
 
     st.markdown("</div>", unsafe_allow_html=True)
 
     if st.button(
-        f"Upgrade auf {plan.get('label', plan_key)}",
-        key=f"buy_normal_{plan_key}",
-        use_container_width=True,
+        f"Upgrade auf {plan['label']}",
+        key=f"buy_{plan_key}"
     ):
-        select_plan(plan_key, "normal")
+        st.success(f"{plan['label']} ausgewählt.")
 
+# =========================================================
+# PREMIUM GRID
+# =========================================================
 
-def football_plan_card(plan_key, highlight=False):
-    plan = FOOTBALL_PLANS[plan_key]
-    css_class = "plan-card highlight" if highlight else "plan-card"
+col1, col2, col3 = st.columns(3)
 
-    ai_actions = plan.get("ai_actions")
-    api_requests = plan.get("api_requests")
+with col1:
+    render_plan("pro")
 
-    ai_actions_text = "Custom" if ai_actions is None else f"{ai_actions:,}"
-    api_requests_text = "Custom" if api_requests is None else f"{api_requests:,}"
+with col2:
+    render_plan("grand", popular=True)
 
-    st.markdown(
-        f"""
-<div class="{css_class}">
-    <div class="plan-label">{plan.get("label", plan_key)}</div>
-    <div class="plan-badge">{plan.get("badge", "")}</div>
-    <div class="plan-price">{plan.get("price", "")}</div>
-    <div class="plan-desc">{plan.get("description", "")}</div>
+with col3:
+    render_plan("elite")
 
-    <div class="plan-metric">
-        <div class="metric-label">Football AI Actions</div>
-        <div class="metric-value">{ai_actions_text}</div>
-    </div>
+# =========================================================
+# FOOTBALL HERO
+# =========================================================
 
-    <div class="plan-metric">
-        <div class="metric-label">Football API Requests</div>
-        <div class="metric-value">{api_requests_text}</div>
-    </div>
-        """,
-        unsafe_allow_html=True,
-    )
+st.markdown("""
+<div class="football-hero">
 
-    for item in plan.get("highlights", []):
-        st.markdown(f'<div class="plan-feature">⚽ {item}</div>', unsafe_allow_html=True)
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    if plan_key == "football_b2b":
-        if st.button("B2B Anfrage starten", key="football_b2b_request", use_container_width=True):
-            st.session_state.page = "support"
-            st.rerun()
-    else:
-        if st.button(
-            f"Football Plan wählen",
-            key=f"buy_football_{plan_key}",
-            use_container_width=True,
-        ):
-            select_plan(plan_key, "football")
-
-
-def render_premium():
-    premium_css()
-
-    st.markdown(
-        """
-<div class="premium-hero">
-    <div class="premium-title">💎 MaByte Premium</div>
-    <div class="premium-sub">
-        Wähle zwischen normalen AI-Tokens für MaByte und separaten Football AI Plänen für Creator, Seiten und B2B Systeme.
-    </div>
+<div class="football-title">
+⚽ Football Intelligence
 </div>
-        """,
-        unsafe_allow_html=True,
-    )
 
-    st.markdown('<div class="section-title">🚀 MaByte AI Plans</div>', unsafe_allow_html=True)
-    st.markdown(
-        '<div class="section-sub">Für normale AI Nutzung: Chat, Coding, Images, Media und Automationen.</div>',
-        unsafe_allow_html=True,
-    )
-
-    c1, c2, c3 = st.columns(3)
-
-    with c1:
-        normal_plan_card("pro")
-
-    with c2:
-        normal_plan_card("grand", highlight=True)
-
-    with c3:
-        normal_plan_card("elite")
-
-    st.divider()
-
-    st.markdown('<div class="section-title">⚽ Football AI Premium</div>', unsafe_allow_html=True)
-    st.markdown(
-        '<div class="section-sub">Getrennte Football-Pläne mit AI Actions, API Limits, Auto Posting und B2B Infrastruktur.</div>',
-        unsafe_allow_html=True,
-    )
-
-    f1, f2, f3 = st.columns(3)
-
-    with f1:
-        football_plan_card("football_starter")
-
-    with f2:
-        football_plan_card("football_pro", highlight=True)
-
-    with f3:
-        football_plan_card("football_elite")
-
-    st.markdown(
-        """
-<div class="b2b-card">
-    <div class="plan-label">🏢 Football B2B / Enterprise</div>
-    <div class="plan-desc">
-        Für Agenturen, Football Apps, Seiten-Netzwerke und Teams mit Custom API Limits, White Label, Webhooks und Dedicated Support.
-    </div>
+<div class="football-sub">
+Erstelle viralen Fußball-Content mit AI,
+automatisiere Matchday Workflows,
+nutze Live Match Daten und skaliere
+Football Creator Systeme mit AI Actions,
+API Access und Automationen.
 </div>
-        """,
-        unsafe_allow_html=True,
+
+</div>
+""", unsafe_allow_html=True)
+
+# =========================================================
+# FOOTBALL SECTION
+# =========================================================
+
+st.markdown("""
+<div class="section-title">
+⚽ Football Premium
+</div>
+
+<div class="section-sub">
+Getrennte Football Pläne für Creator,
+Football Seiten, Agenturen und Apps.
+</div>
+""", unsafe_allow_html=True)
+
+# =========================================================
+# FOOTBALL CARDS
+# =========================================================
+
+football_col1, football_col2, football_col3 = st.columns(3)
+
+# ---------------------------------------------------------
+
+with football_col1:
+
+    st.markdown("""
+<div class="plan-card">
+
+<div class="plan-name">
+Football Starter
+</div>
+
+<div class="plan-badge">
+Creator Entry
+</div>
+
+<div class="plan-price">
+19,99€
+</div>
+
+<div class="plan-price-small">
+pro Monat
+</div>
+
+<div class="token-box">
+
+<div class="token-label">
+FOOTBALL AI ACTIONS
+</div>
+
+<div class="token-value">
+1.000
+</div>
+
+</div>
+
+<div class="feature-title">
+Features
+</div>
+
+<div class="feature-item">
+⚽ Match Stats
+</div>
+
+<div class="feature-item">
+⚽ Match Predictions
+</div>
+
+<div class="feature-item">
+⚽ Team & Player Data
+</div>
+
+<div class="feature-item">
+⚽ AI Match Analysis
+</div>
+
+<div class="feature-item">
+⚽ Basic API Access
+</div>
+
+</div>
+""", unsafe_allow_html=True)
+
+    st.button(
+        "Football Starter wählen",
+        key="football_starter"
     )
 
-    if st.button("🏢 B2B Anfrage stellen", key="b2b_footer", use_container_width=True):
-        st.session_state.page = "support"
-        st.rerun()
+# ---------------------------------------------------------
+
+with football_col2:
+
+    st.markdown("""
+<div class="plan-card popular">
+
+<div class="plan-name">
+Football Pro
+</div>
+
+<div class="plan-badge">
+Most Popular
+</div>
+
+<div class="plan-price">
+99,99€
+</div>
+
+<div class="plan-price-small">
+pro Monat
+</div>
+
+<div class="token-box">
+
+<div class="token-label">
+FOOTBALL AI ACTIONS
+</div>
+
+<div class="token-value">
+8.000
+</div>
+
+</div>
+
+<div class="feature-title">
+Features
+</div>
+
+<div class="feature-item">
+⚽ Reel Generator
+</div>
+
+<div class="feature-item">
+⚽ AI Match Recaps
+</div>
+
+<div class="feature-item">
+⚽ Viral Content Ideas
+</div>
+
+<div class="feature-item">
+⚽ Advanced API Access
+</div>
+
+<div class="feature-item">
+⚽ Auto Posting
+</div>
+
+<div class="feature-item">
+⚽ Webhooks
+</div>
+
+</div>
+""", unsafe_allow_html=True)
+
+    st.button(
+        "Football Pro wählen",
+        key="football_pro"
+    )
+
+# ---------------------------------------------------------
+
+with football_col3:
+
+    st.markdown("""
+<div class="plan-card">
+
+<div class="plan-name">
+Football Elite
+</div>
+
+<div class="plan-badge">
+Infrastructure
+</div>
+
+<div class="plan-price">
+249,99€
+</div>
+
+<div class="plan-price-small">
+pro Monat
+</div>
+
+<div class="token-box">
+
+<div class="token-label">
+FOOTBALL AI ACTIONS
+</div>
+
+<div class="token-value">
+20.000
+</div>
+
+</div>
+
+<div class="feature-title">
+Features
+</div>
+
+<div class="feature-item">
+⚽ High Volume API
+</div>
+
+<div class="feature-item">
+⚽ Multi Account Systems
+</div>
+
+<div class="feature-item">
+⚽ Live Match Automation
+</div>
+
+<div class="feature-item">
+⚽ Priority Infrastructure
+</div>
+
+<div class="feature-item">
+⚽ Advanced Rate Limits
+</div>
+
+<div class="feature-item">
+⚽ Business Usage
+</div>
+
+</div>
+""", unsafe_allow_html=True)
+
+    st.button(
+        "Football Elite wählen",
+        key="football_elite"
+    )
+
+# =========================================================
+# B2B
+# =========================================================
+
+st.markdown("""
+<div class="b2b-box">
+
+<div class="b2b-title">
+🏢 Football Enterprise / B2B
+</div>
+
+<div class="b2b-sub">
+Für Agenturen, große Creator Systeme,
+Football Apps, Datenplattformen
+und Unternehmen mit Custom API Limits,
+White Label Lösungen, Webhooks,
+Dedicated Infrastructure und High Volume Access.
+</div>
+
+</div>
+""", unsafe_allow_html=True)
+
+if st.button(
+    "Enterprise Anfrage stellen",
+    key="enterprise_button"
+):
+    st.info("B2B Anfrage Bereich folgt als nächstes.")
+
+# =========================================================
+# FOOTER
+# =========================================================
+
+st.markdown("<br><br>", unsafe_allow_html=True)
+
+st.caption(
+    "MaByte • AI Operating System • Football Intelligence • Automation Infrastructure"
+)
