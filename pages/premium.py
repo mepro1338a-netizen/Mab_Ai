@@ -14,12 +14,14 @@ def premium_css():
 .stApp,
 [data-testid="stAppViewContainer"]{
     background:
-        radial-gradient(circle at 15% 5%, rgba(56,189,248,.22), transparent 28%),
-        radial-gradient(circle at 90% 0%, rgba(124,58,237,.18), transparent 28%),
-        linear-gradient(180deg,#071426 0%,#0b1d36 48%,#0d2a52 100%) !important;
+        radial-gradient(circle at 18% 5%, rgba(56,189,248,.24), transparent 28%),
+        radial-gradient(circle at 90% 0%, rgba(124,58,237,.20), transparent 30%),
+        linear-gradient(180deg,#06111f 0%,#0a1d38 48%,#0b2a55 100%) !important;
 }
 
-[data-testid="stHeader"]{background:transparent!important;}
+[data-testid="stHeader"]{
+    background:transparent!important;
+}
 
 .main .block-container{
     max-width:1180px!important;
@@ -31,19 +33,26 @@ section[data-testid="stSidebar"]{
     background:#06111f!important;
 }
 
+/* GOLD TEXT SYSTEM */
+h1,h2,h3,p,span,label,
+div[data-testid="stMarkdownContainer"],
+div[data-testid="stCaptionContainer"]{
+    color:#f8e7b0!important;
+}
+
 .hero{
     border-radius:28px;
     padding:28px 32px;
     margin-bottom:24px;
     background:
-        radial-gradient(circle at 85% 20%,rgba(125,211,252,.18),transparent 30%),
-        linear-gradient(135deg,rgba(15,23,42,.94),rgba(29,78,216,.86));
-    border:1px solid rgba(255,255,255,.13);
-    box-shadow:0 24px 60px rgba(0,0,0,.30);
+        radial-gradient(circle at 85% 20%,rgba(255,215,128,.17),transparent 30%),
+        linear-gradient(135deg,rgba(15,23,42,.94),rgba(30,64,175,.84));
+    border:1px solid rgba(255,215,128,.18);
+    box-shadow:0 24px 60px rgba(0,0,0,.32);
 }
 
 .hero-top{
-    color:#7dd3fc;
+    color:#ffd36a!important;
     font-size:12px;
     font-weight:900;
     letter-spacing:.12em;
@@ -51,7 +60,7 @@ section[data-testid="stSidebar"]{
 }
 
 .hero-title{
-    color:white;
+    color:#fff1c2!important;
     font-size:38px;
     line-height:1.04;
     font-weight:1000;
@@ -60,7 +69,7 @@ section[data-testid="stSidebar"]{
 }
 
 .hero-sub{
-    color:#dbeafe;
+    color:#f8e7b0!important;
     font-size:15px;
     line-height:1.55;
     max-width:860px;
@@ -73,45 +82,52 @@ section[data-testid="stSidebar"]{
     gap:10px;
     margin-top:24px;
     margin-bottom:6px;
-    color:#7dd3fc;
+    color:#ffd36a!important;
+}
+
+.section-head svg{
+    color:#ffd36a!important;
 }
 
 .section-head-title{
-    color:white;
+    color:#fff1c2!important;
     font-size:25px;
     font-weight:1000;
     letter-spacing:-.7px;
 }
 
 .section-sub{
-    color:#bfdbfe;
+    color:#f8e7b0!important;
     font-size:14px;
     margin-bottom:14px;
 }
 
+/* CARD */
 div[data-testid="stVerticalBlockBorderWrapper"]{
     background:
-        linear-gradient(180deg,rgba(15,107,255,.96),rgba(29,78,216,.94))!important;
-    border:1px solid rgba(255,255,255,.16)!important;
+        linear-gradient(180deg,rgba(15,107,255,.86),rgba(12,52,150,.92))!important;
+    border:1px solid rgba(255,215,128,.22)!important;
     border-radius:24px!important;
-    box-shadow:0 18px 44px rgba(0,0,0,.28)!important;
+    box-shadow:
+        0 18px 44px rgba(0,0,0,.30),
+        inset 0 1px 0 rgba(255,255,255,.10)!important;
 }
 
 div[data-testid="stVerticalBlockBorderWrapper"] *{
-    color:white!important;
+    color:#fff1c2!important;
 }
 
 div[data-testid="stVerticalBlockBorderWrapper"] p{
-    color:#dbeafe!important;
+    color:#f8e7b0!important;
     font-size:13px!important;
-    line-height:1.4!important;
+    line-height:1.42!important;
     margin-bottom:.55rem!important;
 }
 
 div[data-testid="stCaptionContainer"]{
-    color:#bae6fd!important;
+    color:#ffd36a!important;
     font-size:11px!important;
-    font-weight:900!important;
+    font-weight:950!important;
     letter-spacing:.08em!important;
     text-transform:uppercase!important;
 }
@@ -120,34 +136,48 @@ h3{
     font-size:24px!important;
     line-height:1.1!important;
     margin-bottom:.35rem!important;
+    color:#fff1c2!important;
 }
 
 div[data-testid="stMarkdownContainer"] h3{
-    color:white!important;
+    color:#fff1c2!important;
 }
 
+/* ORIGINAL TOKEN / ACTION BOXES */
 div[data-testid="stMetric"]{
-    background:rgba(255,255,255,.14)!important;
-    border:1px solid rgba(255,255,255,.16)!important;
-    border-radius:16px!important;
-    padding:12px!important;
+    background:
+        radial-gradient(circle at 85% 15%, rgba(125,211,252,.40), transparent 35%),
+        linear-gradient(135deg,#00b7ff 0%,#006dff 52%,#083b9c 100%)!important;
+    border:1px solid rgba(255,255,255,.32)!important;
+    border-radius:22px!important;
+    padding:15px!important;
+    box-shadow:
+        0 14px 30px rgba(0,102,255,.30),
+        inset 0 1px 0 rgba(255,255,255,.32)!important;
+    transform:rotate(-2deg);
+}
+
+div[data-testid="stMetric"]:nth-of-type(even){
+    transform:rotate(2deg);
 }
 
 div[data-testid="stMetricLabel"]{
-    color:#dbeafe!important;
+    color:#dff7ff!important;
     font-size:11px!important;
-    font-weight:900!important;
+    font-weight:950!important;
+    text-transform:uppercase!important;
 }
 
 div[data-testid="stMetricValue"]{
-    color:white!important;
-    font-size:25px!important;
+    color:#ffffff!important;
+    font-size:27px!important;
     font-weight:1000!important;
+    text-shadow:0 2px 12px rgba(0,0,0,.25);
 }
 
 hr{
     margin:10px 0!important;
-    border-color:rgba(255,255,255,.14)!important;
+    border-color:rgba(255,215,128,.18)!important;
 }
 
 .stButton > button{
@@ -156,16 +186,27 @@ hr{
     min-height:44px!important;
     font-size:14px!important;
     font-weight:950!important;
-    background:linear-gradient(135deg,#020617,#0f172a)!important;
-    color:white!important;
-    box-shadow:0 10px 22px rgba(0,0,0,.23)!important;
+    background:
+        linear-gradient(135deg,#ffd36a 0%,#f59e0b 100%)!important;
+    color:#111827!important;
+    box-shadow:0 12px 24px rgba(245,158,11,.24)!important;
+}
+
+.stButton > button:hover{
+    transform:translateY(-2px);
+    filter:brightness(1.04);
 }
 
 div[data-testid="stAlert"]{
-    background:rgba(219,234,254,.95)!important;
-    color:#0f172a!important;
+    background:
+        linear-gradient(135deg,rgba(255,211,106,.96),rgba(255,243,196,.96))!important;
+    color:#111827!important;
     border-radius:16px!important;
-    border:1px solid rgba(37,99,235,.2)!important;
+    border:1px solid rgba(245,158,11,.35)!important;
+}
+
+div[data-testid="stAlert"] *{
+    color:#111827!important;
 }
 
 .b2b{
@@ -173,21 +214,41 @@ div[data-testid="stAlert"]{
     border-radius:24px;
     padding:24px 28px;
     background:
-        radial-gradient(circle at 88% 20%,rgba(56,189,248,.22),transparent 30%),
+        radial-gradient(circle at 88% 20%,rgba(255,211,106,.22),transparent 30%),
         linear-gradient(135deg,#020617,#172554);
-    border:1px solid rgba(255,255,255,.12);
+    border:1px solid rgba(255,215,128,.18);
     box-shadow:0 22px 50px rgba(0,0,0,.32);
 }
 
-.b2b-icon{color:#7dd3fc;margin-bottom:8px;}
-.b2b-title{color:white;font-size:26px;font-weight:1000;letter-spacing:-.7px;}
-.b2b-sub{color:#cbd5e1;font-size:14px;line-height:1.55;max-width:880px;margin-top:8px;}
+.b2b-icon{
+    color:#ffd36a!important;
+    margin-bottom:8px;
+}
+
+.b2b-title{
+    color:#fff1c2!important;
+    font-size:26px;
+    font-weight:1000;
+    letter-spacing:-.7px;
+}
+
+.b2b-sub{
+    color:#f8e7b0!important;
+    font-size:14px;
+    line-height:1.55;
+    max-width:880px;
+    margin-top:8px;
+}
 
 .compact-list{
-    color:#e0f2fe;
+    color:#fff1c2!important;
     font-size:13px;
     line-height:1.65;
     margin-top:8px;
+}
+
+.compact-list b{
+    color:#ffd36a!important;
 }
 </style>
         """,
@@ -263,8 +324,10 @@ def football_card(plan_key):
         st.markdown(f"### {plan.get('price', '')}")
 
         m1, m2 = st.columns(2)
+
         with m1:
             st.metric("Actions", actions_text)
+
         with m2:
             st.metric("API", requests_text)
 
@@ -307,10 +370,13 @@ def render_premium():
     )
 
     c1, c2, c3 = st.columns(3, gap="medium")
+
     with c1:
         normal_card("pro")
+
     with c2:
         normal_card("grand")
+
     with c3:
         normal_card("elite")
 
@@ -323,10 +389,13 @@ def render_premium():
     )
 
     f1, f2, f3 = st.columns(3, gap="medium")
+
     with f1:
         football_card("football_starter")
+
     with f2:
         football_card("football_pro")
+
     with f3:
         football_card("football_elite")
 
