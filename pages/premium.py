@@ -145,6 +145,43 @@ h3{
     color:#fff1c2!important;
 }
 
+.plan-bubble{
+    background:
+        radial-gradient(circle at 85% 15%, rgba(125,211,252,.40), transparent 35%),
+        linear-gradient(135deg,#00b7ff 0%,#006dff 52%,#083b9c 100%);
+    border:1px solid rgba(255,255,255,.34);
+    border-radius:22px;
+    padding:14px 16px;
+    margin:12px 0 14px 0;
+    box-shadow:
+        0 14px 30px rgba(0,102,255,.30),
+        inset 0 1px 0 rgba(255,255,255,.32);
+}
+
+.plan-bubble-label{
+    color:#dff7ff!important;
+    font-size:11px;
+    font-weight:950;
+    text-transform:uppercase;
+    letter-spacing:.08em;
+}
+
+.plan-bubble-value{
+    color:#ffffff!important;
+    font-size:27px;
+    font-weight:1000;
+    line-height:1.1;
+    margin-top:4px;
+    text-shadow:0 2px 12px rgba(0,0,0,.25);
+}
+
+.plan-bubble-sub{
+    color:#dff7ff!important;
+    font-size:12px;
+    font-weight:800;
+    margin-top:5px;
+}
+
 div[data-testid="stMetric"]{
     background:
         radial-gradient(circle at 85% 15%, rgba(125,211,252,.40), transparent 35%),
@@ -155,7 +192,6 @@ div[data-testid="stMetric"]{
     box-shadow:
         0 14px 30px rgba(0,102,255,.30),
         inset 0 1px 0 rgba(255,255,255,.32)!important;
-    transform:rotate(-2deg);
 }
 
 div[data-testid="stMetricLabel"]{
@@ -263,21 +299,34 @@ def section_header(icon, title, sub):
     )
 
 
+def bubble(label, value, sub=""):
+    st.markdown(
+        f"""
+<div class="plan-bubble">
+    <div class="plan-bubble-label">{label}</div>
+    <div class="plan-bubble-value">{value}</div>
+    <div class="plan-bubble-sub">{sub}</div>
+</div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def normal_card(plan_key):
     plan = PLANS[plan_key]
     highlights = plan.get("highlights", [])[:3]
+    token_text = f"{int(plan.get('tokens', 0)):,}".replace(",", ".")
 
     with st.container(border=True):
         st.caption(plan.get("badge", "Plan"))
-        st.subheader(plan.get("label", plan_key))
+
+        bubble("Plan", plan.get("label", plan_key), f"{token_text} Tokens")
+
         st.write(plan.get("description", ""))
 
         st.markdown(f"### {plan.get('price', '')}")
 
-        st.metric(
-            "Tokens",
-            f"{int(plan.get('tokens', 0)):,}".replace(",", "."),
-        )
+        bubble("Tokens", token_text, "inklusive")
 
         st.markdown(
             "<div class='compact-list'>"
@@ -303,21 +352,17 @@ def football_card(plan_key):
 
     with st.container(border=True):
         st.caption(plan.get("badge", "Football"))
-        st.subheader(plan.get("label", plan_key))
+
+        bubble("Plan", plan.get("label", plan_key), "Football Premium")
+
         st.write(plan.get("description", ""))
 
         st.markdown(f"### {plan.get('price', '')}")
 
         if plan_key == "football_elite":
-            c1, c2 = st.columns(2)
-
-            with c1:
-                st.metric("Actions", actions_text)
-
-            with c2:
-                st.metric("API", "Full Access")
+            bubble("Actions + API", f"{actions_text} Actions", "API Full Access")
         else:
-            st.metric("Actions", actions_text)
+            bubble("Actions", actions_text, "Football AI Actions")
 
         st.markdown(
             "<div class='compact-list'>"
