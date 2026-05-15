@@ -6,7 +6,6 @@ from ui_core import load_css, render_sidebar
 from pages.auth import render_auth
 from pages.home import render_home
 from pages.chat import render_chat
-from pages.media import render_media
 from pages.football import render_football
 from pages.projects import render_projects
 from pages.automation_lab import render_automation_lab
