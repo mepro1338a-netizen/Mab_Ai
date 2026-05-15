@@ -8,7 +8,6 @@ from pages.home import render_home
 from pages.chat import render_chat
 
 # MEDIA IMPORT FIX
-from pages.media import render_media
 
 from pages.football import render_football
 from pages.projects import render_projects
