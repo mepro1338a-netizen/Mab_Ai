@@ -33,7 +33,14 @@ section[data-testid="stSidebar"]{
     background:#06111f!important;
 }
 
-/* GOLD TEXT SYSTEM */
+section[data-testid="stSidebar"] .stButton > button{
+    background:linear-gradient(135deg,#38bdf8,#0ea5e9)!important;
+    color:#ffffff!important;
+    border:none!important;
+    border-radius:18px!important;
+    box-shadow:0 12px 24px rgba(14,165,233,.22)!important;
+}
+
 h1,h2,h3,p,span,label,
 div[data-testid="stMarkdownContainer"],
 div[data-testid="stCaptionContainer"]{
@@ -102,7 +109,6 @@ div[data-testid="stCaptionContainer"]{
     margin-bottom:14px;
 }
 
-/* CARD */
 div[data-testid="stVerticalBlockBorderWrapper"]{
     background:
         linear-gradient(180deg,rgba(15,107,255,.86),rgba(12,52,150,.92))!important;
@@ -139,11 +145,6 @@ h3{
     color:#fff1c2!important;
 }
 
-div[data-testid="stMarkdownContainer"] h3{
-    color:#fff1c2!important;
-}
-
-/* ORIGINAL TOKEN / ACTION BOXES */
 div[data-testid="stMetric"]{
     background:
         radial-gradient(circle at 85% 15%, rgba(125,211,252,.40), transparent 35%),
@@ -155,10 +156,6 @@ div[data-testid="stMetric"]{
         0 14px 30px rgba(0,102,255,.30),
         inset 0 1px 0 rgba(255,255,255,.32)!important;
     transform:rotate(-2deg);
-}
-
-div[data-testid="stMetric"]:nth-of-type(even){
-    transform:rotate(2deg);
 }
 
 div[data-testid="stMetricLabel"]{
@@ -190,11 +187,6 @@ hr{
         linear-gradient(135deg,#ffd36a 0%,#f59e0b 100%)!important;
     color:#111827!important;
     box-shadow:0 12px 24px rgba(245,158,11,.24)!important;
-}
-
-.stButton > button:hover{
-    transform:translateY(-2px);
-    filter:brightness(1.04);
 }
 
 div[data-testid="stAlert"]{
@@ -245,10 +237,6 @@ div[data-testid="stAlert"] *{
     font-size:13px;
     line-height:1.65;
     margin-top:8px;
-}
-
-.compact-list b{
-    color:#ffd36a!important;
 }
 </style>
         """,
@@ -311,10 +299,7 @@ def football_card(plan_key):
     highlights = plan.get("highlights", [])[:3]
 
     actions = plan.get("ai_actions")
-    requests = plan.get("api_requests")
-
     actions_text = "Custom" if actions is None else f"{actions:,}".replace(",", ".")
-    requests_text = "Custom" if requests is None else f"{requests:,}".replace(",", ".")
 
     with st.container(border=True):
         st.caption(plan.get("badge", "Football"))
@@ -323,13 +308,16 @@ def football_card(plan_key):
 
         st.markdown(f"### {plan.get('price', '')}")
 
-        m1, m2 = st.columns(2)
+        if plan_key == "football_elite":
+            c1, c2 = st.columns(2)
 
-        with m1:
+            with c1:
+                st.metric("Actions", actions_text)
+
+            with c2:
+                st.metric("API", "Full Access")
+        else:
             st.metric("Actions", actions_text)
-
-        with m2:
-            st.metric("API", requests_text)
 
         st.markdown(
             "<div class='compact-list'>"
