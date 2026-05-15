@@ -11,15 +11,22 @@ from pages.football import render_football
 from pages.projects import render_projects
 from pages.automation_lab import render_automation_lab
 
+# NEUE PREMIUM PAGE
+from pages.premium import render_premium
+
+# ACCOUNT PAGES
 from pages.account import (
     render_dashboard,
     render_support,
-    render_premium,
     render_redeem,
 )
 
 from pages.admin import render_admin
 
+
+# =========================================================
+# PAGE CONFIG
+# =========================================================
 
 st.set_page_config(
     page_title="MaByte",
@@ -28,8 +35,16 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+# =========================================================
+# INIT
+# =========================================================
+
 init_db()
 load_css()
+
+# =========================================================
+# SESSION DEFAULTS
+# =========================================================
 
 DEFAULTS = {
     "page": "auth",
@@ -47,15 +62,29 @@ for key, value in DEFAULTS.items():
     if key not in st.session_state:
         st.session_state[key] = value
 
+# =========================================================
+# AUTOMATIONS PAGE
+# =========================================================
 
 def render_automations():
+
     st.title("⚙️ Automations")
-    st.caption("Geplante Abläufe, Posting Flows und System Actions.")
+
+    st.caption(
+        "Geplante Abläufe, Posting Flows und System Actions."
+    )
 
     with st.container(border=True):
-        st.subheader("Automation Center")
-        st.info("Noch keine Automationen aktiv.")
 
+        st.subheader("Automation Center")
+
+        st.info(
+            "Noch keine Automationen aktiv."
+        )
+
+# =========================================================
+# AUTH CHECK
+# =========================================================
 
 logged_in = bool(
     st.session_state.get("logged_in")
@@ -63,67 +92,136 @@ logged_in = bool(
 )
 
 if not logged_in:
+
     st.session_state.page = "auth"
+
     render_auth()
+
     st.stop()
 
+# =========================================================
+# APP LAYOUT
+# =========================================================
 
 render_sidebar()
 
-page = st.session_state.get("page", "home")
+# =========================================================
+# ROUTER
+# =========================================================
+
+page = st.session_state.get(
+    "page",
+    "home"
+)
+
+# ---------------------------------------------------------
 
 if page == "auth":
+
     st.session_state.page = "home"
+
     st.rerun()
 
+# ---------------------------------------------------------
+
 elif page == "home":
+
     render_home()
 
+# ---------------------------------------------------------
+
 elif page == "chat":
+
     render_chat()
 
+# ---------------------------------------------------------
+
 elif page == "projects":
+
     render_projects()
 
+# ---------------------------------------------------------
+
 elif page == "football":
+
     render_football()
 
+# ---------------------------------------------------------
+
 elif page == "automation_lab":
+
     render_automation_lab()
 
+# ---------------------------------------------------------
+
 elif page == "automations":
+
     render_automations()
 
+# ---------------------------------------------------------
+
 elif page == "coding":
+
     render_media("coding")
 
+# ---------------------------------------------------------
+
 elif page == "image":
+
     render_media("image")
 
+# ---------------------------------------------------------
+
 elif page == "music":
+
     render_media("music")
 
+# ---------------------------------------------------------
+
 elif page == "reels":
+
     render_media("reels")
 
+# ---------------------------------------------------------
+
 elif page == "video":
+
     render_media("video")
 
+# ---------------------------------------------------------
+
 elif page == "dashboard":
+
     render_dashboard()
 
+# ---------------------------------------------------------
+
 elif page == "support":
+
     render_support()
 
+# ---------------------------------------------------------
+
 elif page == "premium":
+
     render_premium()
 
+# ---------------------------------------------------------
+
 elif page == "redeem":
+
     render_redeem()
 
+# ---------------------------------------------------------
+
 elif page == "admin":
+
     render_admin()
 
+# ---------------------------------------------------------
+
 else:
+
     st.session_state.page = "home"
+
     st.rerun()
