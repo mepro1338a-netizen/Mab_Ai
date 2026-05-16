@@ -21,7 +21,7 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 
 
 # =========================================================
-# BASIC HELPERS
+# HELPERS
 # =========================================================
 
 def username():
@@ -38,6 +38,7 @@ def chat_cost():
 
 def sync_user():
     user = get_user(username())
+
     if user:
         sync_session_user(user)
 
@@ -48,144 +49,193 @@ def ensure_messages():
 
 
 # =========================================================
-# PAGE CSS — NO CUSTOM HTML REQUIRED
+# CSS
 # =========================================================
 
 def load_chat_css():
     st.markdown(
         """
 <style>
-.main .block-container {
-    max-width: 1180px !important;
-    padding-top: 105px !important;
-    padding-bottom: 130px !important;
+
+.main .block-container{
+    max-width:1180px!important;
+    padding-top:100px!important;
+    padding-bottom:120px!important;
 }
 
-/* Page titles */
-h1 {
-    font-size: 46px !important;
-    font-weight: 950 !important;
-    color: #ffe7a3 !important;
-    letter-spacing: -1.5px !important;
+/* TITLES */
+
+h1{
+    font-size:52px!important;
+    font-weight:1000!important;
+    color:#ffe7a3!important;
+    letter-spacing:-2px!important;
 }
 
-h2, h3 {
-    color: #ffe7a3 !important;
+h2,h3{
+    color:#ffe7a3!important;
 }
 
-/* Metrics */
-[data-testid="metric-container"] {
-    background: linear-gradient(180deg, rgba(12,24,44,.98), rgba(8,16,30,.98)) !important;
-    border: 1px solid rgba(255,255,255,.07) !important;
-    border-radius: 24px !important;
-    padding: 22px !important;
-    box-shadow: 0 0 34px rgba(0,140,255,.10) !important;
+/* CONTAINERS */
+
+div[data-testid="stVerticalBlockBorderWrapper"]{
+    background:
+        linear-gradient(
+            180deg,
+            rgba(12,24,44,.94),
+            rgba(8,16,30,.98)
+        )!important;
+
+    border:1px solid rgba(255,255,255,.06)!important;
+
+    border-radius:28px!important;
+
+    box-shadow:
+        0 0 40px rgba(0,140,255,.08)!important;
 }
 
-[data-testid="metric-container"] label {
-    color: #7dd3fc !important;
-    font-size: 12px !important;
-    font-weight: 900 !important;
-    text-transform: uppercase !important;
+/* TEXT */
+
+p,span,label,div{
+    color:#f8e7b0!important;
 }
 
-[data-testid="metric-container"] div {
-    color: #ffe7a3 !important;
-    font-weight: 950 !important;
+/* CHAT MESSAGES */
+
+[data-testid="stChatMessage"]{
+    background:
+        linear-gradient(
+            180deg,
+            rgba(12,24,44,.86),
+            rgba(8,16,30,.96)
+        )!important;
+
+    border:1px solid rgba(255,255,255,.07)!important;
+
+    border-radius:24px!important;
+
+    padding:18px!important;
+
+    margin-bottom:14px!important;
+
+    box-shadow:
+        0 0 24px rgba(0,0,0,.18)!important;
 }
 
-/* Containers */
-div[data-testid="stVerticalBlockBorderWrapper"] {
-    background: linear-gradient(180deg, rgba(12,24,44,.92), rgba(8,16,30,.97)) !important;
-    border: 1px solid rgba(255,255,255,.07) !important;
-    border-radius: 26px !important;
-    box-shadow: 0 0 34px rgba(0,140,255,.08) !important;
+[data-testid="stChatMessage"] *{
+    color:#ffe7a3!important;
 }
 
-/* Selectbox */
-.stSelectbox div[data-baseweb="select"] > div {
-    background: rgba(15,23,42,.96) !important;
-    border: 1px solid rgba(56,189,248,.22) !important;
-    border-radius: 18px !important;
-    color: #ffe7a3 !important;
-}
-
-/* Chat messages */
-[data-testid="stChatMessage"] {
-    background: linear-gradient(180deg, rgba(12,24,44,.86), rgba(8,16,30,.96)) !important;
-    border: 1px solid rgba(255,255,255,.07) !important;
-    border-radius: 24px !important;
-    padding: 18px !important;
-    margin-bottom: 14px !important;
-    box-shadow: 0 0 24px rgba(0,0,0,.18) !important;
-}
-
-[data-testid="stChatMessage"] * {
-    color: #ffe7a3 !important;
-}
+/* AVATARS */
 
 [data-testid="stChatMessageAvatarUser"],
-[data-testid="stChatMessageAvatarAssistant"] {
-    background: linear-gradient(135deg,#38bdf8,#0ea5e9) !important;
-    border-radius: 16px !important;
+[data-testid="stChatMessageAvatarAssistant"]{
+    background:
+        linear-gradient(
+            135deg,
+            #38bdf8,
+            #0ea5e9
+        )!important;
+
+    border-radius:14px!important;
 }
 
-/* Chat input */
-[data-testid="stChatInput"] {
-    position: fixed !important;
-    bottom: 22px !important;
-    left: 320px !important;
-    right: 34px !important;
-    z-index: 999999 !important;
-    background: transparent !important;
+/* CHAT INPUT */
+
+[data-testid="stChatInput"]{
+    position:fixed!important;
+    bottom:14px!important;
+    left:330px!important;
+    right:24px!important;
+    z-index:999999!important;
+    background:transparent!important;
 }
 
-[data-testid="stChatInput"] > div {
-    background: linear-gradient(135deg, rgba(15,23,42,.98), rgba(8,16,30,.98)) !important;
-    border: 1px solid rgba(56,189,248,.28) !important;
-    border-radius: 26px !important;
-    box-shadow: 0 0 35px rgba(0,140,255,.22) !important;
-    padding: 8px !important;
+[data-testid="stChatInput"] > div{
+    background:
+        linear-gradient(
+            135deg,
+            rgba(8,15,28,.98),
+            rgba(13,22,40,.98)
+        )!important;
+
+    border:1px solid rgba(56,189,248,.18)!important;
+
+    border-radius:18px!important;
+
+    min-height:58px!important;
+
+    box-shadow:
+        0 0 40px rgba(0,140,255,.14),
+        inset 0 1px 0 rgba(255,255,255,.03)!important;
+
+    padding:6px 10px!important;
 }
 
-[data-testid="stChatInput"] textarea {
-    background: transparent !important;
-    color: #ffe7a3 !important;
-    border: none !important;
-    font-size: 15px !important;
+[data-testid="stChatInput"] textarea{
+    background:transparent!important;
+    color:#ffe7a3!important;
+    border:none!important;
+    font-size:15px!important;
+    padding-top:10px!important;
 }
 
-[data-testid="stChatInput"] textarea::placeholder {
-    color: rgba(248,231,176,.55) !important;
+[data-testid="stChatInput"] textarea::placeholder{
+    color:rgba(248,231,176,.45)!important;
 }
 
-[data-testid="stChatInput"] button {
-    background: linear-gradient(135deg,#38bdf8,#0ea5e9) !important;
-    border-radius: 16px !important;
+[data-testid="stChatInput"] button{
+    width:42px!important;
+    height:42px!important;
+    border-radius:12px!important;
+
+    background:
+        linear-gradient(
+            135deg,
+            #38bdf8,
+            #0ea5e9
+        )!important;
 }
 
-/* Alerts */
-div[data-testid="stAlert"] {
-    background: linear-gradient(135deg, rgba(14,116,144,.34), rgba(30,64,175,.26)) !important;
-    border: 1px solid rgba(56,189,248,.22) !important;
-    border-radius: 18px !important;
+/* SELECTBOX */
+
+.stSelectbox div[data-baseweb="select"] > div{
+    background:rgba(15,23,42,.96)!important;
+    border:1px solid rgba(56,189,248,.18)!important;
+    border-radius:18px!important;
+    color:#ffe7a3!important;
 }
 
-div[data-testid="stAlert"] * {
-    color: #ffe7a3 !important;
+/* ALERTS */
+
+div[data-testid="stAlert"]{
+    background:
+        linear-gradient(
+            135deg,
+            rgba(14,116,144,.28),
+            rgba(30,64,175,.22)
+        )!important;
+
+    border:1px solid rgba(56,189,248,.18)!important;
+
+    border-radius:18px!important;
 }
 
-/* Mobile */
-@media(max-width:900px) {
-    [data-testid="stChatInput"] {
-        left: 12px !important;
-        right: 12px !important;
+/* MOBILE */
+
+@media(max-width:900px){
+
+    [data-testid="stChatInput"]{
+        left:12px!important;
+        right:12px!important;
     }
 
-    h1 {
-        font-size: 34px !important;
+    h1{
+        font-size:34px!important;
     }
+
 }
+
 </style>
         """,
         unsafe_allow_html=True,
@@ -197,19 +247,34 @@ div[data-testid="stAlert"] * {
 # =========================================================
 
 def project_selector():
+
     projects = list_projects(username())
 
     if not projects:
-        st.info("Kein Projekt aktiv. Du kannst trotzdem normal chatten.")
+        st.info(
+            "Kein Projekt aktiv. Du kannst trotzdem normal chatten."
+        )
         return None
 
-    labels = [f"{p.get('title')} · {p.get('workspace')}" for p in projects]
-    ids = {labels[i]: projects[i].get("id") for i in range(len(projects))}
+    labels = [
+        f"{p.get('title')} · {p.get('workspace')}"
+        for p in projects
+    ]
 
-    selected = st.selectbox("Projekt Memory", labels)
+    ids = {
+        labels[i]: projects[i].get("id")
+        for i in range(len(projects))
+    }
+
+    selected = st.selectbox(
+        "Projekt Memory",
+        labels
+    )
+
     project_id = ids[selected]
 
     st.session_state.active_project_id = project_id
+
     return get_project(project_id)
 
 
@@ -218,13 +283,17 @@ def project_selector():
 # =========================================================
 
 def charge_chat(prompt):
+
     cost = chat_cost()
 
     if get_tokens() < cost:
         st.error("Nicht genug Tokens.")
         st.stop()
 
-    ok, msg = spend_tokens(username(), cost)
+    ok, msg = spend_tokens(
+        username(),
+        cost
+    )
 
     if not ok:
         st.error(msg)
@@ -241,6 +310,7 @@ def charge_chat(prompt):
     )
 
     sync_user()
+
     return cost
 
 
@@ -249,10 +319,12 @@ def charge_chat(prompt):
 # =========================================================
 
 def build_messages(prompt, project):
+
     project_context = ""
 
     if project:
         project_context = f"""
+
 Aktives Projekt:
 {project.get("title")}
 
@@ -261,23 +333,28 @@ Workspace:
 
 Beschreibung:
 {project.get("description")}
+
 """
 
     return [
         {
             "role": "system",
             "content": f"""
-Du bist MaByte, ein hochwertiger AI Operating System Assistant.
+
+Du bist MaByte.
+
+Ein moderner AI Operating System Assistant.
 
 Antworte:
-- klar
+- professionell
 - modern
 - strategisch
-- hilfreich
+- hochwertig
+- klar strukturiert
 - nicht unnötig lang
-- mit konkreten nächsten Schritten
 
 {project_context}
+
 """,
         },
         {
@@ -288,6 +365,7 @@ Antworte:
 
 
 def ai_response(prompt, project):
+
     if not OPENAI_API_KEY:
         return "OPENAI_API_KEY fehlt."
 
@@ -305,14 +383,19 @@ def ai_response(prompt, project):
 # =========================================================
 
 def render_history(project):
+
     if project:
-        history = list_project_chat_memory(project.get("id"), limit=40)
+
+        history = list_project_chat_memory(
+            project.get("id"),
+            limit=40
+        )
 
         if not history:
-            st.info("Noch kein Chat in diesem Projekt.")
             return
 
         for msg in history:
+
             role = msg.get("role", "assistant")
             content = msg.get("message", "")
 
@@ -321,16 +404,8 @@ def render_history(project):
 
         return
 
-    if not st.session_state.chat_messages:
-        with st.container(border=True):
-            st.subheader("Willkommen bei MaByte")
-            st.write(
-                "Schreib unten deine erste Nachricht. "
-                "MaByte hilft dir bei Strategie, Content, Coding, Football AI und Workflows."
-            )
-        return
-
     for msg in st.session_state.chat_messages:
+
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
@@ -340,69 +415,133 @@ def render_history(project):
 # =========================================================
 
 def render_chat():
+
     if not st.session_state.get("logged_in"):
+
         st.session_state.page = "auth"
+
         st.rerun()
+
         return
 
     ensure_messages()
+
     load_chat_css()
 
     st.title("MaByte Intelligence")
-    st.caption("AI Assistant für Strategie, Projekte, Content, Coding und Workflows.")
+
+    st.caption(
+        "AI Assistant für Strategie, Projekte, Content, Coding und Workflows."
+    )
+
+    st.write("")
 
     c1, c2, c3 = st.columns(3)
 
     with c1:
-        st.metric("Tokens", get_tokens())
+        with st.container(border=True):
+
+            st.caption("TOKENS")
+
+            st.subheader(get_tokens())
 
     with c2:
-        st.metric("Chat Kosten", chat_cost())
+        with st.container(border=True):
+
+            st.caption("CHAT COST")
+
+            st.subheader(chat_cost())
 
     with c3:
-        st.metric("Letztes Tool", latest_tool_used(username()))
+        with st.container(border=True):
 
-    st.divider()
+            st.caption("LAST TOOL")
+
+            st.subheader(
+                latest_tool_used(username())
+            )
+
+    st.write("")
 
     with st.container(border=True):
+
         project = project_selector()
 
-    st.divider()
+    st.write("")
+
+    if not st.session_state.chat_messages:
+
+        with st.container(border=True):
+
+            st.subheader("Willkommen bei MaByte")
+
+            st.write(
+                """
+MaByte hilft dir bei:
+
+- AI Strategien
+- Content Creation
+- Reels
+- Coding
+- Business Workflows
+- Automation
+- Football Intelligence
+                """
+            )
 
     render_history(project)
 
-    prompt = st.chat_input("Frag MaByte...")
+    prompt = st.chat_input(
+        "Frag MaByte..."
+    )
 
     if prompt:
+
         cost = charge_chat(prompt)
 
         if project:
+
             save_project_chat_message(
                 project_id=project.get("id"),
                 username=username(),
                 role="user",
                 message=prompt,
             )
+
         else:
+
             st.session_state.chat_messages.append(
-                {"role": "user", "content": prompt}
+                {
+                    "role": "user",
+                    "content": prompt,
+                }
             )
 
         with st.spinner("MaByte denkt nach..."):
-            answer = ai_response(prompt, project)
 
-        answer = f"{answer}\n\n---\nTokens: {cost}"
+            answer = ai_response(
+                prompt,
+                project
+            )
+
+        answer += f"\n\n---\nTokens: {cost}"
 
         if project:
+
             save_project_chat_message(
                 project_id=project.get("id"),
                 username=username(),
                 role="assistant",
                 message=answer,
             )
+
         else:
+
             st.session_state.chat_messages.append(
-                {"role": "assistant", "content": answer}
+                {
+                    "role": "assistant",
+                    "content": answer,
+                }
             )
 
         st.rerun()
