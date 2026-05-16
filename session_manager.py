@@ -1,4 +1,4 @@
-import streamlit as st
+﻿import streamlit as st
 from datetime import datetime, timedelta
 
 SESSION_TIMEOUT_MINUTES = 60
@@ -32,3 +32,4 @@ def logout():
         del st.session_state[key]
 
     st.rerun()
+

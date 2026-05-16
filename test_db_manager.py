@@ -1,4 +1,4 @@
-from db_manager import db
+﻿from db_manager import db
 
 result = db.execute(
     "SELECT name FROM sqlite_master",
@@ -6,3 +6,4 @@ result = db.execute(
 )
 
 print(result)
+

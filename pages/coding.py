@@ -1,7 +1,7 @@
-import streamlit as st
+﻿import streamlit as st
 from coding_service import generate_code
 
-st.title("💻 Coding AI")
+st.title("ðŸ’» Coding AI")
 
 prompt = st.text_area("Was soll programmiert werden?")
 
@@ -13,3 +13,4 @@ if st.button("Generate Code"):
         st.code(answer, language="python")
     else:
         st.error(answer)
+

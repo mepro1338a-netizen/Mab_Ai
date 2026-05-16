@@ -1,4 +1,4 @@
-import sqlite3
+﻿import sqlite3
 from config import DB_PATH
 
 
@@ -51,3 +51,4 @@ def run_migrations():
     print("Migrations complete.")
 
 run_migrations()
+

@@ -1,4 +1,4 @@
-import base64
+﻿import base64
 import html
 from pathlib import Path
 
@@ -362,7 +362,7 @@ def sync_session_user(user: dict | None) -> None:
 
 
 def nav(label: str, page: str, icon: str) -> None:
-    if st.button(f"{icon}  {label}", key=f"nav_{page}", use_container_width=True):
+    if st.button(f"{icon}  {label}", key=f"nav_{page}", width="stretch"):
         st.session_state.page = page
         st.rerun()
 
@@ -370,36 +370,36 @@ def nav(label: str, page: str, icon: str) -> None:
 def render_sidebar() -> None:
     with st.sidebar:
         if WORDMARK.exists():
-            st.image(str(WORDMARK), use_container_width=True)
+            st.image(str(WORDMARK), width="stretch")
         else:
             st.markdown("## MaByte")
 
         st.write("")
 
-        nav("Mission Control", "home", "🏠")
-        nav("AI Assistant", "chat", "💬")
-        nav("Projects", "projects", "📁")
-        nav("Automations", "automation_lab", "⚡")
-        nav("Football AI", "football", "⚽")
+        nav("Mission Control", "home", "ðŸ ")
+        nav("AI Assistant", "chat", "ðŸ’¬")
+        nav("Projects", "projects", "ðŸ“")
+        nav("Automations", "automation_lab", "âš¡")
+        nav("Football AI", "football", "âš½")
 
         st.caption("MEDIA")
-        nav("Image Studio", "image", "🎨")
-        nav("Video Studio", "video", "🎬")
-        nav("Reels Studio", "reels", "📣")
-        nav("Music Studio", "music", "🎵")
-        nav("Code Studio", "coding", "💻")
+        nav("Image Studio", "image", "ðŸŽ¨")
+        nav("Video Studio", "video", "ðŸŽ¬")
+        nav("Reels Studio", "reels", "ðŸ“£")
+        nav("Music Studio", "music", "ðŸŽµ")
+        nav("Code Studio", "coding", "ðŸ’»")
 
         st.caption("ACCOUNT")
-        nav("Dashboard", "dashboard", "👤")
-        nav("Premium", "premium", "💎")
-        nav("Redeem", "redeem", "🎁")
-        nav("Support", "support", "🛟")
+        nav("Dashboard", "dashboard", "ðŸ‘¤")
+        nav("Premium", "premium", "ðŸ’Ž")
+        nav("Redeem", "redeem", "ðŸŽ")
+        nav("Support", "support", "ðŸ›Ÿ")
 
         admin_level = int(st.session_state.get("admin_level", 0) or 0)
 
         if admin_level >= 1:
             st.caption("SYSTEM")
-            nav("Admin Panel", "admin", "🛠️")
+            nav("Admin Panel", "admin", "ðŸ› ï¸")
 
         st.divider()
 
@@ -413,7 +413,7 @@ def render_sidebar() -> None:
     <div class="sidebar-user-name">{user}</div>
     <div class="sidebar-user-plan">{plan.upper()}</div>
     <div class="sidebar-user-tokens">{tokens:,}</div>
-    <div class="sidebar-user-caption">Tokens verfügbar</div>
+    <div class="sidebar-user-caption">Tokens verfÃ¼gbar</div>
 </div>
 """,
             unsafe_allow_html=True,

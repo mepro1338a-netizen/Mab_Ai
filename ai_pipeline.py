@@ -1,4 +1,4 @@
-from database import (
+﻿from database import (
     spend_tokens,
     save_usage,
     add_audit_log,
@@ -82,3 +82,4 @@ def run_ai_task(username, tool, prompt, provider, generator_func, *args, **kwarg
         log_error(f"AI Task Exception | user={username} | tool={tool} | error={e}")
 
         return False, f"AI Fehler: {e}", get_user(username)
+

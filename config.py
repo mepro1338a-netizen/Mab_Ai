@@ -1,4 +1,4 @@
-from pathlib import Path
+﻿from pathlib import Path
 import os
 from dotenv import load_dotenv
 
@@ -218,14 +218,14 @@ PLANS = {
     "free": {
         "label": "Free",
         "tier": 0,
-        "price": "0€",
+        "price": "0â‚¬",
         "monthly_price": 0,
         "tokens": 25,
         "model": OPENAI_TEXT_MODEL,
         "max_output": 1200,
         "stripe_price_env": "",
         "badge": "Starter",
-        "description": "Für erste Tests und einfache AI-Chats.",
+        "description": "FÃ¼r erste Tests und einfache AI-Chats.",
         "features": ["chat"],
         "limits": DAILY_LIMITS["free"],
         "highlights": [
@@ -238,14 +238,14 @@ PLANS = {
     "pro": {
         "label": "Pro",
         "tier": 1,
-        "price": "9,99€ / Monat",
+        "price": "9,99â‚¬ / Monat",
         "monthly_price": 9.99,
         "tokens": 1000,
         "model": OPENAI_TEXT_MODEL,
         "max_output": 2200,
         "stripe_price_env": "STRIPE_PRICE_PRO",
         "badge": "Creator",
-        "description": "Für Creator, Solo-Founder und Coding Workflows.",
+        "description": "FÃ¼r Creator, Solo-Founder und Coding Workflows.",
         "features": [
             "chat",
             "coding",
@@ -267,14 +267,14 @@ PLANS = {
     "grand": {
         "label": "Grand",
         "tier": 2,
-        "price": "49,99€ / Monat",
+        "price": "49,99â‚¬ / Monat",
         "monthly_price": 49.99,
         "tokens": 5000,
         "model": OPENAI_TEXT_MODEL,
         "max_output": 3500,
         "stripe_price_env": "STRIPE_PRICE_GRAND",
         "badge": "Scale",
-        "description": "Für Content Engines, Reels, Videos und Automationen.",
+        "description": "FÃ¼r Content Engines, Reels, Videos und Automationen.",
         "features": [
             "chat",
             "coding",
@@ -293,21 +293,21 @@ PLANS = {
             "Content Engine",
             "Media Studio",
             "Automation Lab",
-            "Auto-Posting möglich",
+            "Auto-Posting mÃ¶glich",
         ],
     },
 
     "elite": {
         "label": "Elite",
         "tier": 3,
-        "price": "199,99€ / Monat",
+        "price": "199,99â‚¬ / Monat",
         "monthly_price": 199.99,
         "tokens": 20000,
         "model": OPENAI_CODING_MODEL,
         "max_output": 6000,
         "stripe_price_env": "STRIPE_PRICE_ELITE",
         "badge": "Operating System",
-        "description": "Für Power-User, Agent Workflows und Premium Automation.",
+        "description": "FÃ¼r Power-User, Agent Workflows und Premium Automation.",
         "features": ["all"],
         "limits": DAILY_LIMITS["elite"],
         "highlights": [
@@ -323,21 +323,21 @@ PLANS = {
 TOKEN_PACKAGES = {
     "pro_tokens": {
         "label": "1.000 Tokens",
-        "price": "9,99€",
+        "price": "9,99â‚¬",
         "amount": 9.99,
         "tokens": 1000,
     },
 
     "grand_tokens": {
         "label": "5.000 Tokens",
-        "price": "49,99€",
+        "price": "49,99â‚¬",
         "amount": 49.99,
         "tokens": 5000,
     },
 
     "elite_tokens": {
         "label": "20.000 Tokens",
-        "price": "199,99€",
+        "price": "199,99â‚¬",
         "amount": 199.99,
         "tokens": 20000,
     },
@@ -371,14 +371,14 @@ FOOTBALL_PLANS = {
     "football_starter": {
         "label": "Football Starter",
         "tier": 1,
-        "price": "19,99€ / Monat",
+        "price": "19,99â‚¬ / Monat",
         "monthly_price": 19.99,
         "ai_actions": 100,
         "api_requests": 0,
         "rate_limit_per_minute": 0,
         "stripe_price_env": "STRIPE_PRICE_FOOTBALL_STARTER",
         "badge": "Creator",
-        "description": "Für kleine Football Creator & Seiten.",
+        "description": "FÃ¼r kleine Football Creator & Seiten.",
         "features": [
             "Basic Match Stats",
             "Basic Predictions",
@@ -398,14 +398,14 @@ FOOTBALL_PLANS = {
     "football_pro": {
         "label": "Football Pro",
         "tier": 2,
-        "price": "99,99€ / Monat",
+        "price": "99,99â‚¬ / Monat",
         "monthly_price": 99.99,
         "ai_actions": 750,
         "api_requests": 25000,
         "rate_limit_per_minute": 60,
         "stripe_price_env": "STRIPE_PRICE_FOOTBALL_PRO",
         "badge": "Growth",
-        "description": "Für ernsthafte Football Creator & Content Systeme.",
+        "description": "FÃ¼r ernsthafte Football Creator & Content Systeme.",
         "features": [
             "Live Match Data",
             "AI Match Analysis",
@@ -426,14 +426,14 @@ FOOTBALL_PLANS = {
     "football_elite": {
         "label": "Football Elite",
         "tier": 3,
-        "price": "249,99€ / Monat",
+        "price": "249,99â‚¬ / Monat",
         "monthly_price": 249.99,
         "ai_actions": 2500,
         "api_requests": 100000,
         "rate_limit_per_minute": 240,
         "stripe_price_env": "STRIPE_PRICE_FOOTBALL_ELITE",
         "badge": "Infrastructure",
-        "description": "Für automatisierte Football Content Systeme & Netzwerke.",
+        "description": "FÃ¼r automatisierte Football Content Systeme & Netzwerke.",
         "features": [
             "Everything in Football Pro",
             "Multi Account Support",
@@ -461,7 +461,7 @@ FOOTBALL_PLANS = {
         "rate_limit_per_minute": None,
         "stripe_price_env": "",
         "badge": "Enterprise",
-        "description": "Für Agenturen, Netzwerke und Football Apps.",
+        "description": "FÃ¼r Agenturen, Netzwerke und Football Apps.",
         "features": [
             "Custom API Limits",
             "White Label",

@@ -1,4 +1,4 @@
-import base64
+﻿import base64
 import time
 import requests
 from typing import Any
@@ -204,3 +204,4 @@ def generate_music_provider(prompt: str):
     if error:
         return None, error
     return normalize_media_output(output), None
+

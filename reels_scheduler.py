@@ -1,4 +1,4 @@
-from db_manager import execute, fetch_all
+﻿from db_manager import execute, fetch_all
 
 
 def init_scheduler_table():
@@ -40,3 +40,4 @@ def list_scheduled_reels(username):
     WHERE username=%s
     ORDER BY scheduled_time ASC
     """, (username,))
+

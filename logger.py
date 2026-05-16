@@ -1,4 +1,4 @@
-import logging
+﻿import logging
 import os
 from logging.handlers import RotatingFileHandler
 
@@ -45,3 +45,4 @@ def log_error(message):
 
 def log_warning(message):
     logger.warning(message)
+

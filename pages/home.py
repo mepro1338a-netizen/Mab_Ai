@@ -1,4 +1,4 @@
-import html
+﻿import html
 
 import streamlit as st
 
@@ -321,7 +321,7 @@ def app_card(icon: str, title: str, sub: str, page: str) -> None:
         unsafe_allow_html=True,
     )
 
-    if st.button("Open", key=f"open_{page}", use_container_width=True):
+    if st.button("Open", key=f"open_{page}", width="stretch"):
         open_page(page)
 
 
@@ -370,10 +370,10 @@ def render_activity(username: str) -> None:
 
     if not items:
         demo = [
-            ("💬 AI Assistant", "Neue Anfrage verarbeitet", "vor 2 Min"),
-            ("🎨 Image Generation", "Bild erfolgreich generiert", "vor 5 Min"),
-            ("📁 Project Update", "Workspace aktualisiert", "vor 9 Min"),
-            ("⚡ Automation Trigger", "Workflow ausgeführt", "vor 15 Min"),
+            ("ðŸ’¬ AI Assistant", "Neue Anfrage verarbeitet", "vor 2 Min"),
+            ("ðŸŽ¨ Image Generation", "Bild erfolgreich generiert", "vor 5 Min"),
+            ("ðŸ“ Project Update", "Workspace aktualisiert", "vor 9 Min"),
+            ("âš¡ Automation Trigger", "Workflow ausgefÃ¼hrt", "vor 15 Min"),
         ]
 
         for title, sub, time in demo:
@@ -386,8 +386,8 @@ def render_activity(username: str) -> None:
         created = str(item.get("created_at", ""))[:16]
 
         activity_item(
-            title=f"⚡ {tool}",
-            sub="Neue Aktivität erkannt",
+            title=f"âš¡ {tool}",
+            sub="Neue AktivitÃ¤t erkannt",
             time=created,
         )
 
@@ -417,13 +417,13 @@ def render_home() -> None:
     st.markdown(
         f"""
 <div class="mb-hero">
-    <div class="mb-kicker">◆ Mission Control</div>
+    <div class="mb-kicker">â—† Mission Control</div>
     <div class="mb-title-row">
         <div class="mb-title">Welcome back, {safe_text(user)}</div>
         <div class="mb-plan-badge">{safe_text(plan_label)}</div>
     </div>
     <div class="mb-subtitle">
-        Dein AI Operating System für Strategie, Content, Automationen,
+        Dein AI Operating System fÃ¼r Strategie, Content, Automationen,
         Projekte und Creator Workflows.
     </div>
 </div>
@@ -434,26 +434,26 @@ def render_home() -> None:
     a1, a2, a3, a4, a5 = st.columns(5, gap="medium")
 
     with a1:
-        app_card("💬", "AI Assistant", "Strategy, Coding & Business", "chat")
+        app_card("ðŸ’¬", "AI Assistant", "Strategy, Coding & Business", "chat")
 
     with a2:
-        app_card("📁", "Projects", "Workspace Memory", "projects")
+        app_card("ðŸ“", "Projects", "Workspace Memory", "projects")
 
     with a3:
-        app_card("⚡", "Automations", "AI Workflows", "automation_lab")
+        app_card("âš¡", "Automations", "AI Workflows", "automation_lab")
 
     with a4:
-        app_card("⚽", "Football AI", "Matchday Engine", "football")
+        app_card("âš½", "Football AI", "Matchday Engine", "football")
 
     with a5:
-        app_card("🎬", "Media Tools", "Creator Suite", "video")
+        app_card("ðŸŽ¬", "Media Tools", "Creator Suite", "video")
 
     st.write("")
 
     s1, s2, s3, s4 = st.columns(4, gap="medium")
 
     with s1:
-        stat_card("Tokens", format_number(tokens), "Verfügbar")
+        stat_card("Tokens", format_number(tokens), "VerfÃ¼gbar")
 
     with s2:
         stat_card("Jobs", jobs, "Erfolgreich")
@@ -472,7 +472,7 @@ def render_home() -> None:
         with st.container(border=True):
             st.markdown(
                 """
-<div class="mb-section-title">⚡ Live AI Activity</div>
+<div class="mb-section-title">âš¡ Live AI Activity</div>
 """,
                 unsafe_allow_html=True,
             )
@@ -480,15 +480,15 @@ def render_home() -> None:
             render_activity(user)
 
             st.button(
-                "Alle Aktivitäten anzeigen",
-                use_container_width=True,
+                "Alle AktivitÃ¤ten anzeigen",
+                width="stretch",
                 key="all_activity",
             )
 
     with right:
         recommendation_card(
             "Optimize Your Workflow",
-            "Erstelle Automationen für wiederkehrende Aufgaben und spare Zeit.",
+            "Erstelle Automationen fÃ¼r wiederkehrende Aufgaben und spare Zeit.",
             "blue",
         )
 
@@ -500,7 +500,7 @@ def render_home() -> None:
 
         recommendation_card(
             "Project Boost",
-            "Mehr Memory für bessere AI Ergebnisse.",
+            "Mehr Memory fÃ¼r bessere AI Ergebnisse.",
             "cyan",
         )
 
@@ -509,9 +509,9 @@ def render_home() -> None:
 <div class="mb-elite">
     <div class="mb-elite-flex">
         <div>
-            <div class="mb-elite-title">💎 MaByte Elite Layer</div>
+            <div class="mb-elite-title">ðŸ’Ž MaByte Elite Layer</div>
             <div class="mb-elite-sub">
-                Dein Workspace ist bereit für größere AI Workflows,
+                Dein Workspace ist bereit fÃ¼r grÃ¶ÃŸere AI Workflows,
                 smartere Projekte und mehr Output pro Session.
             </div>
         </div>

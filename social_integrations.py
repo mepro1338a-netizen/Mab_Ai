@@ -1,4 +1,4 @@
-import streamlit as st
+﻿import streamlit as st
 
 from config import TOKEN_COSTS
 from database import get_user, update_tokens, save_usage
@@ -32,7 +32,7 @@ def unlock_auto_posting():
     tokens = int(user.get("tokens", 0) or 0)
 
     if tokens < cost:
-        return False, f"Nicht genug Tokens. Benötigt: {cost}, verfügbar: {tokens}"
+        return False, f"Nicht genug Tokens. BenÃ¶tigt: {cost}, verfÃ¼gbar: {tokens}"
 
     update_tokens(username(), tokens - cost)
 
@@ -57,10 +57,10 @@ def unlock_auto_posting():
 
 
 def render_social_connect_panel():
-    st.subheader("🔗 Auto-Posting")
+    st.subheader("ðŸ”— Auto-Posting")
 
     if not can_use_auto_posting_plan():
-        st.warning("Auto-Posting ist erst ab Grand verfügbar.")
+        st.warning("Auto-Posting ist erst ab Grand verfÃ¼gbar.")
         return False
 
     if not auto_posting_unlocked():
@@ -70,7 +70,7 @@ def render_social_connect_panel():
             f"Auto-Posting kostet einmalig {cost} Tokens zum Freischalten."
         )
 
-        if st.button("⚡ Auto-Posting freischalten", use_container_width=True):
+        if st.button("âš¡ Auto-Posting freischalten", width="stretch"):
             ok, msg = unlock_auto_posting()
 
             if ok:
@@ -95,7 +95,7 @@ def render_social_connect_panel():
         st.checkbox("YouTube Shorts", key="connect_youtube")
 
     st.caption(
-        "Aktuell vorbereitet. Später werden hier echte OAuth/API-Verbindungen eingebaut."
+        "Aktuell vorbereitet. SpÃ¤ter werden hier echte OAuth/API-Verbindungen eingebaut."
     )
 
     return True
@@ -123,6 +123,6 @@ def build_auto_posting_note(enabled, post_time):
     platforms = get_selected_platforms()
 
     if not platforms:
-        return "Auto-Posting aktiv, aber keine Plattform gewählt"
+        return "Auto-Posting aktiv, aber keine Plattform gewÃ¤hlt"
 
     return f"Auto-Posting aktiv | Plattformen: {', '.join(platforms)} | Zeit: {post_time}"

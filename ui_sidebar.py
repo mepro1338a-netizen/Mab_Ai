@@ -1,4 +1,4 @@
-import streamlit as st
+﻿import streamlit as st
 import pandas as pd
 
 from config import PLANS, TOKEN_COSTS
@@ -34,7 +34,7 @@ def render_dashboard():
     plan = current_plan()
     tokens = int(st.session_state.get("tokens", 0) or 0)
 
-    st.title("📊 Dashboard")
+    st.title("ðŸ“Š Dashboard")
     st.write("Dein MaByte Account, Tokens, Nutzung und Plan-Status.")
 
     c1, c2, c3, c4 = st.columns(4)
@@ -53,10 +53,10 @@ def render_dashboard():
 
     st.divider()
 
-    st.subheader("⚡ Token Kosten")
+    st.subheader("âš¡ Token Kosten")
 
     token_rows = [
-        {"Tool": "Memory Chat", "Kosten": TOKEN_COSTS.get("chat", 1), "Freigabe": "Alle Pläne"},
+        {"Tool": "Memory Chat", "Kosten": TOKEN_COSTS.get("chat", 1), "Freigabe": "Alle PlÃ¤ne"},
         {"Tool": "Coding AI", "Kosten": TOKEN_COSTS.get("coding", 4), "Freigabe": "Pro+"},
         {"Tool": "Image AI", "Kosten": TOKEN_COSTS.get("image", 15), "Freigabe": "Pro+"},
         {"Tool": "Music AI", "Kosten": TOKEN_COSTS.get("music", 10), "Freigabe": "Pro+"},
@@ -67,7 +67,7 @@ def render_dashboard():
 
     st.dataframe(
         pd.DataFrame(token_rows),
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
     )
 
@@ -76,26 +76,26 @@ def render_dashboard():
     col_a, col_b = st.columns(2)
 
     with col_a:
-        st.subheader("🧾 Letzte Nutzung")
+        st.subheader("ðŸ§¾ Letzte Nutzung")
         usage = list_usage(st.session_state.get("user"))
 
         if usage:
             st.dataframe(
                 pd.DataFrame(usage).head(20),
-                use_container_width=True,
+                width="stretch",
                 hide_index=True,
             )
         else:
             st.info("Noch keine Nutzung vorhanden.")
 
     with col_b:
-        st.subheader("💳 Payments")
+        st.subheader("ðŸ’³ Payments")
         payments = list_purchases(st.session_state.get("user"))
 
         if payments:
             st.dataframe(
                 pd.DataFrame(payments),
-                use_container_width=True,
+                width="stretch",
                 hide_index=True,
             )
         else:
@@ -105,13 +105,13 @@ def render_dashboard():
 def render_redeem():
     require_login()
 
-    st.title("🎁 Redeem Code")
-    st.write("Löse Codes ein und erhalte Tokens oder Plan-Upgrades.")
+    st.title("ðŸŽ Redeem Code")
+    st.write("LÃ¶se Codes ein und erhalte Tokens oder Plan-Upgrades.")
 
     with st.container(border=True):
         code = st.text_input("Code", placeholder="DEIN-CODE")
 
-        if st.button("Code einlösen", use_container_width=True):
+        if st.button("Code einlÃ¶sen", width="stretch"):
             if not code:
                 st.warning("Bitte Code eingeben.")
                 return
@@ -129,7 +129,7 @@ def render_redeem():
 def render_support():
     require_login()
 
-    st.title("🆘 Support Tickets")
+    st.title("ðŸ†˜ Support Tickets")
     st.write("Erstelle ein Ticket. Unser Team hilft dir weiter.")
 
     with st.container(border=True):
@@ -151,12 +151,12 @@ def render_support():
 
             submitted = st.form_submit_button(
                 "Ticket erstellen",
-                use_container_width=True,
+                width="stretch",
             )
 
             if submitted:
                 if not subject or not message:
-                    st.warning("Bitte Betreff und Nachricht ausfüllen.")
+                    st.warning("Bitte Betreff und Nachricht ausfÃ¼llen.")
                 else:
                     ok, msg = create_support_message(
                         st.session_state.get("user"),
@@ -186,7 +186,7 @@ def render_support():
     if own_tickets:
         st.dataframe(
             pd.DataFrame(own_tickets),
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
         )
     else:
@@ -218,7 +218,7 @@ def plan_features(plan_key):
         return [
             "14000 Tokens",
             "Leistungsstarke APIs",
-            "Verbesserte Videoqualität",
+            "Verbesserte VideoqualitÃ¤t",
             "Business Level",
             "Alles freigeschaltet",
             "Priorisierter Support",
@@ -242,7 +242,7 @@ def plan_card(plan_key):
         st.divider()
 
         for feature in plan_features(plan_key):
-            st.write(f"✅ {feature}")
+            st.write(f"âœ… {feature}")
 
         st.divider()
 
@@ -251,12 +251,12 @@ def plan_card(plan_key):
         if st.button(
             button_label,
             key=f"buy_{plan_key}",
-            use_container_width=True,
+            width="stretch",
             disabled=current,
         ):
             st.session_state.selected_plan = plan_key
             st.success(
-                f"{plan['label']} ausgewählt. Stripe Checkout kann hier verbunden werden."
+                f"{plan['label']} ausgewÃ¤hlt. Stripe Checkout kann hier verbunden werden."
             )
 
 
@@ -264,11 +264,11 @@ def render_premium():
     require_login()
     refresh_user()
 
-    st.title("💎 Premium")
+    st.title("ðŸ’Ž Premium")
     st.write("Upgrade deinen Account und schalte mehr AI Features frei.")
 
     st.info(
-        "Pro = Creator Tools. Grand = Video, Reels & Auto-Posting. Elite = Business Level mit höchster Leistung."
+        "Pro = Creator Tools. Grand = Video, Reels & Auto-Posting. Elite = Business Level mit hÃ¶chster Leistung."
     )
 
     col1, col2, col3 = st.columns(3)

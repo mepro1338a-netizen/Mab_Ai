@@ -1,4 +1,4 @@
-import json
+﻿import json
 from datetime import datetime
 
 from db_manager import db
@@ -63,3 +63,4 @@ def clear_chat_history(username):
         """,
         (username,),
     )
+

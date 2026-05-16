@@ -1,4 +1,4 @@
-import uuid
+﻿import uuid
 from datetime import datetime
 
 from database import get_connection, rows_to_dicts

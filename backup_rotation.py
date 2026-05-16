@@ -1,4 +1,4 @@
-import os
+﻿import os
 
 BACKUP_DIR = "/data/backups"
 MAX_BACKUPS = 20
@@ -15,7 +15,8 @@ if len(files) > MAX_BACKUPS:
 
         os.remove(path)
 
-        print(f"Gelöscht: {file}")
+        print(f"GelÃ¶scht: {file}")
 
 else:
-    print("Keine alten Backups zu löschen.")
+    print("Keine alten Backups zu lÃ¶schen.")
+

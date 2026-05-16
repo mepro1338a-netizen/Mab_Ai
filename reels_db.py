@@ -1,4 +1,4 @@
-from db_manager import fetch_all, execute
+﻿from db_manager import fetch_all, execute
 
 
 def init_reels_table():
@@ -32,3 +32,4 @@ def list_reels(username):
         "SELECT * FROM reels WHERE username=%s ORDER BY created_at DESC",
         (username,)
     )
+

@@ -1,4 +1,4 @@
-import os
+﻿import os
 import base64
 import time
 import requests
@@ -144,7 +144,7 @@ def generate_image(prompt: str, size: str = "1024x1024") -> Tuple[bool, str]:
             path.write_bytes(response.content)
             return True, str(path)
 
-        return False, "OpenAI hat kein Bild zurückgegeben."
+        return False, "OpenAI hat kein Bild zurÃ¼ckgegeben."
 
     except Exception as e:
         return False, f"Image Fehler: {e}"
@@ -188,7 +188,7 @@ def generate_video(prompt: str) -> Tuple[bool, str]:
         video_url = normalize_replicate_output(output)
 
         if not video_url:
-            return False, "Replicate hat kein Video zurückgegeben."
+            return False, "Replicate hat kein Video zurÃ¼ckgegeben."
 
         if isinstance(video_url, str) and video_url.startswith("http"):
             ok, result = download_file(video_url, "mp4")
@@ -240,3 +240,4 @@ def ai_health_check() -> dict:
 
 if __name__ == "__main__":
     print(ai_health_check())
+

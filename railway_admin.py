@@ -1,4 +1,4 @@
-import sqlite3
+﻿import sqlite3
 
 conn = sqlite3.connect("/data/mabai.db")
 cur = conn.cursor()
@@ -23,3 +23,4 @@ WHERE username='mepro1337'
 print(user)
 
 conn.close()
+

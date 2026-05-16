@@ -1,4 +1,4 @@
-import random
+﻿import random
 import streamlit as st
 
 from database import (
@@ -102,11 +102,11 @@ def do_register(username, email, password, captcha):
     result = st.session_state.captcha_a + st.session_state.captcha_b
 
     if not is_valid_username(username):
-        st.error("Ungültiger Username")
+        st.error("UngÃ¼ltiger Username")
         return
 
     if not is_valid_email(email):
-        st.error("Ungültige Email")
+        st.error("UngÃ¼ltige Email")
         return
 
     if len(password) < 6:
@@ -452,7 +452,7 @@ def render_auth():
 
         st.markdown(
             """
-<div class="hero-eyebrow">🚀 Built for creators, brands, agencies and football media teams</div>
+<div class="hero-eyebrow">ðŸš€ Built for creators, brands, agencies and football media teams</div>
 
 <div class="hero-title">
 Create viral content with <span class="hero-gradient">AI workflows</span>.
@@ -464,12 +464,12 @@ Generate hooks, reels, captions, thumbnails, threads, automation flows and creat
 </div>
 
 <div class="hero-points">
-    <div class="point">⚽ Football Intelligence</div>
-    <div class="point">📣 Multi-Platform Content</div>
-    <div class="point">🔥 Viral Score Engine</div>
-    <div class="point">🧪 AI Automation Lab</div>
-    <div class="point">🖼️ Thumbnail Intelligence</div>
-    <div class="point">🧠 Project Memory</div>
+    <div class="point">âš½ Football Intelligence</div>
+    <div class="point">ðŸ“£ Multi-Platform Content</div>
+    <div class="point">ðŸ”¥ Viral Score Engine</div>
+    <div class="point">ðŸ§ª AI Automation Lab</div>
+    <div class="point">ðŸ–¼ï¸ Thumbnail Intelligence</div>
+    <div class="point">ðŸ§  Project Memory</div>
 </div>
             """,
             unsafe_allow_html=True,
@@ -479,10 +479,10 @@ Generate hooks, reels, captions, thumbnails, threads, automation flows and creat
 
         st.markdown('<div class="auth-box login-box">', unsafe_allow_html=True)
 
-        st.markdown("### 🔐 Access MaByte")
+        st.markdown("### ðŸ” Access MaByte")
         st.caption("Login or create your creator workspace.")
 
-        tab1, tab2 = st.tabs(["👤 Login", "✨ Start Free"])
+        tab1, tab2 = st.tabs(["ðŸ‘¤ Login", "âœ¨ Start Free"])
 
         with tab1:
 
@@ -499,10 +499,10 @@ Generate hooks, reels, captions, thumbnails, threads, automation flows and creat
                 key="login_pw",
             )
 
-            if st.button("🚀 Einloggen", use_container_width=True):
+            if st.button("ðŸš€ Einloggen", width="stretch"):
                 do_login(username, password)
 
-            st.caption("Google Login wird später verbunden.")
+            st.caption("Google Login wird spÃ¤ter verbunden.")
 
         with tab2:
 
@@ -529,7 +529,7 @@ Generate hooks, reels, captions, thumbnails, threads, automation flows and creat
                 step=1,
             )
 
-            if st.button("✨ Kostenlos starten", use_container_width=True):
+            if st.button("âœ¨ Kostenlos starten", width="stretch"):
                 do_register(
                     reg_user,
                     reg_email,
@@ -538,4 +538,5 @@ Generate hooks, reels, captions, thumbnails, threads, automation flows and creat
                 )
 
         st.markdown("</div>", unsafe_allow_html=True)
+
 

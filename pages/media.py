@@ -1,4 +1,4 @@
-import uuid
+﻿import uuid
 import streamlit as st
 from openai import OpenAI
 
@@ -45,7 +45,7 @@ def can_afford(cost):
 
 def charge_tokens(tool, prompt, cost):
     if not can_afford(cost):
-        st.error(f"Nicht genug Tokens. Benötigt: {cost}, verfügbar: {get_tokens()}")
+        st.error(f"Nicht genug Tokens. BenÃ¶tigt: {cost}, verfÃ¼gbar: {get_tokens()}")
         st.stop()
 
     ok, msg = spend_tokens(username(), int(cost))
@@ -118,7 +118,7 @@ def render_download(result, prefix):
         data=result.encode("utf-8"),
         file_name=filename,
         mime="text/plain",
-        use_container_width=True,
+        width="stretch",
     )
 
 
@@ -152,12 +152,12 @@ def render_reels_creator():
     ensure_logged_in()
 
     st.title("AI Content Studio")
-    st.caption("Erstelle 7-Sekunden-Reels mit AI. Kostengünstig über OpenAI Text API.")
+    st.caption("Erstelle 7-Sekunden-Reels mit AI. KostengÃ¼nstig Ã¼ber OpenAI Text API.")
 
     c1, c2, c3 = st.columns(3)
 
     with c1:
-        st.metric("Max Länge", f"{MAX_REEL_SECONDS}s")
+        st.metric("Max LÃ¤nge", f"{MAX_REEL_SECONDS}s")
 
     with c2:
         st.metric("Kosten", f"{REEL_COST} Tokens")
@@ -176,7 +176,7 @@ def render_reels_creator():
             topic = st.text_area(
                 "Thema",
                 height=130,
-                placeholder="z.B. Warum Arsenal dieses Jahr gefährlich ist...",
+                placeholder="z.B. Warum Arsenal dieses Jahr gefÃ¤hrlich ist...",
             )
 
             platform = st.selectbox(
@@ -227,11 +227,11 @@ def render_reels_creator():
 
             cta = st.text_input(
                 "CTA",
-                placeholder="Folge für mehr / Link in Bio / Jetzt testen",
+                placeholder="Folge fÃ¼r mehr / Link in Bio / Jetzt testen",
             )
 
             seconds = st.slider(
-                "Videolänge",
+                "VideolÃ¤nge",
                 min_value=3,
                 max_value=MAX_REEL_SECONDS,
                 value=MAX_REEL_SECONDS,
@@ -241,15 +241,15 @@ def render_reels_creator():
         with st.container(border=True):
             st.subheader("7s Struktur")
 
-            st.write("0–2s: Hook")
-            st.write("2–5s: Main Point")
-            st.write("5–7s: CTA")
+            st.write("0â€“2s: Hook")
+            st.write("2â€“5s: Main Point")
+            st.write("5â€“7s: CTA")
 
             st.info("Ein Reel = ein AI API Call.")
 
     st.divider()
 
-    if st.button("Reel Package generieren", use_container_width=True):
+    if st.button("Reel Package generieren", width="stretch"):
         if not topic:
             st.warning("Bitte Thema eingeben.")
             return
@@ -259,7 +259,7 @@ Erstelle ein professionelles 7-Sekunden-Reel-Package.
 
 WICHTIG:
 Das Reel darf maximal {seconds} Sekunden lang sein.
-Plane niemals länger als 7 Sekunden.
+Plane niemals lÃ¤nger als 7 Sekunden.
 
 Thema:
 {topic}
@@ -335,7 +335,7 @@ def render_music_generator():
 
         st.metric("Kosten", f"{SONG_COST} Tokens")
 
-    if st.button("Song Package generieren", use_container_width=True):
+    if st.button("Song Package generieren", width="stretch"):
         if not topic:
             st.warning("Bitte Thema eingeben.")
             return
@@ -376,19 +376,19 @@ Erstelle:
 def render_coding_ai():
     ensure_logged_in()
     st.title("Developer OS")
-    st.info("Coding Workspace kommt als nächstes wieder rein.")
+    st.info("Coding Workspace kommt als nÃ¤chstes wieder rein.")
 
 
 def render_image_ai():
     ensure_logged_in()
     st.title("Creative Workspace")
-    st.info("Image Workspace kommt als nächstes wieder rein.")
+    st.info("Image Workspace kommt als nÃ¤chstes wieder rein.")
 
 
 def render_video_generator():
     ensure_logged_in()
     st.title("Media Studio")
-    st.info("Video Generator kommt später. Reels laufen aktuell kostengünstig über 1 Text API Call.")
+    st.info("Video Generator kommt spÃ¤ter. Reels laufen aktuell kostengÃ¼nstig Ã¼ber 1 Text API Call.")
 
 
 def render_media(active_tool="reels"):

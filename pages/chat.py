@@ -1,4 +1,4 @@
-import html
+﻿import html
 
 import streamlit as st
 from openai import OpenAI
@@ -294,11 +294,11 @@ def project_selector():
     projects = list_projects(username())
 
     if not projects:
-        st.info("Noch kein Projekt vorhanden. Chat läuft ohne Projektkontext.")
+        st.info("Noch kein Projekt vorhanden. Chat lÃ¤uft ohne Projektkontext.")
         return None
 
     labels = [
-        f"{p.get('title', 'Untitled')} · {p.get('workspace', 'Workspace')}"
+        f"{p.get('title', 'Untitled')} Â· {p.get('workspace', 'Workspace')}"
         for p in projects
     ]
 
@@ -373,7 +373,7 @@ Antworte:
 - strategisch
 - kompakt
 - praktisch
-- mit konkreten nächsten Schritten
+- mit konkreten nÃ¤chsten Schritten
 
 {project_context}
 """,
@@ -435,7 +435,7 @@ def render_empty_state() -> None:
     <div class="mb-empty-title">MaByte ist bereit.</div>
     <div class="mb-empty-sub">
         Starte mit einer Frage, einem Projekt, einer Idee oder einem Workflow.
-        MaByte denkt mit Kontext, Struktur und klaren nächsten Schritten.
+        MaByte denkt mit Kontext, Struktur und klaren nÃ¤chsten Schritten.
     </div>
 </div>
 """,
@@ -463,11 +463,11 @@ def render_empty_state() -> None:
         ),
         (
             "Football AI",
-            "Analysiere Taktik, Spieler, Scouting oder Matchday-Pläne.",
+            "Analysiere Taktik, Spieler, Scouting oder Matchday-PlÃ¤ne.",
         ),
         (
             "Automation",
-            "Plane wiederholbare Abläufe und AI-gestützte Systeme.",
+            "Plane wiederholbare AblÃ¤ufe und AI-gestÃ¼tzte Systeme.",
         ),
     ]
 
@@ -529,10 +529,10 @@ def render_chat() -> None:
         st.markdown(
             """
 <div class="mb-chat-hero">
-    <div class="mb-chat-kicker">◆ AI Operating System</div>
+    <div class="mb-chat-kicker">â—† AI Operating System</div>
     <div class="mb-chat-title">MaByte Intelligence</div>
     <div class="mb-chat-subtitle">
-        Dein AI Workspace für Strategie, Content, Coding, Business,
+        Dein AI Workspace fÃ¼r Strategie, Content, Coding, Business,
         Projekte und Football Intelligence.
     </div>
 </div>
@@ -564,7 +564,7 @@ def render_chat() -> None:
                 """
 <div class="mb-panel-title">Aktives Setup</div>
 <div class="mb-panel-sub">
-Wähle optional ein Projekt aus. Dann antwortet MaByte mit Projektkontext.
+WÃ¤hle optional ein Projekt aus. Dann antwortet MaByte mit Projektkontext.
 </div>
 """,
                 unsafe_allow_html=True,
@@ -575,7 +575,7 @@ Wähle optional ein Projekt aus. Dann antwortet MaByte mit Projektkontext.
             if project:
                 st.success(f"Projekt aktiv: {project.get('title')}")
             else:
-                st.info("Chat läuft ohne Projektkontext.")
+                st.info("Chat lÃ¤uft ohne Projektkontext.")
 
     with setup_right:
         st.markdown(
@@ -583,7 +583,7 @@ Wähle optional ein Projekt aus. Dann antwortet MaByte mit Projektkontext.
 <div class="mb-panel">
     <div class="mb-panel-title">Quick Start</div>
     <div class="mb-panel-sub">
-        Nutze kurze Prompts. MaByte strukturiert daraus klare nächste Schritte.
+        Nutze kurze Prompts. MaByte strukturiert daraus klare nÃ¤chste Schritte.
     </div>
     <div class="mb-chip-row">
         <div class="mb-chip">Strategie</div>

@@ -1,4 +1,4 @@
-from openai import OpenAI
+﻿from openai import OpenAI
 from config import OPENAI_API_KEY
 
 client = OpenAI(api_key=OPENAI_API_KEY)
@@ -17,11 +17,11 @@ Dauer: {duration} Sekunden
 
 Gib aus:
 1. Hook
-2. Szene-für-Szene Skript
+2. Szene-fÃ¼r-Szene Skript
 3. Voiceover Text
 4. Caption
 5. Hashtags
-6. Video Prompt für AI Video Generator
+6. Video Prompt fÃ¼r AI Video Generator
 7. Musik-Stimmung
 8. Call-to-Action
 """
@@ -31,7 +31,7 @@ Gib aus:
             messages=[
                 {
                     "role": "system",
-                    "content": "Du bist ein viraler Social-Media-Reels-Stratege für TikTok, Instagram Reels und YouTube Shorts."
+                    "content": "Du bist ein viraler Social-Media-Reels-Stratege fÃ¼r TikTok, Instagram Reels und YouTube Shorts."
                 },
                 {
                     "role": "user",
@@ -46,3 +46,4 @@ Gib aus:
 
     except Exception as e:
         return False, str(e)
+

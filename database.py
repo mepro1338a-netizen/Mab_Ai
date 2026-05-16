@@ -1,4 +1,4 @@
-import sqlite3
+﻿import sqlite3
 import secrets
 from datetime import datetime, timedelta
 import bcrypt
@@ -312,7 +312,7 @@ def create_user(username, email, password):
     email = (email or "").strip().lower()
 
     if not username or not email or not password:
-        return False, "Bitte alle Felder ausfüllen."
+        return False, "Bitte alle Felder ausfÃ¼llen."
 
     valid, msg = validate_password(password)
     if not valid:
@@ -709,7 +709,7 @@ def redeem_code(username, code):
 
     if not item:
         conn.close()
-        return False, "Code ungültig."
+        return False, "Code ungÃ¼ltig."
 
     if int(item["used_count"] or 0) >= int(item["max_uses"] or 1):
         conn.close()
@@ -739,7 +739,7 @@ def redeem_code(username, code):
     conn.commit()
     conn.close()
 
-    return True, "Code eingelöst."
+    return True, "Code eingelÃ¶st."
 
 
 def save_usage(
@@ -1689,7 +1689,7 @@ def sync_session_user(user):
 
 
 def nav(label, page, icon):
-    if st.button(f"{icon}  {label}", key=f"nav_{page}", use_container_width=True):
+    if st.button(f"{icon}  {label}", key=f"nav_{page}", width="stretch"):
         st.session_state.page = page
         st.rerun()
 
@@ -1697,36 +1697,36 @@ def nav(label, page, icon):
 def render_sidebar():
     with st.sidebar:
         if WORDMARK.exists():
-            st.image(str(WORDMARK), use_container_width=True)
+            st.image(str(WORDMARK), width="stretch")
         else:
             st.markdown("## MaByte")
 
         st.write("")
 
-        nav("Mission Control", "home", "🏠")
-        nav("AI Assistant", "chat", "💬")
-        nav("Projects", "projects", "📁")
-        nav("Automations", "automation_lab", "⚡")
-        nav("Football AI", "football", "⚽")
+        nav("Mission Control", "home", "ðŸ ")
+        nav("AI Assistant", "chat", "ðŸ’¬")
+        nav("Projects", "projects", "ðŸ“")
+        nav("Automations", "automation_lab", "âš¡")
+        nav("Football AI", "football", "âš½")
 
         st.caption("MEDIA")
-        nav("Image Studio", "image", "🎨")
-        nav("Video Studio", "video", "🎬")
-        nav("Reels Studio", "reels", "📣")
-        nav("Music Studio", "music", "🎵")
-        nav("Code Studio", "coding", "💻")
+        nav("Image Studio", "image", "ðŸŽ¨")
+        nav("Video Studio", "video", "ðŸŽ¬")
+        nav("Reels Studio", "reels", "ðŸ“£")
+        nav("Music Studio", "music", "ðŸŽµ")
+        nav("Code Studio", "coding", "ðŸ’»")
 
         st.caption("ACCOUNT")
-        nav("Dashboard", "dashboard", "👤")
-        nav("Premium", "premium", "💎")
-        nav("Redeem", "redeem", "🎁")
-        nav("Support", "support", "🛟")
+        nav("Dashboard", "dashboard", "ðŸ‘¤")
+        nav("Premium", "premium", "ðŸ’Ž")
+        nav("Redeem", "redeem", "ðŸŽ")
+        nav("Support", "support", "ðŸ›Ÿ")
 
         admin_level = int(st.session_state.get("admin_level", 0) or 0)
 
         if admin_level >= 1:
             st.caption("SYSTEM")
-            nav("Admin Panel", "admin", "🛠️")
+            nav("Admin Panel", "admin", "ðŸ› ï¸")
 
         st.divider()
 

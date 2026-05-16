@@ -1,4 +1,4 @@
-from openai import OpenAI
+﻿from openai import OpenAI
 
 from config import OPENAI_API_KEY, PLANS
 from providers import generate_image_provider, generate_video_provider, generate_music_provider
@@ -80,3 +80,4 @@ def generate_music(prompt):
         return concept, None
 
     return output, error
+

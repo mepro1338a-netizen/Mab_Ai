@@ -1,4 +1,4 @@
-from config import DB_PATH
+﻿from config import DB_PATH
 import sqlite3
 import os
 
@@ -30,3 +30,4 @@ except Exception as e:
     print("CODES ERROR:", e)
 
 conn.close()
+

@@ -1,4 +1,4 @@
-import io
+﻿import io
 import re
 import streamlit as st
 from openai import OpenAI
@@ -21,7 +21,7 @@ def analyze_viral_score(content):
         return {
             "score": 82,
             "feedback": """
-- Hook stärker emotionalisieren
+- Hook stÃ¤rker emotionalisieren
 - Mehr Spannung im ersten Satz
 - CTA aggressiver formulieren
 """
@@ -36,11 +36,11 @@ def analyze_viral_score(content):
 Du bist ein Elite Social Media Growth Strategist.
 
 Bewerte Football Content auf:
-- Viralität
+- ViralitÃ¤t
 - Engagement Potential
 - Watchtime Potential
 - Plattform Fit
-- Emotionalität
+- EmotionalitÃ¤t
 
 Antworte exakt so:
 
@@ -93,12 +93,12 @@ def improve_package(original_content):
 Du bist ein Elite Viral Football Growth Strategist.
 
 Verbessere:
-- Hook Stärke
-- Emotionalität
+- Hook StÃ¤rke
+- EmotionalitÃ¤t
 - Engagement
 - Watchtime
-- Viralität
-- CTA Stärke
+- ViralitÃ¤t
+- CTA StÃ¤rke
 - Plattform Optimierung
 
 Mache den Content aggressiver, moderner und creator-orientierter.
@@ -141,7 +141,7 @@ low quality, blurry, ugly face, distorted anatomy, bad typography, watermark, lo
 """
 
     prompt = f"""
-Erstelle ein Football Thumbnail System für:
+Erstelle ein Football Thumbnail System fÃ¼r:
 
 Club:
 {club}
@@ -179,7 +179,7 @@ Du erstellst:
 - aggressive Football Visuals
 
 Denke wie:
-- große YouTube Football Creator
+- groÃŸe YouTube Football Creator
 - TikTok Sports Creators
 - moderne Sports Media Brands
 """
@@ -216,7 +216,7 @@ def generate_matchday_package(club, opponent, platform, tone):
     if not OPENAI_API_KEY:
         return f"""
 ## TikTok Hook
-Demo Hook für {club} gegen {opponent}
+Demo Hook fÃ¼r {club} gegen {opponent}
 
 ## TikTok Caption
 Demo TikTok Caption
@@ -240,7 +240,7 @@ Demo Thumbnail Prompt
 #{club} #Football #Matchday
 
 ## CTA
-Folge für mehr Football Content
+Folge fÃ¼r mehr Football Content
 
 ## Posting Strategy
 Poste 2 Stunden vor Kickoff
@@ -261,7 +261,7 @@ Hauptplattform:
 Ton:
 {tone}
 
-Erstelle hochwertige Inhalte für:
+Erstelle hochwertige Inhalte fÃ¼r:
 
 ## TikTok Hook
 
@@ -302,8 +302,8 @@ Du erstellst:
 - moderne Plattform-optimierte Inhalte
 
 Denke wie:
-- große TikTok Football Creator
-- Fußball Meme Pages
+- groÃŸe TikTok Football Creator
+- FuÃŸball Meme Pages
 - moderne Social Media Teams
 - Elite Football Media Brands
 """,
@@ -325,30 +325,30 @@ Denke wie:
 
 def split_sections(result):
     section_map = {
-        "tiktok hook": "🎣 TikTok Hook",
-        "tiktok caption": "📱 TikTok Caption",
-        "instagram reel caption": "📸 Instagram Caption",
-        "twitter thread": "🧵 Twitter Thread",
-        "x/twitter thread": "🧵 Twitter Thread",
-        "youtube shorts title": "▶️ YouTube Title",
-        "youtube shorts description": "📺 YouTube Description",
-        "thumbnail prompt": "🖼️ Thumbnail Prompt",
-        "hashtags": "#️⃣ Hashtags",
-        "cta": "📢 CTA",
-        "posting strategy": "📈 Posting Strategy",
+        "tiktok hook": "ðŸŽ£ TikTok Hook",
+        "tiktok caption": "ðŸ“± TikTok Caption",
+        "instagram reel caption": "ðŸ“¸ Instagram Caption",
+        "twitter thread": "ðŸ§µ Twitter Thread",
+        "x/twitter thread": "ðŸ§µ Twitter Thread",
+        "youtube shorts title": "â–¶ï¸ YouTube Title",
+        "youtube shorts description": "ðŸ“º YouTube Description",
+        "thumbnail prompt": "ðŸ–¼ï¸ Thumbnail Prompt",
+        "hashtags": "#ï¸âƒ£ Hashtags",
+        "cta": "ðŸ“¢ CTA",
+        "posting strategy": "ðŸ“ˆ Posting Strategy",
     }
 
     sections = {
-        "🎣 TikTok Hook": "",
-        "📱 TikTok Caption": "",
-        "📸 Instagram Caption": "",
-        "🧵 Twitter Thread": "",
-        "▶️ YouTube Title": "",
-        "📺 YouTube Description": "",
-        "🖼️ Thumbnail Prompt": "",
-        "#️⃣ Hashtags": "",
-        "📢 CTA": "",
-        "📈 Posting Strategy": "",
+        "ðŸŽ£ TikTok Hook": "",
+        "ðŸ“± TikTok Caption": "",
+        "ðŸ“¸ Instagram Caption": "",
+        "ðŸ§µ Twitter Thread": "",
+        "â–¶ï¸ YouTube Title": "",
+        "ðŸ“º YouTube Description": "",
+        "ðŸ–¼ï¸ Thumbnail Prompt": "",
+        "#ï¸âƒ£ Hashtags": "",
+        "ðŸ“¢ CTA": "",
+        "ðŸ“ˆ Posting Strategy": "",
     }
 
     current = None
@@ -378,7 +378,7 @@ def split_sections(result):
     )
 
     if fallback_empty:
-        sections["🎣 TikTok Hook"] = result
+        sections["ðŸŽ£ TikTok Hook"] = result
 
     return sections
 
@@ -420,11 +420,11 @@ def render_package_tabs(result):
             st.code(content)
 
             st.download_button(
-                f"⬇️ Download {title}",
+                f"â¬‡ï¸ Download {title}",
                 data=content.encode("utf-8"),
                 file_name=f"mabyte_{safe_filename(title)}.txt",
                 mime="text/plain",
-                use_container_width=True,
+                width="stretch",
             )
 
 
@@ -433,18 +433,18 @@ def render_package_tabs(result):
 # =========================================================
 
 def render_full_export(result, filename="mabyte_matchday_package.txt"):
-    st.subheader("📦 Full Package Export")
+    st.subheader("ðŸ“¦ Full Package Export")
 
     export_data = io.BytesIO()
     export_data.write(result.encode("utf-8"))
     export_data.seek(0)
 
     st.download_button(
-        "⬇️ Download Full Package",
+        "â¬‡ï¸ Download Full Package",
         data=export_data,
         file_name=filename,
         mime="text/plain",
-        use_container_width=True,
+        width="stretch",
     )
 
 
@@ -458,10 +458,10 @@ def render_football():
         st.rerun()
         return
 
-    st.title("⚽ Football Intelligence")
+    st.title("âš½ Football Intelligence")
 
     st.caption(
-        "Multi Platform AI Matchday Engine für viralen Football Content."
+        "Multi Platform AI Matchday Engine fÃ¼r viralen Football Content."
     )
 
     project = active_project()
@@ -469,7 +469,7 @@ def render_football():
     if project:
         st.success(f"Aktives Projekt: {project.get('title')}")
     else:
-        st.info("Kein aktives Projekt ausgewählt. Memory wird nicht gespeichert.")
+        st.info("Kein aktives Projekt ausgewÃ¤hlt. Memory wird nicht gespeichert.")
 
     st.divider()
 
@@ -519,26 +519,26 @@ def render_football():
         )
 
         generate = st.button(
-            "🚀 Generate Multi Platform Package",
-            use_container_width=True,
+            "ðŸš€ Generate Multi Platform Package",
+            width="stretch",
         )
 
     with right:
         with st.container(border=True):
-            st.markdown("### ⚡ Generated Content")
-            st.write("✅ TikTok Hook")
-            st.write("✅ TikTok Caption")
-            st.write("✅ Instagram Caption")
-            st.write("✅ Twitter Thread")
-            st.write("✅ YouTube Title")
-            st.write("✅ YouTube Description")
-            st.write("✅ Thumbnail Intelligence")
-            st.write("✅ Hashtags")
-            st.write("✅ CTA")
-            st.write("✅ Posting Strategy")
-            st.write("✅ Viral Intelligence")
-            st.write("✅ AI Optimization")
-            st.write("✅ Export System")
+            st.markdown("### âš¡ Generated Content")
+            st.write("âœ… TikTok Hook")
+            st.write("âœ… TikTok Caption")
+            st.write("âœ… Instagram Caption")
+            st.write("âœ… Twitter Thread")
+            st.write("âœ… YouTube Title")
+            st.write("âœ… YouTube Description")
+            st.write("âœ… Thumbnail Intelligence")
+            st.write("âœ… Hashtags")
+            st.write("âœ… CTA")
+            st.write("âœ… Posting Strategy")
+            st.write("âœ… Viral Intelligence")
+            st.write("âœ… AI Optimization")
+            st.write("âœ… Export System")
 
     st.divider()
 
@@ -555,7 +555,7 @@ def render_football():
                 tone,
             )
 
-        st.subheader("🚀 Matchday Content Package")
+        st.subheader("ðŸš€ Matchday Content Package")
 
         render_package_tabs(result)
 
@@ -574,16 +574,16 @@ def render_football():
                 opponent,
             )
 
-        st.subheader("🖼️ Thumbnail Intelligence")
+        st.subheader("ðŸ–¼ï¸ Thumbnail Intelligence")
 
         st.markdown(thumbnails)
 
         st.download_button(
-            "⬇️ Download Thumbnail System",
+            "â¬‡ï¸ Download Thumbnail System",
             data=thumbnails.encode("utf-8"),
             file_name="mabyte_thumbnail_system.txt",
             mime="text/plain",
-            use_container_width=True,
+            width="stretch",
         )
 
         if project:
@@ -603,7 +603,7 @@ def render_football():
         score = analysis.get("score", 0)
         feedback = analysis.get("feedback", "")
 
-        st.subheader("🔥 Viral Intelligence")
+        st.subheader("ðŸ”¥ Viral Intelligence")
 
         c1, c2 = st.columns([1, 2])
 
@@ -617,15 +617,15 @@ def render_football():
         st.divider()
 
         improve = st.button(
-            "⚡ Improve Package",
-            use_container_width=True,
+            "âš¡ Improve Package",
+            width="stretch",
         )
 
         if improve:
-            with st.spinner("MaByte optimiert Viralität..."):
+            with st.spinner("MaByte optimiert ViralitÃ¤t..."):
                 improved = improve_package(result)
 
-            st.subheader("🚀 Optimized Package")
+            st.subheader("ðŸš€ Optimized Package")
 
             render_package_tabs(improved)
 

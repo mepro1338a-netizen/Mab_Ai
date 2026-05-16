@@ -1,4 +1,4 @@
-import os
+﻿import os
 import stripe
 from config import PLANS, APP_BASE_URL
 from database import record_purchase, set_plan, update_tokens
@@ -8,7 +8,7 @@ stripe.api_key = os.getenv("STRIPE_SECRET_KEY", "")
 
 def create_checkout_session(username, plan_key):
     if plan_key not in PLANS or plan_key == "free":
-        return None, "Ungültiger Plan."
+        return None, "UngÃ¼ltiger Plan."
 
     if not stripe.api_key:
         return None, "STRIPE_SECRET_KEY fehlt in Railway Variables."
@@ -50,6 +50,7 @@ def confirm_checkout_session(session_id):
             record_purchase(username, plan, 0, session.id, status, "paid")
             return True, f"{PLANS[plan]['label']} aktiviert."
         record_purchase(username or "", plan or "", 0, session.id, status, "pending")
-        return False, f"Zahlung noch nicht bestätigt: {status}"
+        return False, f"Zahlung noch nicht bestÃ¤tigt: {status}"
     except Exception as e:
         return False, str(e)
+

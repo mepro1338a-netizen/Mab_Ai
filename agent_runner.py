@@ -1,4 +1,4 @@
-from openai import OpenAI
+﻿from openai import OpenAI
 
 from config import (
     OPENAI_API_KEY,
@@ -179,7 +179,7 @@ AUFGABE:
 Erstelle:
 - Dev Summary
 - Architektur Analyse
-- Verbesserungsvorschläge
+- VerbesserungsvorschlÃ¤ge
 - Security Hinweise
 - Skalierungsplan
 """

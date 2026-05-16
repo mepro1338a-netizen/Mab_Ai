@@ -1,4 +1,4 @@
-import streamlit as st
+﻿import streamlit as st
 
 from database import init_db
 from ui_core import load_css, render_sidebar
@@ -34,7 +34,7 @@ except Exception as e:
         st.error("Media Workspace konnte nicht geladen werden.")
         st.code(str(MEDIA_IMPORT_ERROR))
         st.info(
-            "Prüfe pages/media.py: Dort darf NICHT `from pages.media import render_media` stehen "
+            "PrÃ¼fe pages/media.py: Dort darf NICHT `from pages.media import render_media` stehen "
             "und ganz unten muss `def render_media(...)` existieren."
         )
 
@@ -45,7 +45,7 @@ except Exception as e:
 
 st.set_page_config(
     page_title="MaByte",
-    page_icon="🚀",
+    page_icon="ðŸš€",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -85,8 +85,8 @@ for key, value in DEFAULTS.items():
 # =========================================================
 
 def render_automations():
-    st.title("⚙️ Automations")
-    st.caption("Geplante Abläufe, Posting Flows und System Actions.")
+    st.title("âš™ï¸ Automations")
+    st.caption("Geplante AblÃ¤ufe, Posting Flows und System Actions.")
 
     with st.container(border=True):
         st.subheader("Automation Center")

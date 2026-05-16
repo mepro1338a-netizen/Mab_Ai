@@ -1,4 +1,4 @@
-import streamlit as st
+﻿import streamlit as st
 import pandas as pd
 
 from config import PLANS, TOKEN_COSTS, DAILY_LIMITS
@@ -44,7 +44,7 @@ def render_dashboard():
     plan = current_plan()
     tokens = int(st.session_state.get("tokens", 0) or 0)
 
-    st.title("📊 Account Command Center")
+    st.title("ðŸ“Š Account Command Center")
     st.caption("Plan, Tokens, Nutzung, Limits und Workspace Access.")
 
     c1, c2, c3, c4 = st.columns(4)
@@ -67,7 +67,7 @@ def render_dashboard():
 
     with left:
         with st.container(border=True):
-            st.subheader("🧩 Workspace Access")
+            st.subheader("ðŸ§© Workspace Access")
 
             features = plan.get("features", [])
 
@@ -84,11 +84,11 @@ def render_dashboard():
 
             for label, feature in rows:
                 allowed = "all" in features or feature in features
-                st.write(("✅ " if allowed else "🔒 ") + label)
+                st.write(("âœ… " if allowed else "ðŸ”’ ") + label)
 
     with right:
         with st.container(border=True):
-            st.subheader("⚡ Current Limits")
+            st.subheader("âš¡ Current Limits")
 
             limits = DAILY_LIMITS.get(plan_key, DAILY_LIMITS["free"])
 
@@ -102,7 +102,7 @@ def render_dashboard():
 
     st.divider()
 
-    st.subheader("💰 Token Costs")
+    st.subheader("ðŸ’° Token Costs")
 
     token_rows = [
         {"Workspace": "AI Assistant", "Action": "Prompt", "Cost": TOKEN_COSTS.get("chat", 1)},
@@ -118,7 +118,7 @@ def render_dashboard():
 
     st.dataframe(
         pd.DataFrame(token_rows),
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
     )
 
@@ -127,26 +127,26 @@ def render_dashboard():
     col_a, col_b = st.columns(2)
 
     with col_a:
-        st.subheader("🧾 Latest Usage")
+        st.subheader("ðŸ§¾ Latest Usage")
         usage = list_usage(st.session_state.get("user"))
 
         if usage:
             st.dataframe(
                 pd.DataFrame(usage).head(20),
-                use_container_width=True,
+                width="stretch",
                 hide_index=True,
             )
         else:
             st.info("Noch keine Nutzung vorhanden.")
 
     with col_b:
-        st.subheader("💳 Payments")
+        st.subheader("ðŸ’³ Payments")
         payments = list_purchases(st.session_state.get("user"))
 
         if payments:
             st.dataframe(
                 pd.DataFrame(payments),
-                use_container_width=True,
+                width="stretch",
                 hide_index=True,
             )
         else:
@@ -156,13 +156,13 @@ def render_dashboard():
 def render_redeem():
     require_login()
 
-    st.title("🎁 Redeem Center")
-    st.caption("Codes einlösen und Tokens oder Plan-Upgrades freischalten.")
+    st.title("ðŸŽ Redeem Center")
+    st.caption("Codes einlÃ¶sen und Tokens oder Plan-Upgrades freischalten.")
 
     with st.container(border=True):
         code = st.text_input("Code", placeholder="DEIN-CODE")
 
-        if st.button("Code einlösen", use_container_width=True):
+        if st.button("Code einlÃ¶sen", width="stretch"):
             if not code:
                 st.warning("Bitte Code eingeben.")
                 return
@@ -180,7 +180,7 @@ def render_redeem():
 def render_support():
     require_login()
 
-    st.title("🆘 Support Center")
+    st.title("ðŸ†˜ Support Center")
     st.caption("Tickets erstellen, Bugs melden und Hilfe bekommen.")
 
     with st.container(border=True):
@@ -195,12 +195,12 @@ def render_support():
 
             submitted = st.form_submit_button(
                 "Ticket erstellen",
-                use_container_width=True,
+                width="stretch",
             )
 
             if submitted:
                 if not subject or not message:
-                    st.warning("Bitte Betreff und Nachricht ausfüllen.")
+                    st.warning("Bitte Betreff und Nachricht ausfÃ¼llen.")
                 else:
                     ok, msg = create_support_message(
                         st.session_state.get("user"),
@@ -230,7 +230,7 @@ def render_support():
     if own_tickets:
         st.dataframe(
             pd.DataFrame(own_tickets),
-            use_container_width=True,
+            width="stretch",
             hide_index=True,
         )
     else:
@@ -255,21 +255,21 @@ def plan_card(plan_key):
         st.divider()
 
         for item in plan.get("highlights", []):
-            st.write(f"✅ {item}")
+            st.write(f"âœ… {item}")
 
         st.divider()
 
-        button_label = "Aktiv" if current else f"{plan.get('label', plan_key)} auswählen"
+        button_label = "Aktiv" if current else f"{plan.get('label', plan_key)} auswÃ¤hlen"
 
         if st.button(
             button_label,
             key=f"buy_{plan_key}",
-            use_container_width=True,
+            width="stretch",
             disabled=current,
         ):
             st.session_state.selected_plan = plan_key
             st.success(
-                f"{plan.get('label', plan_key)} ausgewählt. Stripe Checkout wird später verbunden."
+                f"{plan.get('label', plan_key)} ausgewÃ¤hlt. Stripe Checkout wird spÃ¤ter verbunden."
             )
 
 
@@ -277,7 +277,7 @@ def render_premium():
     require_login()
     refresh_user()
 
-    st.title("💎 MaByte Premium")
+    st.title("ðŸ’Ž MaByte Premium")
     st.caption("Upgrade dein AI Operating System mit Workspaces, Limits und Agent Capacity.")
 
     st.info("Pro = Creator OS. Grand = Content Engine & Automation. Elite = Full AI Operating System.")
@@ -301,6 +301,6 @@ def render_premium():
     st.divider()
 
     with st.container(border=True):
-        st.subheader("🚀 Premium Roadmap")
-        st.write("Stripe Checkout, automatische Plan-Upgrades und Webhooks werden als nächster Schritt verbunden.")
-        st.write("Bis dahin können Pläne über Admin oder Redeem Codes freigeschaltet werden.")
+        st.subheader("ðŸš€ Premium Roadmap")
+        st.write("Stripe Checkout, automatische Plan-Upgrades und Webhooks werden als nÃ¤chster Schritt verbunden.")
+        st.write("Bis dahin kÃ¶nnen PlÃ¤ne Ã¼ber Admin oder Redeem Codes freigeschaltet werden.")

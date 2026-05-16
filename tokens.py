@@ -1,4 +1,4 @@
-from config import TOKEN_COSTS
+﻿from config import TOKEN_COSTS
 
 
 def estimate_cost(kind: str, prompt: str = "") -> int:
@@ -13,3 +13,4 @@ def estimate_cost(kind: str, prompt: str = "") -> int:
         return 4
 
     return base
+

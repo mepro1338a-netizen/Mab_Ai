@@ -1,4 +1,4 @@
-from db_manager import execute, fetch_all
+﻿from db_manager import execute, fetch_all
 
 
 def init_redeem_tracking():
@@ -43,3 +43,4 @@ def list_redeem_redemptions():
     ORDER BY created_at DESC
     LIMIT 500
     """)
+

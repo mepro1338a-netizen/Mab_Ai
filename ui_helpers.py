@@ -1,4 +1,4 @@
-# =========================================================
+﻿# =========================================================
 # ui_helpers.py
 # =========================================================
 
@@ -178,12 +178,12 @@ def page_header(title, subtitle=None):
 
 def premium_required(feature_name="Dieses Feature"):
     st.error(
-        f"{feature_name} ist in deinem aktuellen Plan nicht verfügbar."
+        f"{feature_name} ist in deinem aktuellen Plan nicht verfÃ¼gbar."
     )
 
     if st.button(
-        "💎 Premium ansehen",
-        use_container_width=True,
+        "ðŸ’Ž Premium ansehen",
+        width="stretch",
     ):
         go_to("premium")
 

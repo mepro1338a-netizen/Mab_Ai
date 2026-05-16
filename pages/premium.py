@@ -1,4 +1,4 @@
-import streamlit as st
+﻿import streamlit as st
 from config import PLANS, FOOTBALL_PLANS
 
 
@@ -283,7 +283,7 @@ div[data-testid="stAlert"] *{
 def choose_plan(plan_key, category):
     st.session_state.selected_plan = plan_key
     st.session_state.selected_plan_category = category
-    st.success("Plan ausgewählt.")
+    st.success("Plan ausgewÃ¤hlt.")
 
 
 def section_header(icon, title, sub):
@@ -330,15 +330,15 @@ def normal_card(plan_key):
 
         st.markdown(
             "<div class='compact-list'>"
-            + "<br>".join([f"✓ {x}" for x in highlights])
+            + "<br>".join([f"âœ“ {x}" for x in highlights])
             + "</div>",
             unsafe_allow_html=True,
         )
 
         if st.button(
-            f"{plan.get('label')} auswählen",
+            f"{plan.get('label')} auswÃ¤hlen",
             key=f"normal_{plan_key}",
-            use_container_width=True,
+            width="stretch",
         ):
             choose_plan(plan_key, "normal")
 
@@ -366,15 +366,15 @@ def football_card(plan_key):
 
         st.markdown(
             "<div class='compact-list'>"
-            + "<br>".join([f"✓ {x}" for x in highlights])
+            + "<br>".join([f"âœ“ {x}" for x in highlights])
             + "</div>",
             unsafe_allow_html=True,
         )
 
         if st.button(
-            f"{plan.get('label')} wählen",
+            f"{plan.get('label')} wÃ¤hlen",
             key=f"football_{plan_key}",
-            use_container_width=True,
+            width="stretch",
         ):
             choose_plan(plan_key, "football")
 
@@ -386,9 +386,9 @@ def render_premium():
         """
 <div class="hero">
     <div class="hero-top">MABYTE PREMIUM</div>
-    <div class="hero-title">AI-Pläne für Creator, Automation und Football.</div>
+    <div class="hero-title">AI-PlÃ¤ne fÃ¼r Creator, Automation und Football.</div>
     <div class="hero-sub">
-        MaByte Tokens für allgemeine AI-Workflows. Football Premium separat mit Actions,
+        MaByte Tokens fÃ¼r allgemeine AI-Workflows. Football Premium separat mit Actions,
         API Requests und skalierbarer Infrastruktur.
     </div>
 </div>
@@ -413,12 +413,12 @@ def render_premium():
     with c3:
         normal_card("elite")
 
-    st.info("Token-System: 1€ = 100 Tokens. Tokens gelten für normale MaByte AI Actions.")
+    st.info("Token-System: 1â‚¬ = 100 Tokens. Tokens gelten fÃ¼r normale MaByte AI Actions.")
 
     section_header(
         ICON_BALL,
         "Football AI Premium",
-        "Für Creator, Fußballseiten, Apps und automatisierte Content-Systeme.",
+        "FÃ¼r Creator, FuÃŸballseiten, Apps und automatisierte Content-Systeme.",
     )
 
     f1, f2, f3 = st.columns(3, gap="medium")
@@ -438,14 +438,14 @@ def render_premium():
     <div class="b2b-icon">{ICON_B2B}</div>
     <div class="b2b-title">Football Enterprise</div>
     <div class="b2b-sub">
-        Für Agenturen, Football Apps und Netzwerke mit Custom Limits,
-        White Label, Webhooks, Team-Zugängen und Priority Support.
+        FÃ¼r Agenturen, Football Apps und Netzwerke mit Custom Limits,
+        White Label, Webhooks, Team-ZugÃ¤ngen und Priority Support.
     </div>
 </div>
         """,
         unsafe_allow_html=True,
     )
 
-    if st.button("Enterprise Anfrage starten", key="enterprise_request", use_container_width=True):
+    if st.button("Enterprise Anfrage starten", key="enterprise_request", width="stretch"):
         st.session_state.page = "support"
         st.rerun()

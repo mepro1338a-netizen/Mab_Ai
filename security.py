@@ -1,4 +1,4 @@
-import time
+﻿import time
 import re
 from collections import defaultdict
 
@@ -75,3 +75,4 @@ def is_owner(user: dict) -> bool:
         return False
 
     return user.get("role") == "owner" or int(user.get("admin_level", 0) or 0) >= 999
+

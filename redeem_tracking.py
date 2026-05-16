@@ -1,4 +1,4 @@
-import sqlite3
+﻿import sqlite3
 from datetime import datetime
 
 
@@ -74,3 +74,4 @@ def list_redeem_redemptions():
     conn.close()
 
     return rows
+

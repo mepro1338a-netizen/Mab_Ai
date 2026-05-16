@@ -1,4 +1,4 @@
-import os
+﻿import os
 import sqlite3
 from pathlib import Path
 
@@ -52,3 +52,4 @@ def check_database():
 if __name__ == "__main__":
     check_path()
     check_database()
+

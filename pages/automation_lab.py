@@ -1,4 +1,4 @@
-import streamlit as st
+﻿import streamlit as st
 
 from database import (
     list_projects,
@@ -19,7 +19,7 @@ def project_options():
     options = {"Kein Projekt": 0}
 
     for p in projects:
-        options[f"{p.get('title')} · {p.get('workspace')}"] = p.get("id")
+        options[f"{p.get('title')} Â· {p.get('workspace')}"] = p.get("id")
 
     return options
 
@@ -30,23 +30,23 @@ def render_agent_card(icon, title, desc, agent_type):
         st.caption(desc)
 
         if st.button(
-            "Agent auswählen",
+            "Agent auswÃ¤hlen",
             key=f"agent_{agent_type}",
-            use_container_width=True,
+            width="stretch",
         ):
             st.session_state.selected_agent_type = agent_type
-            st.success(f"{title} ausgewählt")
+            st.success(f"{title} ausgewÃ¤hlt")
 
 
 def render_create_automation():
-    st.subheader("⚙️ Workflow erstellen")
+    st.subheader("âš™ï¸ Workflow erstellen")
 
     options = project_options()
 
     with st.container(border=True):
         name = st.text_input(
             "Workflow Name",
-            placeholder="z.B. Football Match → Reel Package",
+            placeholder="z.B. Football Match â†’ Reel Package",
         )
 
         project_label = st.selectbox("Projekt", list(options.keys()))
@@ -110,13 +110,13 @@ def render_create_automation():
             ),
         )
 
-        if st.button("🚀 Automation erstellen", use_container_width=True):
+        if st.button("ðŸš€ Automation erstellen", width="stretch"):
             if not name or not trigger:
-                st.warning("Bitte Name und Trigger ausfüllen.")
+                st.warning("Bitte Name und Trigger ausfÃ¼llen.")
                 return
 
             if project_id == 0:
-                st.warning("Bitte ein Projekt auswählen.")
+                st.warning("Bitte ein Projekt auswÃ¤hlen.")
                 return
 
             automation_id = create_automation(
@@ -134,7 +134,7 @@ def render_create_automation():
 
 
 def render_automations():
-    st.subheader("🧩 Aktive Automations")
+    st.subheader("ðŸ§© Aktive Automations")
 
     automations = list_automations(current_user())
 
@@ -144,9 +144,9 @@ def render_automations():
 
     for item in automations:
         with st.container(border=True):
-            st.markdown(f"### ⚡ {item.get('name')}")
+            st.markdown(f"### âš¡ {item.get('name')}")
             st.caption(
-                f"{item.get('source_workspace')} → {item.get('target_workspace')}"
+                f"{item.get('source_workspace')} â†’ {item.get('target_workspace')}"
             )
             st.write(item.get("trigger_text", ""))
 
@@ -160,11 +160,11 @@ def render_automations():
 
             with c3:
                 if st.button(
-                    "▶️ Agent starten",
+                    "â–¶ï¸ Agent starten",
                     key=f"run_{item.get('id')}",
-                    use_container_width=True,
+                    width="stretch",
                 ):
-                    with st.spinner("Agent läuft..."):
+                    with st.spinner("Agent lÃ¤uft..."):
                         result = run_automation(item)
 
                     if result.get("success"):
@@ -178,7 +178,7 @@ def render_automations():
 
 
 def render_runs():
-    st.subheader("📡 Automation Runs")
+    st.subheader("ðŸ“¡ Automation Runs")
 
     runs = list_automation_runs(current_user(), limit=50)
 
@@ -201,7 +201,7 @@ def render_automation_lab():
         st.rerun()
         return
 
-    st.title("🧪 Automation Lab")
+    st.title("ðŸ§ª Automation Lab")
     st.caption("AI Agents, Workflow Chains und Cross-Workspace Intelligence.")
 
     k1, k2, k3 = st.columns(3)
@@ -217,21 +217,21 @@ def render_automation_lab():
 
     st.divider()
 
-    st.subheader("🤖 AI Agents")
+    st.subheader("ðŸ¤– AI Agents")
 
     a, b, c = st.columns(3)
 
     with a:
         render_agent_card(
-            "⚽",
+            "âš½",
             "Football Content Agent",
-            "Match Analysis → Reels, Shorts, Threads und Commentary.",
+            "Match Analysis â†’ Reels, Shorts, Threads und Commentary.",
             "football_content_agent",
         )
 
     with b:
         render_agent_card(
-            "📣",
+            "ðŸ“£",
             "Content Repurpose Agent",
             "Aus einem Output mehrere Social Formate erstellen.",
             "content_repurpose_agent",
@@ -239,9 +239,9 @@ def render_automation_lab():
 
     with c:
         render_agent_card(
-            "💻",
+            "ðŸ’»",
             "Developer Report Agent",
-            "Code-Änderungen analysieren und Reports erstellen.",
+            "Code-Ã„nderungen analysieren und Reports erstellen.",
             "developer_report_agent",
         )
 

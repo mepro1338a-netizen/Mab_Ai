@@ -1,4 +1,4 @@
-import pandas as pd
+﻿import pandas as pd
 import streamlit as st
 
 from database import (
@@ -75,7 +75,7 @@ def safe_float(value):
 
 
 def money(value):
-    return f"{safe_float(value):,.2f}€".replace(",", "X").replace(".", ",").replace("X", ".")
+    return f"{safe_float(value):,.2f}â‚¬".replace(",", "X").replace(".", ",").replace("X", ".")
 
 
 def safe_df(rows, height=430):
@@ -85,7 +85,7 @@ def safe_df(rows, height=430):
 
     st.dataframe(
         pd.DataFrame(rows),
-        use_container_width=True,
+        width="stretch",
         hide_index=True,
         height=height,
     )
@@ -517,14 +517,14 @@ def render_overview():
     with right:
         panel_start("Command Actions", "Fast internal operations")
 
-        if st.button("Refresh Dashboard", use_container_width=True):
+        if st.button("Refresh Dashboard", width="stretch"):
             st.rerun()
 
-        if st.button("Clear Session Cache", use_container_width=True):
+        if st.button("Clear Session Cache", width="stretch"):
             st.session_state.clear()
             st.success("Session Cache geleert.")
 
-        if st.button("Prepare Broadcast", use_container_width=True):
+        if st.button("Prepare Broadcast", width="stretch"):
             st.session_state.page = "admin"
             st.info("Broadcast System vorbereitet.")
 
@@ -724,7 +724,7 @@ def render_user_control():
             index=plans.index(current_plan),
         )
 
-        if st.button("Set Plan", use_container_width=True):
+        if st.button("Set Plan", width="stretch"):
             set_plan(selected, new_plan)
             add_audit_log(current_user(), "plan_changed", selected, new_plan)
             st.success("Plan aktualisiert.")
@@ -737,7 +737,7 @@ def render_user_control():
             value=safe_int(user.get("tokens")),
         )
 
-        if st.button("Set Tokens", use_container_width=True):
+        if st.button("Set Tokens", width="stretch"):
             update_tokens(selected, int(new_tokens))
             add_audit_log(current_user(), "tokens_updated", selected, str(new_tokens))
             st.success("Tokens aktualisiert.")
@@ -766,10 +766,10 @@ def render_user_control():
         role = st.selectbox(
             "Role",
             roles,
-            format_func=lambda x: f"{x[0]} — Level {x[2]}",
+            format_func=lambda x: f"{x[0]} â€” Level {x[2]}",
         )
 
-        if st.button("Set Role", use_container_width=True):
+        if st.button("Set Role", width="stretch"):
             set_role(selected, role[1], role[2])
             add_audit_log(current_user(), "role_changed", selected, f"{role[1]} / {role[2]}")
             st.success("Rolle aktualisiert.")
@@ -778,14 +778,14 @@ def render_user_control():
         c1, c2 = st.columns(2)
 
         with c1:
-            if st.button("Ban User", use_container_width=True):
+            if st.button("Ban User", width="stretch"):
                 ban_user(selected, True)
                 add_audit_log(current_user(), "user_banned", selected, "")
                 st.success("User gebannt.")
                 st.rerun()
 
         with c2:
-            if st.button("Unban User", use_container_width=True):
+            if st.button("Unban User", width="stretch"):
                 ban_user(selected, False)
                 add_audit_log(current_user(), "user_unbanned", selected, "")
                 st.success("User entbannt.")
@@ -816,11 +816,11 @@ def render_tickets():
         if status_filter != "all" and t.get("status") != status_filter:
             continue
 
-        with st.expander(f"#{t.get('id')} • {t.get('subject')} • {t.get('status')}"):
+        with st.expander(f"#{t.get('id')} â€¢ {t.get('subject')} â€¢ {t.get('status')}"):
             st.write("User:", t.get("username"))
             st.write("Email:", t.get("email"))
             st.write("Kategorie:", t.get("category"))
-            st.write("Priorität:", t.get("priority"))
+            st.write("PrioritÃ¤t:", t.get("priority"))
             st.write("Nachricht:", t.get("message"))
             st.write("Erstellt:", t.get("created_at"))
 
@@ -838,7 +838,7 @@ def render_tickets():
                     if st.button("Delete", key=f"delete_ticket_{t.get('id')}"):
                         delete_support_message(t.get("id"))
                         add_audit_log(current_user(), "ticket_deleted", str(t.get("id")), "")
-                        st.success("Ticket gelöscht.")
+                        st.success("Ticket gelÃ¶scht.")
                         st.rerun()
 
     panel_end()
@@ -870,9 +870,9 @@ def render_codes():
         plan = st.selectbox("Plan", ["", "free", "pro", "grand", "elite"])
 
     with c5:
-        days_valid = st.number_input("Gültig Tage", min_value=1, max_value=365, value=30)
+        days_valid = st.number_input("GÃ¼ltig Tage", min_value=1, max_value=365, value=30)
 
-    if st.button("Create Redeem Code", use_container_width=True):
+    if st.button("Create Redeem Code", width="stretch"):
         code = create_redeem_code(
             code_type=code_type,
             tokens=int(tokens),
@@ -1073,7 +1073,7 @@ def render_system_tools():
         placeholder="Neue Features, Wartung, Football API Launch...",
     )
 
-    if st.button("Save Broadcast", use_container_width=True):
+    if st.button("Save Broadcast", width="stretch"):
         st.session_state.broadcast_message = message
         add_audit_log(current_user(), "broadcast_saved", "system", message[:200])
         st.success("Broadcast gespeichert.")
@@ -1091,7 +1091,7 @@ def render_owner_console():
     panel_start("Owner Console", "Highest privilege command layer")
 
     st.write("Owner Mode aktiv.")
-    st.warning("Alle kritischen Aktionen sollten über Audit Logs nachvollziehbar bleiben.")
+    st.warning("Alle kritischen Aktionen sollten Ã¼ber Audit Logs nachvollziehbar bleiben.")
 
     st.markdown(
         """

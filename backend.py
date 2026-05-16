@@ -1,4 +1,4 @@
-import os
+﻿import os
 import time
 import requests
 from openai import OpenAI
@@ -90,7 +90,7 @@ def process_image(username, prompt):
             return f"data:image/png;base64,{item.b64_json}", None, cost, True
         if getattr(item, "url", None):
             return item.url, None, cost, True
-        return None, "Kein Bild zurückgegeben.", cost, False
+        return None, "Kein Bild zurÃ¼ckgegeben.", cost, False
     except Exception as e:
         return None, f"API Fehler: {e}", cost, False
 
@@ -144,3 +144,4 @@ def process_music(username, prompt):
         return result, None, cost, True
     except Exception as e:
         return None, f"API Fehler: {e}", cost, False
+

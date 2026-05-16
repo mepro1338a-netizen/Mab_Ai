@@ -1,4 +1,4 @@
-from database import create_user, verify_login, get_user
+﻿from database import create_user, verify_login, get_user
 
 
 def login_user(username, password):
@@ -39,3 +39,4 @@ def is_owner_user(user):
     admin_level = int(user.get("admin_level", 0))
 
     return role == "owner" or admin_level >= 3
+
