@@ -1,89 +1,201 @@
 import streamlit as st
 
-from database import init_db
-from ui_core import load_css, render_sidebar
 
-from pages.auth import render_auth
-from pages.home import render_home
-from pages.chat import render_chat
+# =========================================================
+# HELPERS
+# =========================================================
 
-# MEDIA IMPORT FIX
+def ensure_logged_in():
 
-from pages.football import render_football
-from pages.projects import render_projects
-from pages.automation_lab import render_automation_lab
+    if not st.session_state.get("logged_in"):
 
-from pages.premium import render_premium
+        st.session_state.page = "auth"
 
-from pages.account import (
-    render_dashboard,
-    render_support,
-    render_redeem,
-)
+        st.rerun()
 
-from pages.admin import render_admin
+
+def user_plan():
+
+    return st.session_state.get(
+        "plan",
+        "free"
+    )
+
+
+def tokens():
+
+    return int(
+        st.session_state.get(
+            "tokens",
+            0
+        ) or 0
+    )
 
 
 # =========================================================
-# PAGE CONFIG
+# CSS
 # =========================================================
 
-st.set_page_config(
-    page_title="MaByte",
-    page_icon="🚀",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
-
-
-# =========================================================
-# INIT
-# =========================================================
-
-init_db()
-load_css()
-
-
-# =========================================================
-# SAFE SIDEBAR FIX
-# =========================================================
-
-def force_sidebar_css():
+def media_css():
 
     st.markdown(
         """
 <style>
 
-/* Sidebar sichtbar halten */
-section[data-testid="stSidebar"]{
-    display:block!important;
-    visibility:visible!important;
-    opacity:1!important;
-    z-index:999!important;
+.main .block-container{
+    max-width:1280px;
+    padding-top:5rem;
+    padding-bottom:3rem;
 }
 
-/* Sidebar Content sichtbar */
-section[data-testid="stSidebar"] > div{
-    display:block!important;
-    visibility:visible!important;
-    opacity:1!important;
+.media-hero{
+    border-radius:28px;
+    padding:30px;
+    margin-bottom:24px;
+
+    background:
+        radial-gradient(circle at top right, rgba(56,189,248,.22), transparent 30%),
+        linear-gradient(135deg,#020617,#0f172a);
+
+    border:1px solid rgba(255,255,255,.08);
+
+    box-shadow:
+        0 20px 50px rgba(0,0,0,.28);
 }
 
-/* Sidebar Toggle sichtbar */
-button[data-testid="collapsedControl"]{
-    display:flex!important;
-    visibility:visible!important;
-    opacity:1!important;
+.media-kicker{
+    color:#ffd36a;
+    font-size:12px;
+    font-weight:900;
+    letter-spacing:.14em;
+    text-transform:uppercase;
 }
 
-/* Header */
-[data-testid="stHeader"]{
-    z-index:998!important;
+.media-title{
+    color:#ffffff;
+    font-size:42px;
+    font-weight:1000;
+    line-height:1.05;
+    margin-top:10px;
 }
 
-/* Main */
-[data-testid="stAppViewContainer"]{
-    overflow-x:hidden!important;
+.media-sub{
+    color:#cbd5e1;
+    font-size:15px;
+    line-height:1.6;
+    margin-top:14px;
+    max-width:850px;
+}
+
+.studio-card{
+    border-radius:24px;
+    padding:22px;
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(15,23,42,.95),
+            rgba(30,41,59,.92)
+        );
+
+    border:1px solid rgba(255,255,255,.08);
+
+    box-shadow:
+        0 12px 30px rgba(0,0,0,.22);
+
+    margin-bottom:18px;
+}
+
+.studio-title{
+    color:#ffffff;
+    font-size:20px;
+    font-weight:900;
+    margin-bottom:6px;
+}
+
+.studio-sub{
+    color:#94a3b8;
+    font-size:13px;
+    line-height:1.5;
+}
+
+.preview-box{
+    border-radius:18px;
+    padding:14px;
+
+    background:
+        linear-gradient(
+            180deg,
+            rgba(59,130,246,.18),
+            rgba(15,23,42,.85)
+        );
+
+    border:1px solid rgba(59,130,246,.20);
+
+    margin-bottom:10px;
+}
+
+.preview-label{
+    color:#7dd3fc;
+    font-size:11px;
+    font-weight:900;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+}
+
+.preview-value{
+    color:#ffffff;
+    font-size:15px;
+    font-weight:800;
+    margin-top:5px;
+}
+
+.stButton > button{
+    border:none!important;
+    border-radius:16px!important;
+
+    background:
+        linear-gradient(
+            135deg,
+            #38bdf8,
+            #2563eb
+        )!important;
+
+    color:white!important;
+
+    min-height:46px!important;
+
+    font-weight:900!important;
+
+    box-shadow:
+        0 12px 24px rgba(37,99,235,.25)!important;
+}
+
+div[data-testid="stMetric"]{
+    background:
+        linear-gradient(
+            135deg,
+            #0f172a,
+            #1e293b
+        )!important;
+
+    border:1px solid rgba(255,255,255,.08)!important;
+
+    border-radius:22px!important;
+
+    padding:16px!important;
+}
+
+div[data-testid="stMetricLabel"]{
+    color:#7dd3fc!important;
+    font-size:11px!important;
+    font-weight:900!important;
+}
+
+div[data-testid="stMetricValue"]{
+    color:#ffffff!important;
+    font-size:28px!important;
+    font-weight:1000!important;
 }
 
 </style>
@@ -92,180 +204,449 @@ button[data-testid="collapsedControl"]{
     )
 
 
-force_sidebar_css()
-
-
 # =========================================================
-# SESSION DEFAULTS
+# HERO
 # =========================================================
 
-DEFAULTS = {
-    "page": "auth",
-    "logged_in": False,
-    "user": None,
-    "email": "",
-    "plan": "free",
-    "tokens": 0,
-    "role": "user",
-    "admin_level": 0,
-    "active_project_id": None,
-}
+def hero():
 
-for key, value in DEFAULTS.items():
+    st.markdown(
+        """
+<div class="media-hero">
 
-    if key not in st.session_state:
-        st.session_state[key] = value
+    <div class="media-kicker">
+        AI CONTENT STUDIO
+    </div>
 
+    <div class="media-title">
+        Create viral short-form content.
+    </div>
 
-# =========================================================
-# AUTOMATIONS
-# =========================================================
+    <div class="media-sub">
+        Erstelle kompakte Reels, Hooks, Captions,
+        Scripts, CTA Flows und Creator Assets
+        mit AI Workflows.
+    </div>
 
-def render_automations():
-
-    st.title("⚙️ Automations")
-
-    st.caption(
-        "Geplante Abläufe, Posting Flows und System Actions."
+</div>
+        """,
+        unsafe_allow_html=True,
     )
 
-    with st.container(border=True):
 
-        st.subheader("Automation Center")
+# =========================================================
+# CODING
+# =========================================================
 
-        st.info(
-            "Noch keine Automationen aktiv."
+def render_coding_ai():
+
+    st.title("💻 Developer OS")
+
+    st.info(
+        "Coding Workspace aktiv."
+    )
+
+
+# =========================================================
+# IMAGE
+# =========================================================
+
+def render_image_ai():
+
+    st.title("🎨 Creative Workspace")
+
+    st.info(
+        "Image Workspace aktiv."
+    )
+
+
+# =========================================================
+# MUSIC
+# =========================================================
+
+def render_music_generator():
+
+    media_css()
+
+    st.title("🎵 Music Studio")
+
+    st.caption(
+        "Songs kosten jetzt 100 Tokens."
+    )
+
+    topic = st.text_input(
+        "Song Thema"
+    )
+
+    genre = st.selectbox(
+        "Genre",
+        [
+            "Rap",
+            "Trap",
+            "Pop",
+            "EDM",
+            "Phonk",
+        ],
+    )
+
+    st.metric(
+        "Kosten",
+        "100 Tokens"
+    )
+
+    if st.button(
+        "🎵 Song generieren",
+        use_container_width=True
+    ):
+
+        if not topic:
+
+            st.warning(
+                "Bitte Thema eingeben."
+            )
+
+            return
+
+        st.success(
+            "Song Package erstellt."
+        )
+
+        st.markdown(
+            f"""
+## Song
+
+**Thema:** {topic}
+
+**Genre:** {genre}
+
+- Hook
+- Chorus
+- Lyrics
+- Viral Caption
+- Music Prompt
+            """
         )
 
 
 # =========================================================
-# AUTH CHECK
+# REELS
 # =========================================================
 
-logged_in = bool(
-    st.session_state.get("logged_in")
-    and st.session_state.get("user")
-)
+def render_reels_creator():
 
-if not logged_in:
+    media_css()
 
-    st.session_state.page = "auth"
+    hero()
 
-    render_auth()
+    top1, top2, top3 = st.columns(3)
 
-    st.stop()
+    with top1:
+        st.metric(
+            "Max Video",
+            "7s"
+        )
+
+    with top2:
+        st.metric(
+            "Format",
+            "Short-form"
+        )
+
+    with top3:
+        st.metric(
+            "Plan",
+            user_plan().upper()
+        )
+
+    st.divider()
+
+    left, center, right = st.columns(
+        [1.1, 1.3, .9],
+        gap="large"
+    )
+
+    # =====================================================
+    # LEFT
+    # =====================================================
+
+    with left:
+
+        st.markdown(
+            """
+<div class="studio-card">
+
+    <div class="studio-title">
+        Creative Brief
+    </div>
+
+    <div class="studio-sub">
+        Beschreibe dein Reel.
+    </div>
+
+</div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        topic = st.text_area(
+            "Thema",
+            height=130,
+            placeholder="z.B. Warum Arsenal dieses Jahr gefährlich ist..."
+        )
+
+        platform = st.selectbox(
+            "Plattform",
+            [
+                "TikTok",
+                "Instagram Reels",
+                "YouTube Shorts",
+            ],
+        )
+
+        content_type = st.selectbox(
+            "Content Typ",
+            [
+                "Football Reel",
+                "Storytelling",
+                "Educational",
+                "Meme Page",
+                "Personal Brand",
+            ],
+        )
+
+        tone = st.selectbox(
+            "Ton",
+            [
+                "Viral",
+                "Bold",
+                "Funny",
+                "Premium",
+            ],
+        )
+
+    # =====================================================
+    # CENTER
+    # =====================================================
+
+    with center:
+
+        st.markdown(
+            """
+<div class="studio-card">
+
+    <div class="studio-title">
+        Creator Output
+    </div>
+
+    <div class="studio-sub">
+        Hook, Script und Posting Flow.
+    </div>
+
+</div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        template = st.selectbox(
+            "Template",
+            [
+                "Viral Package",
+                "Football Matchday",
+                "Creator Growth",
+                "Ad Creative",
+            ],
+        )
+
+        voice = st.selectbox(
+            "Voice",
+            [
+                "Creator",
+                "Narrator",
+                "Coach",
+                "Analyst",
+            ],
+        )
+
+        cta = st.text_input(
+            "CTA",
+            placeholder="Folge für mehr..."
+        )
+
+        seconds = st.slider(
+            "Videolänge",
+            min_value=3,
+            max_value=7,
+            value=7,
+        )
+
+        st.markdown(
+            f"""
+<div class="preview-box">
+
+    <div class="preview-label">
+        Hook
+    </div>
+
+    <div class="preview-value">
+        0–2 Sekunden
+    </div>
+
+</div>
+
+<div class="preview-box">
+
+    <div class="preview-label">
+        Main Scene
+    </div>
+
+    <div class="preview-value">
+        2–5 Sekunden
+    </div>
+
+</div>
+
+<div class="preview-box">
+
+    <div class="preview-label">
+        CTA
+    </div>
+
+    <div class="preview-value">
+        5–7 Sekunden
+    </div>
+
+</div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    # =====================================================
+    # RIGHT
+    # =====================================================
+
+    with right:
+
+        st.markdown(
+            """
+<div class="studio-card">
+
+    <div class="studio-title">
+        Creator Queue
+    </div>
+
+    <div class="studio-sub">
+        Workflow & Export.
+    </div>
+
+</div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        st.metric(
+            "Kosten",
+            "25 Tokens"
+        )
+
+        st.metric(
+            "Verfügbar",
+            tokens()
+        )
+
+        st.info(
+            "Auto Posting folgt später."
+        )
+
+    st.divider()
+
+    if st.button(
+        "🚀 Content Package generieren",
+        use_container_width=True
+    ):
+
+        if not topic:
+
+            st.warning(
+                "Bitte Thema eingeben."
+            )
+
+            return
+
+        st.success(
+            "Content Package erstellt."
+        )
+
+        st.markdown(
+            f"""
+# Viral Hook
+
+{topic} verändert alles.
+
+# Script
+
+0-2s:
+Aggressiver Einstieg.
+
+2-5s:
+Main Point.
+
+5-7s:
+CTA.
+
+# Caption
+
+Dieses Reel wird viral.
+
+# Hashtags
+
+#football #viral #fyp
+            """
+        )
 
 
 # =========================================================
-# SIDEBAR
+# VIDEO
 # =========================================================
 
-render_sidebar()
+def render_video_generator():
 
+    media_css()
 
-# =========================================================
-# ROUTER
-# =========================================================
+    st.title("🎬 Media Studio")
 
-page = st.session_state.get(
-    "page",
-    "home"
-)
+    st.info(
+        "Video Generator aktiv."
+    )
 
 
 # =========================================================
-# ROUTES
+# MAIN
 # =========================================================
 
-if page == "auth":
+def render_media(active_tool="reels"):
 
-    st.session_state.page = "home"
+    ensure_logged_in()
 
-    st.rerun()
+    if active_tool == "coding":
 
+        render_coding_ai()
 
-elif page == "home":
+    elif active_tool == "image":
 
-    render_home()
+        render_image_ai()
 
+    elif active_tool == "music":
 
-elif page == "chat":
+        render_music_generator()
 
-    render_chat()
+    elif active_tool == "reels":
 
+        render_reels_creator()
 
-elif page == "projects":
+    elif active_tool == "video":
 
-    render_projects()
+        render_video_generator()
 
+    else:
 
-elif page == "football":
-
-    render_football()
-
-
-elif page == "automation_lab":
-
-    render_automation_lab()
-
-
-elif page == "automations":
-
-    render_automations()
-
-
-elif page == "coding":
-
-    render_media("coding")
-
-
-elif page == "image":
-
-    render_media("image")
-
-
-elif page == "music":
-
-    render_media("music")
-
-
-elif page == "reels":
-
-    render_media("reels")
-
-
-elif page == "video":
-
-    render_media("video")
-
-
-elif page == "dashboard":
-
-    render_dashboard()
-
-
-elif page == "support":
-
-    render_support()
-
-
-elif page == "premium":
-
-    render_premium()
-
-
-elif page == "redeem":
-
-    render_redeem()
-
-
-elif page == "admin":
-
-    render_admin()
-
-
-else:
-
-    st.session_state.page = "home"
-
-    st.rerun()
+        render_reels_creator()
