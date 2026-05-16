@@ -24,29 +24,6 @@ def img_base64(path: Path) -> str:
     ).decode("utf-8")
 
 
-def sidebar_icon(name: str) -> str:
-    path = ASSET_DIR / f"{name}.png"
-
-    if not path.exists():
-        return ""
-
-    encoded = img_base64(path)
-
-    return f"""
-<img
-    src="data:image/png;base64,{encoded}"
-    style="
-        width:18px;
-        height:18px;
-        object-fit:contain;
-        margin-right:12px;
-        vertical-align:middle;
-        border-radius:0px!important;
-    "
->
-"""
-
-
 # =========================================================
 # GLOBAL CSS
 # =========================================================
@@ -612,15 +589,10 @@ def sync_session_user(
 def nav(
     label: str,
     page: str,
-    icon: str,
 ) -> None:
 
-    icon_html = sidebar_icon(icon)
-
-    button_label = f"{icon_html}{label}"
-
     if st.button(
-        button_label,
+        label,
         key=f"nav_{page}",
         width="stretch",
     ):
@@ -647,93 +619,26 @@ def render_sidebar() -> None:
 
         st.write("")
 
-        nav(
-            "Mission Control",
-            "home",
-            "missioncontrol",
-        )
-
-        nav(
-            "AI Assistant",
-            "chat",
-            "chat",
-        )
-
-        nav(
-            "Projects",
-            "projects",
-            "projects",
-        )
-
-        nav(
-            "Automations",
-            "automation_lab",
-            "automations",
-        )
-
-        nav(
-            "Football AI",
-            "football",
-            "football",
-        )
+        nav("Mission Control", "home")
+        nav("AI Assistant", "chat")
+        nav("Projects", "projects")
+        nav("Automations", "automation_lab")
+        nav("Football AI", "football")
 
         st.caption("MEDIA")
 
-        nav(
-            "Image Studio",
-            "image",
-            "image",
-        )
-
-        nav(
-            "Video Studio",
-            "video",
-            "video",
-        )
-
-        nav(
-            "Reels Studio",
-            "reels",
-            "video",
-        )
-
-        nav(
-            "Music Studio",
-            "music",
-            "music",
-        )
-
-        nav(
-            "Code Studio",
-            "coding",
-            "code",
-        )
+        nav("Image Studio", "image")
+        nav("Video Studio", "video")
+        nav("Reels Studio", "reels")
+        nav("Music Studio", "music")
+        nav("Code Studio", "coding")
 
         st.caption("ACCOUNT")
 
-        nav(
-            "Dashboard",
-            "dashboard",
-            "dashboard",
-        )
-
-        nav(
-            "Premium",
-            "premium",
-            "premium",
-        )
-
-        nav(
-            "Redeem",
-            "redeem",
-            "redeem",
-        )
-
-        nav(
-            "Support",
-            "support",
-            "tools",
-        )
+        nav("Dashboard", "dashboard")
+        nav("Premium", "premium")
+        nav("Redeem", "redeem")
+        nav("Support", "support")
 
         admin_level = int(
             st.session_state.get(
@@ -749,7 +654,6 @@ def render_sidebar() -> None:
             nav(
                 "Admin Panel",
                 "admin",
-                "tools",
             )
 
         st.divider()
