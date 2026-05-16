@@ -21,7 +21,7 @@ client = OpenAI(api_key=OPENAI_API_KEY)
 
 
 # =========================================================
-# HELPERS
+# BASIC HELPERS
 # =========================================================
 
 def username():
@@ -48,159 +48,142 @@ def ensure_messages():
 
 
 # =========================================================
-# CSS
+# PAGE CSS — NO CUSTOM HTML REQUIRED
 # =========================================================
 
 def load_chat_css():
     st.markdown(
         """
 <style>
-.main .block-container{
-    max-width:1180px!important;
-    padding-top:105px!important;
-    padding-bottom:130px!important;
+.main .block-container {
+    max-width: 1180px !important;
+    padding-top: 105px !important;
+    padding-bottom: 130px !important;
 }
 
-/* HERO */
-.chat-hero{
-    background:
-        radial-gradient(circle at top right, rgba(56,189,248,.18), transparent 35%),
-        linear-gradient(135deg, rgba(8,18,34,.98), rgba(15,23,42,.96));
-    border:1px solid rgba(255,255,255,.07);
-    border-radius:32px;
-    padding:30px;
-    margin-bottom:22px;
-    box-shadow:0 0 40px rgba(0,140,255,.10);
+/* Page titles */
+h1 {
+    font-size: 46px !important;
+    font-weight: 950 !important;
+    color: #ffe7a3 !important;
+    letter-spacing: -1.5px !important;
 }
 
-.chat-kicker{
-    color:#7dd3fc;
-    font-size:12px;
-    font-weight:900;
-    letter-spacing:.18em;
-    text-transform:uppercase;
+h2, h3 {
+    color: #ffe7a3 !important;
 }
 
-.chat-title{
-    color:#ffe7a3;
-    font-size:44px;
-    font-weight:1000;
-    line-height:1;
-    margin-top:10px;
+/* Metrics */
+[data-testid="metric-container"] {
+    background: linear-gradient(180deg, rgba(12,24,44,.98), rgba(8,16,30,.98)) !important;
+    border: 1px solid rgba(255,255,255,.07) !important;
+    border-radius: 24px !important;
+    padding: 22px !important;
+    box-shadow: 0 0 34px rgba(0,140,255,.10) !important;
 }
 
-.chat-sub{
-    color:#f8e7b0;
-    font-size:15px;
-    margin-top:14px;
+[data-testid="metric-container"] label {
+    color: #7dd3fc !important;
+    font-size: 12px !important;
+    font-weight: 900 !important;
+    text-transform: uppercase !important;
 }
 
-/* METRICS */
-.chat-stats{
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:14px;
-    margin-bottom:22px;
+[data-testid="metric-container"] div {
+    color: #ffe7a3 !important;
+    font-weight: 950 !important;
 }
 
-.chat-stat{
-    background:linear-gradient(180deg, rgba(12,24,44,.96), rgba(8,16,30,.98));
-    border:1px solid rgba(255,255,255,.06);
-    border-radius:22px;
-    padding:18px;
+/* Containers */
+div[data-testid="stVerticalBlockBorderWrapper"] {
+    background: linear-gradient(180deg, rgba(12,24,44,.92), rgba(8,16,30,.97)) !important;
+    border: 1px solid rgba(255,255,255,.07) !important;
+    border-radius: 26px !important;
+    box-shadow: 0 0 34px rgba(0,140,255,.08) !important;
 }
 
-.chat-stat-label{
-    color:#7dd3fc;
-    font-size:11px;
-    font-weight:900;
-    text-transform:uppercase;
-    letter-spacing:.13em;
+/* Selectbox */
+.stSelectbox div[data-baseweb="select"] > div {
+    background: rgba(15,23,42,.96) !important;
+    border: 1px solid rgba(56,189,248,.22) !important;
+    border-radius: 18px !important;
+    color: #ffe7a3 !important;
 }
 
-.chat-stat-value{
-    color:#ffe7a3;
-    font-size:28px;
-    font-weight:1000;
-    margin-top:8px;
+/* Chat messages */
+[data-testid="stChatMessage"] {
+    background: linear-gradient(180deg, rgba(12,24,44,.86), rgba(8,16,30,.96)) !important;
+    border: 1px solid rgba(255,255,255,.07) !important;
+    border-radius: 24px !important;
+    padding: 18px !important;
+    margin-bottom: 14px !important;
+    box-shadow: 0 0 24px rgba(0,0,0,.18) !important;
 }
 
-/* PROMPT BAR */
-[data-testid="stChatInput"]{
-    position:fixed!important;
-    bottom:22px!important;
-    left:320px!important;
-    right:34px!important;
-    z-index:999999!important;
-    background:transparent!important;
-}
-
-[data-testid="stChatInput"] > div{
-    background:
-        linear-gradient(135deg, rgba(15,23,42,.98), rgba(8,16,30,.98))!important;
-    border:1px solid rgba(56,189,248,.25)!important;
-    border-radius:26px!important;
-    box-shadow:0 0 35px rgba(0,140,255,.20)!important;
-    padding:8px!important;
-}
-
-[data-testid="stChatInput"] textarea{
-    background:transparent!important;
-    color:#ffe7a3!important;
-    border:none!important;
-    font-size:15px!important;
-}
-
-[data-testid="stChatInput"] textarea::placeholder{
-    color:rgba(248,231,176,.55)!important;
-}
-
-[data-testid="stChatInput"] button{
-    background:linear-gradient(135deg,#38bdf8,#0ea5e9)!important;
-    border-radius:16px!important;
-}
-
-/* CHAT MESSAGES */
-[data-testid="stChatMessage"]{
-    background:linear-gradient(180deg, rgba(12,24,44,.82), rgba(8,16,30,.92))!important;
-    border:1px solid rgba(255,255,255,.07)!important;
-    border-radius:24px!important;
-    padding:18px!important;
-    margin-bottom:14px!important;
-    box-shadow:0 0 24px rgba(0,0,0,.16)!important;
-}
-
-[data-testid="stChatMessage"] *{
-    color:#ffe7a3!important;
+[data-testid="stChatMessage"] * {
+    color: #ffe7a3 !important;
 }
 
 [data-testid="stChatMessageAvatarUser"],
-[data-testid="stChatMessageAvatarAssistant"]{
-    background:linear-gradient(135deg,#38bdf8,#0ea5e9)!important;
-    border-radius:16px!important;
+[data-testid="stChatMessageAvatarAssistant"] {
+    background: linear-gradient(135deg,#38bdf8,#0ea5e9) !important;
+    border-radius: 16px !important;
 }
 
-/* SELECT */
-.stSelectbox div[data-baseweb="select"] > div{
-    background:rgba(15,23,42,.96)!important;
-    border:1px solid rgba(56,189,248,.18)!important;
-    border-radius:18px!important;
-    color:#ffe7a3!important;
+/* Chat input */
+[data-testid="stChatInput"] {
+    position: fixed !important;
+    bottom: 22px !important;
+    left: 320px !important;
+    right: 34px !important;
+    z-index: 999999 !important;
+    background: transparent !important;
 }
 
-/* MOBILE */
-@media(max-width:900px){
-    [data-testid="stChatInput"]{
-        left:12px!important;
-        right:12px!important;
+[data-testid="stChatInput"] > div {
+    background: linear-gradient(135deg, rgba(15,23,42,.98), rgba(8,16,30,.98)) !important;
+    border: 1px solid rgba(56,189,248,.28) !important;
+    border-radius: 26px !important;
+    box-shadow: 0 0 35px rgba(0,140,255,.22) !important;
+    padding: 8px !important;
+}
+
+[data-testid="stChatInput"] textarea {
+    background: transparent !important;
+    color: #ffe7a3 !important;
+    border: none !important;
+    font-size: 15px !important;
+}
+
+[data-testid="stChatInput"] textarea::placeholder {
+    color: rgba(248,231,176,.55) !important;
+}
+
+[data-testid="stChatInput"] button {
+    background: linear-gradient(135deg,#38bdf8,#0ea5e9) !important;
+    border-radius: 16px !important;
+}
+
+/* Alerts */
+div[data-testid="stAlert"] {
+    background: linear-gradient(135deg, rgba(14,116,144,.34), rgba(30,64,175,.26)) !important;
+    border: 1px solid rgba(56,189,248,.22) !important;
+    border-radius: 18px !important;
+}
+
+div[data-testid="stAlert"] * {
+    color: #ffe7a3 !important;
+}
+
+/* Mobile */
+@media(max-width:900px) {
+    [data-testid="stChatInput"] {
+        left: 12px !important;
+        right: 12px !important;
     }
 
-    .chat-stats{
-        grid-template-columns:1fr;
-    }
-
-    .chat-title{
-        font-size:34px;
+    h1 {
+        font-size: 34px !important;
     }
 }
 </style>
@@ -323,7 +306,11 @@ def ai_response(prompt, project):
 
 def render_history(project):
     if project:
-        history = list_project_chat_memory(project.get("id"), limit=30)
+        history = list_project_chat_memory(project.get("id"), limit=40)
+
+        if not history:
+            st.info("Noch kein Chat in diesem Projekt.")
+            return
 
         for msg in history:
             role = msg.get("role", "assistant")
@@ -332,6 +319,15 @@ def render_history(project):
             with st.chat_message(role):
                 st.markdown(content)
 
+        return
+
+    if not st.session_state.chat_messages:
+        with st.container(border=True):
+            st.subheader("Willkommen bei MaByte")
+            st.write(
+                "Schreib unten deine erste Nachricht. "
+                "MaByte hilft dir bei Strategie, Content, Coding, Football AI und Workflows."
+            )
         return
 
     for msg in st.session_state.chat_messages:
@@ -352,37 +348,24 @@ def render_chat():
     ensure_messages()
     load_chat_css()
 
-    st.markdown(
-        f"""
-<div class="chat-hero">
-    <div class="chat-kicker">AI OPERATING SYSTEM</div>
-    <div class="chat-title">MaByte Intelligence</div>
-    <div class="chat-sub">
-        Dein smarter AI Assistant für Strategie, Projekte, Content, Coding und Workflows.
-    </div>
-</div>
+    st.title("MaByte Intelligence")
+    st.caption("AI Assistant für Strategie, Projekte, Content, Coding und Workflows.")
 
-<div class="chat-stats">
-    <div class="chat-stat">
-        <div class="chat-stat-label">Tokens</div>
-        <div class="chat-stat-value">{get_tokens():,}</div>
-    </div>
+    c1, c2, c3 = st.columns(3)
 
-    <div class="chat-stat">
-        <div class="chat-stat-label">Chat Cost</div>
-        <div class="chat-stat-value">{chat_cost()}</div>
-    </div>
+    with c1:
+        st.metric("Tokens", get_tokens())
 
-    <div class="chat-stat">
-        <div class="chat-stat-label">Last Tool</div>
-        <div class="chat-stat-value">{latest_tool_used(username())}</div>
-    </div>
-</div>
-        """,
-        unsafe_allow_html=True,
-    )
+    with c2:
+        st.metric("Chat Kosten", chat_cost())
 
-    project = project_selector()
+    with c3:
+        st.metric("Letztes Tool", latest_tool_used(username()))
+
+    st.divider()
+
+    with st.container(border=True):
+        project = project_selector()
 
     st.divider()
 
