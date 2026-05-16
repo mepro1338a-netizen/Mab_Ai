@@ -220,6 +220,21 @@ button[data-testid="collapsedControl"] {{
 }}
 
 /* ===================================================== */
+/* NAVIGATION ROWS */
+/* ===================================================== */
+
+.mb-nav-row {{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:8px;
+}}
+
+.mb-nav-icon img {{
+    border-radius:12px!important;
+}}
+
+/* ===================================================== */
 /* SIDEBAR BUTTONS */
 /* ===================================================== */
 
@@ -589,15 +604,36 @@ def sync_session_user(
 def nav(
     label: str,
     page: str,
+    icon: str = "",
 ) -> None:
 
-    if st.button(
-        label,
-        key=f"nav_{page}",
-        width="stretch",
-    ):
-        st.session_state.page = page
-        st.rerun()
+    icon_path = ASSET_DIR / f"{icon}.png"
+
+    icon_col, button_col = st.columns(
+        [0.18, 0.82]
+    )
+
+    with icon_col:
+
+        if icon and icon_path.exists():
+
+            st.image(
+                str(icon_path),
+                width=28,
+            )
+
+        else:
+            st.write("")
+
+    with button_col:
+
+        if st.button(
+            label,
+            key=f"nav_{page}",
+            width="stretch",
+        ):
+            st.session_state.page = page
+            st.rerun()
 
 
 # =========================================================
@@ -619,26 +655,93 @@ def render_sidebar() -> None:
 
         st.write("")
 
-        nav("Mission Control", "home")
-        nav("AI Assistant", "chat")
-        nav("Projects", "projects")
-        nav("Automations", "automation_lab")
-        nav("Football AI", "football")
+        nav(
+            "Mission Control",
+            "home",
+            "missioncontrol",
+        )
+
+        nav(
+            "AI Assistant",
+            "chat",
+            "chat",
+        )
+
+        nav(
+            "Projects",
+            "projects",
+            "projects",
+        )
+
+        nav(
+            "Automations",
+            "automation_lab",
+            "automations",
+        )
+
+        nav(
+            "Football AI",
+            "football",
+            "football",
+        )
 
         st.caption("MEDIA")
 
-        nav("Image Studio", "image")
-        nav("Video Studio", "video")
-        nav("Reels Studio", "reels")
-        nav("Music Studio", "music")
-        nav("Code Studio", "coding")
+        nav(
+            "Image Studio",
+            "image",
+            "image",
+        )
+
+        nav(
+            "Video Studio",
+            "video",
+            "video",
+        )
+
+        nav(
+            "Reels Studio",
+            "reels",
+            "video",
+        )
+
+        nav(
+            "Music Studio",
+            "music",
+            "music",
+        )
+
+        nav(
+            "Code Studio",
+            "coding",
+            "code",
+        )
 
         st.caption("ACCOUNT")
 
-        nav("Dashboard", "dashboard")
-        nav("Premium", "premium")
-        nav("Redeem", "redeem")
-        nav("Support", "support")
+        nav(
+            "Dashboard",
+            "dashboard",
+            "dashboard",
+        )
+
+        nav(
+            "Premium",
+            "premium",
+            "premium",
+        )
+
+        nav(
+            "Redeem",
+            "redeem",
+            "redeem",
+        )
+
+        nav(
+            "Support",
+            "support",
+            "tools",
+        )
 
         admin_level = int(
             st.session_state.get(
@@ -654,6 +757,7 @@ def render_sidebar() -> None:
             nav(
                 "Admin Panel",
                 "admin",
+                "tools",
             )
 
         st.divider()
