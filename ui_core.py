@@ -1,5 +1,7 @@
 import base64
+import html
 from pathlib import Path
+
 import streamlit as st
 
 
@@ -8,327 +10,345 @@ WORDMARK = ASSET_DIR / "wordmark.png"
 SLOGAN_HEADER = ASSET_DIR / "sloganheader.png"
 
 
-def img_base64(path):
-    if not path.exists():
+def img_base64(path: Path) -> str:
+    if not path.exists() or not path.is_file():
         return ""
-    return base64.b64encode(path.read_bytes()).decode()
+    return base64.b64encode(path.read_bytes()).decode("utf-8")
 
 
-def load_css():
+def load_css() -> None:
     slogan = img_base64(SLOGAN_HEADER)
 
     slogan_css = ""
     if slogan:
-        slogan_css = """
-.custom-topbar {
-    background-image:url("data:image/png;base64,""" + slogan + """");
-    background-size:cover;
-    background-position:center;
-    background-repeat:no-repeat;
-}
+        slogan_css = f"""
+.custom-topbar {{
+    background-image: url("data:image/png;base64,{slogan}");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}}
 """
 
-    css = """
+    st.markdown(
+        f"""
 <style>
+:root {{
+    --mb-bg-0: #050914;
+    --mb-bg-1: #071120;
+    --mb-bg-2: #0b1d35;
+    --mb-card: rgba(10, 24, 45, .86);
+    --mb-card-strong: rgba(8, 18, 34, .96);
+    --mb-line: rgba(255, 255, 255, .075);
+    --mb-gold: #ffe7a3;
+    --mb-gold-soft: #f8e7b0;
+    --mb-cyan: #38bdf8;
+    --mb-muted: #94a3b8;
+}}
 
 #MainMenu,
-header,
 footer,
-[data-testid="stToolbar"] {
-    display:none!important;
-}
+[data-testid="stToolbar"] {{
+    display: none !important;
+}}
 
-[data-testid="stHeader"] {
-    background:transparent!important;
-}
+[data-testid="stHeader"] {{
+    background: transparent !important;
+    z-index: 998 !important;
+}}
 
-.stApp {
+.stApp {{
     background:
-        radial-gradient(circle at top left, rgba(0,180,255,.18), transparent 25%),
-        radial-gradient(circle at top right, rgba(139,92,246,.18), transparent 25%),
-        linear-gradient(180deg,#071120 0%,#0b1d35 45%,#08172b 100%);
-}
+        radial-gradient(circle at top left, rgba(56,189,248,.16), transparent 26%),
+        radial-gradient(circle at top right, rgba(147,51,234,.14), transparent 26%),
+        linear-gradient(180deg, var(--mb-bg-1) 0%, var(--mb-bg-2) 52%, var(--mb-bg-0) 100%);
+}}
 
-.main .block-container {
-    max-width:1500px;
-    padding-top:105px;
-    padding-bottom:40px;
-}
+.main .block-container {{
+    max-width: 1480px;
+    padding-top: 96px;
+    padding-bottom: 36px;
+}}
 
-.custom-topbar {
-    position:fixed;
-    top:0;
-    left:0;
-    right:0;
-    height:82px;
-    z-index:999999;
-    background:linear-gradient(90deg,rgba(5,10,20,.98),rgba(8,22,40,.98));
-    border-bottom:1px solid rgba(255,255,255,.05);
-    backdrop-filter:blur(16px);
-}
+.custom-topbar {{
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 76px;
+    z-index: 999999;
+    background: linear-gradient(90deg, rgba(5,10,20,.96), rgba(8,22,40,.96));
+    border-bottom: 1px solid rgba(255,255,255,.06);
+    backdrop-filter: blur(18px);
+}}
+{slogan_css}
 
-""" + slogan_css + """
+h1, h2, h3, h4, h5, h6 {{
+    color: var(--mb-gold) !important;
+    font-weight: 900 !important;
+    letter-spacing: -.035em;
+}}
 
-[data-testid="stSidebar"] {
-    background:linear-gradient(180deg,#07111d 0%,#0a1b31 100%)!important;
-    border-right:1px solid rgba(255,255,255,.05);
-}
+.stMarkdown,
+.stCaption,
+.stText,
+label {{
+    color: var(--mb-gold-soft) !important;
+}}
 
-[data-testid="stSidebar"] * {
-    color:#ffe7a3!important;
-}
+small,
+.stCaption {{
+    color: var(--mb-muted) !important;
+}}
 
-[data-testid="stSidebar"] img {
-    border-radius:18px;
-}
+section[data-testid="stSidebar"] {{
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    background: linear-gradient(180deg, #06101d 0%, #0a1b31 100%) !important;
+    border-right: 1px solid rgba(255,255,255,.07);
+    z-index: 999 !important;
+}}
 
-[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
-    gap:.45rem!important;
-}
+section[data-testid="stSidebar"] > div {{
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}}
 
-h1,h2,h3,h4,h5,h6 {
-    color:#ffe7a3!important;
-    font-weight:900!important;
-    letter-spacing:-.03em;
-}
+section[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {{
+    gap: .42rem !important;
+}}
 
-p,span,label,div {
-    color:#f8e7b0!important;
-}
+section[data-testid="stSidebar"] img {{
+    border-radius: 18px;
+}}
 
-small {
-    color:#94a3b8!important;
-}
+section[data-testid="stSidebar"] .stCaption {{
+    margin-top: 1.1rem;
+    color: var(--mb-muted) !important;
+    font-size: .72rem;
+    font-weight: 800;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+}}
 
-.stButton > button {
-    width:100%;
-    min-height:50px!important;
-    border-radius:18px!important;
-    border:1px solid rgba(0,180,255,.18)!important;
-    background:linear-gradient(135deg,#38bdf8,#0ea5e9)!important;
-    color:white!important;
-    font-weight:850!important;
-    font-size:15px!important;
-    box-shadow:0 0 18px rgba(0,180,255,.12);
-    transition:.22s;
-}
+button[data-testid="collapsedControl"] {{
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}}
 
-.stButton > button:hover {
-    transform:translateY(-2px) scale(1.01);
-    box-shadow:0 0 28px rgba(0,180,255,.35);
-}
+.stButton > button {{
+    width: 100%;
+    min-height: 46px !important;
+    border-radius: 16px !important;
+    border: 1px solid rgba(56,189,248,.18) !important;
+    background: linear-gradient(135deg, rgba(56,189,248,.95), rgba(14,165,233,.95)) !important;
+    color: #ffffff !important;
+    font-weight: 850 !important;
+    font-size: 14px !important;
+    box-shadow: 0 0 18px rgba(56,189,248,.11);
+    transition: transform .18s ease, box-shadow .18s ease;
+}}
 
-.stButton > button:active {
-    transform:translateY(0px) scale(.99);
-}
+.stButton > button:hover {{
+    transform: translateY(-1px);
+    box-shadow: 0 0 26px rgba(56,189,248,.28);
+}}
 
 .stTextInput input,
 .stTextArea textarea,
 .stNumberInput input,
 .stDateInput input,
-.stTimeInput input {
-    background:rgba(15,23,42,.94)!important;
-    color:#ffe7a3!important;
-    border:1px solid rgba(96,165,250,.22)!important;
-    border-radius:16px!important;
-    min-height:46px!important;
-    box-shadow:inset 0 0 0 1px rgba(255,255,255,.02)!important;
-}
+.stTimeInput input {{
+    background: rgba(15,23,42,.92) !important;
+    color: var(--mb-gold) !important;
+    border: 1px solid rgba(96,165,250,.24) !important;
+    border-radius: 15px !important;
+    min-height: 44px !important;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.02) !important;
+}}
 
 .stTextInput input::placeholder,
-.stTextArea textarea::placeholder {
-    color:#94a3b8!important;
-}
+.stTextArea textarea::placeholder {{
+    color: var(--mb-muted) !important;
+}}
 
 .stTextInput input:focus,
 .stTextArea textarea:focus,
-.stNumberInput input:focus {
-    border-color:#38bdf8!important;
-    box-shadow:0 0 0 3px rgba(56,189,248,.16)!important;
-}
+.stNumberInput input:focus {{
+    border-color: var(--mb-cyan) !important;
+    box-shadow: 0 0 0 3px rgba(56,189,248,.15) !important;
+}}
 
-.stSelectbox div[data-baseweb="select"] > div {
-    background:rgba(15,23,42,.94)!important;
-    color:#ffe7a3!important;
-    border:1px solid rgba(96,165,250,.22)!important;
-    border-radius:16px!important;
-    min-height:46px!important;
-}
+.stSelectbox div[data-baseweb="select"] > div,
+.stMultiSelect div[data-baseweb="select"] > div {{
+    background: rgba(15,23,42,.92) !important;
+    color: var(--mb-gold) !important;
+    border: 1px solid rgba(96,165,250,.24) !important;
+    border-radius: 15px !important;
+    min-height: 44px !important;
+}}
 
-.stSelectbox div[data-baseweb="select"] span {
-    color:#ffe7a3!important;
-}
+div[data-baseweb="popover"] div[data-baseweb="menu"] {{
+    background: #0f172a !important;
+    border: 1px solid rgba(96,165,250,.22) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 24px 60px rgba(0,0,0,.45) !important;
+}}
 
-div[data-baseweb="popover"] div[data-baseweb="menu"] {
-    background:#0f172a!important;
-    border:1px solid rgba(96,165,250,.20)!important;
-    border-radius:16px!important;
-    box-shadow:0 24px 60px rgba(0,0,0,.45)!important;
-}
+div[data-baseweb="popover"] li {{
+    background: #0f172a !important;
+    color: var(--mb-gold) !important;
+}}
 
-div[data-baseweb="popover"] li {
-    background:#0f172a!important;
-    color:#ffe7a3!important;
-}
+div[data-baseweb="popover"] li:hover {{
+    background: #1e3a8a !important;
+    color: #ffffff !important;
+}}
 
-div[data-baseweb="popover"] li:hover {
-    background:#1e3a8a!important;
-    color:white!important;
-}
+div[data-testid="stVerticalBlockBorderWrapper"] {{
+    background: linear-gradient(180deg, var(--mb-card), var(--mb-card-strong)) !important;
+    border: 1px solid var(--mb-line) !important;
+    border-radius: 24px !important;
+    box-shadow: 0 0 36px rgba(0,140,255,.075) !important;
+}}
 
-.stMultiSelect div[data-baseweb="select"] > div {
-    background:rgba(15,23,42,.94)!important;
-    border:1px solid rgba(96,165,250,.22)!important;
-    border-radius:16px!important;
-}
+div[data-testid="stAlert"] {{
+    background: linear-gradient(135deg, rgba(14,116,144,.34), rgba(30,64,175,.26)) !important;
+    border: 1px solid rgba(56,189,248,.22) !important;
+    border-radius: 16px !important;
+}}
 
-.stCheckbox label,
-.stRadio label {
-    color:#ffe7a3!important;
-}
+[data-testid="metric-container"] {{
+    background: linear-gradient(180deg, rgba(11,24,44,.96), rgba(8,16,30,.96)) !important;
+    border-radius: 22px !important;
+    border: 1px solid var(--mb-line) !important;
+    padding: 20px !important;
+    box-shadow: 0 0 26px rgba(0,140,255,.07) !important;
+}}
 
-div[data-testid="stVerticalBlockBorderWrapper"] {
-    background:linear-gradient(180deg,rgba(10,24,45,.94),rgba(8,18,34,.98))!important;
-    border:1px solid rgba(255,255,255,.06)!important;
-    border-radius:28px!important;
-    box-shadow:0 0 40px rgba(0,140,255,.08)!important;
-}
+[data-testid="metric-container"] label {{
+    color: #7dd3fc !important;
+    font-size: 12px !important;
+    font-weight: 900 !important;
+}}
 
-div[data-testid="stAlert"] {
-    background:linear-gradient(135deg,rgba(14,116,144,.35),rgba(30,64,175,.28))!important;
-    border:1px solid rgba(56,189,248,.22)!important;
-    border-radius:18px!important;
-}
+.stTabs [data-baseweb="tab-list"] {{
+    gap: 9px !important;
+}}
 
-div[data-testid="stAlert"] * {
-    color:#ffe7a3!important;
-}
+.stTabs [data-baseweb="tab"] {{
+    background: rgba(255,255,255,.045) !important;
+    border: 1px solid rgba(255,255,255,.07) !important;
+    border-radius: 14px !important;
+    color: var(--mb-gold) !important;
+    font-weight: 850 !important;
+    padding: 10px 18px !important;
+}}
 
-[data-testid="metric-container"] {
-    background:linear-gradient(180deg,rgba(11,24,44,.98),rgba(8,16,30,.98))!important;
-    border-radius:24px!important;
-    border:1px solid rgba(255,255,255,.06)!important;
-    padding:22px!important;
-    box-shadow:0 0 28px rgba(0,140,255,.08)!important;
-}
+.stTabs [aria-selected="true"] {{
+    background: linear-gradient(135deg, rgba(56,189,248,.28), rgba(37,99,235,.30)) !important;
+    color: #ffffff !important;
+}}
 
-[data-testid="metric-container"] label {
-    color:#7dd3fc!important;
-    font-size:12px!important;
-    font-weight:900!important;
-}
+[data-testid="stDataFrame"] {{
+    border-radius: 20px !important;
+    overflow: hidden !important;
+    border: 1px solid var(--mb-line) !important;
+}}
 
-[data-testid="metric-container"] div {
-    color:#ffe7a3!important;
-    font-weight:950!important;
-}
+details {{
+    border-radius: 17px !important;
+    border: 1px solid var(--mb-line) !important;
+    background: rgba(15,23,42,.50) !important;
+}}
 
-.stTabs [data-baseweb="tab-list"] {
-    gap:10px!important;
-}
+.sidebar-user-card {{
+    background: linear-gradient(180deg, rgba(11,24,44,.98), rgba(8,16,30,.98));
+    border: 1px solid rgba(255,255,255,.07);
+    border-radius: 24px;
+    padding: 18px;
+    margin-top: 20px;
+    box-shadow: 0 0 32px rgba(0,140,255,.10);
+}}
 
-.stTabs [data-baseweb="tab"] {
-    background:rgba(255,255,255,.04)!important;
-    border:1px solid rgba(255,255,255,.06)!important;
-    border-radius:14px!important;
-    color:#ffe7a3!important;
-    font-weight:850!important;
-    padding:12px 20px!important;
-}
+.sidebar-user-name {{
+    font-size: 18px;
+    font-weight: 950;
+    color: #ffffff !important;
+    margin-bottom: 8px;
+}}
 
-.stTabs [aria-selected="true"] {
-    background:linear-gradient(135deg,rgba(56,189,248,.28),rgba(37,99,235,.30))!important;
-    color:white!important;
-}
+.sidebar-user-plan {{
+    display: inline-flex;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #7c3aed, #9333ea);
+    color: #ffffff !important;
+    font-size: 12px;
+    font-weight: 900;
+    margin-bottom: 12px;
+}}
 
-[data-testid="stDataFrame"] {
-    border-radius:22px!important;
-    overflow:hidden!important;
-    border:1px solid rgba(255,255,255,.06)!important;
-}
+.sidebar-user-tokens {{
+    color: var(--mb-cyan) !important;
+    font-size: 28px;
+    font-weight: 1000;
+    line-height: 1;
+    margin-top: 10px;
+}}
 
-.streamlit-expanderHeader {
-    background:rgba(15,23,42,.72)!important;
-    border-radius:16px!important;
-    color:#ffe7a3!important;
-    font-weight:850!important;
-}
+.sidebar-user-caption {{
+    color: var(--mb-muted) !important;
+    font-size: 13px;
+    margin-top: 6px;
+}}
 
-details {
-    border-radius:18px!important;
-    border:1px solid rgba(255,255,255,.06)!important;
-    background:rgba(15,23,42,.50)!important;
-}
+[data-testid="stAppViewContainer"] {{
+    overflow-x: hidden !important;
+}}
 
-.sidebar-user-card {
-    background:linear-gradient(180deg,rgba(11,24,44,.98),rgba(8,16,30,.98));
-    border:1px solid rgba(255,255,255,.06);
-    border-radius:26px;
-    padding:20px;
-    margin-top:24px;
-    box-shadow:0 0 35px rgba(0,140,255,.10);
-}
+::-webkit-scrollbar {{
+    width: 10px;
+}}
 
-.sidebar-user-name {
-    font-size:19px;
-    font-weight:950;
-    color:#ffffff!important;
-    margin-bottom:8px;
-}
+::-webkit-scrollbar-thumb {{
+    background: #1ea7ff;
+    border-radius: 20px;
+}}
 
-.sidebar-user-plan {
-    display:inline-flex;
-    padding:6px 13px;
-    border-radius:999px;
-    background:linear-gradient(135deg,#7c3aed,#9333ea);
-    color:white!important;
-    font-size:12px;
-    font-weight:900;
-    margin-bottom:14px;
-}
+::-webkit-scrollbar-track {{
+    background: #071120;
+}}
 
-.sidebar-user-tokens {
-    color:#38bdf8!important;
-    font-size:30px;
-    font-weight:1000;
-    line-height:1;
-    margin-top:12px;
-}
+@media (max-width: 900px) {{
+    .main .block-container {{
+        padding-top: 84px;
+        padding-left: 1rem;
+        padding-right: 1rem;
+    }}
 
-.sidebar-user-caption {
-    color:#94a3b8!important;
-    font-size:13px;
-    margin-top:6px;
-}
-
-::-webkit-scrollbar {
-    width:10px;
-}
-
-::-webkit-scrollbar-thumb {
-    background:#1ea7ff;
-    border-radius:20px;
-}
-
-::-webkit-scrollbar-track {
-    background:#071120;
-}
-
+    .custom-topbar {{
+        height: 64px;
+    }}
+}}
 </style>
 
 <div class="custom-topbar"></div>
-"""
+""",
+        unsafe_allow_html=True,
+    )
 
-    st.markdown(css, unsafe_allow_html=True)
 
-
-def require_login():
+def require_login() -> None:
     if not st.session_state.get("logged_in") or not st.session_state.get("user"):
         st.session_state.page = "auth"
         st.stop()
 
 
-def sync_session_user(user):
+def sync_session_user(user: dict | None) -> None:
     if not user:
         return
 
@@ -341,13 +361,13 @@ def sync_session_user(user):
     st.session_state.admin_level = int(user.get("admin_level", 0) or 0)
 
 
-def nav(label, page, icon):
+def nav(label: str, page: str, icon: str) -> None:
     if st.button(f"{icon}  {label}", key=f"nav_{page}", use_container_width=True):
         st.session_state.page = page
         st.rerun()
 
 
-def render_sidebar():
+def render_sidebar() -> None:
     with st.sidebar:
         if WORDMARK.exists():
             st.image(str(WORDMARK), use_container_width=True)
@@ -383,8 +403,8 @@ def render_sidebar():
 
         st.divider()
 
-        user = st.session_state.get("user", "User")
-        plan = st.session_state.get("plan", "free")
+        user = html.escape(str(st.session_state.get("user", "User")))
+        plan = html.escape(str(st.session_state.get("plan", "free")))
         tokens = int(st.session_state.get("tokens", 0) or 0)
 
         st.markdown(
@@ -395,6 +415,6 @@ def render_sidebar():
     <div class="sidebar-user-tokens">{tokens:,}</div>
     <div class="sidebar-user-caption">Tokens verfügbar</div>
 </div>
-            """,
+""",
             unsafe_allow_html=True,
         )

@@ -60,49 +60,6 @@ load_css()
 
 
 # =========================================================
-# SAFE SIDEBAR FIX
-# =========================================================
-
-def force_sidebar_css():
-    st.markdown(
-        """
-<style>
-section[data-testid="stSidebar"]{
-    display:block!important;
-    visibility:visible!important;
-    opacity:1!important;
-    z-index:999!important;
-}
-
-section[data-testid="stSidebar"] > div{
-    display:block!important;
-    visibility:visible!important;
-    opacity:1!important;
-}
-
-button[data-testid="collapsedControl"]{
-    display:flex!important;
-    visibility:visible!important;
-    opacity:1!important;
-}
-
-[data-testid="stHeader"]{
-    z-index:998!important;
-}
-
-[data-testid="stAppViewContainer"]{
-    overflow-x:hidden!important;
-}
-</style>
-        """,
-        unsafe_allow_html=True,
-    )
-
-
-force_sidebar_css()
-
-
-# =========================================================
 # SESSION DEFAULTS
 # =========================================================
 
@@ -124,7 +81,7 @@ for key, value in DEFAULTS.items():
 
 
 # =========================================================
-# AUTOMATIONS
+# LOCAL FALLBACK PAGE
 # =========================================================
 
 def render_automations():
@@ -163,7 +120,6 @@ render_sidebar()
 # =========================================================
 
 page = st.session_state.get("page", "home")
-
 
 if page == "auth":
     st.session_state.page = "home"
