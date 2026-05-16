@@ -48,125 +48,41 @@ def load_chat_css():
         """
 <style>
 .main .block-container {
-    max-width: 1250px !important;
+    max-width: 1120px !important;
     padding-top: 105px !important;
-    padding-bottom: 130px !important;
+    padding-bottom: 95px !important;
 }
 
 h1 {
+    font-size: 44px !important;
+    font-weight: 950 !important;
     color: #ffe7a3 !important;
-    font-size: 56px !important;
-    font-weight: 1000 !important;
-    letter-spacing: -2px !important;
-}
-
-h2, h3, h4 {
-    color: #ffe7a3 !important;
-}
-
-p, span, label, div {
-    color: #f8e7b0 !important;
-}
-
-[data-testid="metric-container"] {
-    background: linear-gradient(180deg, rgba(12,24,44,.98), rgba(8,16,30,.98)) !important;
-    border: 1px solid rgba(56,189,248,.12) !important;
-    border-radius: 26px !important;
-    padding: 22px !important;
-    box-shadow: 0 0 34px rgba(0,140,255,.12) !important;
-}
-
-[data-testid="metric-container"] label {
-    color: #7dd3fc !important;
-    font-size: 12px !important;
-    font-weight: 900 !important;
-    text-transform: uppercase !important;
-}
-
-div[data-testid="stVerticalBlockBorderWrapper"] {
-    background: linear-gradient(180deg, rgba(12,24,44,.90), rgba(8,16,30,.96)) !important;
-    border: 1px solid rgba(255,255,255,.07) !important;
-    border-radius: 28px !important;
-    box-shadow: 0 0 34px rgba(0,140,255,.10) !important;
-}
-
-.stSelectbox div[data-baseweb="select"] > div {
-    background: rgba(15,23,42,.96) !important;
-    border: 1px solid rgba(56,189,248,.20) !important;
-    border-radius: 18px !important;
-    color: #ffe7a3 !important;
+    letter-spacing: -1.4px !important;
 }
 
 [data-testid="stChatMessage"] {
-    background: linear-gradient(180deg, rgba(12,24,44,.88), rgba(8,16,30,.96)) !important;
+    background: linear-gradient(180deg, rgba(12,24,44,.82), rgba(8,16,30,.94)) !important;
     border: 1px solid rgba(255,255,255,.07) !important;
-    border-radius: 24px !important;
-    padding: 18px !important;
-    margin-bottom: 14px !important;
-    box-shadow: 0 0 24px rgba(0,0,0,.18) !important;
+    border-radius: 22px !important;
+    padding: 16px !important;
+    margin-bottom: 12px !important;
 }
 
 [data-testid="stChatMessage"] * {
     color: #ffe7a3 !important;
 }
 
-[data-testid="stChatMessageAvatarUser"],
-[data-testid="stChatMessageAvatarAssistant"] {
-    background: linear-gradient(135deg,#38bdf8,#0ea5e9) !important;
-    border-radius: 15px !important;
+[data-testid="metric-container"] {
+    background: linear-gradient(180deg, rgba(12,24,44,.95), rgba(8,16,30,.98)) !important;
+    border: 1px solid rgba(255,255,255,.06) !important;
+    border-radius: 22px !important;
+    padding: 16px !important;
 }
 
-[data-testid="stChatInput"] {
-    position: fixed !important;
-    bottom: 18px !important;
-    left: 330px !important;
-    right: 28px !important;
-    z-index: 999999 !important;
-    background: transparent !important;
-}
-
-[data-testid="stChatInput"] > div {
-    background: linear-gradient(135deg, rgba(8,15,28,.99), rgba(13,22,40,.99)) !important;
-    border: 1px solid rgba(56,189,248,.28) !important;
+div[data-testid="stVerticalBlockBorderWrapper"] {
+    background: linear-gradient(180deg, rgba(12,24,44,.88), rgba(8,16,30,.96)) !important;
+    border: 1px solid rgba(255,255,255,.06) !important;
     border-radius: 24px !important;
-    box-shadow: 0 0 40px rgba(0,140,255,.20) !important;
-    padding: 8px 10px !important;
-}
-
-[data-testid="stChatInput"] textarea {
-    background: transparent !important;
-    color: #ffe7a3 !important;
-    border: none !important;
-    font-size: 15px !important;
-    padding-top: 10px !important;
-}
-
-[data-testid="stChatInput"] textarea::placeholder {
-    color: rgba(248,231,176,.50) !important;
-}
-
-[data-testid="stChatInput"] button {
-    width: 44px !important;
-    height: 44px !important;
-    border-radius: 14px !important;
-    background: linear-gradient(135deg,#38bdf8,#0ea5e9) !important;
-}
-
-div[data-testid="stAlert"] {
-    background: linear-gradient(135deg, rgba(14,116,144,.32), rgba(30,64,175,.22)) !important;
-    border: 1px solid rgba(56,189,248,.18) !important;
-    border-radius: 20px !important;
-}
-
-@media(max-width:900px) {
-    [data-testid="stChatInput"] {
-        left: 12px !important;
-        right: 12px !important;
-    }
-
-    h1 {
-        font-size: 36px !important;
-    }
 }
 </style>
         """,
@@ -178,16 +94,20 @@ def project_selector():
     projects = list_projects(username())
 
     if not projects:
-        st.info("Kein Projekt aktiv. Du kannst trotzdem normal chatten.")
         return None
 
     labels = [f"{p.get('title')} · {p.get('workspace')}" for p in projects]
     ids = {labels[i]: projects[i].get("id") for i in range(len(projects))}
 
-    selected = st.selectbox("Aktives Projekt", labels)
-    project_id = ids[selected]
+    selected = st.selectbox(
+        "Projekt Memory",
+        labels,
+        label_visibility="collapsed",
+    )
 
+    project_id = ids[selected]
     st.session_state.active_project_id = project_id
+
     return get_project(project_id)
 
 
@@ -237,12 +157,11 @@ Beschreibung:
         {
             "role": "system",
             "content": f"""
-Du bist MaByte, ein hochwertiger AI Operating System Assistant.
+Du bist MaByte, ein professioneller AI Operating System Assistant.
 
 Antworte:
 - klar
 - modern
-- professionell
 - strategisch
 - hilfreich
 - kompakt
@@ -273,12 +192,12 @@ def ai_response(prompt, project):
 
 def render_history(project):
     if project:
-        history = list_project_chat_memory(project.get("id"), limit=40)
+        history = list_project_chat_memory(project.get("id"), limit=30)
 
         if not history:
             with st.container(border=True):
                 st.subheader("Starte eine Unterhaltung")
-                st.write("Stelle deine erste Frage oder arbeite mit deinem Projektkontext.")
+                st.write("Dieses Projekt ist bereit für projektbezogene Antworten.")
             return
 
         for msg in history:
@@ -292,37 +211,28 @@ def render_history(project):
             st.subheader("MaByte hilft dir bei Allem.")
             st.write("Dein smarter AI Assistant für jede Herausforderung.")
 
-            c1, c2, c3 = st.columns(3)
+            col1, col2, col3 = st.columns(3)
 
-            with c1:
-                st.write("**AI Strategien**")
-                st.caption("Vision, Positionierung, Wachstum")
+            with col1:
+                st.write("**Strategie**")
+                st.caption("Positionierung, Wachstum, Entscheidungen")
 
-                st.write("**Content Creation**")
+                st.write("**Content**")
                 st.caption("Texte, Posts, Hooks, Scripts")
 
-                st.write("**Reels & Videos**")
-                st.caption("Ideen, Skripte, Konzepte")
-
-            with c2:
+            with col2:
                 st.write("**Coding**")
                 st.caption("Code, Debugging, Automatisierung")
 
-                st.write("**Business Workflows**")
+                st.write("**Workflows**")
                 st.caption("Prozesse, Systeme, Abläufe")
 
-                st.write("**Automation**")
-                st.caption("Smarte Aufgaben und Integrationen")
-
-            with c3:
-                st.write("**Football Intelligence**")
+            with col3:
+                st.write("**Football AI**")
                 st.caption("Analysen, Taktik, Scouting")
 
-                st.write("**Daten & Analysen**")
-                st.caption("Reports, Auswertungen, Insights")
-
-                st.write("**Und vieles mehr**")
-                st.caption("Frag MaByte einfach alles.")
+                st.write("**Daten**")
+                st.caption("Reports, Insights, Auswertungen")
 
         return
 
@@ -340,27 +250,35 @@ def render_chat():
     ensure_messages()
     load_chat_css()
 
-    st.caption("AI OPERATING SYSTEM")
-    st.title("MaByte Intelligence")
-    st.write("AI Assistant für Strategie, Projekte, Content, Coding und Workflows.")
+    top_left, top_right = st.columns([1.7, 1], gap="large")
 
-    st.write("")
+    with top_left:
+        st.caption("AI OPERATING SYSTEM")
+        st.title("MaByte Intelligence")
+        st.write("AI Assistant für Strategie, Projekte, Content, Coding und Workflows.")
 
-    c1, c2, c3 = st.columns(3)
+    with top_right:
+        with st.container(border=True):
+            st.caption("Aktives Setup")
 
-    with c1:
+            project = project_selector()
+
+            if project:
+                st.write(f"**{project.get('title')}**")
+                st.caption(project.get("workspace", "Workspace"))
+            else:
+                st.info("Kein Projekt aktiv.")
+
+    m1, m2, m3 = st.columns(3)
+
+    with m1:
         st.metric("Tokens", get_tokens())
 
-    with c2:
+    with m2:
         st.metric("Chat Kosten", chat_cost())
 
-    with c3:
+    with m3:
         st.metric("Letztes Tool", latest_tool_used(username()))
-
-    st.write("")
-
-    with st.container(border=True):
-        project = project_selector()
 
     st.write("")
 
