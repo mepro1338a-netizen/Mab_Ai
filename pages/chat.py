@@ -47,11 +47,30 @@ def load_chat_css():
     st.markdown(
         """
 <style>
+
+/* =========================
+   GLOBAL LAYOUT
+========================= */
+
 .main .block-container {
     max-width: 1120px !important;
     padding-top: 105px !important;
-    padding-bottom: 95px !important;
+    padding-bottom: 150px !important;
 }
+
+/* =========================
+   PAGE BACKGROUND
+========================= */
+
+.stApp {
+    background:
+        radial-gradient(circle at top left, rgba(0,120,255,.12), transparent 35%),
+        linear-gradient(180deg, #020817 0%, #04112b 100%);
+}
+
+/* =========================
+   HEADINGS
+========================= */
 
 h1 {
     font-size: 44px !important;
@@ -60,10 +79,55 @@ h1 {
     letter-spacing: -1.4px !important;
 }
 
+h2, h3, p, span, label {
+    color: #ffe7a3 !important;
+}
+
+/* =========================
+   METRICS
+========================= */
+
+[data-testid="metric-container"] {
+    background: linear-gradient(
+        180deg,
+        rgba(12,24,44,.95),
+        rgba(8,16,30,.98)
+    ) !important;
+
+    border: 1px solid rgba(255,255,255,.06) !important;
+    border-radius: 22px !important;
+    padding: 16px !important;
+}
+
+/* =========================
+   CONTAINERS
+========================= */
+
+div[data-testid="stVerticalBlockBorderWrapper"] {
+    background: linear-gradient(
+        180deg,
+        rgba(12,24,44,.88),
+        rgba(8,16,30,.96)
+    ) !important;
+
+    border: 1px solid rgba(255,255,255,.06) !important;
+    border-radius: 24px !important;
+}
+
+/* =========================
+   CHAT MESSAGES
+========================= */
+
 [data-testid="stChatMessage"] {
-    background: linear-gradient(180deg, rgba(12,24,44,.82), rgba(8,16,30,.94)) !important;
+    background: linear-gradient(
+        180deg,
+        rgba(12,24,44,.82),
+        rgba(8,16,30,.94)
+    ) !important;
+
     border: 1px solid rgba(255,255,255,.07) !important;
     border-radius: 22px !important;
+
     padding: 16px !important;
     margin-bottom: 12px !important;
 }
@@ -72,18 +136,91 @@ h1 {
     color: #ffe7a3 !important;
 }
 
-[data-testid="metric-container"] {
-    background: linear-gradient(180deg, rgba(12,24,44,.95), rgba(8,16,30,.98)) !important;
-    border: 1px solid rgba(255,255,255,.06) !important;
-    border-radius: 22px !important;
-    padding: 16px !important;
+/* =========================
+   CHAT INPUT FIX
+========================= */
+
+/* Bottom area */
+[data-testid="stBottomBlockContainer"],
+[data-testid="stBottom"] {
+    background: linear-gradient(
+        180deg,
+        rgba(2,8,23,0),
+        rgba(2,8,23,.95)
+    ) !important;
+
+    border-top: 1px solid rgba(255,255,255,.06) !important;
+
+    padding-top: 18px !important;
+    padding-bottom: 18px !important;
 }
 
-div[data-testid="stVerticalBlockBorderWrapper"] {
-    background: linear-gradient(180deg, rgba(12,24,44,.88), rgba(8,16,30,.96)) !important;
-    border: 1px solid rgba(255,255,255,.06) !important;
-    border-radius: 24px !important;
+/* Remove white wrapper */
+[data-testid="stChatInput"] {
+    background: transparent !important;
 }
+
+[data-testid="stChatInput"] > div {
+    background: transparent !important;
+}
+
+/* Input box */
+[data-testid="stChatInput"] textarea {
+    background: rgba(255,255,255,.95) !important;
+
+    color: #0b1220 !important;
+
+    border: 1px solid rgba(255, 70, 90, .75) !important;
+
+    border-radius: 999px !important;
+
+    padding-top: 14px !important;
+    padding-bottom: 14px !important;
+    padding-left: 18px !important;
+
+    font-size: 15px !important;
+}
+
+/* Placeholder */
+[data-testid="stChatInput"] textarea::placeholder {
+    color: #5f6b85 !important;
+}
+
+/* Send button */
+[data-testid="stChatInputSubmitButton"] {
+    background: linear-gradient(
+        135deg,
+        #3b82f6,
+        #9333ea
+    ) !important;
+
+    border-radius: 999px !important;
+}
+
+/* Prevent content overlap */
+section.main {
+    padding-bottom: 120px !important;
+}
+
+/* =========================
+   SELECTBOX
+========================= */
+
+.stSelectbox div[data-baseweb="select"] > div {
+    background: rgba(12,24,44,.95) !important;
+    color: #ffe7a3 !important;
+    border-radius: 18px !important;
+    border: 1px solid rgba(255,255,255,.08) !important;
+}
+
+/* =========================
+   INFO BOX
+========================= */
+
+.stAlert {
+    border-radius: 18px !important;
+}
+
 </style>
         """,
         unsafe_allow_html=True,
@@ -97,7 +234,11 @@ def project_selector():
         return None
 
     labels = [f"{p.get('title')} · {p.get('workspace')}" for p in projects]
-    ids = {labels[i]: projects[i].get("id") for i in range(len(projects))}
+
+    ids = {
+        labels[i]: projects[i].get("id")
+        for i in range(len(projects))
+    }
 
     selected = st.selectbox(
         "Projekt Memory",
@@ -106,6 +247,7 @@ def project_selector():
     )
 
     project_id = ids[selected]
+
     st.session_state.active_project_id = project_id
 
     return get_project(project_id)
@@ -135,6 +277,7 @@ def charge_chat(prompt):
     )
 
     sync_user()
+
     return cost
 
 
@@ -191,82 +334,131 @@ def ai_response(prompt, project):
 
 
 def render_history(project):
+
     if project:
-        history = list_project_chat_memory(project.get("id"), limit=30)
+
+        history = list_project_chat_memory(
+            project.get("id"),
+            limit=30,
+        )
 
         if not history:
+
             with st.container(border=True):
                 st.subheader("Starte eine Unterhaltung")
-                st.write("Dieses Projekt ist bereit für projektbezogene Antworten.")
+                st.write(
+                    "Dieses Projekt ist bereit für projektbezogene Antworten."
+                )
+
             return
 
         for msg in history:
+
             with st.chat_message(msg.get("role", "assistant")):
                 st.markdown(msg.get("message", ""))
 
         return
 
     if not st.session_state.chat_messages:
+
         with st.container(border=True):
+
             st.subheader("MaByte hilft dir bei Allem.")
-            st.write("Dein smarter AI Assistant für jede Herausforderung.")
+
+            st.write(
+                "Dein smarter AI Assistant für jede Herausforderung."
+            )
 
             col1, col2, col3 = st.columns(3)
 
             with col1:
-                st.write("**Strategie**")
-                st.caption("Positionierung, Wachstum, Entscheidungen")
 
-                st.write("**Content**")
-                st.caption("Texte, Posts, Hooks, Scripts")
+                st.write("### Strategie")
+                st.caption(
+                    "Positionierung, Wachstum, Entscheidungen"
+                )
+
+                st.write("### Content")
+                st.caption(
+                    "Texte, Posts, Hooks, Scripts"
+                )
 
             with col2:
-                st.write("**Coding**")
-                st.caption("Code, Debugging, Automatisierung")
 
-                st.write("**Workflows**")
-                st.caption("Prozesse, Systeme, Abläufe")
+                st.write("### Coding")
+                st.caption(
+                    "Code, Debugging, Automatisierung"
+                )
+
+                st.write("### Workflows")
+                st.caption(
+                    "Prozesse, Systeme, Abläufe"
+                )
 
             with col3:
-                st.write("**Football AI**")
-                st.caption("Analysen, Taktik, Scouting")
 
-                st.write("**Daten**")
-                st.caption("Reports, Insights, Auswertungen")
+                st.write("### Football AI")
+                st.caption(
+                    "Analysen, Taktik, Scouting"
+                )
+
+                st.write("### Daten")
+                st.caption(
+                    "Reports, Insights, Auswertungen"
+                )
 
         return
 
     for msg in st.session_state.chat_messages:
+
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
 
 def render_chat():
+
     if not st.session_state.get("logged_in"):
         st.session_state.page = "auth"
         st.rerun()
         return
 
     ensure_messages()
+
     load_chat_css()
 
-    top_left, top_right = st.columns([1.7, 1], gap="large")
+    top_left, top_right = st.columns(
+        [1.7, 1],
+        gap="large",
+    )
 
     with top_left:
+
         st.caption("AI OPERATING SYSTEM")
+
         st.title("MaByte Intelligence")
-        st.write("AI Assistant für Strategie, Projekte, Content, Coding und Workflows.")
+
+        st.write(
+            "AI Assistant für Strategie, Projekte, Content, Coding und Workflows."
+        )
 
     with top_right:
+
         with st.container(border=True):
+
             st.caption("Aktives Setup")
 
             project = project_selector()
 
             if project:
-                st.write(f"**{project.get('title')}**")
-                st.caption(project.get("workspace", "Workspace"))
+
+                st.write(f"### {project.get('title')}")
+
+                st.caption(
+                    project.get("workspace", "Workspace")
+                )
+
             else:
+
                 st.info("Kein Projekt aktiv.")
 
     m1, m2, m3 = st.columns(3)
@@ -278,25 +470,34 @@ def render_chat():
         st.metric("Chat Kosten", chat_cost())
 
     with m3:
-        st.metric("Letztes Tool", latest_tool_used(username()))
+        st.metric(
+            "Letztes Tool",
+            latest_tool_used(username())
+        )
 
     st.write("")
 
     render_history(project)
 
-    prompt = st.chat_input("Schreib etwas an MaByte...")
+    prompt = st.chat_input(
+        "Schreib etwas an MaByte..."
+    )
 
     if prompt:
+
         cost = charge_chat(prompt)
 
         if project:
+
             save_project_chat_message(
                 project_id=project.get("id"),
                 username=username(),
                 role="user",
                 message=prompt,
             )
+
         else:
+
             st.session_state.chat_messages.append(
                 {
                     "role": "user",
@@ -305,18 +506,25 @@ def render_chat():
             )
 
         with st.spinner("MaByte denkt nach..."):
-            answer = ai_response(prompt, project)
+
+            answer = ai_response(
+                prompt,
+                project,
+            )
 
         answer += f"\n\n---\nTokens: {cost}"
 
         if project:
+
             save_project_chat_message(
                 project_id=project.get("id"),
                 username=username(),
                 role="assistant",
                 message=answer,
             )
+
         else:
+
             st.session_state.chat_messages.append(
                 {
                     "role": "assistant",
@@ -325,3 +533,6 @@ def render_chat():
             )
 
         st.rerun()
+
+
+render_chat()
