@@ -6,11 +6,9 @@ from ui_core import load_css, render_sidebar
 from pages.auth import render_auth
 from pages.home import render_home
 from pages.chat import render_chat
-from pages.media import render_media
 from pages.football import render_football
 from pages.projects import render_projects
 from pages.automation_lab import render_automation_lab
-
 from pages.premium import render_premium
 
 from pages.account import (
@@ -20,6 +18,25 @@ from pages.account import (
 )
 
 from pages.admin import render_admin
+
+
+# =========================================================
+# SAFE MEDIA IMPORT
+# =========================================================
+
+try:
+    from pages.media import render_media
+    MEDIA_IMPORT_ERROR = None
+except Exception as e:
+    MEDIA_IMPORT_ERROR = e
+
+    def render_media(active_tool="reels"):
+        st.error("Media Workspace konnte nicht geladen werden.")
+        st.code(str(MEDIA_IMPORT_ERROR))
+        st.info(
+            "Prüfe pages/media.py: Dort darf NICHT `from pages.media import render_media` stehen "
+            "und ganz unten muss `def render_media(...)` existieren."
+        )
 
 
 # =========================================================
@@ -43,82 +60,39 @@ load_css()
 
 
 # =========================================================
-# FORCE SIDEBAR VISIBLE
+# SAFE SIDEBAR FIX
 # =========================================================
 
 def force_sidebar_css():
     st.markdown(
         """
 <style>
-
-/* Streamlit Sidebar hart sichtbar halten */
 section[data-testid="stSidebar"]{
     display:block!important;
     visibility:visible!important;
     opacity:1!important;
-
-    min-width:285px!important;
-    max-width:285px!important;
-    width:285px!important;
-
-    z-index:999999!important;
-
-    background:#06111f!important;
+    z-index:999!important;
 }
 
-/* Sidebar Inhalt sichtbar halten */
 section[data-testid="stSidebar"] > div{
     display:block!important;
     visibility:visible!important;
     opacity:1!important;
 }
 
-/* verhindert, dass Sidebar Content verschwindet */
-section[data-testid="stSidebar"] [data-testid="stVerticalBlock"]{
-    display:block!important;
-    visibility:visible!important;
-    opacity:1!important;
-}
-
-/* Main Content korrekt neben Sidebar */
-[data-testid="stAppViewContainer"]{
-    overflow-x:hidden!important;
-}
-
-/* Mobile: Sidebar darf einklappen, aber Button bleibt sichtbar */
-button[kind="header"],
 button[data-testid="collapsedControl"]{
     display:flex!important;
     visibility:visible!important;
     opacity:1!important;
-    z-index:999999!important;
 }
 
-/* Header nicht über Sidebar legen */
 [data-testid="stHeader"]{
-    z-index:9999!important;
+    z-index:998!important;
 }
 
-/* Falls globale CSS Sidebar versteckt */
-.css-1d391kg,
-.css-1lcbmhc,
-.css-17eq0hr{
-    display:block!important;
-    visibility:visible!important;
-    opacity:1!important;
+[data-testid="stAppViewContainer"]{
+    overflow-x:hidden!important;
 }
-
-/* Sidebar Buttons wieder hellblau */
-section[data-testid="stSidebar"] .stButton > button{
-    background:linear-gradient(135deg,#38bdf8,#0ea5e9)!important;
-    color:#ffffff!important;
-    border:none!important;
-    border-radius:18px!important;
-    min-height:44px!important;
-    font-weight:900!important;
-    box-shadow:0 12px 24px rgba(14,165,233,.22)!important;
-}
-
 </style>
         """,
         unsafe_allow_html=True,
@@ -150,7 +124,7 @@ for key, value in DEFAULTS.items():
 
 
 # =========================================================
-# AUTOMATIONS PAGE
+# AUTOMATIONS
 # =========================================================
 
 def render_automations():
@@ -178,7 +152,7 @@ if not logged_in:
 
 
 # =========================================================
-# APP LAYOUT
+# SIDEBAR
 # =========================================================
 
 render_sidebar()
