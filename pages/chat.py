@@ -1,3 +1,5 @@
+import html
+
 import streamlit as st
 from openai import OpenAI
 
@@ -20,48 +22,192 @@ from ui_core import sync_session_user
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 
-def username():
-    return st.session_state.get("user")
+# =========================================================
+# SESSION / USER HELPERS
+# =========================================================
+
+def username() -> str:
+    return str(st.session_state.get("user") or "")
 
 
-def get_tokens():
+def safe_text(value) -> str:
+    return html.escape(str(value or ""))
+
+
+def get_tokens() -> int:
     return int(st.session_state.get("tokens", 0) or 0)
 
 
-def chat_cost():
+def chat_cost() -> int:
     return int(TOKEN_COSTS.get("chat", 1))
 
 
-def sync_user():
+def sync_user() -> None:
     user = get_user(username())
     if user:
         sync_session_user(user)
 
 
-def ensure_messages():
+def ensure_messages() -> None:
     if "chat_messages" not in st.session_state:
         st.session_state.chat_messages = []
 
 
-def load_chat_css():
+# =========================================================
+# CSS
+# =========================================================
+
+def load_chat_css() -> None:
     st.markdown(
         """
 <style>
 .main .block-container {
-    max-width: 1180px !important;
-    padding-top: 98px !important;
-    padding-bottom: 90px !important;
+    max-width: 1260px !important;
+    padding-top: 96px !important;
+    padding-bottom: 92px !important;
 }
 
-h1 {
-    font-size: 42px !important;
-    font-weight: 950 !important;
-    color: #ffe7a3 !important;
-    letter-spacing: -1.4px !important;
+.mb-chat-hero {
+    margin-bottom: 20px;
 }
 
-h2, h3 {
+.mb-chat-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #7dd3fc !important;
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+}
+
+.mb-chat-title {
     color: #ffe7a3 !important;
+    font-size: 48px;
+    line-height: .96;
+    font-weight: 950;
+    letter-spacing: -1.8px;
+}
+
+.mb-chat-subtitle {
+    max-width: 780px;
+    margin-top: 12px;
+    color: #94a3b8 !important;
+    font-size: 16px;
+    line-height: 1.55;
+}
+
+.mb-panel {
+    background: linear-gradient(145deg, rgba(10,24,45,.92), rgba(8,16,30,.97));
+    border: 1px solid rgba(255,255,255,.075);
+    border-radius: 24px;
+    padding: 19px;
+    box-shadow: 0 18px 44px rgba(0,0,0,.18);
+}
+
+.mb-panel-title {
+    color: #ffe7a3 !important;
+    font-size: 18px;
+    font-weight: 950;
+    letter-spacing: -.035em;
+    margin-bottom: 8px;
+}
+
+.mb-panel-sub {
+    color: #94a3b8 !important;
+    font-size: 13px;
+    line-height: 1.45;
+}
+
+.mb-chip-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+}
+
+.mb-chip {
+    display: inline-flex;
+    padding: 7px 10px;
+    border-radius: 999px;
+    background: rgba(56,189,248,.10);
+    border: 1px solid rgba(56,189,248,.18);
+    color: #7dd3fc !important;
+    font-size: 12px;
+    font-weight: 850;
+}
+
+.mb-session-line {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 9px 0;
+    border-bottom: 1px solid rgba(255,255,255,.06);
+}
+
+.mb-session-line:last-child {
+    border-bottom: 0;
+}
+
+.mb-session-label {
+    color: #94a3b8 !important;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.mb-session-value {
+    color: #ffffff !important;
+    font-size: 13px;
+    font-weight: 850;
+    text-align: right;
+}
+
+.mb-empty {
+    background:
+        radial-gradient(circle at top right, rgba(56,189,248,.12), transparent 30%),
+        linear-gradient(145deg, rgba(10,24,45,.90), rgba(8,16,30,.98));
+    border: 1px solid rgba(255,255,255,.075);
+    border-radius: 26px;
+    padding: 24px;
+    box-shadow: 0 18px 44px rgba(0,0,0,.16);
+}
+
+.mb-empty-title {
+    color: #ffe7a3 !important;
+    font-size: 26px;
+    font-weight: 950;
+    letter-spacing: -.04em;
+    margin-bottom: 8px;
+}
+
+.mb-empty-sub {
+    color: #94a3b8 !important;
+    font-size: 14px;
+    line-height: 1.5;
+    margin-bottom: 18px;
+}
+
+.mb-suggestion {
+    background: rgba(15,23,42,.58);
+    border: 1px solid rgba(255,255,255,.07);
+    border-radius: 18px;
+    padding: 15px;
+    min-height: 112px;
+}
+
+.mb-suggestion-title {
+    color: #ffffff !important;
+    font-size: 15px;
+    font-weight: 900;
+    margin-bottom: 6px;
+}
+
+.mb-suggestion-sub {
+    color: #94a3b8 !important;
+    font-size: 13px;
+    line-height: 1.4;
 }
 
 [data-testid="metric-container"] {
@@ -69,7 +215,7 @@ h2, h3 {
     border: 1px solid rgba(56,189,248,.16) !important;
     border-radius: 22px !important;
     padding: 18px !important;
-    box-shadow: 0 18px 42px rgba(0,0,0,.22) !important;
+    box-shadow: 0 18px 42px rgba(0,0,0,.18) !important;
 }
 
 [data-testid="metric-container"] label {
@@ -79,23 +225,17 @@ h2, h3 {
     font-size: 11px !important;
 }
 
-div[data-testid="stVerticalBlockBorderWrapper"] {
-    background: linear-gradient(145deg, rgba(9,20,38,.94), rgba(8,16,30,.98)) !important;
-    border: 1px solid rgba(255,255,255,.07) !important;
-    border-radius: 26px !important;
-    box-shadow: 0 18px 44px rgba(0,0,0,.18) !important;
-}
-
 [data-testid="stChatMessage"] {
-    background: linear-gradient(145deg, rgba(9,20,38,.92), rgba(8,16,30,.98)) !important;
-    border: 1px solid rgba(255,255,255,.07) !important;
+    background: linear-gradient(145deg, rgba(9,20,38,.90), rgba(8,16,30,.98)) !important;
+    border: 1px solid rgba(255,255,255,.075) !important;
     border-radius: 22px !important;
-    padding: 16px !important;
-    margin-bottom: 12px !important;
+    padding: 14px !important;
+    margin-bottom: 11px !important;
+    box-shadow: 0 10px 28px rgba(0,0,0,.13) !important;
 }
 
 [data-testid="stChatMessage"] * {
-    color: #ffe7a3 !important;
+    color: #f8e7b0 !important;
 }
 
 [data-testid="stChatInput"] {
@@ -134,29 +274,47 @@ div[data-testid="stAlert"] {
 button[kind="secondary"] {
     border-radius: 16px !important;
 }
+
+@media (max-width: 1000px) {
+    .mb-chat-title {
+        font-size: 38px;
+    }
+}
 </style>
         """,
         unsafe_allow_html=True,
     )
 
 
+# =========================================================
+# PROJECT / TOKEN LOGIC
+# =========================================================
+
 def project_selector():
     projects = list_projects(username())
 
     if not projects:
+        st.info("Noch kein Projekt vorhanden. Chat läuft ohne Projektkontext.")
         return None
 
-    labels = [f"{p.get('title')} · {p.get('workspace')}" for p in projects]
-    ids = {labels[i]: projects[i].get("id") for i in range(len(projects))}
+    labels = [
+        f"{p.get('title', 'Untitled')} · {p.get('workspace', 'Workspace')}"
+        for p in projects
+    ]
 
-    selected = st.selectbox("Projekt auswählen", labels)
+    ids = {
+        labels[i]: projects[i].get("id")
+        for i in range(len(projects))
+    }
+
+    selected = st.selectbox("Projektkontext", labels)
     project_id = ids[selected]
 
     st.session_state.active_project_id = project_id
     return get_project(project_id)
 
 
-def charge_chat(prompt):
+def charge_chat(prompt: str) -> int:
     cost = chat_cost()
 
     if get_tokens() < cost:
@@ -183,7 +341,11 @@ def charge_chat(prompt):
     return cost
 
 
-def build_messages(prompt, project):
+# =========================================================
+# AI
+# =========================================================
+
+def build_messages(prompt: str, project):
     project_context = ""
 
     if project:
@@ -220,7 +382,7 @@ Antworte:
     ]
 
 
-def ai_response(prompt, project):
+def ai_response(prompt: str, project) -> str:
     if not OPENAI_API_KEY:
         return "OPENAI_API_KEY fehlt."
 
@@ -233,36 +395,99 @@ def ai_response(prompt, project):
     return response.choices[0].message.content
 
 
-def render_empty_state():
-    with st.container(border=True):
-        st.subheader("MaByte hilft dir bei Allem.")
-        st.caption("Starte mit einer Frage oder wähle einen Workspace.")
+# =========================================================
+# UI COMPONENTS
+# =========================================================
 
-        c1, c2, c3 = st.columns(3)
+def session_panel() -> None:
+    user = username()
+    tool = latest_tool_used(user)
 
-        with c1:
-            st.write("**Strategie**")
-            st.caption("Ideen, Positionierung, Entscheidungen")
+    st.markdown(
+        f"""
+<div class="mb-panel">
+    <div class="mb-panel-title">Session Core</div>
 
-            st.write("**Content**")
-            st.caption("Hooks, Captions, Scripts, Posts")
+    <div class="mb-session-line">
+        <div class="mb-session-label">User</div>
+        <div class="mb-session-value">{safe_text(user)}</div>
+    </div>
 
-        with c2:
-            st.write("**Coding**")
-            st.caption("Code, Debugging, Automatisierung")
+    <div class="mb-session-line">
+        <div class="mb-session-label">Letztes Tool</div>
+        <div class="mb-session-value">{safe_text(tool)}</div>
+    </div>
 
-            st.write("**Business**")
-            st.caption("Workflows, Systeme, Prozesse")
+    <div class="mb-session-line">
+        <div class="mb-session-label">Modus</div>
+        <div class="mb-session-value">AI Workspace</div>
+    </div>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
 
-        with c3:
-            st.write("**Football AI**")
-            st.caption("Analyse, Taktik, Scouting")
 
-            st.write("**Daten**")
-            st.caption("Reports, Insights, Auswertungen")
+def render_empty_state() -> None:
+    st.markdown(
+        """
+<div class="mb-empty">
+    <div class="mb-empty-title">MaByte ist bereit.</div>
+    <div class="mb-empty-sub">
+        Starte mit einer Frage, einem Projekt, einer Idee oder einem Workflow.
+        MaByte denkt mit Kontext, Struktur und klaren nächsten Schritten.
+    </div>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
+    c1, c2, c3 = st.columns(3, gap="medium")
+
+    suggestions = [
+        (
+            "Strategie",
+            "Entwickle Positionierung, Angebote, Roadmaps oder Entscheidungen.",
+        ),
+        (
+            "Coding",
+            "Debugge Code, plane Features oder verbessere deine App-Struktur.",
+        ),
+        (
+            "Content",
+            "Erstelle Hooks, Captions, Scripts, Reels und Kampagnen.",
+        ),
+        (
+            "Business",
+            "Optimiere Prozesse, Systeme, Pricing und Workflows.",
+        ),
+        (
+            "Football AI",
+            "Analysiere Taktik, Spieler, Scouting oder Matchday-Pläne.",
+        ),
+        (
+            "Automation",
+            "Plane wiederholbare Abläufe und AI-gestützte Systeme.",
+        ),
+    ]
+
+    cols = [c1, c2, c3]
+
+    for index, item in enumerate(suggestions):
+        title, sub = item
+        with cols[index % 3]:
+            st.markdown(
+                f"""
+<div class="mb-suggestion">
+    <div class="mb-suggestion-title">{safe_text(title)}</div>
+    <div class="mb-suggestion-sub">{safe_text(sub)}</div>
+</div>
+""",
+                unsafe_allow_html=True,
+            )
 
 
-def render_history(project):
+def render_history(project) -> None:
     if project:
         history = list_project_chat_memory(project.get("id"), limit=30)
 
@@ -285,7 +510,11 @@ def render_history(project):
             st.markdown(msg["content"])
 
 
-def render_chat():
+# =========================================================
+# MAIN
+# =========================================================
+
+def render_chat() -> None:
     if not st.session_state.get("logged_in"):
         st.session_state.page = "auth"
         st.rerun()
@@ -294,20 +523,27 @@ def render_chat():
     ensure_messages()
     load_chat_css()
 
-    top_left, top_right = st.columns([1.5, 1], gap="large")
+    top_left, top_right = st.columns([1.55, 1], gap="large")
 
     with top_left:
-        st.caption("AI OPERATING SYSTEM")
-        st.title("MaByte Intelligence")
-        st.write("Dein smarter AI Assistant für Strategie, Content, Coding, Business und Football.")
+        st.markdown(
+            """
+<div class="mb-chat-hero">
+    <div class="mb-chat-kicker">◆ AI Operating System</div>
+    <div class="mb-chat-title">MaByte Intelligence</div>
+    <div class="mb-chat-subtitle">
+        Dein AI Workspace für Strategie, Content, Coding, Business,
+        Projekte und Football Intelligence.
+    </div>
+</div>
+""",
+            unsafe_allow_html=True,
+        )
 
     with top_right:
-        with st.container(border=True):
-            st.caption("Session")
-            st.write(f"**User:** {username()}")
-            st.write(f"**Tool:** {latest_tool_used(username())}")
+        session_panel()
 
-    m1, m2, m3 = st.columns(3)
+    m1, m2, m3 = st.columns(3, gap="medium")
 
     with m1:
         st.metric("Tokens", get_tokens())
@@ -320,26 +556,46 @@ def render_chat():
 
     st.write("")
 
-    setup_left, setup_right = st.columns([1.2, 1], gap="large")
+    setup_left, setup_right = st.columns([1.25, 1], gap="large")
 
     with setup_left:
         with st.container(border=True):
-            st.subheader("Aktives Setup")
+            st.markdown(
+                """
+<div class="mb-panel-title">Aktives Setup</div>
+<div class="mb-panel-sub">
+Wähle optional ein Projekt aus. Dann antwortet MaByte mit Projektkontext.
+</div>
+""",
+                unsafe_allow_html=True,
+            )
+
             project = project_selector()
 
             if project:
                 st.success(f"Projekt aktiv: {project.get('title')}")
             else:
-                st.info("Kein Projekt aktiv. Du kannst trotzdem normal chatten.")
+                st.info("Chat läuft ohne Projektkontext.")
 
     with setup_right:
-        with st.container(border=True):
-            st.subheader("Quick Start")
-            st.caption("Beispiele:")
-            st.write("• Erstelle mir eine Content-Strategie")
-            st.write("• Analysiere meinen Workflow")
-            st.write("• Hilf mir mit Code")
-            st.write("• Plane ein 7s Reel")
+        st.markdown(
+            """
+<div class="mb-panel">
+    <div class="mb-panel-title">Quick Start</div>
+    <div class="mb-panel-sub">
+        Nutze kurze Prompts. MaByte strukturiert daraus klare nächste Schritte.
+    </div>
+    <div class="mb-chip-row">
+        <div class="mb-chip">Strategie</div>
+        <div class="mb-chip">Code</div>
+        <div class="mb-chip">Content</div>
+        <div class="mb-chip">Workflow</div>
+        <div class="mb-chip">Analyse</div>
+    </div>
+</div>
+""",
+            unsafe_allow_html=True,
+        )
 
     st.write("")
 
