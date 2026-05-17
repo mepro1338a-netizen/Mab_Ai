@@ -1,368 +1,491 @@
-﻿from pathlib import Path
+﻿import streamlit as st
 
-import streamlit as st
 
-from database import (
-    recent_activity,
-    successful_jobs_count,
-    workspace_activity_score,
+# =========================================================
+# PAGE CONFIG
+# =========================================================
+
+st.set_page_config(
+    page_title="MaByte",
+    page_icon="🧠",
+    layout="wide",
 )
 
-from config import PLANS
 
-
-ASSET_DIR = Path("assets")
-
-
-def open_page(page: str) -> None:
-    st.session_state.page = page
-    st.rerun()
-
-
-def format_number(value) -> str:
-    try:
-        return f"{int(value):,}".replace(",", ".")
-    except Exception:
-        return str(value)
-
-
-def asset_path(name: str) -> Path:
-    return ASSET_DIR / f"{name}.png"
-
+# =========================================================
+# CSS
+# =========================================================
 
 def home_css() -> None:
     st.markdown(
         """
 <style>
-.main .block-container {
-    max-width: 1320px !important;
-    padding-top: 92px !important;
-    padding-bottom: 80px !important;
+
+html, body, [class*="css"] {
+    font-family: Inter, sans-serif;
 }
 
-.mb-home-hero {
+.stApp {
     background:
-        radial-gradient(circle at top right, rgba(168,85,247,.22), transparent 32%),
-        radial-gradient(circle at bottom left, rgba(56,189,248,.10), transparent 34%),
-        linear-gradient(135deg, rgba(18,10,38,.94), rgba(6,7,18,.98));
-    border: 1px solid rgba(168,85,247,.28);
+        radial-gradient(circle at top left, rgba(59,130,246,.12), transparent 28%),
+        radial-gradient(circle at top right, rgba(168,85,247,.10), transparent 26%),
+        linear-gradient(180deg, #071120 0%, #081426 38%, #09111d 100%);
+}
+
+/* remove streamlit spacing */
+.block-container {
+    padding-top: 2rem !important;
+    padding-bottom: 4rem !important;
+    max-width: 1380px !important;
+}
+
+/* =========================================================
+HEADER
+========================================================= */
+
+.mb-hero {
+
+    background:
+        radial-gradient(circle at top right, rgba(168,85,247,.18), transparent 32%),
+        radial-gradient(circle at top left, rgba(59,130,246,.16), transparent 34%),
+        linear-gradient(135deg, rgba(10,22,45,.96), rgba(7,12,24,.98));
+
+    border: 1px solid rgba(96,165,250,.18);
+
     border-radius: 30px;
-    padding: 34px;
-    margin-bottom: 24px;
-    box-shadow: 0 24px 60px rgba(0,0,0,.28);
+
+    padding: 38px;
+
+    margin-bottom: 28px;
+
+    box-shadow:
+        0 0 40px rgba(59,130,246,.08),
+        0 24px 60px rgba(0,0,0,.34);
 }
 
 .mb-kicker {
-    color: #c084fc !important;
+    color: #c084fc;
     font-size: 12px;
-    font-weight: 1000;
-    letter-spacing: .20em;
+    font-weight: 900;
+    letter-spacing: .22em;
     text-transform: uppercase;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
 }
 
 .mb-title {
-    color: #ffe7a3 !important;
-    font-size: 56px;
+    color: #ffe7a3;
+    font-size: 62px;
     line-height: .95;
     font-weight: 1000;
-    letter-spacing: -2.4px;
+    letter-spacing: -2px;
 }
 
 .mb-subtitle {
-    margin-top: 14px;
-    max-width: 720px;
-    color: #c7d2fe !important;
-    font-size: 16px;
-    line-height: 1.5;
+    margin-top: 16px;
+    max-width: 760px;
+    color: #cbd5e1;
+    font-size: 17px;
+    line-height: 1.6;
 }
 
 .mb-badge {
     display: inline-flex;
-    padding: 8px 15px;
+    align-items: center;
+    justify-content: center;
+
+    padding: 10px 18px;
+
     border-radius: 999px;
-    background: linear-gradient(135deg, #7c3aed, #a855f7);
-    color: #ffffff !important;
+
+    background:
+        linear-gradient(135deg, #7c3aed, #a855f7);
+
+    color: white;
     font-size: 13px;
-    font-weight: 1000;
-    box-shadow: 0 0 24px rgba(168,85,247,.30);
-    margin-left: 12px;
+    font-weight: 900;
+
+    box-shadow:
+        0 0 25px rgba(168,85,247,.32);
+
+    margin-left: 16px;
 }
 
-div[data-testid="stVerticalBlockBorderWrapper"] {
+/* =========================================================
+CARDS
+========================================================= */
+
+.mb-card {
+
     background:
-        radial-gradient(circle at top left, rgba(168,85,247,.10), transparent 32%),
-        linear-gradient(145deg, rgba(12,13,32,.90), rgba(6,7,18,.98)) !important;
-    border: 1px solid rgba(255,255,255,.08) !important;
-    border-radius: 24px !important;
-    box-shadow: 0 16px 42px rgba(0,0,0,.22) !important;
+        radial-gradient(circle at top left, rgba(59,130,246,.06), transparent 30%),
+        linear-gradient(145deg, rgba(9,19,36,.96), rgba(7,11,22,.98));
+
+    border: 1px solid rgba(96,165,250,.10);
+
+    border-radius: 26px;
+
+    padding: 28px;
+
+    min-height: 250px;
+
+    box-shadow:
+        0 14px 34px rgba(0,0,0,.24);
+
+    transition: all .2s ease;
 }
+
+.mb-card:hover {
+
+    transform: translateY(-4px);
+
+    border-color: rgba(96,165,250,.24);
+
+    box-shadow:
+        0 0 30px rgba(59,130,246,.12),
+        0 16px 42px rgba(0,0,0,.26);
+}
+
+.mb-icon {
+
+    width: 58px;
+    height: 58px;
+
+    border-radius: 18px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background:
+        linear-gradient(135deg, rgba(59,130,246,.18), rgba(168,85,247,.18));
+
+    border: 1px solid rgba(255,255,255,.08);
+
+    margin-bottom: 18px;
+
+    color: #ffe7a3;
+
+    font-size: 26px;
+    font-weight: 900;
+}
+
+.mb-card-title {
+    color: white;
+    font-size: 20px;
+    font-weight: 900;
+    margin-bottom: 8px;
+}
+
+.mb-card-sub {
+    color: #94a3b8;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+/* =========================================================
+BUTTONS
+========================================================= */
+
+.stButton > button {
+
+    width: 100%;
+
+    height: 48px;
+
+    border-radius: 16px;
+
+    background:
+        linear-gradient(135deg, rgba(29,78,216,.22), rgba(91,33,182,.22));
+
+    border: 1px solid rgba(96,165,250,.20);
+
+    color: white;
+
+    font-size: 15px;
+
+    font-weight: 900;
+
+    transition: all .2s ease;
+
+    box-shadow:
+        0 12px 24px rgba(0,0,0,.18);
+
+    backdrop-filter: blur(10px);
+}
+
+.stButton > button:hover {
+
+    transform: translateY(-2px);
+
+    border-color: rgba(255,255,255,.22);
+
+    background:
+        linear-gradient(135deg, rgba(59,130,246,.30), rgba(168,85,247,.28));
+
+    box-shadow:
+        0 0 24px rgba(59,130,246,.18);
+}
+
+/* =========================================================
+METRICS
+========================================================= */
 
 [data-testid="metric-container"] {
+
     background:
-        linear-gradient(145deg, rgba(12,13,32,.90), rgba(6,7,18,.98)) !important;
-    border: 1px solid rgba(255,255,255,.08) !important;
-    border-radius: 22px !important;
-    padding: 20px !important;
-    box-shadow: 0 14px 34px rgba(0,0,0,.20) !important;
+        linear-gradient(145deg, rgba(9,19,36,.96), rgba(7,11,22,.98));
+
+    border: 1px solid rgba(96,165,250,.10);
+
+    border-radius: 24px;
+
+    padding: 22px;
+
+    box-shadow:
+        0 14px 34px rgba(0,0,0,.22);
 }
 
 [data-testid="metric-container"] label {
-    color: #c084fc !important;
+
+    color: #60a5fa !important;
+
     font-size: 11px !important;
+
     font-weight: 1000 !important;
-    letter-spacing: .14em !important;
+
+    letter-spacing: .16em !important;
+
     text-transform: uppercase !important;
 }
 
 [data-testid="metric-container"] div {
+
     color: #ffe7a3 !important;
+
     font-weight: 1000 !important;
 }
 
-.stButton > button {
-    width: 100% !important;
-    height: 44px !important;
-    border-radius: 15px !important;
-    background: linear-gradient(135deg, rgba(36,8,56,.98), rgba(12,3,25,.98)) !important;
-    border: 1px solid rgba(168,85,247,.30) !important;
-    color: #ffe7a3 !important;
-    font-size: 15px !important;
-    font-weight: 1000 !important;
-    box-shadow: 0 10px 24px rgba(0,0,0,.20) !important;
-}
-
-.stButton > button:hover {
-    border-color: rgba(255,231,163,.36) !important;
-    box-shadow: 0 0 24px rgba(168,85,247,.28) !important;
-    transform: translateY(-1px);
-}
-
-.mb-card-title {
-    color: #ffffff !important;
-    font-size: 20px;
-    font-weight: 1000;
-    margin-top: 8px;
-    margin-bottom: 4px;
-}
-
-.mb-card-sub {
-    color: #aab3c5 !important;
-    font-size: 13px;
-    line-height: 1.4;
-}
+/* =========================================================
+SECTION TITLES
+========================================================= */
 
 .mb-section-title {
-    color: #ffe7a3 !important;
+    color: #ffe7a3;
     font-size: 24px;
     font-weight: 1000;
-    margin-bottom: 12px;
+    margin-bottom: 14px;
 }
 
-.mb-small-muted {
-    color: #94a3b8 !important;
-    font-size: 13px;
+.mb-muted {
+    color: #94a3b8;
+    font-size: 14px;
+}
+
+/* =========================================================
+ACTIVITY
+========================================================= */
+
+.mb-activity {
+
+    background:
+        linear-gradient(145deg, rgba(9,19,36,.96), rgba(7,11,22,.98));
+
+    border: 1px solid rgba(96,165,250,.10);
+
+    border-radius: 20px;
+
+    padding: 18px;
+
+    margin-bottom: 14px;
 }
 
 .mb-activity-title {
-    color: #ffffff !important;
+    color: white;
     font-size: 15px;
-    font-weight: 1000;
+    font-weight: 900;
 }
 
 .mb-activity-sub {
-    color: #aab3c5 !important;
+    color: #94a3b8;
     font-size: 13px;
 }
 
-.mb-side-title {
-    color: #ffe7a3 !important;
-    font-size: 19px;
-    font-weight: 1000;
-}
-
-.mb-side-sub {
-    color: #c7d2fe !important;
-    font-size: 14px;
-    line-height: 1.45;
-}
-
-.mb-elite-title {
-    color: #ffe7a3 !important;
-    font-size: 30px;
-    font-weight: 1000;
-}
-
-.mb-elite-sub {
-    color: #c7d2fe !important;
-    font-size: 15px;
-    line-height: 1.5;
-}
+/* =========================================================
+RESPONSIVE
+========================================================= */
 
 @media(max-width: 1100px) {
+
     .mb-title {
         font-size: 42px;
     }
+
+    .mb-card {
+        min-height: auto;
+    }
 }
+
 </style>
 """,
         unsafe_allow_html=True,
     )
 
 
-def render_icon(name: str, width: int = 42) -> None:
-    path = asset_path(name)
+# =========================================================
+# START
+# =========================================================
 
-    if path.exists():
-        st.image(str(path), width=width)
-    else:
-        st.write("")
+home_css()
 
 
-def app_card(icon: str, title: str, sub: str, page: str) -> None:
-    with st.container(border=True):
-        render_icon(icon, 42)
-        st.markdown(f'<div class="mb-card-title">{title}</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="mb-card-sub">{sub}</div>', unsafe_allow_html=True)
-        st.write("")
-        if st.button("Open", key=f"open_{page}", width="stretch"):
-            open_page(page)
+# =========================================================
+# HERO
+# =========================================================
+
+st.markdown(
+    """
+<div class="mb-hero">
+
+    <div class="mb-kicker">
+        AI OPERATING SYSTEM
+    </div>
+
+    <div class="mb-title">
+        MaByte Intelligence
+        <span class="mb-badge">Elite</span>
+    </div>
+
+    <div class="mb-subtitle">
+        Strategy. Content. Automation. Projects. 
+        Built for modern AI workflows.
+    </div>
+
+</div>
+""",
+    unsafe_allow_html=True,
+)
 
 
-def side_card(title: str, sub: str) -> None:
-    with st.container(border=True):
-        st.markdown(f'<div class="mb-side-title">{title}</div>', unsafe_allow_html=True)
-        st.markdown(f'<div class="mb-side-sub">{sub}</div>', unsafe_allow_html=True)
+# =========================================================
+# APP CARDS
+# =========================================================
+
+apps = [
+    ("AI", "Assistant", "Chat, strategy and coding."),
+    ("PR", "Projects", "Workspace and memory."),
+    ("AU", "Automation", "AI workflows and systems."),
+    ("FB", "Football AI", "Matchday and scouting."),
+    ("MD", "Media", "Creator tools and studio."),
+]
+
+cols = st.columns(5)
+
+for col, app in zip(cols, apps):
+
+    icon, title, sub = app
+
+    with col:
+
+        st.markdown(
+            f"""
+<div class="mb-card">
+
+    <div class="mb-icon">
+        {icon}
+    </div>
+
+    <div class="mb-card-title">
+        {title}
+    </div>
+
+    <div class="mb-card-sub">
+        {sub}
+    </div>
+
+</div>
+""",
+            unsafe_allow_html=True,
+        )
+
+        st.button("Open", use_container_width=True)
 
 
-def render_activity(user: str) -> None:
-    items = recent_activity(username=user, limit=4)
-
-    if not items:
-        items = [
-            {"tool": "AI Assistant", "created_at": "vor 2 Min"},
-            {"tool": "Automation", "created_at": "vor 8 Min"},
-            {"tool": "Projects", "created_at": "vor 14 Min"},
-        ]
-
-    for item in items:
-        tool = str(item.get("tool", "system")).replace("_", " ").title()
-        created = str(item.get("created_at", ""))[:16]
-
-        with st.container(border=True):
-            st.markdown(
-                f'<div class="mb-activity-title">{tool}</div>',
-                unsafe_allow_html=True,
-            )
-            st.markdown(
-                f'<div class="mb-activity-sub">Neue Aktivität erkannt · {created}</div>',
-                unsafe_allow_html=True,
-            )
+st.markdown("<br>", unsafe_allow_html=True)
 
 
-def render_home() -> None:
-    if not st.session_state.get("logged_in"):
-        st.session_state.page = "auth"
-        st.rerun()
-        return
+# =========================================================
+# METRICS
+# =========================================================
 
-    home_css()
+m1, m2, m3, m4 = st.columns(4)
 
-    user = st.session_state.get("user", "User")
-    plan = st.session_state.get("plan", "free")
-    tokens = int(st.session_state.get("tokens", 0) or 0)
+with m1:
+    st.metric("Tokens", "18")
 
-    plan_data = PLANS.get(plan, PLANS["free"])
-    plan_label = plan_data.get("label", "Free")
+with m2:
+    st.metric("Jobs", "34")
 
-    jobs = successful_jobs_count(user)
-    score = workspace_activity_score(user)
+with m3:
+    st.metric("Activity", "100/100")
+
+with m4:
+    st.metric("Plan", "Elite")
+
+
+st.markdown("<br>", unsafe_allow_html=True)
+
+
+# =========================================================
+# LOWER AREA
+# =========================================================
+
+left, right = st.columns([2.2, 1])
+
+with left:
 
     st.markdown(
-        f"""
-<div class="mb-home-hero">
-    <div class="mb-kicker">Mission Control</div>
-    <div class="mb-title">
-        Welcome back, {user}
-        <span class="mb-badge">{plan_label}</span>
-    </div>
-    <div class="mb-subtitle">
-        Dein AI Operating System für Strategie, Content, Projekte und Automationen.
-    </div>
+        """
+<div class="mb-section-title">
+    Live Activity
 </div>
 """,
         unsafe_allow_html=True,
     )
 
-    c1, c2, c3, c4, c5 = st.columns(5, gap="medium")
+    for i in range(3):
 
-    with c1:
-        app_card("chat", "Assistant", "Chat, Strategie, Coding", "chat")
-
-    with c2:
-        app_card("projects", "Projects", "Workspace Memory", "projects")
-
-    with c3:
-        app_card("automations", "Automation", "AI Workflows", "automation_lab")
-
-    with c4:
-        app_card("football", "Football", "Matchday Engine", "football")
-
-    with c5:
-        app_card("video", "Media", "Creator Tools", "video")
-
-    st.write("")
-
-    s1, s2, s3, s4 = st.columns(4, gap="medium")
-
-    with s1:
-        st.metric("Tokens", format_number(tokens), "Verfügbar")
-
-    with s2:
-        st.metric("Jobs", jobs, "Erfolgreich")
-
-    with s3:
-        st.metric("Activity", f"{score}/100", "Workspace Score")
-
-    with s4:
-        st.metric("Plan", plan_label, "Aktueller Zugriff")
-
-    st.write("")
-
-    left, right = st.columns([1.45, 1], gap="large")
-
-    with left:
-        with st.container(border=True):
-            st.markdown(
-                '<div class="mb-section-title">Live Activity</div>',
-                unsafe_allow_html=True,
-            )
-            render_activity(user)
-
-    with right:
-        side_card(
-            "Optimize Workflow",
-            "Baue wiederholbare Abläufe für Content, Projekte und Automationen.",
-        )
-
-        side_card(
-            "Project Boost",
-            "Nutze Projektkontext für bessere Antworten und mehr Memory.",
-        )
-
-        side_card(
-            "Creator Layer",
-            "Erstelle schneller Reels, Assets, Ideen und Kampagnen.",
-        )
-
-    st.write("")
-
-    with st.container(border=True):
         st.markdown(
-            '<div class="mb-elite-title">MaByte Elite Layer</div>',
+            f"""
+<div class="mb-activity">
+
+    <div class="mb-activity-title">
+        AI Workflow #{i+1}
+    </div>
+
+    <div class="mb-activity-sub">
+        Active automation running successfully.
+    </div>
+
+</div>
+""",
             unsafe_allow_html=True,
         )
-        st.markdown(
-            f'<div class="mb-elite-sub">{format_number(tokens)} Tokens verfügbar. Dein Workspace ist bereit für größere AI Workflows.</div>',
-            unsafe_allow_html=True,
-        )
+
+with right:
+
+    st.markdown(
+        """
+<div class="mb-card">
+
+    <div class="mb-section-title">
+        Upgrade Elite+
+    </div>
+
+    <div class="mb-muted">
+        More power, workflows and creator tools.
+    </div>
+
+</div>
+""",
+        unsafe_allow_html=True,
+    )
