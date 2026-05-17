@@ -56,14 +56,18 @@ def load_chat_css() -> None:
 .main .block-container {
     max-width: 1220px !important;
     padding-top: 92px !important;
-    padding-bottom: 110px !important;
+    padding-bottom: 120px !important;
 }
 
-[data-testid="stBottom"],
-[data-testid="stBottomBlockContainer"],
-[data-testid="stBottomBlockContainer"] > div,
-[data-testid="stChatInput"],
-[data-testid="stChatInput"] > div {
+/* ===================================================== */
+/* CHAT INPUT / BOTTOM BAR FIX */
+/* ===================================================== */
+
+[data-testid="stBottom"] {
+    background: transparent !important;
+}
+
+[data-testid="stBottom"] > div {
     background: transparent !important;
 }
 
@@ -72,21 +76,32 @@ def load_chat_css() -> None:
         linear-gradient(
             180deg,
             rgba(5,5,16,0) 0%,
-            rgba(5,5,16,.96) 28%,
+            rgba(5,5,16,.94) 24%,
             rgba(5,5,16,.98) 100%
         ) !important;
     border-top: 1px solid rgba(255,231,163,.08) !important;
     backdrop-filter: blur(18px) !important;
+    padding-top: 16px !important;
+    padding-bottom: 18px !important;
+}
+
+[data-testid="stBottomBlockContainer"] > div {
+    background: transparent !important;
 }
 
 [data-testid="stChatInput"] {
+    background: transparent !important;
     padding-left: 2rem !important;
     padding-right: 2rem !important;
 }
 
 [data-testid="stChatInput"] > div {
     background:
-        linear-gradient(145deg, rgba(24,10,42,.98), rgba(8,6,18,.98)) !important;
+        linear-gradient(
+            145deg,
+            rgba(24,10,42,.98),
+            rgba(8,6,18,.98)
+        ) !important;
     border: 1px solid rgba(255,231,163,.20) !important;
     border-radius: 26px !important;
     box-shadow:
@@ -116,6 +131,10 @@ def load_chat_css() -> None:
     box-shadow: 0 0 18px rgba(168,85,247,.22) !important;
 }
 
+/* ===================================================== */
+/* HERO */
+/* ===================================================== */
+
 .mb-chat-hero {
     margin-bottom: 18px;
 }
@@ -144,6 +163,10 @@ def load_chat_css() -> None:
     font-size: 15px;
     line-height: 1.55;
 }
+
+/* ===================================================== */
+/* PANELS */
+/* ===================================================== */
 
 .mb-panel {
     background:
@@ -212,6 +235,10 @@ def load_chat_css() -> None:
     text-align: right;
 }
 
+/* ===================================================== */
+/* EMPTY STATE */
+/* ===================================================== */
+
 .mb-empty {
     background:
         radial-gradient(circle at top right, rgba(168,85,247,.14), transparent 30%),
@@ -259,6 +286,10 @@ def load_chat_css() -> None:
     font-size: 13px;
     line-height: 1.4;
 }
+
+/* ===================================================== */
+/* STREAMLIT ELEMENTS */
+/* ===================================================== */
 
 [data-testid="metric-container"] {
     background: linear-gradient(145deg, rgba(24,10,42,.92), rgba(9,6,18,.98)) !important;
