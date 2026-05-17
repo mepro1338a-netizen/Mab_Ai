@@ -59,7 +59,10 @@ def load_chat_css() -> None:
     padding-bottom: 132px !important;
 }
 
-/* hide streamlit white bottom layer */
+/* ===================================================== */
+/* PROMPT BAR - PURPLE FIX */
+/* ===================================================== */
+
 [data-testid="stBottom"],
 [data-testid="stBottom"] > div,
 [data-testid="stBottomBlockContainer"],
@@ -74,7 +77,6 @@ def load_chat_css() -> None:
     padding-bottom: 18px !important;
 }
 
-/* prompt */
 [data-testid="stChatInput"] {
     background: transparent !important;
     padding-left: 2.2rem !important;
@@ -83,13 +85,13 @@ def load_chat_css() -> None:
 
 [data-testid="stChatInput"] > div {
     background:
-        radial-gradient(circle at left, rgba(168,85,247,.18), transparent 24%),
-        linear-gradient(135deg, rgba(12,10,28,.98), rgba(7,5,16,.99)) !important;
-    border: 1px solid rgba(168,85,247,.55) !important;
+        radial-gradient(circle at left, rgba(168,85,247,.24), transparent 25%),
+        linear-gradient(135deg, rgba(34,10,58,.98), rgba(14,6,26,.99)) !important;
+    border: 1px solid rgba(168,85,247,.65) !important;
     border-radius: 999px !important;
     box-shadow:
-        0 0 34px rgba(168,85,247,.34),
-        0 0 12px rgba(255,231,163,.08) !important;
+        0 0 34px rgba(168,85,247,.38),
+        inset 0 0 0 1px rgba(255,231,163,.06) !important;
 }
 
 [data-testid="stChatInput"] textarea,
@@ -97,23 +99,38 @@ def load_chat_css() -> None:
 [data-testid="stChatInput"] textarea:active {
     background: transparent !important;
     color: #ffe7a3 !important;
-    font-weight: 850 !important;
+    font-weight: 900 !important;
     box-shadow: none !important;
 }
 
 [data-testid="stChatInput"] textarea::placeholder {
-    color: rgba(255,231,163,.56) !important;
-    font-weight: 850 !important;
+    color: rgba(255,231,163,.62) !important;
+    font-weight: 900 !important;
 }
 
 [data-testid="stChatInput"] button {
     background: linear-gradient(135deg, #7c3aed, #a855f7) !important;
     border-radius: 999px !important;
-    border: 1px solid rgba(255,231,163,.24) !important;
-    box-shadow: 0 0 22px rgba(168,85,247,.38) !important;
+    border: 1px solid rgba(255,231,163,.28) !important;
+    box-shadow: 0 0 22px rgba(168,85,247,.42) !important;
 }
 
-/* page shell */
+/* extra Streamlit input internals */
+[data-testid="stChatInput"] div,
+[data-testid="stChatInput"] section,
+[data-testid="stChatInput"] form {
+    background-color: transparent !important;
+}
+
+[data-testid="stChatInput"] textarea {
+    background-color: transparent !important;
+    caret-color: #ffe7a3 !important;
+}
+
+/* ===================================================== */
+/* PAGE SHELL */
+/* ===================================================== */
+
 .mb-ai-shell {
     min-height: calc(100vh - 220px);
 }
@@ -279,8 +296,7 @@ def load_chat_css() -> None:
 }
 
 .mb-quick {
-    background:
-        linear-gradient(145deg, rgba(18,14,34,.78), rgba(9,7,18,.96));
+    background: linear-gradient(145deg, rgba(18,14,34,.78), rgba(9,7,18,.96));
     border: 1px solid rgba(255,255,255,.08);
     border-radius: 16px;
     padding: 14px 16px;
