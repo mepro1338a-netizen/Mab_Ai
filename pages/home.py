@@ -1,4 +1,5 @@
 ﻿import html
+
 import streamlit as st
 
 from database import (
@@ -10,292 +11,285 @@ from database import (
 from config import PLANS
 
 
-# =========================================================
-# NAVIGATION
-# =========================================================
-
-def open_page(page: str):
+def open_page(page: str) -> None:
     st.session_state.page = page
     st.rerun()
 
 
-# =========================================================
-# HELPERS
-# =========================================================
-
-def safe(value):
+def safe_text(value) -> str:
     return html.escape(str(value or ""))
 
 
-def fmt(value):
+def format_number(value) -> str:
     try:
         return f"{int(value):,}".replace(",", ".")
     except Exception:
         return str(value)
 
 
-# =========================================================
-# CSS
-# =========================================================
-
-def home_css():
+def home_css() -> None:
     st.markdown(
         """
 <style>
-
-.main .block-container{
-    max-width:1450px!important;
-    padding-top:90px!important;
-    padding-bottom:120px!important;
+.main .block-container {
+    max-width: 1320px !important;
+    padding-top: 92px !important;
+    padding-bottom: 80px !important;
 }
 
-/* HERO */
-
-.mb-hero{
-    padding:32px;
-    border-radius:30px;
+.mb-home-hero {
     background:
-        radial-gradient(circle at top right, rgba(168,85,247,.16), transparent 30%),
-        linear-gradient(135deg, rgba(12,18,40,.96), rgba(5,8,20,.98));
-    border:1px solid rgba(168,85,247,.14);
-    margin-bottom:26px;
-    box-shadow:0 0 50px rgba(0,0,0,.25);
+        radial-gradient(circle at top right, rgba(168,85,247,.18), transparent 32%),
+        radial-gradient(circle at bottom left, rgba(56,189,248,.08), transparent 35%),
+        linear-gradient(135deg, rgba(15,10,34,.88), rgba(6,7,18,.98));
+    border: 1px solid rgba(168,85,247,.26);
+    border-radius: 30px;
+    padding: 34px;
+    margin-bottom: 24px;
+    box-shadow: 0 24px 60px rgba(0,0,0,.28);
 }
 
-.mb-kicker{
-    color:#c084fc;
-    font-size:12px;
-    font-weight:900;
-    letter-spacing:.25em;
-    text-transform:uppercase;
-    margin-bottom:12px;
+.mb-kicker {
+    color: #c084fc !important;
+    font-size: 12px;
+    font-weight: 1000;
+    letter-spacing: .20em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
 }
 
-.mb-title{
-    color:#ffe7a3;
-    font-size:64px;
-    font-weight:1000;
-    line-height:1;
-    letter-spacing:-3px;
+.mb-title-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
 }
 
-.mb-sub{
-    margin-top:16px;
-    color:#aeb7d0;
-    font-size:18px;
-    max-width:720px;
-    line-height:1.6;
+.mb-title {
+    color: #ffe7a3 !important;
+    font-size: 56px;
+    line-height: .95;
+    font-weight: 1000;
+    letter-spacing: -2.4px;
 }
 
-/* APP GRID */
+.mb-plan {
+    padding: 8px 15px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    color: #ffffff !important;
+    font-size: 13px;
+    font-weight: 1000;
+    box-shadow: 0 0 24px rgba(168,85,247,.30);
+}
 
-.mb-app{
+.mb-subtitle {
+    margin-top: 14px;
+    max-width: 720px;
+    color: #c7d2fe !important;
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+.mb-app-card {
     background:
-        linear-gradient(180deg, rgba(10,15,35,.95), rgba(5,7,18,.98));
-    border:1px solid rgba(168,85,247,.12);
-    border-radius:24px;
-    padding:22px;
-    min-height:210px;
-    position:relative;
-    overflow:hidden;
-    transition:.25s;
+        radial-gradient(circle at top left, rgba(168,85,247,.12), transparent 32%),
+        linear-gradient(145deg, rgba(12,13,32,.90), rgba(6,7,18,.98));
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 24px;
+    padding: 20px;
+    min-height: 178px;
+    box-shadow: 0 16px 42px rgba(0,0,0,.22);
 }
 
-.mb-app:hover{
-    transform:translateY(-4px);
-    border:1px solid rgba(168,85,247,.35);
-    box-shadow:0 0 30px rgba(168,85,247,.15);
+.mb-app-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(168,85,247,.16);
+    border: 1px solid rgba(255,231,163,.14);
+    color: #ffe7a3 !important;
+    font-size: 18px;
+    font-weight: 1000;
+    margin-bottom: 14px;
 }
 
-.mb-icon{
-    width:58px;
-    height:58px;
-    border-radius:18px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    margin-bottom:18px;
-    background:rgba(168,85,247,.12);
-    border:1px solid rgba(168,85,247,.18);
-    font-size:28px;
+.mb-app-title {
+    color: #ffffff !important;
+    font-size: 20px;
+    font-weight: 1000;
+    margin-bottom: 7px;
 }
 
-.mb-app-title{
-    color:white;
-    font-size:28px;
-    font-weight:900;
-    margin-bottom:10px;
+.mb-app-sub {
+    color: #aab3c5 !important;
+    font-size: 13px;
+    line-height: 1.4;
+    min-height: 38px;
 }
 
-.mb-app-sub{
-    color:#9ca3af;
-    font-size:15px;
-    line-height:1.6;
-    min-height:48px;
-}
-
-/* BUTTONS */
-
-.stButton > button{
-    width:100%!important;
-    border-radius:16px!important;
-    height:48px!important;
+.mb-stat-card {
     background:
-        linear-gradient(135deg, rgba(36,8,56,.98), rgba(12,3,25,.98))!important;
-
-    border:1px solid rgba(168,85,247,.24)!important;
-
-    color:#ffe7a3!important;
-    font-size:16px!important;
-    font-weight:900!important;
-    transition:.2s!important;
+        linear-gradient(145deg, rgba(12,13,32,.90), rgba(6,7,18,.98));
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 22px;
+    padding: 20px;
+    box-shadow: 0 14px 34px rgba(0,0,0,.20);
 }
 
-.stButton > button:hover{
-    transform:translateY(-2px)!important;
-    border:1px solid #a855f7!important;
-    box-shadow:0 0 22px rgba(168,85,247,.25)!important;
+.mb-stat-label {
+    color: #c084fc !important;
+    font-size: 11px;
+    font-weight: 1000;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
 }
 
-/* STATS */
+.mb-stat-value {
+    color: #ffe7a3 !important;
+    font-size: 34px;
+    line-height: 1;
+    font-weight: 1000;
+}
 
-.mb-stat{
-    padding:22px;
-    border-radius:24px;
+.mb-stat-sub {
+    color: #94a3b8 !important;
+    font-size: 13px;
+    margin-top: 9px;
+}
+
+.mb-section-title {
+    color: #ffe7a3 !important;
+    font-size: 24px;
+    font-weight: 1000;
+    margin-bottom: 14px;
+}
+
+.mb-activity-card,
+.mb-side-card {
     background:
-        linear-gradient(180deg, rgba(8,12,28,.95), rgba(5,8,20,.98));
-    border:1px solid rgba(255,255,255,.06);
+        linear-gradient(145deg, rgba(15,10,34,.84), rgba(6,7,18,.98));
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 24px;
+    padding: 20px;
+    box-shadow: 0 16px 42px rgba(0,0,0,.20);
 }
 
-.mb-stat-top{
-    color:#7dd3fc;
-    font-size:12px;
-    font-weight:900;
-    letter-spacing:.18em;
-    text-transform:uppercase;
+.mb-activity-item {
+    padding: 14px;
+    border-radius: 17px;
+    background: rgba(255,255,255,.035);
+    border: 1px solid rgba(255,255,255,.06);
+    margin-bottom: 10px;
 }
 
-.mb-stat-value{
-    margin-top:12px;
-    color:#ffe7a3;
-    font-size:42px;
-    font-weight:1000;
+.mb-activity-top {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
 }
 
-.mb-stat-sub{
-    margin-top:10px;
-    color:#94a3b8;
-    font-size:14px;
+.mb-activity-title {
+    color: #ffffff !important;
+    font-size: 14px;
+    font-weight: 1000;
 }
 
-/* ACTIVITY */
-
-.mb-section{
-    margin-top:34px;
+.mb-activity-time {
+    color: #c084fc !important;
+    font-size: 12px;
+    white-space: nowrap;
 }
 
-.mb-section-title{
-    color:#ffe7a3;
-    font-size:28px;
-    font-weight:1000;
-    margin-bottom:18px;
+.mb-activity-sub {
+    color: #aab3c5 !important;
+    font-size: 13px;
+    margin-top: 5px;
 }
 
-.mb-activity{
-    padding:18px;
-    border-radius:20px;
-    margin-bottom:14px;
+.mb-side-card {
+    margin-bottom: 14px;
+}
 
+.mb-side-title {
+    color: #ffe7a3 !important;
+    font-size: 20px;
+    font-weight: 1000;
+    margin-bottom: 8px;
+}
+
+.mb-side-sub {
+    color: #c7d2fe !important;
+    font-size: 14px;
+    line-height: 1.45;
+}
+
+.mb-elite {
+    margin-top: 24px;
     background:
-        linear-gradient(135deg, rgba(10,14,30,.96), rgba(8,10,20,.98));
-
-    border:1px solid rgba(255,255,255,.05);
+        radial-gradient(circle at top right, rgba(168,85,247,.18), transparent 32%),
+        linear-gradient(135deg, rgba(30,10,50,.92), rgba(7,7,18,.98));
+    border: 1px solid rgba(168,85,247,.22);
+    border-radius: 30px;
+    padding: 28px;
+    box-shadow: 0 22px 54px rgba(0,0,0,.24);
 }
 
-.mb-activity-title{
-    color:white;
-    font-size:16px;
-    font-weight:900;
+.mb-elite-title {
+    color: #ffe7a3 !important;
+    font-size: 30px;
+    font-weight: 1000;
+    margin-bottom: 9px;
 }
 
-.mb-activity-sub{
-    color:#9ca3af;
-    margin-top:6px;
-    font-size:14px;
+.mb-elite-sub {
+    color: #c7d2fe !important;
+    font-size: 15px;
+    line-height: 1.5;
 }
 
-.mb-activity-time{
-    color:#7dd3fc;
-    font-size:12px;
-    margin-top:10px;
+.stButton > button {
+    width: 100% !important;
+    height: 44px !important;
+    border-radius: 15px !important;
+    background: linear-gradient(135deg, rgba(36,8,56,.98), rgba(12,3,25,.98)) !important;
+    border: 1px solid rgba(168,85,247,.30) !important;
+    color: #ffe7a3 !important;
+    font-size: 15px !important;
+    font-weight: 1000 !important;
+    box-shadow: 0 10px 24px rgba(0,0,0,.20) !important;
 }
 
-/* ELITE */
-
-.mb-elite{
-    margin-top:38px;
-    padding:30px;
-    border-radius:30px;
-
-    background:
-        radial-gradient(circle at top right, rgba(168,85,247,.18), transparent 30%),
-        linear-gradient(135deg, rgba(30,10,50,.96), rgba(8,8,20,.98));
-
-    border:1px solid rgba(168,85,247,.18);
+.stButton > button:hover {
+    border-color: rgba(255,231,163,.36) !important;
+    box-shadow: 0 0 24px rgba(168,85,247,.28) !important;
+    transform: translateY(-1px);
 }
 
-.mb-elite-title{
-    color:#ffe7a3;
-    font-size:38px;
-    font-weight:1000;
-}
-
-.mb-elite-sub{
-    margin-top:12px;
-    color:#cbd5e1;
-    font-size:16px;
-    line-height:1.6;
-}
-
-@media(max-width:1200px){
-
-    .mb-title{
-        font-size:44px;
+@media(max-width: 1100px) {
+    .mb-title {
+        font-size: 42px;
     }
-
-    .mb-stat-value{
-        font-size:32px;
-    }
 }
-
 </style>
-        """,
+""",
         unsafe_allow_html=True,
     )
 
 
-# =========================================================
-# COMPONENTS
-# =========================================================
-
-def app_card(icon, title, sub, page):
-
+def app_card(icon: str, title: str, sub: str, page: str) -> None:
     st.markdown(
         f"""
-<div class="mb-app">
-
-    <div class="mb-icon">{safe(icon)}</div>
-
-    <div class="mb-app-title">
-        {safe(title)}
-    </div>
-
-    <div class="mb-app-sub">
-        {safe(sub)}
-    </div>
-
+<div class="mb-app-card">
+<div class="mb-app-icon">{safe_text(icon)}</div>
+<div class="mb-app-title">{safe_text(title)}</div>
+<div class="mb-app-sub">{safe_text(sub)}</div>
 </div>
-        """,
+""",
         unsafe_allow_html=True,
     )
 
@@ -303,60 +297,73 @@ def app_card(icon, title, sub, page):
         open_page(page)
 
 
-def stat_card(title, value, sub):
-
+def stat_card(title: str, value, sub: str) -> None:
     st.markdown(
         f"""
-<div class="mb-stat">
-
-    <div class="mb-stat-top">
-        {safe(title)}
-    </div>
-
-    <div class="mb-stat-value">
-        {safe(value)}
-    </div>
-
-    <div class="mb-stat-sub">
-        {safe(sub)}
-    </div>
-
+<div class="mb-stat-card">
+<div class="mb-stat-label">{safe_text(title)}</div>
+<div class="mb-stat-value">{safe_text(value)}</div>
+<div class="mb-stat-sub">{safe_text(sub)}</div>
 </div>
-        """,
+""",
         unsafe_allow_html=True,
     )
 
 
-def activity(title, sub, time):
-
+def activity_item(title: str, sub: str, time: str) -> None:
     st.markdown(
         f"""
-<div class="mb-activity">
-
-    <div class="mb-activity-title">
-        {safe(title)}
-    </div>
-
-    <div class="mb-activity-sub">
-        {safe(sub)}
-    </div>
-
-    <div class="mb-activity-time">
-        {safe(time)}
-    </div>
-
+<div class="mb-activity-item">
+<div class="mb-activity-top">
+<div class="mb-activity-title">{safe_text(title)}</div>
+<div class="mb-activity-time">{safe_text(time)}</div>
 </div>
-        """,
+<div class="mb-activity-sub">{safe_text(sub)}</div>
+</div>
+""",
         unsafe_allow_html=True,
     )
 
 
-# =========================================================
-# MAIN
-# =========================================================
+def side_card(title: str, sub: str) -> None:
+    st.markdown(
+        f"""
+<div class="mb-side-card">
+<div class="mb-side-title">{safe_text(title)}</div>
+<div class="mb-side-sub">{safe_text(sub)}</div>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
 
-def render_home():
 
+def render_activity(user: str) -> None:
+    items = recent_activity(username=user, limit=4)
+
+    if not items:
+        demo = [
+            ("AI Assistant", "Neue Anfrage verarbeitet", "vor 2 Min"),
+            ("Automation", "Workflow bereit", "vor 8 Min"),
+            ("Projects", "Workspace aktualisiert", "vor 14 Min"),
+        ]
+
+        for title, sub, time in demo:
+            activity_item(title, sub, time)
+
+        return
+
+    for item in items:
+        tool = str(item.get("tool", "system")).replace("_", " ").title()
+        created = str(item.get("created_at", ""))[:16]
+
+        activity_item(
+            title=tool,
+            sub="Neue Aktivität erkannt",
+            time=created,
+        )
+
+
+def render_home() -> None:
     if not st.session_state.get("logged_in"):
         st.session_state.page = "auth"
         st.rerun()
@@ -368,150 +375,102 @@ def render_home():
     plan = st.session_state.get("plan", "free")
     tokens = int(st.session_state.get("tokens", 0) or 0)
 
-    jobs = successful_jobs_count(user)
-    score = workspace_activity_score(user)
-
     plan_data = PLANS.get(plan, PLANS["free"])
     plan_label = plan_data.get("label", "Free")
 
-    # =====================================================
-    # HERO
-    # =====================================================
+    jobs = successful_jobs_count(user)
+    score = workspace_activity_score(user)
 
     st.markdown(
         f"""
-<div class="mb-hero">
-
-    <div class="mb-kicker">
-        AI OPERATING SYSTEM
-    </div>
-
-    <div class="mb-title">
-        MaByte Intelligence
-    </div>
-
-    <div class="mb-sub">
-        Strategy. Content. Automation. Projects.
-    </div>
-
+<div class="mb-home-hero">
+<div class="mb-kicker">Mission Control</div>
+<div class="mb-title-row">
+<div class="mb-title">Welcome back, {safe_text(user)}</div>
+<div class="mb-plan">{safe_text(plan_label)}</div>
 </div>
-        """,
+<div class="mb-subtitle">
+Dein AI Operating System für Strategie, Content, Projekte und Automationen.
+</div>
+</div>
+""",
         unsafe_allow_html=True,
     )
 
-    # =====================================================
-    # APPS
-    # =====================================================
+    a1, a2, a3, a4, a5 = st.columns(5, gap="medium")
 
-    c1, c2, c3, c4, c5 = st.columns(5)
+    with a1:
+        app_card("AI", "Assistant", "Chat, Strategie, Coding", "chat")
 
-    with c1:
-        app_card("💬", "Assistant", "Strategy & AI", "chat")
+    with a2:
+        app_card("PR", "Projects", "Workspace Memory", "projects")
 
-    with c2:
-        app_card("📁", "Projects", "Workspace Memory", "projects")
+    with a3:
+        app_card("AU", "Automation", "AI Workflows", "automation_lab")
 
-    with c3:
-        app_card("⚡", "Automation", "AI Workflows", "automation_lab")
+    with a4:
+        app_card("FB", "Football", "Matchday Engine", "football")
 
-    with c4:
-        app_card("⚽", "Football", "Matchday Engine", "football")
+    with a5:
+        app_card("MD", "Media", "Creator Tools", "video")
 
-    with c5:
-        app_card("🎬", "Media", "Creator Suite", "video")
+    st.write("")
 
-    # =====================================================
-    # STATS
-    # =====================================================
-
-    st.markdown('<div class="mb-section">', unsafe_allow_html=True)
-
-    s1, s2, s3, s4 = st.columns(4)
+    s1, s2, s3, s4 = st.columns(4, gap="medium")
 
     with s1:
-        stat_card("Tokens", fmt(tokens), "Available")
+        stat_card("Tokens", format_number(tokens), "Verfügbar")
 
     with s2:
-        stat_card("Jobs", jobs, "Completed")
+        stat_card("Jobs", jobs, "Erfolgreich")
 
     with s3:
-        stat_card("Activity", f"{score}/100", "Workspace")
+        stat_card("Activity", f"{score}/100", "Workspace Score")
 
     with s4:
-        stat_card("Plan", plan_label, "Current Layer")
+        stat_card("Plan", plan_label, "Aktueller Zugriff")
 
-    st.markdown("</div>", unsafe_allow_html=True)
+    st.write("")
 
-    # =====================================================
-    # ACTIVITY
-    # =====================================================
+    left, right = st.columns([1.45, 1], gap="large")
 
-    st.markdown(
-        """
-<div class="mb-section">
-
-    <div class="mb-section-title">
-        Live Activity
-    </div>
-
-</div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    items = recent_activity(username=user, limit=3)
-
-    if not items:
-
-        activity(
-            "AI Assistant",
-            "Neue Anfrage verarbeitet",
-            "vor 2 Min"
+    with left:
+        st.markdown(
+            """
+<div class="mb-activity-card">
+<div class="mb-section-title">Live Activity</div>
+""",
+            unsafe_allow_html=True,
         )
 
-        activity(
-            "Automation",
-            "Workflow ausgeführt",
-            "vor 8 Min"
+        render_activity(user)
+
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    with right:
+        side_card(
+            "Optimize Workflow",
+            "Baue wiederholbare Abläufe für Content, Projekte und Automationen.",
         )
 
-        activity(
-            "Project Memory",
-            "Workspace synchronisiert",
-            "vor 14 Min"
+        side_card(
+            "Project Boost",
+            "Nutze Projektkontext für bessere Antworten und mehr Memory.",
         )
 
-    else:
-
-        for item in items:
-
-            tool = str(item.get("tool", "system")).title()
-            created = str(item.get("created_at", ""))[:16]
-
-            activity(
-                tool,
-                "Neue Aktivität erkannt",
-                created
-            )
-
-    # =====================================================
-    # ELITE
-    # =====================================================
+        side_card(
+            "Creator Layer",
+            "Erstelle schneller Reels, Assets, Ideen und Kampagnen.",
+        )
 
     st.markdown(
         f"""
 <div class="mb-elite">
-
-    <div class="mb-elite-title">
-        MaByte Elite Layer
-    </div>
-
-    <div class="mb-elite-sub">
-        Dein AI Workspace läuft im Premium Modus mit
-        schnellerem Workflow und smarterem Kontext.
-    </div>
-
+<div class="mb-elite-title">MaByte Elite Layer</div>
+<div class="mb-elite-sub">
+{safe_text(format_number(tokens))} Tokens verfügbar. Dein Workspace ist bereit für größere AI Workflows.
 </div>
-        """,
+</div>
+""",
         unsafe_allow_html=True,
     )
