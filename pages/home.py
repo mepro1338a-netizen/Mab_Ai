@@ -1,4 +1,6 @@
-﻿import html
+﻿import base64
+import html
+from pathlib import Path
 
 import streamlit as st
 
@@ -9,6 +11,9 @@ from database import (
 )
 
 from config import PLANS
+
+
+ASSET_DIR = Path("assets")
 
 
 def open_page(page: str) -> None:
@@ -27,6 +32,25 @@ def format_number(value) -> str:
         return str(value)
 
 
+def img_base64(path: Path) -> str:
+    if not path.exists() or not path.is_file():
+        return ""
+
+    return base64.b64encode(path.read_bytes()).decode("utf-8")
+
+
+def asset_icon(name: str) -> str:
+    path = ASSET_DIR / f"{name}.png"
+    encoded = img_base64(path)
+
+    if not encoded:
+        return '<div class="mb-app-icon-fallback"></div>'
+
+    return f"""
+<img class="mb-app-icon-img" src="data:image/png;base64,{encoded}" alt="">
+"""
+
+
 def home_css() -> None:
     st.markdown(
         """
@@ -34,7 +58,7 @@ def home_css() -> None:
 .main .block-container {
     max-width: 1320px !important;
     padding-top: 92px !important;
-    padding-bottom: 80px !important;
+    padding-bottom: 90px !important;
 }
 
 .mb-home-hero {
@@ -93,28 +117,48 @@ def home_css() -> None:
 
 .mb-app-card {
     background:
-        radial-gradient(circle at top left, rgba(168,85,247,.12), transparent 32%),
+        radial-gradient(circle at top left, rgba(168,85,247,.13), transparent 34%),
         linear-gradient(145deg, rgba(12,13,32,.90), rgba(6,7,18,.98));
     border: 1px solid rgba(255,255,255,.08);
     border-radius: 24px;
     padding: 20px;
     min-height: 178px;
     box-shadow: 0 16px 42px rgba(0,0,0,.22);
+    transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
 }
 
-.mb-app-icon {
-    width: 46px;
-    height: 46px;
-    border-radius: 16px;
+.mb-app-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(168,85,247,.34);
+    box-shadow: 0 0 32px rgba(168,85,247,.14), 0 16px 42px rgba(0,0,0,.22);
+}
+
+.mb-app-icon-box {
+    width: 50px;
+    height: 50px;
+    border-radius: 17px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: rgba(168,85,247,.16);
-    border: 1px solid rgba(255,231,163,.14);
-    color: #ffe7a3 !important;
-    font-size: 18px;
-    font-weight: 1000;
+    background:
+        linear-gradient(135deg, rgba(168,85,247,.18), rgba(255,231,163,.06));
+    border: 1px solid rgba(255,231,163,.16);
     margin-bottom: 14px;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.03);
+}
+
+.mb-app-icon-img {
+    width: 30px;
+    height: 30px;
+    object-fit: contain;
+    display: block;
+}
+
+.mb-app-icon-fallback {
+    width: 30px;
+    height: 30px;
+    border-radius: 10px;
+    background: rgba(168,85,247,.26);
 }
 
 .mb-app-title {
@@ -281,13 +325,17 @@ def home_css() -> None:
     )
 
 
-def app_card(icon: str, title: str, sub: str, page: str) -> None:
+def app_card(icon_name: str, title: str, sub: str, page: str) -> None:
+    icon = asset_icon(icon_name)
+
     st.markdown(
         f"""
 <div class="mb-app-card">
-<div class="mb-app-icon">{safe_text(icon)}</div>
-<div class="mb-app-title">{safe_text(title)}</div>
-<div class="mb-app-sub">{safe_text(sub)}</div>
+    <div class="mb-app-icon-box">
+        {icon}
+    </div>
+    <div class="mb-app-title">{safe_text(title)}</div>
+    <div class="mb-app-sub">{safe_text(sub)}</div>
 </div>
 """,
         unsafe_allow_html=True,
@@ -301,9 +349,9 @@ def stat_card(title: str, value, sub: str) -> None:
     st.markdown(
         f"""
 <div class="mb-stat-card">
-<div class="mb-stat-label">{safe_text(title)}</div>
-<div class="mb-stat-value">{safe_text(value)}</div>
-<div class="mb-stat-sub">{safe_text(sub)}</div>
+    <div class="mb-stat-label">{safe_text(title)}</div>
+    <div class="mb-stat-value">{safe_text(value)}</div>
+    <div class="mb-stat-sub">{safe_text(sub)}</div>
 </div>
 """,
         unsafe_allow_html=True,
@@ -314,11 +362,11 @@ def activity_item(title: str, sub: str, time: str) -> None:
     st.markdown(
         f"""
 <div class="mb-activity-item">
-<div class="mb-activity-top">
-<div class="mb-activity-title">{safe_text(title)}</div>
-<div class="mb-activity-time">{safe_text(time)}</div>
-</div>
-<div class="mb-activity-sub">{safe_text(sub)}</div>
+    <div class="mb-activity-top">
+        <div class="mb-activity-title">{safe_text(title)}</div>
+        <div class="mb-activity-time">{safe_text(time)}</div>
+    </div>
+    <div class="mb-activity-sub">{safe_text(sub)}</div>
 </div>
 """,
         unsafe_allow_html=True,
@@ -329,8 +377,8 @@ def side_card(title: str, sub: str) -> None:
     st.markdown(
         f"""
 <div class="mb-side-card">
-<div class="mb-side-title">{safe_text(title)}</div>
-<div class="mb-side-sub">{safe_text(sub)}</div>
+    <div class="mb-side-title">{safe_text(title)}</div>
+    <div class="mb-side-sub">{safe_text(sub)}</div>
 </div>
 """,
         unsafe_allow_html=True,
@@ -384,14 +432,14 @@ def render_home() -> None:
     st.markdown(
         f"""
 <div class="mb-home-hero">
-<div class="mb-kicker">Mission Control</div>
-<div class="mb-title-row">
-<div class="mb-title">Welcome back, {safe_text(user)}</div>
-<div class="mb-plan">{safe_text(plan_label)}</div>
-</div>
-<div class="mb-subtitle">
-Dein AI Operating System für Strategie, Content, Projekte und Automationen.
-</div>
+    <div class="mb-kicker">Mission Control</div>
+    <div class="mb-title-row">
+        <div class="mb-title">Welcome back, {safe_text(user)}</div>
+        <div class="mb-plan">{safe_text(plan_label)}</div>
+    </div>
+    <div class="mb-subtitle">
+        Dein AI Operating System für Strategie, Content, Projekte und Automationen.
+    </div>
 </div>
 """,
         unsafe_allow_html=True,
@@ -400,19 +448,19 @@ Dein AI Operating System für Strategie, Content, Projekte und Automationen.
     a1, a2, a3, a4, a5 = st.columns(5, gap="medium")
 
     with a1:
-        app_card("AI", "Assistant", "Chat, Strategie, Coding", "chat")
+        app_card("chat", "Assistant", "Chat, Strategie, Coding", "chat")
 
     with a2:
-        app_card("PR", "Projects", "Workspace Memory", "projects")
+        app_card("projects", "Projects", "Workspace Memory", "projects")
 
     with a3:
-        app_card("AU", "Automation", "AI Workflows", "automation_lab")
+        app_card("automations", "Automation", "AI Workflows", "automation_lab")
 
     with a4:
-        app_card("FB", "Football", "Matchday Engine", "football")
+        app_card("football", "Football", "Matchday Engine", "football")
 
     with a5:
-        app_card("MD", "Media", "Creator Tools", "video")
+        app_card("video", "Media", "Creator Tools", "video")
 
     st.write("")
 
@@ -438,7 +486,7 @@ Dein AI Operating System für Strategie, Content, Projekte und Automationen.
         st.markdown(
             """
 <div class="mb-activity-card">
-<div class="mb-section-title">Live Activity</div>
+    <div class="mb-section-title">Live Activity</div>
 """,
             unsafe_allow_html=True,
         )
@@ -466,10 +514,10 @@ Dein AI Operating System für Strategie, Content, Projekte und Automationen.
     st.markdown(
         f"""
 <div class="mb-elite">
-<div class="mb-elite-title">MaByte Elite Layer</div>
-<div class="mb-elite-sub">
-{safe_text(format_number(tokens))} Tokens verfügbar. Dein Workspace ist bereit für größere AI Workflows.
-</div>
+    <div class="mb-elite-title">MaByte Elite Layer</div>
+    <div class="mb-elite-sub">
+        {safe_text(format_number(tokens))} Tokens verfügbar. Dein Workspace ist bereit für größere AI Workflows.
+    </div>
 </div>
 """,
         unsafe_allow_html=True,
