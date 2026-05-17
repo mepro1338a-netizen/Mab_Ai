@@ -136,7 +136,7 @@ div[data-testid="column"] {{
 
 .custom-topbar {{
 
-    position:relative;
+    position:fixed;
 
     top:0;
     left:0;
