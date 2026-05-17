@@ -1,516 +1,529 @@
-import streamlit as st
+import html
 
-st.set_page_config(
-    page_title="MaByte",
-    page_icon="🧠",
-    layout="wide",
+import streamlit as st
+from openai import OpenAI
+
+from config import OPENAI_API_KEY, OPENAI_TEXT_MODEL, TOKEN_COSTS
+
+from database import (
+    get_project,
+    save_project_chat_message,
+    list_project_chat_memory,
+    spend_tokens,
+    save_usage,
+    get_user,
 )
 
-# =========================================================
-# STYLE
-# =========================================================
+from ui_core import sync_session_user
 
-st.markdown("""
+
+client = OpenAI(api_key=OPENAI_API_KEY)
+
+
+def username() -> str:
+    return str(st.session_state.get("user") or "")
+
+
+def safe_text(value) -> str:
+    return html.escape(str(value or ""))
+
+
+def get_tokens() -> int:
+    return int(st.session_state.get("tokens", 0) or 0)
+
+
+def chat_cost() -> int:
+    return int(TOKEN_COSTS.get("chat", 1))
+
+
+def sync_user() -> None:
+    user = get_user(username())
+    if user:
+        sync_session_user(user)
+
+
+def ensure_messages() -> None:
+    if "chat_messages" not in st.session_state:
+        st.session_state.chat_messages = []
+
+
+def load_chat_css() -> None:
+    st.markdown(
+        """
 <style>
-
-/* =========================
-GLOBAL
-========================= */
-
-html, body, [class*="css"]{
-    font-family: "Inter", sans-serif;
+.main .block-container {
+    max-width: 1120px !important;
+    padding-top: 92px !important;
+    padding-bottom: 138px !important;
 }
 
-.stApp{
+/* PROMPT BAR */
+[data-testid="stBottom"],
+[data-testid="stBottom"] > div,
+[data-testid="stBottomBlockContainer"],
+[data-testid="stBottomBlockContainer"] > div {
+    background: transparent !important;
+}
+
+[data-testid="stBottomBlockContainer"] {
+    border-top: 0 !important;
+    padding-top: 10px !important;
+    padding-bottom: 18px !important;
+}
+
+[data-testid="stChatInput"] {
+    background: transparent !important;
+    padding-left: 2.2rem !important;
+    padding-right: 2.2rem !important;
+}
+
+[data-testid="stChatInput"] > div {
     background:
-        radial-gradient(circle at top right, rgba(168,85,247,0.30), transparent 25%),
-        radial-gradient(circle at bottom left, rgba(59,130,246,0.20), transparent 30%),
-        linear-gradient(180deg,#020617 0%, #031127 45%, #020617 100%);
-    color:white;
-}
-
-/* REMOVE STREAMLIT STUFF */
-
-header,
-#MainMenu,
-footer{
-    visibility:hidden;
-}
-
-.block-container{
-    padding-top:0rem;
-    padding-bottom:2rem;
-    max-width:100%;
-}
-
-/* =========================
-TOP BAR
-========================= */
-
-.mb-top{
-    height:96px;
-    width:100%;
-    background:linear-gradient(90deg,#051937,#0a2457,#111827);
-    border-bottom:1px solid rgba(255,255,255,0.06);
-
-    display:flex;
-    align-items:center;
-    justify-content:center;
-
-    margin-bottom:22px;
-}
-
-.mb-top img{
-    width:100%;
-    max-width:1450px;
-    object-fit:cover;
-}
-
-/* =========================
-LAYOUT
-========================= */
-
-[data-testid="column"]:nth-child(1){
-    background:linear-gradient(
-        180deg,
-        rgba(33,6,52,0.96),
-        rgba(10,5,33,0.96)
-    );
-
-    border-right:1px solid rgba(168,85,247,0.12);
-
-    padding:22px 18px 22px 18px;
-    border-radius:0px 24px 24px 0px;
-
-    min-height:92vh;
-}
-
-[data-testid="column"]:nth-child(2){
-    padding-left:34px;
-    padding-right:34px;
-}
-
-/* =========================
-LOGO
-========================= */
-
-.mb-logo{
-    width:100%;
-    border-radius:24px;
-    overflow:hidden;
-    margin-bottom:24px;
-}
-
-.mb-logo img{
-    width:100%;
-    border-radius:24px;
-}
-
-/* =========================
-SIDEBAR BUTTONS
-========================= */
-
-.stButton > button{
-    width:100%;
-    height:68px;
-
-    border-radius:22px;
-
-    background:
-        linear-gradient(
-            90deg,
-            rgba(168,85,247,0.14),
-            rgba(10,10,20,0.96)
-        );
-
-    border:1px solid rgba(168,85,247,0.22);
-
-    color:#ffffff !important;
-    font-size:20px;
-    font-weight:700;
-
-    transition:0.25s ease;
-
-    box-shadow:none;
-}
-
-.stButton > button:hover{
-    transform:translateY(-2px);
-
-    border:1px solid rgba(192,132,252,0.6);
-
+        radial-gradient(circle at left, rgba(168,85,247,.24), transparent 25%),
+        linear-gradient(135deg, rgba(34,10,58,.98), rgba(14,6,26,.99)) !important;
+    border: 1px solid rgba(168,85,247,.65) !important;
+    border-radius: 999px !important;
     box-shadow:
-        0 0 24px rgba(168,85,247,0.22);
-
-    color:#f5d68a !important;
+        0 0 34px rgba(168,85,247,.38),
+        inset 0 0 0 1px rgba(255,231,163,.06) !important;
 }
 
-/* =========================
-HERO
-========================= */
+[data-testid="stChatInput"] textarea,
+[data-testid="stChatInput"] textarea:focus,
+[data-testid="stChatInput"] textarea:active {
+    background: transparent !important;
+    color: #ffe7a3 !important;
+    font-weight: 900 !important;
+    box-shadow: none !important;
+}
 
-.mb-hero{
-    width:100%;
+[data-testid="stChatInput"] textarea::placeholder {
+    color: rgba(255,231,163,.62) !important;
+    font-weight: 900 !important;
+}
 
-    padding:42px;
+[data-testid="stChatInput"] button {
+    background: linear-gradient(135deg, #7c3aed, #a855f7) !important;
+    border-radius: 999px !important;
+    border: 1px solid rgba(255,231,163,.28) !important;
+    box-shadow: 0 0 22px rgba(168,85,247,.42) !important;
+}
 
-    border-radius:34px;
+[data-testid="stChatInput"] div,
+[data-testid="stChatInput"] section,
+[data-testid="stChatInput"] form {
+    background-color: transparent !important;
+}
 
+/* TOP AREA */
+.mb-chat-shell {
+    min-height: calc(100vh - 245px);
+}
+
+.mb-brand {
+    min-height: 245px;
+    border-radius: 34px;
+    margin-bottom: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
     background:
-        radial-gradient(circle at top right, rgba(168,85,247,0.14), transparent 35%),
-        linear-gradient(
-            180deg,
-            rgba(6,15,40,0.96),
-            rgba(2,6,23,0.96)
-        );
-
-    border:1px solid rgba(255,255,255,0.05);
-
-    margin-bottom:28px;
-}
-
-.mb-kicker{
-    color:#c084fc;
-    font-size:14px;
-    font-weight:800;
-    letter-spacing:4px;
-
-    margin-bottom:12px;
-}
-
-.mb-title{
-    font-size:76px;
-    line-height:1;
-
-    font-weight:900;
-
-    background:linear-gradient(
-        90deg,
-        #ffe7a3,
-        #ffffff
-    );
-
-    -webkit-background-clip:text;
-    -webkit-text-fill-color:transparent;
-
-    margin-bottom:16px;
-}
-
-.mb-sub{
-    color:#d6d9e7;
-    font-size:28px;
-    line-height:1.5;
-}
-
-/* =========================
-QUICK START
-========================= */
-
-.mb-section{
-    margin-top:12px;
-    margin-bottom:20px;
-}
-
-.mb-section-title{
-    color:#c084fc;
-    font-size:20px;
-    font-weight:800;
-    letter-spacing:3px;
-
-    margin-bottom:20px;
-}
-
-.mb-card{
-    min-height:245px;
-
-    padding:28px;
-
-    border-radius:28px;
-
-    background:
-        linear-gradient(
-            180deg,
-            rgba(8,12,36,0.96),
-            rgba(5,7,20,0.96)
-        );
-
-    border:1px solid rgba(255,255,255,0.05);
-
-    transition:0.25s ease;
-}
-
-.mb-card:hover{
-    transform:translateY(-5px);
-
-    border:1px solid rgba(168,85,247,0.35);
-
+        radial-gradient(circle at center, rgba(168,85,247,.22), transparent 34%),
+        radial-gradient(circle at top right, rgba(59,130,246,.16), transparent 34%),
+        linear-gradient(135deg, rgba(4,12,30,.72), rgba(8,6,22,.92));
+    border: 1px solid rgba(168,85,247,.18);
     box-shadow:
-        0 0 32px rgba(168,85,247,0.14);
+        0 0 42px rgba(168,85,247,.10),
+        0 22px 55px rgba(0,0,0,.20);
 }
 
-.mb-icon{
-    width:62px;
-    height:62px;
+.mb-brand-title {
+    font-size: 76px;
+    line-height: .9;
+    font-weight: 1000;
+    letter-spacing: -3px;
+    background: linear-gradient(135deg, #ffe7a3, #c084fc, #60a5fa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
 
-    border-radius:20px;
+.mb-brand-sub {
+    margin-top: 16px;
+    color: #c7d2fe !important;
+    font-size: 18px;
+    font-weight: 750;
+}
 
-    display:flex;
-    align-items:center;
-    justify-content:center;
+.mb-brand-pill {
+    display: inline-flex;
+    margin-top: 18px;
+    padding: 10px 18px;
+    border-radius: 999px;
+    color: #ffffff !important;
+    font-size: 13px;
+    font-weight: 900;
+    background: rgba(15,10,34,.68);
+    border: 1px solid rgba(168,85,247,.50);
+    box-shadow: 0 0 24px rgba(168,85,247,.18);
+}
 
-    font-size:30px;
+/* QUICK START */
+.mb-quick-title {
+    color: #c084fc !important;
+    font-size: 13px;
+    font-weight: 1000;
+    letter-spacing: .20em;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+}
 
+div[data-testid="stButton"] > button {
+    min-height: 72px !important;
+    border-radius: 20px !important;
     background:
-        linear-gradient(
-            180deg,
-            rgba(168,85,247,0.28),
-            rgba(91,33,182,0.18)
-        );
-
-    margin-bottom:24px;
+        radial-gradient(circle at top left, rgba(168,85,247,.18), transparent 34%),
+        linear-gradient(145deg, rgba(18,14,34,.88), rgba(8,7,18,.98)) !important;
+    border: 1px solid rgba(168,85,247,.24) !important;
+    color: #ffffff !important;
+    font-size: 15px !important;
+    font-weight: 1000 !important;
+    box-shadow: 0 12px 28px rgba(0,0,0,.18) !important;
+    transition: all .18s ease !important;
 }
 
-.mb-card-title{
-    font-size:30px;
-    font-weight:800;
-
-    color:#ffffff;
-
-    margin-bottom:14px;
-}
-
-.mb-card-text{
-    font-size:19px;
-    line-height:1.6;
-
-    color:#d1d5db;
-}
-
-/* =========================
-PROMPT
-========================= */
-
-.mb-prompt-wrap{
-    position:fixed;
-
-    left:50%;
-    transform:translateX(-50%);
-
-    bottom:22px;
-
-    width:62%;
-    z-index:999;
-}
-
-.mb-prompt{
-    width:100%;
-    height:92px;
-
-    border-radius:32px;
-
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-
-    padding:0px 18px 0px 28px;
-
-    background:
-        linear-gradient(
-            90deg,
-            rgba(49,8,82,0.98),
-            rgba(20,5,40,0.98)
-        );
-
-    border:1px solid rgba(192,132,252,0.34);
-
+div[data-testid="stButton"] > button:hover {
+    transform: translateY(-2px) !important;
+    border-color: rgba(255,231,163,.32) !important;
     box-shadow:
-        0 0 34px rgba(168,85,247,0.26);
+        0 0 24px rgba(168,85,247,.22),
+        0 12px 28px rgba(0,0,0,.20) !important;
 }
 
-.mb-prompt-text{
-    color:#d8b4fe;
-    font-size:26px;
-    font-weight:700;
+/* READY CARD */
+.mb-ready {
+    margin-top: 28px;
+    background:
+        radial-gradient(circle at bottom, rgba(168,85,247,.18), transparent 42%),
+        linear-gradient(145deg, rgba(12,10,30,.78), rgba(7,6,18,.96));
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 28px;
+    min-height: 240px;
+    padding: 42px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    box-shadow:
+        0 20px 54px rgba(0,0,0,.22),
+        0 18px 40px rgba(168,85,247,.08);
 }
 
-.mb-send{
-    width:64px;
-    height:64px;
-
-    border-radius:22px;
-
-    background:linear-gradient(
-        180deg,
-        #a855f7,
-        #7c3aed
-    );
-
-    display:flex;
-    align-items:center;
-    justify-content:center;
-
-    color:white;
-    font-size:34px;
-    font-weight:900;
+.mb-ready-icon {
+    color: #c084fc !important;
+    font-size: 40px;
+    margin-bottom: 14px;
 }
 
-/* =========================
-RESPONSIVE
-========================= */
+.mb-ready-title {
+    color: #ffe7a3 !important;
+    font-size: 30px;
+    font-weight: 1000;
+    letter-spacing: -.04em;
+    margin-bottom: 8px;
+}
 
-@media(max-width:1200px){
+.mb-ready-sub {
+    color: #c7d2fe !important;
+    font-size: 14px;
+}
 
-    .mb-title{
-        font-size:58px;
+/* MESSAGES */
+[data-testid="stChatMessage"] {
+    background:
+        linear-gradient(145deg, rgba(18,14,34,.84), rgba(8,6,18,.98)) !important;
+    border: 1px solid rgba(255,255,255,.08) !important;
+    border-radius: 22px !important;
+    padding: 15px !important;
+    margin-bottom: 12px !important;
+    box-shadow: 0 12px 30px rgba(0,0,0,.16) !important;
+}
+
+[data-testid="stChatMessage"] * {
+    color: #f8e7b0 !important;
+}
+
+div[data-testid="stAlert"] {
+    background: rgba(30,20,70,.72) !important;
+    border: 1px solid rgba(168,85,247,.26) !important;
+    border-radius: 16px !important;
+}
+
+@media (max-width: 1050px) {
+    .mb-brand-title {
+        font-size: 48px;
     }
 
-    .mb-sub{
-        font-size:22px;
+    .mb-brand {
+        min-height: 230px;
     }
 
-    .mb-prompt-wrap{
-        width:90%;
+    [data-testid="stChatInput"] {
+        padding-left: .75rem !important;
+        padding-right: .75rem !important;
     }
 }
-
 </style>
-""", unsafe_allow_html=True)
+        """,
+        unsafe_allow_html=True,
+    )
 
-# =========================================================
-# TOP BAR
-# =========================================================
 
-st.markdown("""
-<div class="mb-top">
-    <img src="https://i.imgur.com/8iR7Y6D.png">
-</div>
-""", unsafe_allow_html=True)
+def get_active_project():
+    project_id = st.session_state.get("active_project_id")
+    if not project_id:
+        return None
 
-# =========================================================
-# LAYOUT
-# =========================================================
+    try:
+        return get_project(project_id)
+    except Exception:
+        return None
 
-left, right = st.columns([1, 3])
 
-# =========================================================
-# SIDEBAR
-# =========================================================
+def charge_chat(prompt: str) -> int:
+    cost = chat_cost()
 
-with left:
+    if get_tokens() < cost:
+        st.error("Nicht genug Tokens.")
+        st.stop()
 
-    st.markdown("""
-    <div class="mb-logo">
-        <img src="https://i.imgur.com/Lk0Y6wM.png">
-    </div>
-    """, unsafe_allow_html=True)
+    ok, msg = spend_tokens(username(), cost)
 
-    st.button("🏠  Mission Control", key="nav1")
-    st.button("💬  AI Assistant", key="nav2")
-    st.button("📁  Projects", key="nav3")
-    st.button("⚡  Automations", key="nav4")
-    st.button("⚽  Football AI", key="nav5")
+    if not ok:
+        st.error(msg)
+        st.stop()
 
-    st.markdown("<br>", unsafe_allow_html=True)
+    save_usage(
+        username=username(),
+        tool="chat",
+        prompt=prompt[:1000],
+        tokens_used=cost,
+        cost_tokens=cost,
+        api_provider="openai",
+        status="success",
+    )
 
-    st.button("🖼️  Image Studio", key="nav6")
-    st.button("🎬  Video Studio", key="nav7")
-    st.button("🎵  Music Studio", key="nav8")
-    st.button("💻  Code Studio", key="nav9")
+    sync_user()
+    return cost
 
-# =========================================================
-# MAIN
-# =========================================================
 
-with right:
+def build_messages(prompt: str, project):
+    project_context = ""
 
-    st.markdown("""
-    <div class="mb-hero">
-        <div class="mb-kicker">AI OPERATING SYSTEM</div>
+    if project:
+        project_context = f"""
+Aktives Projekt:
+{project.get("title")}
 
-        <div class="mb-title">
-            MaByte
-        </div>
+Workspace:
+{project.get("workspace")}
 
-        <div class="mb-sub">
-            Strategie. Code. Content. Workflows.
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+Beschreibung:
+{project.get("description")}
+"""
 
-    st.markdown("""
-    <div class="mb-section">
-        <div class="mb-section-title">
-            ✦ QUICK START
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    return [
+        {
+            "role": "system",
+            "content": f"""
+Du bist MaByte, ein professioneller AI Operating System Assistant.
 
-    c1, c2, c3 = st.columns(3)
+Antworte:
+- kurz
+- klar
+- hochwertig
+- direkt
+- praktisch
+- mit nächsten Schritten
 
-    with c1:
-        st.markdown("""
-        <div class="mb-card">
-            <div class="mb-icon">📈</div>
+{project_context}
+""",
+        },
+        {"role": "user", "content": prompt},
+    ]
 
-            <div class="mb-card-title">
-                Social Media
-            </div>
 
-            <div class="mb-card-text">
-                Erstelle virale Strategien für Instagram,
-                TikTok und YouTube.
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+def ai_response(prompt: str, project) -> str:
+    if not OPENAI_API_KEY:
+        return "OPENAI_API_KEY fehlt."
 
-    with c2:
-        st.markdown("""
-        <div class="mb-card">
-            <div class="mb-icon">🚀</div>
+    response = client.chat.completions.create(
+        model=OPENAI_TEXT_MODEL,
+        messages=build_messages(prompt, project),
+        temperature=0.7,
+    )
 
-            <div class="mb-card-title">
-                Marketing
-            </div>
+    return response.choices[0].message.content
 
-            <div class="mb-card-text">
-                Baue Kampagnen mit Zielgruppen,
-                Hooks und Funnels.
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
 
-    with c3:
-        st.markdown("""
-        <div class="mb-card">
-            <div class="mb-icon">🧠</div>
-
-            <div class="mb-card-title">
-                Business Analyse
-            </div>
-
-            <div class="mb-card-text">
-                Optimiere Prozesse, Umsatz
-                und Wachstum.
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-# =========================================================
-# PROMPT BAR
-# =========================================================
-
-st.markdown("""
-<div class="mb-prompt-wrap">
-    <div class="mb-prompt">
-
-        <div class="mb-prompt-text">
-            Frag MaByte...
-        </div>
-
-        <div class="mb-send">
-            ➜
-        </div>
-
+def render_brand() -> None:
+    st.markdown(
+        """
+<div class="mb-brand">
+    <div>
+        <div class="mb-brand-title">MaByte</div>
+        <div class="mb-brand-sub">Dein AI Operating System.</div>
+        <div class="mb-brand-pill">Strategie · Code · Content · Workflows</div>
     </div>
 </div>
-""", unsafe_allow_html=True)
+""",
+        unsafe_allow_html=True,
+    )
+
+
+def quick_prompt_buttons() -> str | None:
+    st.markdown(
+        '<div class="mb-quick-title">Quick Start</div>',
+        unsafe_allow_html=True,
+    )
+
+    prompts = [
+        (
+            "Social Media Strategie",
+            "Erstelle mir eine Social-Media-Strategie mit Plattform-Fokus, Content-Ideen, Hooks und Wochenplan.",
+        ),
+        (
+            "Marketing Kampagne",
+            "Entwickle mir eine Marketing-Kampagne mit Zielgruppe, Botschaft, Angebot, Kanälen und nächsten Schritten.",
+        ),
+        (
+            "Business Analyse",
+            "Analysiere mein Business und gib mir klare Wachstumshebel, Schwachstellen und Prioritäten.",
+        ),
+        (
+            "Content Ideen",
+            "Gib mir 20 starke Content-Ideen mit Hook, Format und kurzer Beschreibung.",
+        ),
+        (
+            "Partnerschaften finden",
+            "Hilf mir passende Partner, Marken oder Kooperationen zu finden und eine Outreach-Strategie zu bauen.",
+        ),
+        (
+            "Ziele & Planung",
+            "Erstelle mir einen klaren 30-Tage-Plan mit Zielen, Aufgaben und täglichen Prioritäten.",
+        ),
+    ]
+
+    cols = st.columns(3, gap="medium")
+
+    for index, item in enumerate(prompts):
+        label, prompt = item
+
+        with cols[index % 3]:
+            if st.button(label, key=f"quick_prompt_{index}", width="stretch"):
+                return prompt
+
+    return None
+
+
+def render_empty_state() -> None:
+    st.markdown(
+        """
+<div class="mb-ready">
+    <div>
+        <div class="mb-ready-icon">✦</div>
+        <div class="mb-ready-title">MaByte ist bereit.</div>
+        <div class="mb-ready-sub">Wähle einen Quick Start oder frag direkt unten im Prompt.</div>
+    </div>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
+
+def render_history(project) -> None:
+    if project:
+        history = list_project_chat_memory(project.get("id"), limit=30)
+
+        if not history:
+            render_empty_state()
+            return
+
+        for msg in history:
+            with st.chat_message(msg.get("role", "assistant")):
+                st.markdown(msg.get("message", ""))
+
+        return
+
+    if not st.session_state.chat_messages:
+        render_empty_state()
+        return
+
+    for msg in st.session_state.chat_messages:
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
+
+
+def handle_prompt(prompt: str, project) -> None:
+    cost = charge_chat(prompt)
+
+    if project:
+        save_project_chat_message(
+            project_id=project.get("id"),
+            username=username(),
+            role="user",
+            message=prompt,
+        )
+    else:
+        st.session_state.chat_messages.append(
+            {"role": "user", "content": prompt}
+        )
+
+    with st.spinner("MaByte denkt..."):
+        answer = ai_response(prompt, project)
+
+    answer += f"\n\n---\nTokens: {cost}"
+
+    if project:
+        save_project_chat_message(
+            project_id=project.get("id"),
+            username=username(),
+            role="assistant",
+            message=answer,
+        )
+    else:
+        st.session_state.chat_messages.append(
+            {"role": "assistant", "content": answer}
+        )
+
+    st.rerun()
+
+
+def render_chat() -> None:
+    if not st.session_state.get("logged_in"):
+        st.session_state.page = "auth"
+        st.rerun()
+        return
+
+    ensure_messages()
+    load_chat_css()
+
+    project = get_active_project()
+
+    st.markdown('<div class="mb-chat-shell">', unsafe_allow_html=True)
+
+    render_brand()
+
+    quick_prompt = quick_prompt_buttons()
+
+    render_history(project)
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    prompt = st.chat_input("Frag MaByte...")
+
+    if quick_prompt:
+        handle_prompt(quick_prompt, project)
+
+    if prompt:
+        handle_prompt(prompt, project)
