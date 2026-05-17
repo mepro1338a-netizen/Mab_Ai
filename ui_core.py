@@ -130,13 +130,13 @@ div[data-testid="column"] {{
 
 .main .block-container {{
     max-width:1480px;
-    padding-top:96px;
+    padding-top:0px;
     padding-bottom:36px;
 }}
 
 .custom-topbar {{
 
-    position:fixed;
+    position:relative;
 
     top:0;
     left:0;
