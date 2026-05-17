@@ -22,10 +22,6 @@ from ui_core import sync_session_user
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 
-# =========================================================
-# SESSION / USER HELPERS
-# =========================================================
-
 def username() -> str:
     return str(st.session_state.get("user") or "")
 
@@ -53,10 +49,6 @@ def ensure_messages() -> None:
         st.session_state.chat_messages = []
 
 
-# =========================================================
-# CSS
-# =========================================================
-
 def load_chat_css() -> None:
     st.markdown(
         """
@@ -64,7 +56,64 @@ def load_chat_css() -> None:
 .main .block-container {
     max-width: 1220px !important;
     padding-top: 92px !important;
-    padding-bottom: 92px !important;
+    padding-bottom: 110px !important;
+}
+
+[data-testid="stBottom"],
+[data-testid="stBottomBlockContainer"],
+[data-testid="stBottomBlockContainer"] > div,
+[data-testid="stChatInput"],
+[data-testid="stChatInput"] > div {
+    background: transparent !important;
+}
+
+[data-testid="stBottomBlockContainer"] {
+    background:
+        linear-gradient(
+            180deg,
+            rgba(5,5,16,0) 0%,
+            rgba(5,5,16,.96) 28%,
+            rgba(5,5,16,.98) 100%
+        ) !important;
+    border-top: 1px solid rgba(255,231,163,.08) !important;
+    backdrop-filter: blur(18px) !important;
+}
+
+[data-testid="stChatInput"] {
+    padding-left: 2rem !important;
+    padding-right: 2rem !important;
+}
+
+[data-testid="stChatInput"] > div {
+    background:
+        linear-gradient(145deg, rgba(24,10,42,.98), rgba(8,6,18,.98)) !important;
+    border: 1px solid rgba(255,231,163,.20) !important;
+    border-radius: 26px !important;
+    box-shadow:
+        0 0 34px rgba(168,85,247,.22),
+        0 0 14px rgba(255,231,163,.06) !important;
+}
+
+[data-testid="stChatInput"] textarea,
+[data-testid="stChatInput"] textarea:focus,
+[data-testid="stChatInput"] textarea:active {
+    background: transparent !important;
+    color: #ffe7a3 !important;
+    font-weight: 850 !important;
+    box-shadow: none !important;
+}
+
+[data-testid="stChatInput"] textarea::placeholder {
+    color: #94a3b8 !important;
+    font-weight: 850 !important;
+}
+
+[data-testid="stChatInput"] button {
+    background:
+        linear-gradient(135deg, #7c3aed, #a855f7) !important;
+    border-radius: 16px !important;
+    border: 1px solid rgba(255,231,163,.20) !important;
+    box-shadow: 0 0 18px rgba(168,85,247,.22) !important;
 }
 
 .mb-chat-hero {
@@ -72,9 +121,6 @@ def load_chat_css() -> None:
 }
 
 .mb-chat-kicker {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
     color: #d8b4fe !important;
     font-size: 12px;
     font-weight: 950;
@@ -193,8 +239,7 @@ def load_chat_css() -> None:
 }
 
 .mb-suggestion {
-    background:
-        linear-gradient(145deg, rgba(28,10,42,.78), rgba(10,6,18,.92));
+    background: linear-gradient(145deg, rgba(28,10,42,.78), rgba(10,6,18,.92));
     border: 1px solid rgba(255,231,163,.10);
     border-radius: 18px;
     padding: 15px;
@@ -216,8 +261,7 @@ def load_chat_css() -> None:
 }
 
 [data-testid="metric-container"] {
-    background:
-        linear-gradient(145deg, rgba(24,10,42,.92), rgba(9,6,18,.98)) !important;
+    background: linear-gradient(145deg, rgba(24,10,42,.92), rgba(9,6,18,.98)) !important;
     border: 1px solid rgba(255,231,163,.10) !important;
     border-radius: 22px !important;
     padding: 17px !important;
@@ -237,8 +281,7 @@ def load_chat_css() -> None:
 }
 
 [data-testid="stChatMessage"] {
-    background:
-        linear-gradient(145deg, rgba(24,10,42,.84), rgba(8,6,18,.98)) !important;
+    background: linear-gradient(145deg, rgba(24,10,42,.84), rgba(8,6,18,.98)) !important;
     border: 1px solid rgba(255,231,163,.10) !important;
     border-radius: 24px !important;
     padding: 15px !important;
@@ -250,35 +293,6 @@ def load_chat_css() -> None:
     color: #f8e7b0 !important;
 }
 
-[data-testid="stChatInput"] {
-    background: transparent !important;
-}
-
-[data-testid="stChatInput"] > div {
-    background:
-        linear-gradient(145deg, rgba(24,10,42,.98), rgba(8,6,18,.98)) !important;
-    border: 1px solid rgba(255,231,163,.18) !important;
-    border-radius: 24px !important;
-    box-shadow:
-        0 0 34px rgba(168,85,247,.18),
-        0 0 12px rgba(255,231,163,.05) !important;
-}
-
-[data-testid="stChatInput"] textarea {
-    color: #ffe7a3 !important;
-    font-weight: 750 !important;
-}
-
-[data-testid="stChatInput"] textarea::placeholder {
-    color: #94a3b8 !important;
-}
-
-[data-testid="stChatInput"] button {
-    background:
-        linear-gradient(135deg, #7c3aed, #a855f7) !important;
-    border-radius: 15px !important;
-}
-
 .stSelectbox div[data-baseweb="select"] > div {
     background: rgba(15,10,28,.96) !important;
     border: 1px solid rgba(255,231,163,.14) !important;
@@ -287,8 +301,7 @@ def load_chat_css() -> None:
 }
 
 div[data-testid="stAlert"] {
-    background:
-        linear-gradient(135deg, rgba(80,20,120,.28), rgba(30,64,175,.16)) !important;
+    background: linear-gradient(135deg, rgba(80,20,120,.28), rgba(30,64,175,.16)) !important;
     border: 1px solid rgba(255,231,163,.10) !important;
     border-radius: 18px !important;
 }
@@ -301,16 +314,17 @@ button[kind="secondary"] {
     .mb-chat-title {
         font-size: 38px;
     }
+
+    [data-testid="stChatInput"] {
+        padding-left: .75rem !important;
+        padding-right: .75rem !important;
+    }
 }
 </style>
         """,
         unsafe_allow_html=True,
     )
 
-
-# =========================================================
-# PROJECT / TOKEN LOGIC
-# =========================================================
 
 def project_selector():
     projects = list_projects(username())
@@ -324,11 +338,7 @@ def project_selector():
         for p in projects
     ]
 
-    ids = {
-        labels[i]: projects[i].get("id")
-        for i in range(len(projects))
-    }
-
+    ids = {labels[i]: projects[i].get("id") for i in range(len(projects))}
     selected = st.selectbox("Projektkontext", labels)
     project_id = ids[selected]
 
@@ -362,10 +372,6 @@ def charge_chat(prompt: str) -> int:
     sync_user()
     return cost
 
-
-# =========================================================
-# AI
-# =========================================================
 
 def build_messages(prompt: str, project):
     project_context = ""
@@ -417,10 +423,6 @@ def ai_response(prompt: str, project) -> str:
     return response.choices[0].message.content
 
 
-# =========================================================
-# UI COMPONENTS
-# =========================================================
-
 def session_panel() -> None:
     user = username()
     tool = latest_tool_used(user)
@@ -429,17 +431,14 @@ def session_panel() -> None:
         f"""
 <div class="mb-panel">
     <div class="mb-panel-title">Session Core</div>
-
     <div class="mb-session-line">
         <div class="mb-session-label">User</div>
         <div class="mb-session-value">{safe_text(user)}</div>
     </div>
-
     <div class="mb-session-line">
         <div class="mb-session-label">Letztes Tool</div>
         <div class="mb-session-value">{safe_text(tool)}</div>
     </div>
-
     <div class="mb-session-line">
         <div class="mb-session-label">Modus</div>
         <div class="mb-session-value">AI Workspace</div>
@@ -467,30 +466,12 @@ def render_empty_state() -> None:
     c1, c2, c3 = st.columns(3, gap="medium")
 
     suggestions = [
-        (
-            "Strategie",
-            "Positionierung, Angebote, Roadmaps und Entscheidungen.",
-        ),
-        (
-            "Coding",
-            "Debugging, Features, Architektur und App-Struktur.",
-        ),
-        (
-            "Content",
-            "Hooks, Captions, Scripts, Reels und Kampagnen.",
-        ),
-        (
-            "Business",
-            "Prozesse, Systeme, Pricing und Workflows.",
-        ),
-        (
-            "Football AI",
-            "Taktik, Scouting, Spieler und Matchday-Pläne.",
-        ),
-        (
-            "Automation",
-            "Wiederholbare Abläufe und AI-gestützte Systeme.",
-        ),
+        ("Strategie", "Positionierung, Angebote, Roadmaps und Entscheidungen."),
+        ("Coding", "Debugging, Features, Architektur und App-Struktur."),
+        ("Content", "Hooks, Captions, Scripts, Reels und Kampagnen."),
+        ("Business", "Prozesse, Systeme, Pricing und Workflows."),
+        ("Football AI", "Taktik, Scouting, Spieler und Matchday-Pläne."),
+        ("Automation", "Wiederholbare Abläufe und AI-gestützte Systeme."),
     ]
 
     cols = [c1, c2, c3]
@@ -531,10 +512,6 @@ def render_history(project) -> None:
         with st.chat_message(msg["role"]):
             st.markdown(msg["content"])
 
-
-# =========================================================
-# MAIN
-# =========================================================
 
 def render_chat() -> None:
     if not st.session_state.get("logged_in"):
