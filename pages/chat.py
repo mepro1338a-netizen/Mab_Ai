@@ -1,4 +1,4 @@
-﻿import html
+import html
 
 import streamlit as st
 from openai import OpenAI
@@ -62,22 +62,22 @@ def load_chat_css() -> None:
         """
 <style>
 .main .block-container {
-    max-width: 1260px !important;
-    padding-top: 96px !important;
+    max-width: 1220px !important;
+    padding-top: 92px !important;
     padding-bottom: 92px !important;
 }
 
 .mb-chat-hero {
-    margin-bottom: 20px;
+    margin-bottom: 18px;
 }
 
 .mb-chat-kicker {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    color: #7dd3fc !important;
+    color: #d8b4fe !important;
     font-size: 12px;
-    font-weight: 900;
+    font-weight: 950;
     letter-spacing: .16em;
     text-transform: uppercase;
     margin-bottom: 10px;
@@ -85,38 +85,40 @@ def load_chat_css() -> None:
 
 .mb-chat-title {
     color: #ffe7a3 !important;
-    font-size: 48px;
+    font-size: 46px;
     line-height: .96;
-    font-weight: 950;
+    font-weight: 1000;
     letter-spacing: -1.8px;
 }
 
 .mb-chat-subtitle {
-    max-width: 780px;
+    max-width: 760px;
     margin-top: 12px;
-    color: #94a3b8 !important;
-    font-size: 16px;
+    color: #aab3c5 !important;
+    font-size: 15px;
     line-height: 1.55;
 }
 
 .mb-panel {
-    background: linear-gradient(145deg, rgba(10,24,45,.92), rgba(8,16,30,.97));
-    border: 1px solid rgba(255,255,255,.075);
+    background:
+        radial-gradient(circle at top right, rgba(168,85,247,.12), transparent 28%),
+        linear-gradient(145deg, rgba(24,10,42,.88), rgba(8,6,18,.98));
+    border: 1px solid rgba(255,231,163,.10);
     border-radius: 24px;
-    padding: 19px;
+    padding: 18px;
     box-shadow: 0 18px 44px rgba(0,0,0,.18);
 }
 
 .mb-panel-title {
     color: #ffe7a3 !important;
     font-size: 18px;
-    font-weight: 950;
+    font-weight: 1000;
     letter-spacing: -.035em;
     margin-bottom: 8px;
 }
 
 .mb-panel-sub {
-    color: #94a3b8 !important;
+    color: #aab3c5 !important;
     font-size: 13px;
     line-height: 1.45;
 }
@@ -132,11 +134,11 @@ def load_chat_css() -> None:
     display: inline-flex;
     padding: 7px 10px;
     border-radius: 999px;
-    background: rgba(56,189,248,.10);
-    border: 1px solid rgba(56,189,248,.18);
-    color: #7dd3fc !important;
+    background: rgba(168,85,247,.14);
+    border: 1px solid rgba(255,231,163,.14);
+    color: #ffe7a3 !important;
     font-size: 12px;
-    font-weight: 850;
+    font-weight: 900;
 }
 
 .mb-session-line {
@@ -144,7 +146,7 @@ def load_chat_css() -> None:
     justify-content: space-between;
     gap: 14px;
     padding: 9px 0;
-    border-bottom: 1px solid rgba(255,255,255,.06);
+    border-bottom: 1px solid rgba(255,255,255,.07);
 }
 
 .mb-session-line:last-child {
@@ -154,84 +156,94 @@ def load_chat_css() -> None:
 .mb-session-label {
     color: #94a3b8 !important;
     font-size: 12px;
-    font-weight: 800;
+    font-weight: 850;
 }
 
 .mb-session-value {
     color: #ffffff !important;
     font-size: 13px;
-    font-weight: 850;
+    font-weight: 950;
     text-align: right;
 }
 
 .mb-empty {
     background:
-        radial-gradient(circle at top right, rgba(56,189,248,.12), transparent 30%),
-        linear-gradient(145deg, rgba(10,24,45,.90), rgba(8,16,30,.98));
-    border: 1px solid rgba(255,255,255,.075);
-    border-radius: 26px;
+        radial-gradient(circle at top right, rgba(168,85,247,.14), transparent 30%),
+        radial-gradient(circle at bottom left, rgba(56,189,248,.06), transparent 28%),
+        linear-gradient(145deg, rgba(22,10,40,.88), rgba(8,6,18,.98));
+    border: 1px solid rgba(255,231,163,.10);
+    border-radius: 28px;
     padding: 24px;
     box-shadow: 0 18px 44px rgba(0,0,0,.16);
 }
 
 .mb-empty-title {
     color: #ffe7a3 !important;
-    font-size: 26px;
-    font-weight: 950;
+    font-size: 27px;
+    font-weight: 1000;
     letter-spacing: -.04em;
     margin-bottom: 8px;
 }
 
 .mb-empty-sub {
-    color: #94a3b8 !important;
+    color: #aab3c5 !important;
     font-size: 14px;
     line-height: 1.5;
     margin-bottom: 18px;
 }
 
 .mb-suggestion {
-    background: rgba(15,23,42,.58);
-    border: 1px solid rgba(255,255,255,.07);
+    background:
+        linear-gradient(145deg, rgba(28,10,42,.78), rgba(10,6,18,.92));
+    border: 1px solid rgba(255,231,163,.10);
     border-radius: 18px;
     padding: 15px;
-    min-height: 112px;
+    min-height: 106px;
+    box-shadow: 0 12px 30px rgba(0,0,0,.12);
 }
 
 .mb-suggestion-title {
     color: #ffffff !important;
     font-size: 15px;
-    font-weight: 900;
+    font-weight: 1000;
     margin-bottom: 6px;
 }
 
 .mb-suggestion-sub {
-    color: #94a3b8 !important;
+    color: #aab3c5 !important;
     font-size: 13px;
     line-height: 1.4;
 }
 
 [data-testid="metric-container"] {
-    background: linear-gradient(145deg, rgba(9,20,38,.96), rgba(11,35,62,.88)) !important;
-    border: 1px solid rgba(56,189,248,.16) !important;
+    background:
+        linear-gradient(145deg, rgba(24,10,42,.92), rgba(9,6,18,.98)) !important;
+    border: 1px solid rgba(255,231,163,.10) !important;
     border-radius: 22px !important;
-    padding: 18px !important;
+    padding: 17px !important;
     box-shadow: 0 18px 42px rgba(0,0,0,.18) !important;
 }
 
 [data-testid="metric-container"] label {
-    color: #7dd3fc !important;
-    font-weight: 900 !important;
+    color: #d8b4fe !important;
+    font-weight: 950 !important;
     text-transform: uppercase !important;
     font-size: 11px !important;
 }
 
+[data-testid="metric-container"] div {
+    color: #ffe7a3 !important;
+    font-weight: 1000 !important;
+}
+
 [data-testid="stChatMessage"] {
-    background: linear-gradient(145deg, rgba(9,20,38,.90), rgba(8,16,30,.98)) !important;
-    border: 1px solid rgba(255,255,255,.075) !important;
-    border-radius: 22px !important;
-    padding: 14px !important;
-    margin-bottom: 11px !important;
-    box-shadow: 0 10px 28px rgba(0,0,0,.13) !important;
+    background:
+        linear-gradient(145deg, rgba(24,10,42,.84), rgba(8,6,18,.98)) !important;
+    border: 1px solid rgba(255,231,163,.10) !important;
+    border-radius: 24px !important;
+    padding: 15px !important;
+    margin-bottom: 12px !important;
+    box-shadow: 0 12px 34px rgba(0,0,0,.16) !important;
 }
 
 [data-testid="stChatMessage"] * {
@@ -243,31 +255,41 @@ def load_chat_css() -> None:
 }
 
 [data-testid="stChatInput"] > div {
-    background: linear-gradient(145deg, rgba(8,16,30,.98), rgba(12,30,54,.98)) !important;
-    border: 1px solid rgba(56,189,248,.24) !important;
-    border-radius: 22px !important;
-    box-shadow: 0 0 34px rgba(0,140,255,.18) !important;
+    background:
+        linear-gradient(145deg, rgba(24,10,42,.98), rgba(8,6,18,.98)) !important;
+    border: 1px solid rgba(255,231,163,.18) !important;
+    border-radius: 24px !important;
+    box-shadow:
+        0 0 34px rgba(168,85,247,.18),
+        0 0 12px rgba(255,231,163,.05) !important;
 }
 
 [data-testid="stChatInput"] textarea {
     color: #ffe7a3 !important;
+    font-weight: 750 !important;
+}
+
+[data-testid="stChatInput"] textarea::placeholder {
+    color: #94a3b8 !important;
 }
 
 [data-testid="stChatInput"] button {
-    background: linear-gradient(135deg,#38bdf8,#0ea5e9) !important;
-    border-radius: 14px !important;
+    background:
+        linear-gradient(135deg, #7c3aed, #a855f7) !important;
+    border-radius: 15px !important;
 }
 
 .stSelectbox div[data-baseweb="select"] > div {
-    background: rgba(15,23,42,.96) !important;
-    border: 1px solid rgba(56,189,248,.20) !important;
+    background: rgba(15,10,28,.96) !important;
+    border: 1px solid rgba(255,231,163,.14) !important;
     border-radius: 16px !important;
     color: #ffe7a3 !important;
 }
 
 div[data-testid="stAlert"] {
-    background: linear-gradient(135deg, rgba(14,116,144,.30), rgba(30,64,175,.22)) !important;
-    border: 1px solid rgba(56,189,248,.18) !important;
+    background:
+        linear-gradient(135deg, rgba(80,20,120,.28), rgba(30,64,175,.16)) !important;
+    border: 1px solid rgba(255,231,163,.10) !important;
     border-radius: 18px !important;
 }
 
@@ -294,11 +316,11 @@ def project_selector():
     projects = list_projects(username())
 
     if not projects:
-        st.info("Noch kein Projekt vorhanden. Chat lÃ¤uft ohne Projektkontext.")
+        st.info("Noch kein Projekt vorhanden. Chat läuft ohne Projektkontext.")
         return None
 
     labels = [
-        f"{p.get('title', 'Untitled')} Â· {p.get('workspace', 'Workspace')}"
+        f"{p.get('title', 'Untitled')} · {p.get('workspace', 'Workspace')}"
         for p in projects
     ]
 
@@ -373,7 +395,7 @@ Antworte:
 - strategisch
 - kompakt
 - praktisch
-- mit konkreten nÃ¤chsten Schritten
+- mit konkreten nächsten Schritten
 
 {project_context}
 """,
@@ -435,7 +457,7 @@ def render_empty_state() -> None:
     <div class="mb-empty-title">MaByte ist bereit.</div>
     <div class="mb-empty-sub">
         Starte mit einer Frage, einem Projekt, einer Idee oder einem Workflow.
-        MaByte denkt mit Kontext, Struktur und klaren nÃ¤chsten Schritten.
+        MaByte denkt mit Kontext, Struktur und klaren nächsten Schritten.
     </div>
 </div>
 """,
@@ -447,27 +469,27 @@ def render_empty_state() -> None:
     suggestions = [
         (
             "Strategie",
-            "Entwickle Positionierung, Angebote, Roadmaps oder Entscheidungen.",
+            "Positionierung, Angebote, Roadmaps und Entscheidungen.",
         ),
         (
             "Coding",
-            "Debugge Code, plane Features oder verbessere deine App-Struktur.",
+            "Debugging, Features, Architektur und App-Struktur.",
         ),
         (
             "Content",
-            "Erstelle Hooks, Captions, Scripts, Reels und Kampagnen.",
+            "Hooks, Captions, Scripts, Reels und Kampagnen.",
         ),
         (
             "Business",
-            "Optimiere Prozesse, Systeme, Pricing und Workflows.",
+            "Prozesse, Systeme, Pricing und Workflows.",
         ),
         (
             "Football AI",
-            "Analysiere Taktik, Spieler, Scouting oder Matchday-PlÃ¤ne.",
+            "Taktik, Scouting, Spieler und Matchday-Pläne.",
         ),
         (
             "Automation",
-            "Plane wiederholbare AblÃ¤ufe und AI-gestÃ¼tzte Systeme.",
+            "Wiederholbare Abläufe und AI-gestützte Systeme.",
         ),
     ]
 
@@ -529,11 +551,11 @@ def render_chat() -> None:
         st.markdown(
             """
 <div class="mb-chat-hero">
-    <div class="mb-chat-kicker">â—† AI Operating System</div>
+    <div class="mb-chat-kicker">◆ AI Operating System</div>
     <div class="mb-chat-title">MaByte Intelligence</div>
     <div class="mb-chat-subtitle">
-        Dein AI Workspace fÃ¼r Strategie, Content, Coding, Business,
-        Projekte und Football Intelligence.
+        Dein Premium AI Workspace für Strategie, Content, Coding,
+        Business, Projekte und Football Intelligence.
     </div>
 </div>
 """,
@@ -564,7 +586,7 @@ def render_chat() -> None:
                 """
 <div class="mb-panel-title">Aktives Setup</div>
 <div class="mb-panel-sub">
-WÃ¤hle optional ein Projekt aus. Dann antwortet MaByte mit Projektkontext.
+Wähle optional ein Projekt aus. Dann antwortet MaByte mit Projektkontext.
 </div>
 """,
                 unsafe_allow_html=True,
@@ -575,7 +597,7 @@ WÃ¤hle optional ein Projekt aus. Dann antwortet MaByte mit Projektkontext.
             if project:
                 st.success(f"Projekt aktiv: {project.get('title')}")
             else:
-                st.info("Chat lÃ¤uft ohne Projektkontext.")
+                st.info("Chat läuft ohne Projektkontext.")
 
     with setup_right:
         st.markdown(
@@ -583,7 +605,7 @@ WÃ¤hle optional ein Projekt aus. Dann antwortet MaByte mit Projektkontext.
 <div class="mb-panel">
     <div class="mb-panel-title">Quick Start</div>
     <div class="mb-panel-sub">
-        Nutze kurze Prompts. MaByte strukturiert daraus klare nÃ¤chste Schritte.
+        Nutze kurze Prompts. MaByte strukturiert daraus klare nächste Schritte.
     </div>
     <div class="mb-chip-row">
         <div class="mb-chip">Strategie</div>
