@@ -289,62 +289,147 @@ def render_media_hero(active_tool: str) -> None:
 
 
 def render_reels_creator() -> None:
-    seconds = MAX_REEL_SECONDS
-    cost = get_reel_script_cost(seconds)
 
-    st.markdown('<div class="mb-section-title">Reels Script Package</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="mb-section-title">Premium Reels Studio</div>',
+        unsafe_allow_html=True,
+    )
 
-    c1, c2, c3 = st.columns(3, gap="medium")
+    # =====================================================
+    # TOP METRICS
+    # =====================================================
 
-    with c1:
-        st.metric("Max Länge", f"{seconds}s")
+    top1, top2, top3, top4 = st.columns(4, gap="medium")
 
-    with c2:
-        st.metric("Kosten", f"{cost} Tokens")
+    with top1:
+        st.metric("Max Reel", f"{MAX_REEL_SECONDS}s")
 
-    with c3:
+    with top2:
         st.metric("Tokens", get_tokens())
+
+    with top3:
+        st.metric("Format", "Vertical")
+
+    with top4:
+        st.metric("Engine", "V2")
 
     st.write("")
 
-    left, right = st.columns([1.15, .85], gap="large")
+    # =====================================================
+    # MAIN GRID
+    # =====================================================
+
+    left, right = st.columns([1.2, .8], gap="large")
+
+    # =====================================================
+    # LEFT
+    # =====================================================
 
     with left:
+
         with st.container(border=True):
+
             topic = st.text_area(
-                "Creative Brief",
+                "Reel Idee",
                 height=150,
-                placeholder="z.B. Warum Arsenal dieses Jahr gefährlich ist...",
+                placeholder="z.B. Warum Arsenal dieses Jahr komplett gefährlich ist...",
+            )
+
+            audience = st.selectbox(
+                "Zielgruppe",
+                [
+                    "Football Fans",
+                    "TikTok Audience",
+                    "Business Audience",
+                    "Luxury Audience",
+                    "Gamers",
+                    "Creators",
+                    "Gen Z",
+                    "Meme Audience",
+                ],
             )
 
             platform = st.selectbox(
                 "Plattform",
-                ["TikTok", "Instagram Reels", "YouTube Shorts"],
-            )
-
-            content_type = st.selectbox(
-                "Content Typ",
                 [
-                    "Football Reel",
-                    "Viral Reel",
-                    "Storytelling",
-                    "Educational",
-                    "Meme Page",
-                    "Personal Brand",
-                    "Product Promo",
+                    "TikTok",
+                    "Instagram Reels",
+                    "YouTube Shorts",
                 ],
             )
 
+            reel_type = st.selectbox(
+                "Reel Kategorie",
+                [
+                    "Football Edit",
+                    "Faceless Storytelling",
+                    "Luxury Reel",
+                    "Meme Reel",
+                    "Motivation Reel",
+                    "AI News",
+                    "Business Reel",
+                    "Personal Brand",
+                    "Educational",
+                    "Viral Edit",
+                ],
+            )
+
+            goal = st.selectbox(
+                "Ziel",
+                [
+                    "Viral gehen",
+                    "Follower aufbauen",
+                    "Kommentare erzeugen",
+                    "Sales erzeugen",
+                    "Retention erhöhen",
+                    "Branding",
+                ],
+            )
+
+    # =====================================================
+    # RIGHT
+    # =====================================================
+
     with right:
+
         with st.container(border=True):
+
+            template = st.selectbox(
+                "Template",
+                [
+                    "Alex Hormozi",
+                    "Iman Gadzhi",
+                    "Football TikTok",
+                    "Fast Meme Edit",
+                    "Dark Cinematic",
+                    "News Style",
+                    "Luxury Edit",
+                ],
+            )
+
             style = st.selectbox(
                 "Style",
-                ["Fast Cut", "Cinematic", "Aggressive", "Funny", "Premium", "Emotional"],
+                [
+                    "Aggressive",
+                    "Fast Cut",
+                    "Cinematic",
+                    "Emotional",
+                    "Premium",
+                    "Dark",
+                    "Funny",
+                ],
             )
 
             voice = st.selectbox(
                 "Voice",
-                ["Creator", "Narrator", "Coach", "Analyst", "Hype", "News"],
+                [
+                    "Narrator",
+                    "Creator",
+                    "Coach",
+                    "Analyst",
+                    "Hype",
+                    "News Reporter",
+                ],
             )
 
             cta = st.text_input(
@@ -352,52 +437,121 @@ def render_reels_creator() -> None:
                 placeholder="Folge für mehr / Link in Bio / Jetzt testen",
             )
 
-            st.info("Dieses Modul erzeugt Script, Hook, Caption und Szenenplan.")
+            seconds = st.slider(
+                "Länge",
+                min_value=5,
+                max_value=15,
+                value=7,
+            )
 
-    if st.button("Reel Script generieren", width="stretch"):
+            cost = get_reel_script_cost(seconds)
+
+            st.write("")
+
+            metric1, metric2 = st.columns(2)
+
+            with metric1:
+                st.metric("Kosten", f"{cost}")
+
+            with metric2:
+                st.metric("Output", "Premium")
+
+            st.info(
+                "Dieses Modul erzeugt Hook, Script, Szenenplan, Caption und virale Struktur."
+            )
+
+    st.write("")
+
+    # =====================================================
+    # GENERATE
+    # =====================================================
+
+    if st.button("Premium Reel generieren", width="stretch"):
+
         if not topic:
-            st.warning("Bitte Thema eingeben.")
+            st.warning("Bitte Reel Idee eingeben.")
             return
 
         prompt = f"""
-Erstelle ein professionelles {seconds}-Sekunden-Reel-Package.
+Du bist MaByte Reels Studio V2.
 
-Thema:
+Erstelle ein extrem hochwertiges virales Reel.
+
+THEMA:
 {topic}
 
-Plattform:
+PLATTFORM:
 {platform}
 
-Content Typ:
-{content_type}
+REEL TYP:
+{reel_type}
 
-Style:
+TEMPLATE:
+{template}
+
+STYLE:
 {style}
 
-Voice:
+VOICE:
 {voice}
+
+AUDIENCE:
+{audience}
+
+ZIEL:
+{goal}
 
 CTA:
 {cta}
 
-Erstelle exakt:
+LÄNGE:
+{seconds} Sekunden
 
-## Viral Hook
-## {seconds} Second Script
-## Scene Plan
-## On-Screen Text
-## Voiceover
-## Caption
-## Hashtags
-## Thumbnail Text
-## Posting Tipp
+Erstelle exakt dieses Format:
+
+# VIRAL SCORE
+Bewerte 1-100.
+
+# HOOK STRENGTH
+Bewerte 1-100.
+
+# RETENTION SCORE
+Bewerte 1-100.
+
+# VIRAL HOOK
+
+# FULL SCRIPT
+
+# SCENE BREAKDOWN
+
+# B-ROLL IDEAS
+
+# ON SCREEN TEXT
+
+# CAPTION
+
+# HASHTAGS
+
+# POSTING STRATEGY
+
+# BEST POSTING TIME
+
+# THUMBNAIL TEXT
+
+# CTA
+
+Alles maximal hochwertig.
+Kurz.
+Modern.
+TikTok optimiert.
+Retention optimiert.
 """
 
         run_paid_ai(
-            tool="reels_script",
+            tool="premium_reels",
             prompt=prompt,
             cost=cost,
-            filename_prefix="mabyte_reel_script",
+            filename_prefix="mabyte_premium_reel",
         )
 
 
