@@ -7,6 +7,7 @@ from config import OPENAI_API_KEY, OPENAI_TEXT_MODEL
 from database import spend_tokens, save_usage, get_user, update_tokens
 from pricing import (
     get_reel_script_cost,
+    get_reel_automation_cost,
     get_video_cost,
     get_image_cost,
     get_music_cost,
@@ -16,8 +17,6 @@ from ui_core import sync_session_user
 
 
 client = OpenAI(api_key=OPENAI_API_KEY)
-
-MAX_REEL_SECONDS = 7
 
 
 def ensure_logged_in() -> None:
@@ -40,16 +39,12 @@ def sync_user() -> None:
         sync_session_user(user)
 
 
-def can_afford(cost: int) -> bool:
-    return get_tokens() >= int(cost)
-
-
 def charge_tokens(tool: str, prompt: str, cost: int) -> None:
-    if not can_afford(cost):
+    if get_tokens() < cost:
         st.error(f"Nicht genug Tokens. Benötigt: {cost}, verfügbar: {get_tokens()}")
         st.stop()
 
-    ok, msg = spend_tokens(username(), int(cost))
+    ok, msg = spend_tokens(username(), cost)
 
     if not ok:
         st.error(msg)
@@ -59,8 +54,8 @@ def charge_tokens(tool: str, prompt: str, cost: int) -> None:
         username=username(),
         tool=tool,
         prompt=prompt[:1000],
-        tokens_used=int(cost),
-        cost_tokens=int(cost),
+        tokens_used=cost,
+        cost_tokens=cost,
         api_provider="openai",
         status="charged",
     )
@@ -75,14 +70,14 @@ def refund_tokens(cost: int, tool: str, prompt: str) -> None:
         return
 
     current = int(user.get("tokens") or 0)
-    update_tokens(username(), current + int(cost))
+    update_tokens(username(), current + cost)
 
     save_usage(
         username=username(),
         tool=tool,
         prompt=prompt[:1000],
         tokens_used=0,
-        cost_tokens=-int(cost),
+        cost_tokens=-cost,
         api_provider="refund",
         status="refunded",
     )
@@ -101,10 +96,7 @@ def ai_generate(prompt: str) -> str:
                 "role": "system",
                 "content": "Du bist MaByte, ein professioneller AI Creator Assistent.",
             },
-            {
-                "role": "user",
-                "content": prompt,
-            },
+            {"role": "user", "content": prompt},
         ],
         temperature=0.7,
     )
@@ -162,7 +154,7 @@ def media_css() -> None:
 
 .mb-media-title {
     text-align: center;
-    font-size: 56px;
+    font-size: 54px;
     line-height: .95;
     font-weight: 1000;
     letter-spacing: -3px;
@@ -175,7 +167,7 @@ def media_css() -> None:
 .mb-media-sub {
     text-align: center;
     margin-top: 10px;
-    margin-bottom: 26px;
+    margin-bottom: 24px;
     color: #cbd5e1 !important;
     font-size: 16px;
     font-weight: 800;
@@ -256,12 +248,6 @@ div[data-testid="stAlert"] {
     border: 1px solid rgba(168,85,247,.26) !important;
     border-radius: 16px !important;
 }
-
-@media(max-width: 900px) {
-    .mb-media-title {
-        font-size: 42px;
-    }
-}
 </style>
 """,
         unsafe_allow_html=True,
@@ -269,7 +255,7 @@ div[data-testid="stAlert"] {
 
 
 def render_media_hero(active_tool: str) -> None:
-    label_map = {
+    labels = {
         "image": "Image AI",
         "video": "Video AI",
         "reels": "Reels Studio",
@@ -277,62 +263,53 @@ def render_media_hero(active_tool: str) -> None:
         "coding": "Coding Studio",
     }
 
-    active_label = label_map.get(active_tool, "Media Studio")
-
     st.markdown(
         f"""
-<div class="mb-media-title">{active_label}</div>
-<div class="mb-media-sub">Creator Tools für Bilder, Reels, Video, Musik und Code.</div>
+<div class="mb-media-title">{labels.get(active_tool, "Media Studio")}</div>
+<div class="mb-media-sub">Creator Tools für Reels, Video, Bilder, Musik und Code.</div>
 """,
         unsafe_allow_html=True,
     )
 
 
 def render_reels_creator() -> None:
+    st.markdown('<div class="mb-section-title">Premium Reels Studio</div>', unsafe_allow_html=True)
 
-    st.markdown(
-        '<div class="mb-section-title">Premium Reels Studio</div>',
-        unsafe_allow_html=True,
+    mode = st.radio(
+        "Reel Modus",
+        ["Script Package", "Automation Flow"],
+        horizontal=True,
     )
 
-    # =====================================================
-    # TOP METRICS
-    # =====================================================
+    if mode == "Script Package":
+        render_reel_script_package()
+    else:
+        render_reel_automation_flow()
 
-    top1, top2, top3, top4 = st.columns(4, gap="medium")
 
-    with top1:
-        st.metric("Max Reel", f"{MAX_REEL_SECONDS}s")
+def render_reel_script_package() -> None:
+    seconds = st.slider("Reel Länge", min_value=5, max_value=15, value=7)
+    cost = get_reel_script_cost(seconds)
 
-    with top2:
+    m1, m2, m3 = st.columns(3)
+
+    with m1:
+        st.metric("Kosten", f"{cost} Tokens")
+
+    with m2:
+        st.metric("Länge", f"{seconds}s")
+
+    with m3:
         st.metric("Tokens", get_tokens())
-
-    with top3:
-        st.metric("Format", "Vertical")
-
-    with top4:
-        st.metric("Engine", "V2")
-
-    st.write("")
-
-    # =====================================================
-    # MAIN GRID
-    # =====================================================
 
     left, right = st.columns([1.2, .8], gap="large")
 
-    # =====================================================
-    # LEFT
-    # =====================================================
-
     with left:
-
         with st.container(border=True):
-
             topic = st.text_area(
                 "Reel Idee",
                 height=150,
-                placeholder="z.B. Warum Arsenal dieses Jahr komplett gefährlich ist...",
+                placeholder="z.B. Warum Arsenal dieses Jahr gefährlich ist...",
             )
 
             audience = st.selectbox(
@@ -342,7 +319,6 @@ def render_reels_creator() -> None:
                     "TikTok Audience",
                     "Business Audience",
                     "Luxury Audience",
-                    "Gamers",
                     "Creators",
                     "Gen Z",
                     "Meme Audience",
@@ -351,11 +327,7 @@ def render_reels_creator() -> None:
 
             platform = st.selectbox(
                 "Plattform",
-                [
-                    "TikTok",
-                    "Instagram Reels",
-                    "YouTube Shorts",
-                ],
+                ["TikTok", "Instagram Reels", "YouTube Shorts"],
             )
 
             reel_type = st.selectbox(
@@ -370,211 +342,124 @@ def render_reels_creator() -> None:
                     "Business Reel",
                     "Personal Brand",
                     "Educational",
-                    "Viral Edit",
                 ],
             )
-
-            goal = st.selectbox(
-                "Ziel",
-                [
-                    "Viral gehen",
-                    "Follower aufbauen",
-                    "Kommentare erzeugen",
-                    "Sales erzeugen",
-                    "Retention erhöhen",
-                    "Branding",
-                ],
-            )
-
-    # =====================================================
-    # RIGHT
-    # =====================================================
 
     with right:
-
         with st.container(border=True):
-
             template = st.selectbox(
                 "Template",
                 [
-                    "Alex Hormozi",
-                    "Iman Gadzhi",
                     "Football TikTok",
                     "Fast Meme Edit",
                     "Dark Cinematic",
                     "News Style",
                     "Luxury Edit",
+                    "Alex Hormozi",
+                    "Iman Gadzhi",
                 ],
             )
 
             style = st.selectbox(
                 "Style",
-                [
-                    "Aggressive",
-                    "Fast Cut",
-                    "Cinematic",
-                    "Emotional",
-                    "Premium",
-                    "Dark",
-                    "Funny",
-                ],
+                ["Aggressive", "Fast Cut", "Cinematic", "Emotional", "Premium", "Funny"],
             )
 
             voice = st.selectbox(
                 "Voice",
-                [
-                    "Narrator",
-                    "Creator",
-                    "Coach",
-                    "Analyst",
-                    "Hype",
-                    "News Reporter",
-                ],
+                ["Narrator", "Creator", "Coach", "Analyst", "Hype", "News Reporter"],
             )
 
-            cta = st.text_input(
-                "CTA",
-                placeholder="Folge für mehr / Link in Bio / Jetzt testen",
-            )
+            cta = st.text_input("CTA", placeholder="Folge für mehr / Link in Bio")
 
-            seconds = st.slider(
-                "Länge",
-                min_value=5,
-                max_value=15,
-                value=7,
-            )
+            st.info("Erzeugt Script, Hook, Szenenplan, Caption, Hashtags und Posting-Tipp.")
 
-            cost = get_reel_script_cost(seconds)
-
-            st.write("")
-
-            metric1, metric2 = st.columns(2)
-
-            with metric1:
-                st.metric("Kosten", f"{cost}")
-
-            with metric2:
-                st.metric("Output", "Premium")
-
-            st.info(
-                "Dieses Modul erzeugt Hook, Script, Szenenplan, Caption und virale Struktur."
-            )
-
-    st.write("")
-
-    # =====================================================
-    # GENERATE
-    # =====================================================
-
-    if st.button("Premium Reel generieren", width="stretch"):
-
+    if st.button("Premium Reel Script generieren", width="stretch"):
         if not topic:
             st.warning("Bitte Reel Idee eingeben.")
             return
 
         prompt = f"""
-Du bist MaByte Reels Studio V2.
+Du bist MaByte Reels Studio.
 
-Erstelle ein extrem hochwertiges virales Reel.
+Erstelle ein hochwertiges virales Reel Script.
 
-THEMA:
+Thema:
 {topic}
 
-PLATTFORM:
+Plattform:
 {platform}
 
-REEL TYP:
+Länge:
+{seconds} Sekunden
+
+Kategorie:
 {reel_type}
 
-TEMPLATE:
+Template:
 {template}
 
-STYLE:
+Style:
 {style}
 
-VOICE:
+Voice:
 {voice}
 
-AUDIENCE:
+Zielgruppe:
 {audience}
-
-ZIEL:
-{goal}
 
 CTA:
 {cta}
 
-LÄNGE:
-{seconds} Sekunden
+Erstelle exakt:
 
-Erstelle exakt dieses Format:
-
-# VIRAL SCORE
-Bewerte 1-100.
-
-# HOOK STRENGTH
-Bewerte 1-100.
-
-# RETENTION SCORE
-Bewerte 1-100.
-
-# VIRAL HOOK
-
-# FULL SCRIPT
-
-# SCENE BREAKDOWN
-
-# B-ROLL IDEAS
-
-# ON SCREEN TEXT
-
-# CAPTION
-
-# HASHTAGS
-
-# POSTING STRATEGY
-
-# BEST POSTING TIME
-
-# THUMBNAIL TEXT
-
+# Viral Score
+# Hook Strength
+# Retention Score
+# Viral Hook
+# Full Script
+# Scene Breakdown
+# B-Roll Ideas
+# On Screen Text
+# Caption
+# Hashtags
+# Posting Strategy
+# Best Posting Time
+# Thumbnail Text
 # CTA
-
-Alles maximal hochwertig.
-Kurz.
-Modern.
-TikTok optimiert.
-Retention optimiert.
 """
 
         run_paid_ai(
-            tool="premium_reels",
+            tool="premium_reels_script",
             prompt=prompt,
             cost=cost,
-            filename_prefix="mabyte_premium_reel",
+            filename_prefix="mabyte_reel_script",
         )
 
 
-def render_video_generator() -> None:
-    st.markdown('<div class="mb-section-title">Reel Video Generator</div>', unsafe_allow_html=True)
-
-    left, right = st.columns([1.15, .85], gap="large")
+def render_reel_automation_flow() -> None:
+    left, right = st.columns([1.2, .8], gap="large")
 
     with left:
         with st.container(border=True):
             idea = st.text_area(
-                "Video Idee",
+                "Reel Video Idee",
                 height=150,
-                placeholder="z.B. Cinematic football promo, fast cuts, neon stadium...",
+                placeholder="z.B. 7 Sekunden Football Reel mit Stadion, schnellen Cuts und Hook...",
+            )
+
+            platform = st.selectbox(
+                "Posting Plattform",
+                ["TikTok", "Instagram Reels", "YouTube Shorts"],
             )
 
             provider = st.selectbox(
-                "Provider",
+                "Video Provider",
                 ["kling", "runway"],
             )
 
             seconds = st.slider(
-                "Sekunden",
+                "Videolänge",
                 min_value=5,
                 max_value=15,
                 value=7,
@@ -587,19 +472,106 @@ def render_video_generator() -> None:
                 ["standard", "premium", "cinematic"],
             )
 
-            with_audio = st.checkbox("Mit Audio", value=False)
+            with_audio = st.checkbox("Audio / Voice vorbereiten", value=True)
+            auto_caption = st.checkbox("Caption automatisch erzeugen", value=True)
+            auto_schedule = st.checkbox("Posting vorbereiten", value=True)
 
-            cost = get_video_cost(
-                provider=provider,
+            cost = get_reel_automation_cost(
                 seconds=seconds,
+                provider=provider,
                 quality=quality,
                 with_audio=with_audio,
+                auto_caption=auto_caption,
+                auto_schedule=auto_schedule,
             )
 
-            st.metric("Kosten", f"{cost} Tokens")
-            st.metric("Tokens", get_tokens())
+            st.metric("Sicherer Preis", f"{cost} Tokens")
+            st.metric("Deine Tokens", get_tokens())
 
-            st.info("Echte Video-API wird als nächster Schritt angebunden.")
+            st.info("Dieser Preis enthält Sicherheitsaufschlag, damit API-Kosten gedeckt bleiben.")
+
+    if st.button("Automation Flow vorbereiten", width="stretch"):
+        if not idea:
+            st.warning("Bitte Reel Video Idee eingeben.")
+            return
+
+        prompt = f"""
+Du bist MaByte Reel Automation Engine.
+
+Baue einen vollständigen Automation Flow für ein Reel.
+
+Idee:
+{idea}
+
+Plattform:
+{platform}
+
+Provider:
+{provider}
+
+Länge:
+{seconds} Sekunden
+
+Qualität:
+{quality}
+
+Audio:
+{with_audio}
+
+Auto Caption:
+{auto_caption}
+
+Posting Vorbereitung:
+{auto_schedule}
+
+Erstelle exakt:
+
+# API Cost Safety Check
+# Final Video Prompt
+# Shot List
+# Motion Direction
+# Voiceover Script
+# Caption
+# Hashtags
+# Thumbnail Text
+# Posting Time
+# Automation Steps
+# Quality Checklist
+# Retry Rules
+# User Delivery Package
+"""
+
+        run_paid_ai(
+            tool="reel_automation_flow",
+            prompt=prompt,
+            cost=cost,
+            filename_prefix="mabyte_reel_automation",
+        )
+
+
+def render_video_generator() -> None:
+    st.markdown('<div class="mb-section-title">Video AI</div>', unsafe_allow_html=True)
+
+    with st.container(border=True):
+        idea = st.text_area(
+            "Video Idee",
+            height=150,
+            placeholder="z.B. Cinematic football promo, fast cuts, neon stadium...",
+        )
+
+        provider = st.selectbox("Provider", ["kling", "runway"])
+        seconds = st.slider("Sekunden", min_value=5, max_value=15, value=7)
+        quality = st.selectbox("Qualität", ["standard", "premium", "cinematic"])
+        with_audio = st.checkbox("Mit Audio", value=False)
+
+        cost = get_video_cost(
+            provider=provider,
+            seconds=seconds,
+            quality=quality,
+            with_audio=with_audio,
+        )
+
+        st.metric("Kosten", f"{cost} Tokens")
 
     if st.button("Video Prompt vorbereiten", width="stretch"):
         if not idea:
@@ -618,20 +590,20 @@ Sekunden:
 Qualität:
 {quality}
 
-Mit Audio:
+Audio:
 {with_audio}
 
 Idee:
 {idea}
 
 Erstelle:
-## Video Prompt
-## Kamera Bewegung
-## Szenenstruktur
-## Licht & Stil
-## Negative Prompt
-## Caption
-## Posting Tipp
+# Video Prompt
+# Camera Movement
+# Scene Structure
+# Lighting
+# Negative Prompt
+# Caption
+# Quality Checklist
 """
 
         run_paid_ai(
@@ -646,27 +618,9 @@ def render_image_ai() -> None:
     st.markdown('<div class="mb-section-title">Image AI</div>', unsafe_allow_html=True)
 
     with st.container(border=True):
-        prompt = st.text_area(
-            "Image Prompt",
-            height=150,
-            placeholder="z.B. Premium SaaS Dashboard, dark blue purple, gold typography...",
-        )
-
-        style = st.selectbox(
-            "Style",
-            ["Premium SaaS", "Cinematic", "Photorealistic", "Logo", "Thumbnail", "Social Ad"],
-        )
-
-        quality = st.selectbox(
-            "Qualität",
-            ["standard", "hd"],
-        )
-
-        size = st.selectbox(
-            "Größe",
-            ["1024", "2048"],
-        )
-
+        prompt = st.text_area("Image Prompt", height=150)
+        quality = st.selectbox("Qualität", ["standard", "hd"])
+        size = st.selectbox("Größe", ["1024", "2048"])
         cost = get_image_cost(quality=quality, size=size)
 
         st.metric("Kosten", f"{cost} Tokens")
@@ -677,10 +631,7 @@ def render_image_ai() -> None:
             return
 
         full_prompt = f"""
-Optimiere diesen Image Prompt für OpenAI Image Generation.
-
-Style:
-{style}
+Optimiere diesen Image Prompt.
 
 Qualität:
 {quality}
@@ -692,50 +643,26 @@ Prompt:
 {prompt}
 
 Erstelle:
-## Final Image Prompt
-## Negative Prompt
-## Format Empfehlung
-## Social Usage
+# Final Image Prompt
+# Negative Prompt
+# Format Empfehlung
+# Social Usage
 """
 
-        run_paid_ai(
-            tool="image_prompt",
-            prompt=full_prompt,
-            cost=cost,
-            filename_prefix="mabyte_image_prompt",
-        )
+        run_paid_ai("image_prompt", full_prompt, cost, "mabyte_image_prompt")
 
 
 def render_music_generator() -> None:
     st.markdown('<div class="mb-section-title">Music AI</div>', unsafe_allow_html=True)
 
-    left, right = st.columns([1.2, .8], gap="large")
+    with st.container(border=True):
+        topic = st.text_input("Song Thema")
+        genre = st.selectbox("Genre", ["Rap", "Trap", "Pop", "EDM", "Phonk", "Afro", "Rock"])
+        length = st.selectbox("Länge", ["short", "medium", "long"])
+        mood = st.selectbox("Mood", ["Viral", "Dark", "Emotional", "Luxury", "Energetic"])
+        cost = get_music_cost(length=length)
 
-    with left:
-        with st.container(border=True):
-            topic = st.text_input("Song Thema")
-
-            genre = st.selectbox(
-                "Genre",
-                ["Rap", "Trap", "Pop", "EDM", "Phonk", "Afro", "Rock"],
-            )
-
-            length = st.selectbox(
-                "Länge",
-                ["short", "medium", "long"],
-            )
-
-    with right:
-        with st.container(border=True):
-            mood = st.selectbox(
-                "Mood",
-                ["Viral", "Dark", "Emotional", "Luxury", "Energetic"],
-            )
-
-            cost = get_music_cost(length=length)
-
-            st.metric("Kosten", f"{cost} Tokens")
-            st.metric("Tokens", get_tokens())
+        st.metric("Kosten", f"{cost} Tokens")
 
     if st.button("Song Package generieren", width="stretch"):
         if not topic:
@@ -743,7 +670,7 @@ def render_music_generator() -> None:
             return
 
         prompt = f"""
-Erstelle ein professionelles Song Package.
+Erstelle ein Song Package.
 
 Thema:
 {topic}
@@ -758,46 +685,26 @@ Länge:
 {length}
 
 Erstelle:
-
-## Song Title
-## Hook
-## Chorus
-## Verse 1
-## Verse 2
-## Lyrics
-## Music Prompt
-## Social Caption
-## Hashtags
+# Song Title
+# Hook
+# Chorus
+# Verse
+# Lyrics
+# Music Prompt
+# Social Caption
+# Hashtags
 """
 
-        run_paid_ai(
-            tool="music",
-            prompt=prompt,
-            cost=cost,
-            filename_prefix="mabyte_song",
-        )
+        run_paid_ai("music", prompt, cost, "mabyte_song")
 
 
 def render_coding_ai() -> None:
     st.markdown('<div class="mb-section-title">Coding Studio</div>', unsafe_allow_html=True)
 
     with st.container(border=True):
-        task = st.text_area(
-            "Was soll MaByte bauen oder fixen?",
-            height=160,
-            placeholder="z.B. Baue mir eine Streamlit Page mit Login, Cards und API Call...",
-        )
-
-        complexity = st.selectbox(
-            "Komplexität",
-            ["normal", "advanced", "fullstack"],
-        )
-
-        stack = st.selectbox(
-            "Stack",
-            ["Python", "Streamlit", "HTML/CSS", "JavaScript", "API Backend", "Debugging"],
-        )
-
+        task = st.text_area("Was soll MaByte bauen oder fixen?", height=160)
+        complexity = st.selectbox("Komplexität", ["normal", "advanced", "fullstack"])
+        stack = st.selectbox("Stack", ["Python", "Streamlit", "HTML/CSS", "JavaScript", "API Backend"])
         cost = get_coding_cost(complexity=complexity)
 
         st.metric("Kosten", f"{cost} Tokens")
@@ -820,19 +727,14 @@ Aufgabe:
 {task}
 
 Antworte mit:
-## Architektur
-## Schrittfolge
-## Code
-## Test
-## Deployment Hinweis
+# Architektur
+# Schrittfolge
+# Code
+# Test
+# Deployment Hinweis
 """
 
-        run_paid_ai(
-            tool="coding",
-            prompt=prompt,
-            cost=cost,
-            filename_prefix="mabyte_code",
-        )
+        run_paid_ai("coding", prompt, cost, "mabyte_code")
 
 
 def render_media(active_tool: str = "reels") -> None:
