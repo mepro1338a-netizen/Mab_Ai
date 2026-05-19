@@ -18,6 +18,10 @@ from ui_core import sync_session_user
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 
+# =========================================================
+# HELPERS
+# =========================================================
+
 def username() -> str:
     return str(st.session_state.get("user") or "")
 
@@ -41,181 +45,375 @@ def ensure_messages() -> None:
         st.session_state.chat_messages = []
 
 
+# =========================================================
+# STYLE
+# =========================================================
+
 def load_chat_css() -> None:
     st.markdown(
         """
 <style>
+
+/* =========================================================
+HIDE STREAMLIT
+========================================================= */
+
+header,
+footer,
+#MainMenu {
+    display: none !important;
+}
+
+.stDeployButton {
+    display: none !important;
+}
+
+[data-testid="stDecoration"] {
+    display: none !important;
+}
+
+/* =========================================================
+PAGE
+========================================================= */
+
+html,
+body,
+[data-testid="stAppViewContainer"],
+.main {
+
+    background:
+        radial-gradient(circle at top left, rgba(37,99,235,.14), transparent 30%),
+        radial-gradient(circle at bottom, rgba(168,85,247,.10), transparent 35%),
+        linear-gradient(180deg, #020617 0%, #030b1f 40%, #020617 100%) !important;
+
+    color: white !important;
+}
+
 .main .block-container {
+
     max-width: 980px !important;
-    padding-top: 22px !important;
+
+    padding-top: 18px !important;
+
     padding-bottom: 130px !important;
 }
 
-/* Prompt */
-[data-testid="stBottom"],
-[data-testid="stBottom"] > div,
-[data-testid="stBottomBlockContainer"],
-[data-testid="stBottomBlockContainer"] > div {
-    background: transparent !important;
-    border: 0 !important;
-}
+/* =========================================================
+MINIMAL HERO
+========================================================= */
 
-[data-testid="stChatInput"] {
-    background: transparent !important;
-    padding-left: 1.5rem !important;
-    padding-right: 1.5rem !important;
-}
+.mb-hero {
 
-[data-testid="stChatInput"] > div {
-    background:
-        radial-gradient(circle at left, rgba(168,85,247,.22), transparent 25%),
-        linear-gradient(135deg, rgba(35,12,58,.98), rgba(14,6,28,.99)) !important;
-    border: 1px solid rgba(168,85,247,.65) !important;
-    border-radius: 999px !important;
-    box-shadow:
-        0 0 34px rgba(168,85,247,.34),
-        inset 0 0 0 1px rgba(255,231,163,.05) !important;
-}
-
-[data-testid="stChatInput"] textarea,
-[data-testid="stChatInput"] textarea:focus {
-    background: transparent !important;
-    color: #ffe7a3 !important;
-    font-weight: 900 !important;
-    box-shadow: none !important;
-}
-
-[data-testid="stChatInput"] textarea::placeholder {
-    color: rgba(255,231,163,.62) !important;
-    font-weight: 900 !important;
-}
-
-[data-testid="stChatInput"] button {
-    background: linear-gradient(135deg, #7c3aed, #a855f7) !important;
-    border-radius: 999px !important;
-    border: 1px solid rgba(255,231,163,.24) !important;
-    box-shadow: 0 0 22px rgba(168,85,247,.38) !important;
-}
-
-/* Page */
-.mb-mini-hero {
     text-align: center;
-    padding: 26px 18px 20px 18px;
-    margin-bottom: 18px;
+
+    padding-top: 30px;
+
+    padding-bottom: 12px;
 }
 
-.mb-mini-title {
-    font-size: 56px;
-    line-height: .95;
+.mb-title {
+
+    font-size: 72px;
+
+    line-height: .92;
+
     font-weight: 1000;
-    letter-spacing: -2.8px;
-    background: linear-gradient(135deg, #ffe7a3, #c084fc, #60a5fa);
+
+    letter-spacing: -3px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #ffe7a3 0%,
+            #c084fc 45%,
+            #60a5fa 100%
+        );
+
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
-.mb-mini-sub {
-    margin-top: 10px;
-    color: #c7d2fe !important;
-    font-size: 15px;
-    font-weight: 750;
+.mb-sub {
+
+    margin-top: 12px;
+
+    color: #cbd5e1;
+
+    font-size: 16px;
+
+    font-weight: 700;
 }
 
-.mb-quick-label {
-    color: #c084fc !important;
+/* =========================================================
+QUICK START
+========================================================= */
+
+.mb-section-title {
+
+    color: #c084fc;
+
     font-size: 12px;
+
     font-weight: 1000;
+
     letter-spacing: .20em;
+
     text-transform: uppercase;
-    margin-bottom: 10px;
+
+    margin-top: 26px;
+
+    margin-bottom: 12px;
 }
 
 div[data-testid="stButton"] > button {
-    min-height: 54px !important;
+
+    width: 100% !important;
+
+    min-height: 58px !important;
+
     border-radius: 18px !important;
+
     background:
         radial-gradient(circle at top left, rgba(168,85,247,.18), transparent 34%),
-        linear-gradient(145deg, rgba(18,14,34,.88), rgba(8,7,18,.98)) !important;
+        linear-gradient(
+            145deg,
+            rgba(18,14,34,.88),
+            rgba(8,7,18,.98)
+        ) !important;
+
     border: 1px solid rgba(168,85,247,.22) !important;
+
     color: #ffffff !important;
+
     font-size: 14px !important;
+
     font-weight: 1000 !important;
-    box-shadow: 0 10px 24px rgba(0,0,0,.16) !important;
+
+    box-shadow:
+        0 10px 24px rgba(0,0,0,.16) !important;
+
+    transition: all .18s ease !important;
 }
 
 div[data-testid="stButton"] > button:hover {
+
     transform: translateY(-2px) !important;
+
     border-color: rgba(255,231,163,.32) !important;
-    box-shadow: 0 0 22px rgba(168,85,247,.22) !important;
+
+    box-shadow:
+        0 0 22px rgba(168,85,247,.22) !important;
 }
 
-.mb-ready-box {
+/* =========================================================
+READY BOX
+========================================================= */
+
+.mb-ready {
+
+    margin-top: 20px;
+
     text-align: center;
-    margin-top: 18px;
-    padding: 34px 22px;
+
+    padding: 38px 22px;
+
     border-radius: 28px;
+
     background:
         radial-gradient(circle at bottom, rgba(168,85,247,.16), transparent 42%),
-        linear-gradient(145deg, rgba(12,10,30,.78), rgba(7,6,18,.96));
+        linear-gradient(
+            145deg,
+            rgba(12,10,30,.78),
+            rgba(7,6,18,.96)
+        );
+
     border: 1px solid rgba(255,255,255,.08);
-    box-shadow: 0 18px 48px rgba(0,0,0,.22);
+
+    box-shadow:
+        0 18px 48px rgba(0,0,0,.22);
 }
 
 .mb-ready-icon {
-    color: #c084fc !important;
+
+    color: #c084fc;
+
     font-size: 34px;
+
     margin-bottom: 8px;
 }
 
 .mb-ready-title {
-    color: #ffe7a3 !important;
-    font-size: 24px;
+
+    color: #ffe7a3;
+
+    font-size: 26px;
+
     font-weight: 1000;
-    margin-bottom: 6px;
+
+    margin-bottom: 8px;
 }
 
 .mb-ready-sub {
-    color: #c7d2fe !important;
+
+    color: #cbd5e1;
+
     font-size: 14px;
 }
 
+/* =========================================================
+CHAT MESSAGES
+========================================================= */
+
 [data-testid="stChatMessage"] {
+
     background:
-        linear-gradient(145deg, rgba(18,14,34,.84), rgba(8,6,18,.98)) !important;
+        linear-gradient(
+            145deg,
+            rgba(18,14,34,.84),
+            rgba(8,6,18,.98)
+        ) !important;
+
     border: 1px solid rgba(255,255,255,.08) !important;
+
     border-radius: 22px !important;
+
     padding: 15px !important;
+
     margin-bottom: 12px !important;
-    box-shadow: 0 12px 30px rgba(0,0,0,.16) !important;
+
+    box-shadow:
+        0 12px 30px rgba(0,0,0,.16) !important;
 }
 
 [data-testid="stChatMessage"] * {
-    color: #f8e7b0 !important;
+
+    color: #f8fafc !important;
 }
 
-div[data-testid="stAlert"] {
-    background: rgba(30,20,70,.72) !important;
-    border: 1px solid rgba(168,85,247,.26) !important;
-    border-radius: 16px !important;
+/* =========================================================
+PURPLE PROMPT
+========================================================= */
+
+[data-testid="stBottom"],
+[data-testid="stBottom"] > div,
+[data-testid="stBottomBlockContainer"],
+[data-testid="stBottomBlockContainer"] > div {
+
+    background: transparent !important;
+
+    border: 0 !important;
 }
+
+[data-testid="stChatInput"] {
+
+    background: transparent !important;
+
+    padding-left: 1.5rem !important;
+
+    padding-right: 1.5rem !important;
+}
+
+[data-testid="stChatInput"] > div {
+
+    background:
+        radial-gradient(circle at top left, rgba(192,132,252,.32), transparent 28%),
+        radial-gradient(circle at bottom right, rgba(96,165,250,.14), transparent 34%),
+        linear-gradient(
+            135deg,
+            rgba(58,18,92,.98),
+            rgba(28,8,52,.99)
+        ) !important;
+
+    border: 1px solid rgba(192,132,252,.55) !important;
+
+    border-radius: 999px !important;
+
+    box-shadow:
+        0 0 38px rgba(168,85,247,.42),
+        0 10px 40px rgba(0,0,0,.22),
+        inset 0 0 0 1px rgba(255,255,255,.04) !important;
+}
+
+[data-testid="stChatInput"] textarea,
+[data-testid="stChatInput"] textarea:focus {
+
+    background: transparent !important;
+
+    color: #f5d0fe !important;
+
+    font-weight: 900 !important;
+
+    font-size: 16px !important;
+
+    box-shadow: none !important;
+}
+
+[data-testid="stChatInput"] textarea::placeholder {
+
+    color: rgba(245,208,254,.72) !important;
+
+    font-weight: 900 !important;
+}
+
+[data-testid="stChatInput"] button {
+
+    background:
+        linear-gradient(
+            135deg,
+            #9333ea,
+            #c084fc
+        ) !important;
+
+    border-radius: 999px !important;
+
+    border: 1px solid rgba(255,255,255,.12) !important;
+
+    box-shadow:
+        0 0 26px rgba(192,132,252,.55) !important;
+
+    transition: all .18s ease !important;
+}
+
+[data-testid="stChatInput"] button:hover {
+
+    transform: scale(1.04) !important;
+
+    box-shadow:
+        0 0 36px rgba(192,132,252,.72) !important;
+}
+
+/* =========================================================
+RESPONSIVE
+========================================================= */
 
 @media (max-width: 900px) {
-    .mb-mini-title {
-        font-size: 42px;
+
+    .mb-title {
+        font-size: 50px;
+    }
+
+    .mb-sub {
+        font-size: 15px;
     }
 
     [data-testid="stChatInput"] {
-        padding-left: .75rem !important;
-        padding-right: .75rem !important;
+        padding-left: .8rem !important;
+        padding-right: .8rem !important;
     }
 }
+
 </style>
         """,
         unsafe_allow_html=True,
     )
 
 
+# =========================================================
+# PROJECT
+# =========================================================
+
 def get_active_project():
+
     project_id = st.session_state.get("active_project_id")
 
     if not project_id:
@@ -227,7 +425,12 @@ def get_active_project():
         return None
 
 
+# =========================================================
+# AI
+# =========================================================
+
 def charge_chat(prompt: str) -> int:
+
     cost = chat_cost()
 
     if get_tokens() < cost:
@@ -251,19 +454,18 @@ def charge_chat(prompt: str) -> int:
     )
 
     sync_user()
+
     return cost
 
 
 def build_messages(prompt: str, project):
+
     project_context = ""
 
     if project:
         project_context = f"""
 Aktives Projekt:
 {project.get("title")}
-
-Workspace:
-{project.get("workspace")}
 
 Beschreibung:
 {project.get("description")}
@@ -273,26 +475,26 @@ Beschreibung:
         {
             "role": "system",
             "content": f"""
-Du bist MaByte, ein professioneller AI Operating System Assistant.
+Du bist MaByte.
 
 Antworte:
-- kurz
-- klar
+- modern
 - hochwertig
+- kurz
 - direkt
 - praktisch
-- mit nächsten Schritten
 
 {project_context}
 """,
         },
-        {"role": "user", "content": prompt},
+        {
+            "role": "user",
+            "content": prompt,
+        },
     ]
 
 
 def ai_response(prompt: str, project) -> str:
-    if not OPENAI_API_KEY:
-        return "OPENAI_API_KEY fehlt."
 
     response = client.chat.completions.create(
         model=OPENAI_TEXT_MODEL,
@@ -303,156 +505,211 @@ def ai_response(prompt: str, project) -> str:
     return response.choices[0].message.content
 
 
-def render_brand() -> None:
+# =========================================================
+# UI
+# =========================================================
+
+def render_hero():
+
     st.markdown(
         """
-<div class="mb-mini-hero">
-    <div class="mb-mini-title">MaByte</div>
-    <div class="mb-mini-sub">Dein AI Operating System.</div>
+<div class="mb-hero">
+
+    <div class="mb-title">
+        MaByte
+    </div>
+
+    <div class="mb-sub">
+        Dein AI Operating System.
+    </div>
+
 </div>
 """,
         unsafe_allow_html=True,
     )
 
 
-def quick_prompt_buttons() -> str | None:
+def render_quickstart():
+
     st.markdown(
-        '<div class="mb-quick-label">Quick Start</div>',
+        '<div class="mb-section-title">Quick Start</div>',
         unsafe_allow_html=True,
     )
 
     prompts = [
         (
-            "Social Strategie",
-            "Erstelle mir eine Social-Media-Strategie mit Content-Ideen, Hooks und Wochenplan.",
+            "🚀 Wachstum",
+            "Erstelle mir eine Growth Strategie für mein Business."
         ),
         (
-            "Marketing Plan",
-            "Entwickle mir einen Marketing-Plan mit Zielgruppe, Botschaft und nächsten Schritten.",
+            "🎯 Content",
+            "Gib mir virale Content Ideen."
         ),
         (
-            "Business Check",
-            "Analysiere mein Business und gib mir klare Wachstumshebel und Prioritäten.",
+            "💸 Kunden",
+            "Wie bekomme ich mehr Kunden online?"
         ),
         (
-            "Content Ideen",
-            "Gib mir 20 starke Content-Ideen mit Hook, Format und kurzer Beschreibung.",
+            "⚡ Workflow",
+            "Baue mir einen AI Workflow."
         ),
         (
-            "AI Workflow",
-            "Baue mir einen einfachen AI Workflow für mein Business.",
+            "📈 Analyse",
+            "Analysiere mein Business."
         ),
         (
-            "30 Tage Plan",
-            "Erstelle mir einen klaren 30-Tage-Plan mit Zielen und täglichen Aufgaben.",
+            "🔥 Hooks",
+            "Gib mir virale Hooks."
         ),
     ]
 
-    cols = st.columns(3, gap="medium")
+    cols = st.columns(3)
 
-    for index, item in enumerate(prompts):
-        label, prompt = item
+    clicked_prompt = None
 
-        with cols[index % 3]:
-            if st.button(label, key=f"quick_prompt_{index}", width="stretch"):
-                return prompt
+    for i, (label, prompt) in enumerate(prompts):
 
-    return None
+        with cols[i % 3]:
+
+            if st.button(label, key=f"quick_{i}"):
+
+                clicked_prompt = prompt
+
+    return clicked_prompt
 
 
-def render_empty_state() -> None:
+def render_empty():
+
     st.markdown(
         """
-<div class="mb-ready-box">
-    <div class="mb-ready-icon">✦</div>
-    <div class="mb-ready-title">MaByte ist bereit.</div>
-    <div class="mb-ready-sub">Wähle einen Quick Start oder frag direkt unten.</div>
+<div class="mb-ready">
+
+    <div class="mb-ready-icon">
+        ✦
+    </div>
+
+    <div class="mb-ready-title">
+        MaByte ist bereit.
+    </div>
+
+    <div class="mb-ready-sub">
+        Nutze einen Quick Start oder frag direkt unten.
+    </div>
+
 </div>
 """,
         unsafe_allow_html=True,
     )
 
 
-def render_history(project) -> None:
+def render_messages(project):
+
     if project:
-        history = list_project_chat_memory(project.get("id"), limit=30)
+
+        history = list_project_chat_memory(
+            project.get("id"),
+            limit=30,
+        )
 
         if not history:
-            render_empty_state()
+            render_empty()
             return
 
         for msg in history:
+
             with st.chat_message(msg.get("role", "assistant")):
+
                 st.markdown(msg.get("message", ""))
 
         return
 
     if not st.session_state.chat_messages:
-        render_empty_state()
+
+        render_empty()
+
         return
 
     for msg in st.session_state.chat_messages:
+
         with st.chat_message(msg["role"]):
+
             st.markdown(msg["content"])
 
 
-def handle_prompt(prompt: str, project) -> None:
+# =========================================================
+# CHAT
+# =========================================================
+
+def handle_prompt(prompt: str, project):
+
     cost = charge_chat(prompt)
 
     if project:
+
         save_project_chat_message(
             project_id=project.get("id"),
             username=username(),
             role="user",
             message=prompt,
         )
+
     else:
-        st.session_state.chat_messages.append(
-            {
-                "role": "user",
-                "content": prompt,
-            }
-        )
+
+        st.session_state.chat_messages.append({
+            "role": "user",
+            "content": prompt,
+        })
 
     with st.spinner("MaByte denkt..."):
+
         answer = ai_response(prompt, project)
 
     answer += f"\n\n---\nTokens: {cost}"
 
     if project:
+
         save_project_chat_message(
             project_id=project.get("id"),
             username=username(),
             role="assistant",
             message=answer,
         )
+
     else:
-        st.session_state.chat_messages.append(
-            {
-                "role": "assistant",
-                "content": answer,
-            }
-        )
+
+        st.session_state.chat_messages.append({
+            "role": "assistant",
+            "content": answer,
+        })
 
     st.rerun()
 
 
-def render_chat() -> None:
+# =========================================================
+# MAIN
+# =========================================================
+
+def render_chat():
+
     if not st.session_state.get("logged_in"):
+
         st.session_state.page = "auth"
+
         st.rerun()
+
         return
 
     ensure_messages()
+
     load_chat_css()
 
     project = get_active_project()
 
-    render_brand()
+    render_hero()
 
-    quick_prompt = quick_prompt_buttons()
+    quick_prompt = render_quickstart()
 
-    render_history(project)
+    render_messages(project)
 
     prompt = st.chat_input("Frag MaByte...")
 
