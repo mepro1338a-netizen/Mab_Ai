@@ -1,4 +1,5 @@
 ﻿import uuid
+
 import streamlit as st
 from openai import OpenAI
 
@@ -9,43 +10,41 @@ from ui_core import sync_session_user
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 
-
 REEL_COST = 25
 SONG_COST = 100
+IMAGE_COST = 20
+VIDEO_COST = 50
+CODING_COST = 15
 MAX_REEL_SECONDS = 7
 
 
-def ensure_logged_in():
+def ensure_logged_in() -> None:
     if not st.session_state.get("logged_in"):
         st.session_state.page = "auth"
         st.rerun()
 
 
-def username():
-    return st.session_state.get("user")
+def username() -> str:
+    return str(st.session_state.get("user") or "")
 
 
-def user_plan():
-    return st.session_state.get("plan", "free")
-
-
-def get_tokens():
+def get_tokens() -> int:
     return int(st.session_state.get("tokens", 0) or 0)
 
 
-def sync_user():
+def sync_user() -> None:
     user = get_user(username())
     if user:
         sync_session_user(user)
 
 
-def can_afford(cost):
+def can_afford(cost: int) -> bool:
     return get_tokens() >= int(cost)
 
 
-def charge_tokens(tool, prompt, cost):
+def charge_tokens(tool: str, prompt: str, cost: int) -> None:
     if not can_afford(cost):
-        st.error(f"Nicht genug Tokens. BenÃ¶tigt: {cost}, verfÃ¼gbar: {get_tokens()}")
+        st.error(f"Nicht genug Tokens. Benötigt: {cost}, verfügbar: {get_tokens()}")
         st.stop()
 
     ok, msg = spend_tokens(username(), int(cost))
@@ -57,7 +56,7 @@ def charge_tokens(tool, prompt, cost):
     save_usage(
         username=username(),
         tool=tool,
-        prompt=prompt,
+        prompt=prompt[:1000],
         tokens_used=int(cost),
         cost_tokens=int(cost),
         api_provider="openai",
@@ -67,7 +66,7 @@ def charge_tokens(tool, prompt, cost):
     sync_user()
 
 
-def refund_tokens(cost, tool, prompt):
+def refund_tokens(cost: int, tool: str, prompt: str) -> None:
     user = get_user(username())
 
     if not user:
@@ -79,7 +78,7 @@ def refund_tokens(cost, tool, prompt):
     save_usage(
         username=username(),
         tool=tool,
-        prompt=prompt,
+        prompt=prompt[:1000],
         tokens_used=0,
         cost_tokens=-int(cost),
         api_provider="refund",
@@ -89,7 +88,7 @@ def refund_tokens(cost, tool, prompt):
     sync_user()
 
 
-def ai_generate(prompt):
+def ai_generate(prompt: str) -> str:
     if not OPENAI_API_KEY:
         raise RuntimeError("OPENAI_API_KEY fehlt.")
 
@@ -105,12 +104,13 @@ def ai_generate(prompt):
                 "content": prompt,
             },
         ],
+        temperature=0.7,
     )
 
     return response.choices[0].message.content
 
 
-def render_download(result, prefix):
+def render_download(result: str, prefix: str) -> None:
     filename = f"{prefix}_{uuid.uuid4().hex[:6]}.txt"
 
     st.download_button(
@@ -122,7 +122,7 @@ def render_download(result, prefix):
     )
 
 
-def run_paid_ai(tool, prompt, cost, filename_prefix):
+def run_paid_ai(tool: str, prompt: str, cost: int, filename_prefix: str) -> None:
     charge_tokens(tool, prompt, cost)
 
     try:
@@ -132,7 +132,7 @@ def run_paid_ai(tool, prompt, cost, filename_prefix):
         save_usage(
             username=username(),
             tool=tool,
-            prompt=prompt,
+            prompt=prompt[:1000],
             tokens_used=0,
             cost_tokens=0,
             api_provider="openai",
@@ -148,35 +148,196 @@ def run_paid_ai(tool, prompt, cost, filename_prefix):
         st.error(f"Fehler: {e}")
 
 
-def render_reels_creator():
-    ensure_logged_in()
+def media_css() -> None:
+    st.markdown(
+        """
+<style>
+.main .block-container {
+    max-width: 1180px !important;
+    padding-top: 26px !important;
+    padding-bottom: 90px !important;
+}
 
-    st.title("AI Content Studio")
-    st.caption("Erstelle 7-Sekunden-Reels mit AI. KostengÃ¼nstig Ã¼ber OpenAI Text API.")
+.mb-media-hero {
+    text-align: center;
+    padding: 30px 18px 22px 18px;
+    margin-bottom: 22px;
+}
 
-    c1, c2, c3 = st.columns(3)
+.mb-media-title {
+    font-size: 58px;
+    line-height: .92;
+    font-weight: 1000;
+    letter-spacing: -3px;
+    background: linear-gradient(135deg, #ffe7a3, #c084fc, #60a5fa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.mb-media-sub {
+    margin-top: 12px;
+    color: #cbd5e1 !important;
+    font-size: 16px;
+    font-weight: 800;
+}
+
+.mb-pill-row {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 18px;
+}
+
+.mb-pill {
+    padding: 8px 13px;
+    border-radius: 999px;
+    color: #ffffff !important;
+    font-size: 12px;
+    font-weight: 900;
+    background: rgba(168,85,247,.14);
+    border: 1px solid rgba(168,85,247,.28);
+}
+
+.mb-section-title {
+    color: #c084fc !important;
+    font-size: 12px;
+    font-weight: 1000;
+    letter-spacing: .20em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+}
+
+div[data-testid="stVerticalBlockBorderWrapper"] {
+    background:
+        radial-gradient(circle at top left, rgba(168,85,247,.12), transparent 32%),
+        linear-gradient(145deg, rgba(12,13,32,.90), rgba(6,7,18,.98)) !important;
+    border: 1px solid rgba(168,85,247,.16) !important;
+    border-radius: 24px !important;
+    box-shadow: 0 16px 42px rgba(0,0,0,.22) !important;
+}
+
+.stTextInput input,
+.stTextArea textarea,
+.stSelectbox div[data-baseweb="select"] > div {
+    background: rgba(15,10,28,.96) !important;
+    border: 1px solid rgba(168,85,247,.28) !important;
+    border-radius: 16px !important;
+    color: #ffe7a3 !important;
+}
+
+.stTextArea textarea::placeholder,
+.stTextInput input::placeholder {
+    color: rgba(255,231,163,.55) !important;
+}
+
+.stButton > button {
+    min-height: 48px !important;
+    border-radius: 16px !important;
+    background:
+        radial-gradient(circle at top left, rgba(168,85,247,.20), transparent 34%),
+        linear-gradient(145deg, rgba(36,8,56,.98), rgba(12,3,25,.98)) !important;
+    border: 1px solid rgba(168,85,247,.32) !important;
+    color: #ffe7a3 !important;
+    font-size: 15px !important;
+    font-weight: 1000 !important;
+    box-shadow: 0 10px 24px rgba(0,0,0,.18) !important;
+}
+
+.stButton > button:hover {
+    transform: translateY(-2px) !important;
+    border-color: rgba(255,231,163,.34) !important;
+    box-shadow: 0 0 24px rgba(168,85,247,.25) !important;
+}
+
+[data-testid="metric-container"] {
+    background: linear-gradient(145deg, rgba(18,14,34,.88), rgba(8,7,18,.98)) !important;
+    border: 1px solid rgba(168,85,247,.18) !important;
+    border-radius: 20px !important;
+    padding: 17px !important;
+}
+
+[data-testid="metric-container"] label {
+    color: #c084fc !important;
+    font-weight: 1000 !important;
+    font-size: 11px !important;
+    text-transform: uppercase !important;
+}
+
+[data-testid="metric-container"] div {
+    color: #ffe7a3 !important;
+    font-weight: 1000 !important;
+}
+
+div[data-testid="stAlert"] {
+    background: rgba(30,20,70,.72) !important;
+    border: 1px solid rgba(168,85,247,.26) !important;
+    border-radius: 16px !important;
+}
+
+@media(max-width: 900px) {
+    .mb-media-title {
+        font-size: 42px;
+    }
+}
+</style>
+""",
+        unsafe_allow_html=True,
+    )
+
+
+def render_media_hero(active_tool: str) -> None:
+    label_map = {
+        "image": "Image AI",
+        "video": "Video AI",
+        "reels": "Reels Studio",
+        "music": "Music AI",
+        "coding": "Coding Studio",
+    }
+
+    active_label = label_map.get(active_tool, "Media Studio")
+
+    st.markdown(
+        f"""
+<div class="mb-media-hero">
+    <div class="mb-media-title">{active_label}</div>
+    <div class="mb-media-sub">Create. Automate. Ship content faster.</div>
+    <div class="mb-pill-row">
+        <div class="mb-pill">OpenAI</div>
+        <div class="mb-pill">Creator Tools</div>
+        <div class="mb-pill">AI SaaS Layer</div>
+        <div class="mb-pill">{get_tokens()} Tokens</div>
+    </div>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
+
+def render_reels_creator() -> None:
+    st.markdown('<div class="mb-section-title">Reels Studio</div>', unsafe_allow_html=True)
+
+    c1, c2, c3 = st.columns(3, gap="medium")
 
     with c1:
-        st.metric("Max LÃ¤nge", f"{MAX_REEL_SECONDS}s")
+        st.metric("Max Länge", f"{MAX_REEL_SECONDS}s")
 
     with c2:
         st.metric("Kosten", f"{REEL_COST} Tokens")
 
     with c3:
-        st.metric("Deine Tokens", get_tokens())
+        st.metric("Tokens", get_tokens())
 
-    st.divider()
+    st.write("")
 
-    left, mid, right = st.columns([1.1, 1.2, 0.9], gap="large")
+    left, right = st.columns([1.15, .85], gap="large")
 
     with left:
         with st.container(border=True):
-            st.subheader("Creative Brief")
-
             topic = st.text_area(
-                "Thema",
-                height=130,
-                placeholder="z.B. Warum Arsenal dieses Jahr gefÃ¤hrlich ist...",
+                "Creative Brief",
+                height=150,
+                placeholder="z.B. Warum Arsenal dieses Jahr gefährlich ist...",
             )
 
             platform = st.selectbox(
@@ -197,57 +358,29 @@ def render_reels_creator():
                 ],
             )
 
-    with mid:
+    with right:
         with st.container(border=True):
-            st.subheader("Output Design")
-
             style = st.selectbox(
                 "Style",
-                [
-                    "Fast Cut",
-                    "Cinematic",
-                    "Aggressive",
-                    "Funny",
-                    "Premium",
-                    "Emotional",
-                ],
+                ["Fast Cut", "Cinematic", "Aggressive", "Funny", "Premium", "Emotional"],
             )
 
             voice = st.selectbox(
                 "Voice",
-                [
-                    "Creator",
-                    "Narrator",
-                    "Coach",
-                    "Analyst",
-                    "Hype",
-                    "News",
-                ],
+                ["Creator", "Narrator", "Coach", "Analyst", "Hype", "News"],
             )
 
             cta = st.text_input(
                 "CTA",
-                placeholder="Folge fÃ¼r mehr / Link in Bio / Jetzt testen",
+                placeholder="Folge für mehr / Link in Bio / Jetzt testen",
             )
 
             seconds = st.slider(
-                "VideolÃ¤nge",
+                "Videolänge",
                 min_value=3,
                 max_value=MAX_REEL_SECONDS,
                 value=MAX_REEL_SECONDS,
             )
-
-    with right:
-        with st.container(border=True):
-            st.subheader("7s Struktur")
-
-            st.write("0â€“2s: Hook")
-            st.write("2â€“5s: Main Point")
-            st.write("5â€“7s: CTA")
-
-            st.info("Ein Reel = ein AI API Call.")
-
-    st.divider()
 
     if st.button("Reel Package generieren", width="stretch"):
         if not topic:
@@ -255,11 +388,7 @@ def render_reels_creator():
             return
 
         prompt = f"""
-Erstelle ein professionelles 7-Sekunden-Reel-Package.
-
-WICHTIG:
-Das Reel darf maximal {seconds} Sekunden lang sein.
-Plane niemals lÃ¤nger als 7 Sekunden.
+Erstelle ein professionelles {seconds}-Sekunden-Reel-Package.
 
 Thema:
 {topic}
@@ -279,27 +408,16 @@ Voice:
 CTA:
 {cta}
 
-Erstelle exakt diese Struktur:
+Erstelle exakt:
 
 ## Viral Hook
-
-## 7 Second Script
-0-2s:
-2-5s:
-5-7s:
-
+## {seconds} Second Script
 ## Scene Plan
-
 ## On-Screen Text
-
 ## Voiceover
-
 ## Caption
-
 ## Hashtags
-
 ## Thumbnail Text
-
 ## Posting Tipp
 """
 
@@ -311,29 +429,28 @@ Erstelle exakt diese Struktur:
         )
 
 
-def render_music_generator():
-    ensure_logged_in()
+def render_music_generator() -> None:
+    st.markdown('<div class="mb-section-title">Music AI</div>', unsafe_allow_html=True)
 
-    st.title("Music Studio")
-    st.caption("Songs kosten 100 Tokens.")
+    left, right = st.columns([1.2, .8], gap="large")
 
-    c1, c2 = st.columns(2)
+    with left:
+        with st.container(border=True):
+            topic = st.text_input("Song Thema")
+            genre = st.selectbox(
+                "Genre",
+                ["Rap", "Trap", "Pop", "EDM", "Phonk", "Afro", "Rock"],
+            )
 
-    with c1:
-        topic = st.text_input("Song Thema")
+    with right:
+        with st.container(border=True):
+            mood = st.selectbox(
+                "Mood",
+                ["Viral", "Dark", "Emotional", "Luxury", "Energetic"],
+            )
 
-        genre = st.selectbox(
-            "Genre",
-            ["Rap", "Trap", "Pop", "EDM", "Phonk", "Afro", "Rock"],
-        )
-
-    with c2:
-        mood = st.selectbox(
-            "Mood",
-            ["Viral", "Dark", "Emotional", "Luxury", "Energetic"],
-        )
-
-        st.metric("Kosten", f"{SONG_COST} Tokens")
+            st.metric("Kosten", f"{SONG_COST} Tokens")
+            st.metric("Tokens", get_tokens())
 
     if st.button("Song Package generieren", width="stretch"):
         if not topic:
@@ -373,41 +490,159 @@ Erstelle:
         )
 
 
-def render_coding_ai():
+def render_coding_ai() -> None:
+    st.markdown('<div class="mb-section-title">Coding Studio</div>', unsafe_allow_html=True)
+
+    with st.container(border=True):
+        task = st.text_area(
+            "Was soll MaByte bauen oder fixen?",
+            height=160,
+            placeholder="z.B. Baue mir eine Streamlit Page mit Login, Cards und API Call...",
+        )
+
+        language = st.selectbox(
+            "Stack",
+            ["Python", "Streamlit", "HTML/CSS", "JavaScript", "API Backend", "Debugging"],
+        )
+
+    if st.button("Code Assistant starten", width="stretch"):
+        if not task:
+            st.warning("Bitte Aufgabe eingeben.")
+            return
+
+        prompt = f"""
+Du bist MaByte Coding Studio.
+
+Stack:
+{language}
+
+Aufgabe:
+{task}
+
+Antworte mit:
+## Architektur
+## Schrittfolge
+## Code
+## Test
+## Deployment Hinweis
+"""
+
+        run_paid_ai(
+            tool="coding",
+            prompt=prompt,
+            cost=CODING_COST,
+            filename_prefix="mabyte_code",
+        )
+
+
+def render_image_ai() -> None:
+    st.markdown('<div class="mb-section-title">Image AI</div>', unsafe_allow_html=True)
+
+    with st.container(border=True):
+        prompt = st.text_area(
+            "Image Prompt",
+            height=150,
+            placeholder="z.B. Premium SaaS Dashboard, dark blue purple, gold typography...",
+        )
+
+        style = st.selectbox(
+            "Style",
+            ["Premium SaaS", "Cinematic", "Photorealistic", "Logo", "Thumbnail", "Social Ad"],
+        )
+
+        st.metric("Kosten", f"{IMAGE_COST} Tokens")
+
+    if st.button("Image Prompt vorbereiten", width="stretch"):
+        if not prompt:
+            st.warning("Bitte Prompt eingeben.")
+            return
+
+        full_prompt = f"""
+Optimiere diesen Image Prompt für OpenAI Image Generation.
+
+Style:
+{style}
+
+Prompt:
+{prompt}
+
+Erstelle:
+## Final Image Prompt
+## Negative Prompt
+## Format Empfehlung
+## Social Usage
+"""
+
+        run_paid_ai(
+            tool="image",
+            prompt=full_prompt,
+            cost=IMAGE_COST,
+            filename_prefix="mabyte_image_prompt",
+        )
+
+
+def render_video_generator() -> None:
+    st.markdown('<div class="mb-section-title">Video AI</div>', unsafe_allow_html=True)
+
+    with st.container(border=True):
+        idea = st.text_area(
+            "Video Idee",
+            height=150,
+            placeholder="z.B. Cinematic football promo, fast cuts, neon stadium...",
+        )
+
+        provider = st.selectbox(
+            "Provider Vorbereitung",
+            ["Kling", "Runway", "Veo später"],
+        )
+
+        st.metric("Kosten", f"{VIDEO_COST} Tokens")
+
+    if st.button("Video Prompt vorbereiten", width="stretch"):
+        if not idea:
+            st.warning("Bitte Video Idee eingeben.")
+            return
+
+        prompt = f"""
+Erstelle einen professionellen Video Generation Prompt.
+
+Provider:
+{provider}
+
+Idee:
+{idea}
+
+Erstelle:
+## Video Prompt
+## Kamera Bewegung
+## Szenenstruktur
+## Licht & Stil
+## Negative Prompt
+## Reel Caption
+"""
+
+        run_paid_ai(
+            tool="video",
+            prompt=prompt,
+            cost=VIDEO_COST,
+            filename_prefix="mabyte_video_prompt",
+        )
+
+
+def render_media(active_tool: str = "reels") -> None:
     ensure_logged_in()
-    st.title("Developer OS")
-    st.info("Coding Workspace kommt als nÃ¤chstes wieder rein.")
-
-
-def render_image_ai():
-    ensure_logged_in()
-    st.title("Creative Workspace")
-    st.info("Image Workspace kommt als nÃ¤chstes wieder rein.")
-
-
-def render_video_generator():
-    ensure_logged_in()
-    st.title("Media Studio")
-    st.info("Video Generator kommt spÃ¤ter. Reels laufen aktuell kostengÃ¼nstig Ã¼ber 1 Text API Call.")
-
-
-def render_media(active_tool="reels"):
-    ensure_logged_in()
+    media_css()
+    render_media_hero(active_tool)
 
     if active_tool == "coding":
         render_coding_ai()
-
     elif active_tool == "image":
         render_image_ai()
-
     elif active_tool == "music":
         render_music_generator()
-
-    elif active_tool == "reels":
-        render_reels_creator()
-
     elif active_tool == "video":
         render_video_generator()
-
+    elif active_tool == "reels":
+        render_reels_creator()
     else:
         render_reels_creator()
