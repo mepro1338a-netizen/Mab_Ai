@@ -11,6 +11,25 @@ WORDMARK = ASSET_DIR / "wordmark.png"
 SLOGAN_HEADER = ASSET_DIR / "sloganheader.png"
 
 
+ICON_MAP = {
+    "home": "missioncontrol",
+    "chat": "chat",
+    "projects": "projects",
+    "automation_lab": "automations",
+    "football": "football",
+    "image": "image",
+    "video": "video",
+    "reels": "video",
+    "music": "music",
+    "coding": "code",
+    "dashboard": "dashboard",
+    "premium": "premium",
+    "redeem": "redeem",
+    "support": "tools",
+    "admin": "settings-sliders",
+}
+
+
 def img_base64(path: Path) -> str:
     if not path.exists() or not path.is_file():
         return ""
@@ -18,8 +37,15 @@ def img_base64(path: Path) -> str:
     return base64.b64encode(path.read_bytes()).decode("utf-8")
 
 
-def icon_path(name: str) -> Path:
-    return ASSET_DIR / f"{name}.png"
+def icon_src(page: str) -> str:
+    icon_name = ICON_MAP.get(page, page)
+    path = ASSET_DIR / f"{icon_name}.png"
+
+    if not path.exists():
+        return ""
+
+    encoded = img_base64(path)
+    return f"data:image/png;base64,{encoded}"
 
 
 def load_css() -> None:
@@ -43,8 +69,8 @@ def load_css() -> None:
 :root {{
     --mb-bg:#050816;
     --mb-bg-2:#081226;
-    --mb-sidebar:#13051f;
-    --mb-sidebar-2:#210833;
+    --mb-sidebar:#15051f;
+    --mb-sidebar-2:#230836;
     --mb-card:rgba(12,18,38,.90);
     --mb-card-2:rgba(8,12,26,.98);
     --mb-line:rgba(255,255,255,.08);
@@ -127,34 +153,40 @@ small,
 
 section[data-testid="stSidebar"] {{
     background:
-        radial-gradient(circle at top left, rgba(168,85,247,.22), transparent 24%),
-        radial-gradient(circle at bottom right, rgba(96,165,250,.10), transparent 32%),
-        linear-gradient(180deg, #13051f 0%, #210833 46%, #0d0417 100%) !important;
+        radial-gradient(circle at top left, rgba(168,85,247,.24), transparent 25%),
+        radial-gradient(circle at bottom right, rgba(96,165,250,.10), transparent 34%),
+        linear-gradient(180deg, #16041f 0%, #230836 46%, #0d0315 100%) !important;
     border-right: 1px solid rgba(255,255,255,.09);
     z-index: 999 !important;
 }}
 
 section[data-testid="stSidebar"] > div {{
-    padding-left: 12px !important;
-    padding-right: 12px !important;
+    padding-left: 14px !important;
+    padding-right: 14px !important;
 }}
 
 section[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {{
-    gap: .22rem !important;
+    gap: .18rem !important;
 }}
 
-section[data-testid="stSidebar"] img {{
-    border-radius: 18px;
+.sidebar-logo-wrap {{
+    padding: 4px 0 18px 0;
 }}
 
-section[data-testid="stSidebar"] .stCaption {{
-    margin-top: .9rem;
-    margin-bottom: .2rem;
-    color: rgba(255,231,163,.68) !important;
-    font-size: .70rem !important;
-    font-weight: 1000 !important;
-    letter-spacing: .16em !important;
-    text-transform: uppercase !important;
+.sidebar-logo-wrap img {{
+    width: 100%;
+    border-radius: 22px;
+    box-shadow: 0 18px 45px rgba(0,0,0,.22);
+}}
+
+.mb-section-label {{
+    margin-top: 14px;
+    margin-bottom: 7px;
+    color: rgba(255,231,163,.64) !important;
+    font-size: 11px;
+    font-weight: 1000;
+    letter-spacing: .18em;
+    text-transform: uppercase;
 }}
 
 button[data-testid="collapsedControl"] {{
@@ -163,56 +195,63 @@ button[data-testid="collapsedControl"] {{
     opacity: 1 !important;
 }}
 
-.mb-nav-wrap {{
-    margin-bottom: 6px;
+.mb-nav-item {{
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    margin-bottom: 9px;
 }}
 
-.mb-nav-wrap [data-testid="column"] {{
-    padding: 0 !important;
-}}
-
-.mb-nav-icon-shell {{
-    width: 40px;
-    height: 40px;
-    border-radius: 15px;
+.mb-nav-icon {{
+    flex: 0 0 46px;
+    width: 46px;
+    height: 46px;
+    border-radius: 17px;
     display: flex;
     align-items: center;
     justify-content: center;
     background:
-        linear-gradient(135deg, rgba(255,231,163,.10), rgba(168,85,247,.12));
-    border: 1px solid rgba(255,231,163,.14);
+        radial-gradient(circle at top left, rgba(255,231,163,.16), transparent 32%),
+        linear-gradient(135deg, rgba(49,18,62,.95), rgba(20,9,32,.98));
+    border: 1px solid rgba(255,231,163,.15);
     box-shadow:
         inset 0 0 0 1px rgba(255,255,255,.025),
-        0 8px 18px rgba(0,0,0,.14);
+        0 10px 24px rgba(0,0,0,.18);
 }}
 
-.mb-nav-icon-shell img {{
-    width: 23px !important;
-    height: 23px !important;
-    object-fit: contain !important;
-    border-radius: 0 !important;
+.mb-nav-icon img {{
+    width: 25px;
+    height: 25px;
+    object-fit: contain;
+    display: block;
 }}
 
-.stButton > button {{
+.mb-nav-button {{
+    flex: 1;
+}}
+
+.mb-nav-button .stButton > button {{
     width: 100% !important;
-    min-height: 40px !important;
-    border-radius: 15px !important;
+    min-height: 46px !important;
+    border-radius: 17px !important;
     border: 1px solid rgba(255,231,163,.14) !important;
     background:
-        linear-gradient(135deg, rgba(32,9,48,.92), rgba(12,6,22,.98)) !important;
+        linear-gradient(135deg, rgba(32,9,48,.90), rgba(12,6,22,.98)) !important;
     color: var(--mb-gold) !important;
     font-weight: 1000 !important;
-    font-size: 14px !important;
+    font-size: 15px !important;
     letter-spacing: .01em !important;
-    text-align: left !important;
-    padding-left: 14px !important;
+    text-align: center !important;
+    padding-left: 10px !important;
+    padding-right: 10px !important;
     box-shadow:
         inset 0 0 0 1px rgba(255,255,255,.025),
         0 10px 24px rgba(0,0,0,.16) !important;
     transition: all .18s ease !important;
 }}
 
-.stButton > button:hover {{
+.mb-nav-button .stButton > button:hover {{
     transform: translateY(-1px) !important;
     color: #ffffff !important;
     border-color: rgba(255,231,163,.34) !important;
@@ -223,20 +262,17 @@ button[data-testid="collapsedControl"] {{
         0 0 12px rgba(255,231,163,.08) !important;
 }}
 
-.stButton > button:active {{
-    transform: translateY(0) !important;
-}}
-
-.mb-active-nav .mb-nav-icon-shell {{
+.mb-nav-active .mb-nav-icon {{
     background:
-        linear-gradient(135deg, rgba(255,231,163,.24), rgba(168,85,247,.26));
+        radial-gradient(circle at top left, rgba(255,231,163,.28), transparent 32%),
+        linear-gradient(135deg, rgba(126,34,206,.82), rgba(38,12,62,.98));
     border-color: rgba(255,231,163,.45);
     box-shadow:
-        0 0 22px rgba(168,85,247,.22),
-        0 0 14px rgba(255,231,163,.12);
+        0 0 24px rgba(168,85,247,.26),
+        0 0 16px rgba(255,231,163,.12);
 }}
 
-.mb-active-nav .stButton > button {{
+.mb-nav-active .mb-nav-button .stButton > button {{
     color: #ffffff !important;
     border-color: rgba(255,231,163,.44) !important;
     background:
@@ -313,40 +349,49 @@ div[data-testid="stAlert"] {{
 
 .sidebar-user-card {{
     background:
-        radial-gradient(circle at top right, rgba(168,85,247,.14), transparent 34%),
-        linear-gradient(180deg, rgba(22,8,38,.98), rgba(10,6,18,.98));
+        radial-gradient(circle at top right, rgba(168,85,247,.18), transparent 36%),
+        linear-gradient(180deg, rgba(24,8,42,.98), rgba(10,6,18,.98));
     border: 1px solid rgba(255,255,255,.09);
-    border-radius: 24px;
+    border-radius: 26px;
     padding: 18px;
     margin-top: 18px;
     margin-bottom: 10px;
-    box-shadow: 0 0 32px rgba(168,85,247,.12);
+    box-shadow: 0 0 34px rgba(168,85,247,.14);
+}}
+
+.sidebar-user-row {{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
 }}
 
 .sidebar-user-name {{
     font-size: 18px;
     font-weight: 1000;
     color: #ffffff !important;
-    margin-bottom: 8px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }}
 
 .sidebar-user-plan {{
     display: inline-flex;
-    padding: 6px 12px;
+    padding: 6px 11px;
     border-radius: 999px;
     background: linear-gradient(135deg, #7c3aed, #a855f7);
     color: #ffffff !important;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 1000;
-    margin-bottom: 12px;
+    white-space: nowrap;
 }}
 
 .sidebar-user-tokens {{
     color: var(--mb-gold) !important;
-    font-size: 28px;
+    font-size: 30px;
     font-weight: 1000;
     line-height: 1;
-    margin-top: 10px;
+    margin-top: 14px;
 }}
 
 .sidebar-user-caption {{
@@ -413,37 +458,52 @@ def sync_session_user(user: dict | None) -> None:
     st.session_state.admin_level = int(user.get("admin_level", 0) or 0)
 
 
-def nav(label: str, page: str, icon: str) -> None:
-    path = icon_path(icon)
-
-    is_active = st.session_state.get("page") == page
-    active_class = "mb-active-nav" if is_active else ""
-
+def section_label(label: str) -> None:
     st.markdown(
-        f'<div class="mb-nav-wrap {active_class}">',
+        f'<div class="mb-section-label">{html.escape(label)}</div>',
         unsafe_allow_html=True,
     )
 
-    icon_col, button_col = st.columns([0.16, 0.84], gap="small")
 
-    with icon_col:
+def nav(label: str, page: str) -> None:
+    src = icon_src(page)
+    is_active = st.session_state.get("page") == page
+    active_class = "mb-nav-active" if is_active else ""
+
+    st.markdown(
+        f'<div class="mb-nav-item {active_class}">',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        '<div class="mb-nav-icon">',
+        unsafe_allow_html=True,
+    )
+
+    if src:
         st.markdown(
-            '<div class="mb-nav-icon-shell">',
+            f'<img src="{src}" alt="">',
             unsafe_allow_html=True,
         )
 
-        if path.exists():
-            st.image(str(path), width=23)
+    st.markdown(
+        "</div>",
+        unsafe_allow_html=True,
+    )
 
-        st.markdown(
-            "</div>",
-            unsafe_allow_html=True,
-        )
+    st.markdown(
+        '<div class="mb-nav-button">',
+        unsafe_allow_html=True,
+    )
 
-    with button_col:
-        if st.button(label, key=f"nav_{page}", width="stretch"):
-            st.session_state.page = page
-            st.rerun()
+    if st.button(label, key=f"nav_{page}", width="stretch"):
+        st.session_state.page = page
+        st.rerun()
+
+    st.markdown(
+        "</div>",
+        unsafe_allow_html=True,
+    )
 
     st.markdown(
         "</div>",
@@ -454,40 +514,45 @@ def nav(label: str, page: str, icon: str) -> None:
 def render_sidebar() -> None:
     with st.sidebar:
         if WORDMARK.exists():
-            st.image(str(WORDMARK), width="stretch")
+            wordmark_src = img_base64(WORDMARK)
+
+            st.markdown(
+                f"""
+<div class="sidebar-logo-wrap">
+    <img src="data:image/png;base64,{wordmark_src}" alt="MaByte">
+</div>
+""",
+                unsafe_allow_html=True,
+            )
         else:
             st.markdown("## MaByte")
 
-        st.write("")
+        nav("Mission Control", "home")
+        nav("AI Assistant", "chat")
+        nav("Projects", "projects")
+        nav("Automations", "automation_lab")
+        nav("Football AI", "football")
 
-        nav("Mission Control", "home", "missioncontrol")
-        nav("AI Assistant", "chat", "chat")
-        nav("Projects", "projects", "projects")
-        nav("Automations", "automation_lab", "automations")
-        nav("Football AI", "football", "football")
+        section_label("Media")
 
-        st.caption("MEDIA")
+        nav("Image Studio", "image")
+        nav("Video Studio", "video")
+        nav("Reels Studio", "reels")
+        nav("Music Studio", "music")
+        nav("Code Studio", "coding")
 
-        nav("Image Studio", "image", "image")
-        nav("Video Studio", "video", "video")
-        nav("Reels Studio", "reels", "video")
-        nav("Music Studio", "music", "music")
-        nav("Code Studio", "coding", "code")
+        section_label("Account")
 
-        st.caption("ACCOUNT")
-
-        nav("Dashboard", "dashboard", "dashboard")
-        nav("Premium", "premium", "premium")
-        nav("Redeem", "redeem", "reedem")
-        nav("Support", "support", "tools")
+        nav("Dashboard", "dashboard")
+        nav("Premium", "premium")
+        nav("Redeem", "redeem")
+        nav("Support", "support")
 
         admin_level = int(st.session_state.get("admin_level", 0) or 0)
 
         if admin_level >= 1:
-            st.caption("SYSTEM")
-            nav("Admin Panel", "admin", "settings-sliders")
-
-        st.divider()
+            section_label("System")
+            nav("Admin Panel", "admin")
 
         user = html.escape(str(st.session_state.get("user", "User")))
         plan = html.escape(str(st.session_state.get("plan", "free")))
@@ -496,8 +561,10 @@ def render_sidebar() -> None:
         st.markdown(
             f"""
 <div class="sidebar-user-card">
-    <div class="sidebar-user-name">{user}</div>
-    <div class="sidebar-user-plan">{plan.upper()}</div>
+    <div class="sidebar-user-row">
+        <div class="sidebar-user-name">{user}</div>
+        <div class="sidebar-user-plan">{plan.upper()}</div>
+    </div>
     <div class="sidebar-user-tokens">{tokens:,}</div>
     <div class="sidebar-user-caption">Tokens verfügbar</div>
 </div>
