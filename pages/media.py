@@ -709,7 +709,7 @@ def render_coding_ai() -> None:
 
         st.metric("Kosten", f"{cost} Tokens")
 
-    if st.button("Code Assistant starten", width="stretch"):
+    if st.button("Code Assistant starten:", width="stretch"):
         if not task:
             st.warning("Bitte Aufgabe eingeben.")
             return
