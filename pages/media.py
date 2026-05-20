@@ -575,7 +575,7 @@ def render_video_generator() -> None:
 
     if st.button("Video Prompt vorbereiten", width="stretch"):
         if not idea:
-            st.warning("Bitte Video Idee eingeben.")
+            st.warning("Bitte Video Idee eingeben")
             return
 
         prompt = f"""
