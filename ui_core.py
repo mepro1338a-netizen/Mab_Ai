@@ -403,6 +403,13 @@ def sync_session_user(user: dict | None) -> None:
     st.session_state.admin_level = int(user.get("admin_level", 0) or 0)
 
 
+def is_admin_user() -> bool:
+    role = str(st.session_state.get("role", "user") or "user").lower()
+    admin_level = int(st.session_state.get("admin_level", 0) or 0)
+
+    return role in ["admin", "owner"] or admin_level >= 1
+
+
 def section_label(label: str) -> None:
     st.markdown(
         f'<div class="mb-section-label">{html.escape(label)}</div>',
@@ -485,9 +492,7 @@ def render_sidebar() -> None:
         nav("Redeem", "redeem")
         nav("Support", "support")
 
-        admin_level = int(st.session_state.get("admin_level", 0) or 0)
-
-        if admin_level >= 1:
+        if is_admin_user():
             section_label("System")
             nav("Admin Panel", "admin")
 
