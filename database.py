@@ -1,190 +1,29 @@
 ﻿import sqlite3
 import secrets
 from datetime import datetime, timedelta
+
 import bcrypt
 
 from config import DB_PATH, PLANS
 
-# =========================================================
-# MISSION CONTROL / ACTIVITY
-# =========================================================
 
-def usage_summary(username=None, days=7):
-    conn = get_connection()
-    cur = conn.cursor()
+OWNER_USERNAME = "mepro1337"
 
-    since = (datetime.utcnow() - timedelta(days=int(days))).isoformat()
+ROLE_LEVELS = {
+    "user": 0,
+    "supporter": 1,
+    "moderator": 2,
+    "admin": 3,
+    "owner": 1337,
+}
 
-    if username:
-        rows = cur.execute("""
-            SELECT
-                tool,
-                COUNT(*) AS runs,
-                SUM(cost_tokens) AS total_tokens
-            FROM usage_logs
-            WHERE username = ?
-            AND created_at >= ?
-            GROUP BY tool
-            ORDER BY runs DESC
-        """, (
-            (username or "").strip().lower(),
-            since,
-        )).fetchall()
-    else:
-        rows = cur.execute("""
-            SELECT
-                tool,
-                COUNT(*) AS runs,
-                SUM(cost_tokens) AS total_tokens
-            FROM usage_logs
-            WHERE created_at >= ?
-            GROUP BY tool
-            ORDER BY runs DESC
-        """, (
-            since,
-        )).fetchall()
-
-    conn.close()
-    return rows_to_dicts(rows)
-
-
-def recent_activity(username=None, limit=8):
-    conn = get_connection()
-    cur = conn.cursor()
-
-    if username:
-        rows = cur.execute("""
-            SELECT
-                tool,
-                prompt,
-                cost_tokens,
-                api_provider,
-                status,
-                created_at
-            FROM usage_logs
-            WHERE username = ?
-            ORDER BY id DESC
-            LIMIT ?
-        """, (
-            (username or "").strip().lower(),
-            int(limit),
-        )).fetchall()
-    else:
-        rows = cur.execute("""
-            SELECT
-                tool,
-                prompt,
-                cost_tokens,
-                api_provider,
-                status,
-                created_at
-            FROM usage_logs
-            ORDER BY id DESC
-            LIMIT ?
-        """, (
-            int(limit),
-        )).fetchall()
-
-    conn.close()
-    return rows_to_dicts(rows)
-
-
-def total_tokens_used(username=None):
-    conn = get_connection()
-    cur = conn.cursor()
-
-    if username:
-        row = cur.execute("""
-            SELECT SUM(cost_tokens) AS total
-            FROM usage_logs
-            WHERE username = ?
-            AND cost_tokens > 0
-        """, (
-            (username or "").strip().lower(),
-        )).fetchone()
-    else:
-        row = cur.execute("""
-            SELECT SUM(cost_tokens) AS total
-            FROM usage_logs
-            WHERE cost_tokens > 0
-        """).fetchone()
-
-    conn.close()
-    return int(row["total"] or 0)
-
-
-def successful_jobs_count(username=None):
-    conn = get_connection()
-    cur = conn.cursor()
-
-    if username:
-        row = cur.execute("""
-            SELECT COUNT(*) AS total
-            FROM usage_logs
-            WHERE username = ?
-            AND status IN ('success', 'charged')
-        """, (
-            (username or "").strip().lower(),
-        )).fetchone()
-    else:
-        row = cur.execute("""
-            SELECT COUNT(*) AS total
-            FROM usage_logs
-            WHERE status IN ('success', 'charged')
-        """).fetchone()
-
-    conn.close()
-    return int(row["total"] or 0)
-
-
-def failed_jobs_count(username=None):
-    conn = get_connection()
-    cur = conn.cursor()
-
-    if username:
-        row = cur.execute("""
-            SELECT COUNT(*) AS total
-            FROM usage_logs
-            WHERE username = ?
-            AND status IN ('failed', 'error', 'refunded')
-        """, (
-            (username or "").strip().lower(),
-        )).fetchone()
-    else:
-        row = cur.execute("""
-            SELECT COUNT(*) AS total
-            FROM usage_logs
-            WHERE status IN ('failed', 'error', 'refunded')
-        """).fetchone()
-
-    conn.close()
-    return int(row["total"] or 0)
-
-
-def workspace_activity_score(username=None):
-    summary = usage_summary(username=username, days=7)
-
-    score = 0
-
-    for row in summary:
-        runs = int(row.get("runs") or 0)
-        tokens = int(row.get("total_tokens") or 0)
-        score += runs * 5
-        score += min(tokens // 10, 100)
-
-    return min(score, 100)
-
-
-def latest_tool_used(username=None):
-    activity = recent_activity(username=username, limit=1)
-
-    if not activity:
-        return "None"
-
-    return activity[0].get("tool", "None")
 
 def now():
     return datetime.utcnow().isoformat()
+
+
+def normalize_username(username):
+    return (username or "").strip().lower()
 
 
 def get_connection():
@@ -201,19 +40,6 @@ def rows_to_dicts(rows):
     return [dict(row) for row in rows]
 
 
-def validate_password(password):
-    if not password:
-        return False, "Bitte Passwort eingeben."
-
-    if len(password) < 6:
-        return False, "Passwort muss mindestens 6 Zeichen haben."
-
-    if len(password.encode("utf-8")) > 72:
-        return False, "Passwort maximal 72 Zeichen."
-
-    return True, ""
-
-
 def init_db():
     conn = get_connection()
     cur = conn.cursor()
@@ -226,6 +52,7 @@ def init_db():
         password_hash TEXT,
         plan TEXT DEFAULT 'free',
         tokens INTEGER DEFAULT 0,
+        automation_unlocked INTEGER DEFAULT 0,
         role TEXT DEFAULT 'user',
         admin_level INTEGER DEFAULT 0,
         is_banned INTEGER DEFAULT 0,
@@ -233,6 +60,11 @@ def init_db():
         last_login TEXT
     )
     """)
+
+    try:
+        cur.execute("ALTER TABLE users ADD COLUMN automation_unlocked INTEGER DEFAULT 0")
+    except Exception:
+        pass
 
     cur.execute("""
     CREATE TABLE IF NOT EXISTS support_tickets (
@@ -259,17 +91,6 @@ def init_db():
         cost_tokens INTEGER DEFAULT 0,
         api_provider TEXT,
         status TEXT,
-        created_at TEXT
-    )
-    """)
-
-    cur.execute("""
-    CREATE TABLE IF NOT EXISTS audit_logs (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        actor TEXT,
-        action TEXT,
-        target TEXT,
-        details TEXT,
         created_at TEXT
     )
     """)
@@ -303,16 +124,40 @@ def init_db():
     )
     """)
 
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS login_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT,
+        ip_address TEXT,
+        user_agent TEXT,
+        success INTEGER DEFAULT 0,
+        created_at TEXT
+    )
+    """)
+
     conn.commit()
     conn.close()
 
 
+def validate_password(password):
+    if not password:
+        return False, "Bitte Passwort eingeben."
+
+    if len(password) < 6:
+        return False, "Passwort muss mindestens 6 Zeichen haben."
+
+    if len(password.encode("utf-8")) > 72:
+        return False, "Passwort maximal 72 Zeichen."
+
+    return True, ""
+
+
 def create_user(username, email, password):
-    username = (username or "").strip().lower()
+    username = normalize_username(username)
     email = (email or "").strip().lower()
 
     if not username or not email or not password:
-        return False, "Bitte alle Felder ausfÃ¼llen."
+        return False, "Bitte alle Felder ausfüllen."
 
     valid, msg = validate_password(password)
     if not valid:
@@ -324,7 +169,7 @@ def create_user(username, email, password):
     try:
         password_hash = bcrypt.hashpw(
             password.encode("utf-8"),
-            bcrypt.gensalt()
+            bcrypt.gensalt(),
         ).decode("utf-8")
 
         cur.execute("""
@@ -334,22 +179,24 @@ def create_user(username, email, password):
             password_hash,
             plan,
             tokens,
+            automation_unlocked,
             role,
             admin_level,
             is_banned,
             created_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             username,
             email,
             password_hash,
             "free",
             int(PLANS["free"]["tokens"]),
+            0,
             "user",
             0,
             0,
-            now()
+            now(),
         ))
 
         conn.commit()
@@ -362,12 +209,11 @@ def create_user(username, email, password):
         return False, f"Datenbankfehler: {e}"
 
     finally:
-        conn.commit()
         conn.close()
 
 
 def verify_login(username, password):
-    username = (username or "").strip().lower()
+    username = normalize_username(username)
 
     if not username or not password:
         return False, "Bitte Username und Passwort eingeben.", None
@@ -375,8 +221,10 @@ def verify_login(username, password):
     conn = get_connection()
     cur = conn.cursor()
 
-    cur.execute("SELECT * FROM users WHERE username = ?", (username,))
-    user = cur.fetchone()
+    user = cur.execute(
+        "SELECT * FROM users WHERE username = ?",
+        (username,),
+    ).fetchone()
 
     if not user:
         conn.close()
@@ -389,7 +237,7 @@ def verify_login(username, password):
     try:
         valid = bcrypt.checkpw(
             password.encode("utf-8"),
-            user["password_hash"].encode("utf-8")
+            user["password_hash"].encode("utf-8"),
         )
     except Exception:
         valid = False
@@ -400,13 +248,15 @@ def verify_login(username, password):
 
     cur.execute(
         "UPDATE users SET last_login = ? WHERE username = ?",
-        (now(), username)
+        (now(), username),
     )
 
     conn.commit()
 
-    cur.execute("SELECT * FROM users WHERE username = ?", (username,))
-    updated_user = cur.fetchone()
+    updated_user = cur.execute(
+        "SELECT * FROM users WHERE username = ?",
+        (username,),
+    ).fetchone()
 
     conn.close()
     return True, "Login erfolgreich.", row_to_dict(updated_user)
@@ -416,14 +266,12 @@ def get_user(username):
     conn = get_connection()
     cur = conn.cursor()
 
-    cur.execute(
+    user = cur.execute(
         "SELECT * FROM users WHERE username = ?",
-        ((username or "").strip().lower(),)
-    )
+        (normalize_username(username),),
+    ).fetchone()
 
-    user = cur.fetchone()
     conn.close()
-
     return row_to_dict(user)
 
 
@@ -431,11 +279,123 @@ def list_users():
     conn = get_connection()
     cur = conn.cursor()
 
-    cur.execute("SELECT * FROM users ORDER BY id DESC")
-    rows = cur.fetchall()
+    rows = cur.execute(
+        "SELECT * FROM users ORDER BY id DESC"
+    ).fetchall()
 
     conn.close()
     return rows_to_dicts(rows)
+
+
+def get_role_level(username):
+    username = normalize_username(username)
+
+    if username == OWNER_USERNAME:
+        return 1337
+
+    user = get_user(username)
+
+    if not user:
+        return 0
+
+    role = str(user.get("role") or "user").lower()
+    return int(user.get("admin_level") or ROLE_LEVELS.get(role, 0))
+
+
+def is_owner_user(username):
+    username = normalize_username(username)
+    return username == OWNER_USERNAME or get_role_level(username) >= 1337
+
+
+def can_manage_support(actor):
+    return get_role_level(actor) >= 1
+
+
+def can_manage_users(actor):
+    return get_role_level(actor) >= 2
+
+
+def can_manage_roles(actor):
+    return get_role_level(actor) >= 3
+
+
+def can_assign_role(actor, target, new_role):
+    actor = normalize_username(actor)
+    target = normalize_username(target)
+    new_role = str(new_role or "user").lower()
+
+    if not can_manage_roles(actor):
+        return False, "Keine Berechtigung für Rollen."
+
+    if target == OWNER_USERNAME and not is_owner_user(actor):
+        return False, "Owner ist geschützt."
+
+    if new_role == "owner" and not is_owner_user(actor):
+        return False, "Nur Owner darf Owner vergeben."
+
+    if new_role not in ROLE_LEVELS:
+        return False, "Ungültige Rolle."
+
+    return True, ""
+
+
+def set_role(username, role, admin_level=0):
+    username = normalize_username(username)
+    role = str(role or "user").lower()
+
+    if username == OWNER_USERNAME:
+        role = "owner"
+        admin_level = 1337
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute(
+        "UPDATE users SET role = ?, admin_level = ? WHERE username = ?",
+        (role, int(admin_level), username),
+    )
+
+    conn.commit()
+    conn.close()
+
+
+def secure_set_role(actor, target, new_role):
+    ok, msg = can_assign_role(actor, target, new_role)
+
+    if not ok:
+        return False, msg
+
+    set_role(target, new_role, ROLE_LEVELS.get(new_role, 0))
+    return True, "Rolle gespeichert."
+
+
+def make_admin(username):
+    username = normalize_username(username)
+
+    if username == OWNER_USERNAME:
+        set_role(username, "owner", 1337)
+    else:
+        set_role(username, "admin", 3)
+
+
+def set_plan(username, plan):
+    username = normalize_username(username)
+
+    if plan not in PLANS:
+        plan = "free"
+
+    tokens = int(PLANS.get(plan, PLANS["free"]).get("tokens", 0))
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute(
+        "UPDATE users SET plan = ?, tokens = ? WHERE username = ?",
+        (plan, tokens, username),
+    )
+
+    conn.commit()
+    conn.close()
 
 
 def update_tokens(username, tokens):
@@ -444,7 +404,7 @@ def update_tokens(username, tokens):
 
     cur.execute(
         "UPDATE users SET tokens = ? WHERE username = ?",
-        (int(tokens), (username or "").strip().lower())
+        (int(tokens), normalize_username(username)),
     )
 
     conn.commit()
@@ -452,21 +412,27 @@ def update_tokens(username, tokens):
 
 
 def spend_tokens(username, amount):
-    user = get_user(username)
-
-    if not user:
-        return False, "User nicht gefunden."
-
-    if int(user["tokens"] or 0) < int(amount):
-        return False, "Nicht genug Tokens."
+    username = normalize_username(username)
+    amount = int(amount)
 
     conn = get_connection()
     cur = conn.cursor()
 
-    cur.execute(
-        "UPDATE users SET tokens = tokens - ? WHERE username = ?",
-        (int(amount), (username or "").strip().lower())
-    )
+    cur.execute("""
+    UPDATE users
+    SET tokens = tokens - ?
+    WHERE username = ?
+    AND tokens >= ?
+    """, (
+        amount,
+        username,
+        amount,
+    ))
+
+    if cur.rowcount == 0:
+        conn.rollback()
+        conn.close()
+        return False, "Nicht genug Tokens."
 
     conn.commit()
     conn.close()
@@ -474,64 +440,70 @@ def spend_tokens(username, amount):
     return True, "Tokens abgezogen."
 
 
-def set_plan(username, plan):
-    tokens = PLANS.get(plan, PLANS["free"])["tokens"]
-
-    conn = get_connection()
-    cur = conn.cursor()
-
-    cur.execute(
-        "UPDATE users SET plan = ?, tokens = ? WHERE username = ?",
-        (plan, int(tokens), (username or "").strip().lower())
-    )
-
-    conn.commit()
-    conn.close()
-
-
-def set_role(username, role, admin_level=0):
-    conn = get_connection()
-    cur = conn.cursor()
-
-    cur.execute(
-        "UPDATE users SET role = ?, admin_level = ? WHERE username = ?",
-        (role, int(admin_level), (username or "").strip().lower())
-    )
-
-    conn.commit()
-    conn.close()
-
-
-def make_admin(username):
-    set_role(username, "admin", 999)
-
-
 def ban_user(username, banned=True):
+    username = normalize_username(username)
+
+    if username == OWNER_USERNAME:
+        return False
+
     conn = get_connection()
     cur = conn.cursor()
 
     cur.execute(
         "UPDATE users SET is_banned = ? WHERE username = ?",
-        (1 if banned else 0, (username or "").strip().lower())
-    )
-
-    conn.commit()
-    conn.close()
-
-
-def delete_user(username):
-    conn = get_connection()
-    cur = conn.cursor()
-
-    cur.execute(
-        "DELETE FROM users WHERE username = ?",
-        ((username or "").strip().lower(),)
+        (1 if banned else 0, username),
     )
 
     conn.commit()
     conn.close()
 
     return True
+
+
+def secure_ban_user(actor, target, banned=True):
+    if not can_manage_users(actor):
+        return False, "Keine Berechtigung."
+
+    target = normalize_username(target)
+
+    if target == OWNER_USERNAME:
+        return False, "Owner kann nicht gebannt werden."
+
+    ban_user(target, banned)
+    return True, "Status geändert."
+
+
+def delete_user(username):
+    username = normalize_username(username)
+
+    if username == OWNER_USERNAME:
+        return False
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute(
+        "DELETE FROM users WHERE username = ?",
+        (username,),
+    )
+
+    conn.commit()
+    conn.close()
+
+    return True
+
+
+def secure_delete_user(actor, target):
+    if not can_manage_roles(actor):
+        return False, "Keine Berechtigung."
+
+    target = normalize_username(target)
+
+    if target == OWNER_USERNAME:
+        return False, "Owner kann nicht gelöscht werden."
+
+    delete_user(target)
+    return True, "User gelöscht."
 
 
 def create_support_message(username, email, category, subject, message):
@@ -552,13 +524,13 @@ def create_support_message(username, email, category, subject, message):
     )
     VALUES (?, ?, ?, ?, ?, 'open', 'normal', ?, ?)
     """, (
-        username,
+        normalize_username(username),
         email,
         category,
         subject,
         message,
         now(),
-        now()
+        now(),
     ))
 
     conn.commit()
@@ -572,16 +544,16 @@ def list_support_messages(status_filter="all"):
     cur = conn.cursor()
 
     if status_filter == "all":
-        cur.execute("SELECT * FROM support_tickets ORDER BY id DESC")
+        rows = cur.execute(
+            "SELECT * FROM support_tickets ORDER BY id DESC"
+        ).fetchall()
     else:
-        cur.execute(
+        rows = cur.execute(
             "SELECT * FROM support_tickets WHERE status = ? ORDER BY id DESC",
-            (status_filter,)
-        )
+            (status_filter,),
+        ).fetchall()
 
-    rows = cur.fetchall()
     conn.close()
-
     return rows_to_dicts(rows)
 
 
@@ -617,7 +589,7 @@ def set_support_status(ticket_id, status):
 
     cur.execute(
         "UPDATE support_tickets SET status = ?, updated_at = ? WHERE id = ?",
-        (status, now(), int(ticket_id))
+        (status, now(), int(ticket_id)),
     )
 
     conn.commit()
@@ -630,7 +602,7 @@ def delete_support_message(ticket_id):
 
     cur.execute(
         "DELETE FROM support_tickets WHERE id = ?",
-        (int(ticket_id),)
+        (int(ticket_id),),
     )
 
     conn.commit()
@@ -644,7 +616,7 @@ def create_redeem_code(
     plan="",
     max_uses=1,
     created_by="",
-    days_valid=30
+    days_valid=30,
 ):
     code = secrets.token_hex(4).upper()
     expires_at = (datetime.utcnow() + timedelta(days=int(days_valid))).isoformat()
@@ -672,9 +644,9 @@ def create_redeem_code(
         plan,
         int(tokens or 0),
         int(max_uses or 1),
-        created_by,
+        normalize_username(created_by),
         expires_at,
-        now()
+        now(),
     ))
 
     conn.commit()
@@ -687,29 +659,29 @@ def list_codes():
     conn = get_connection()
     cur = conn.cursor()
 
-    cur.execute("SELECT * FROM redeem_codes ORDER BY id DESC")
-    rows = cur.fetchall()
+    rows = cur.execute(
+        "SELECT * FROM redeem_codes ORDER BY id DESC"
+    ).fetchall()
 
     conn.close()
-
     return rows_to_dicts(rows)
 
 
 def redeem_code(username, code):
+    username = normalize_username(username)
     code = (code or "").strip().upper()
-    username = (username or "").strip().lower()
 
     conn = get_connection()
     cur = conn.cursor()
 
     item = cur.execute(
         "SELECT * FROM redeem_codes WHERE code = ? AND is_active = 1",
-        (code,)
+        (code,),
     ).fetchone()
 
     if not item:
         conn.close()
-        return False, "Code ungÃ¼ltig."
+        return False, "Code ungültig."
 
     if int(item["used_count"] or 0) >= int(item["max_uses"] or 1):
         conn.close()
@@ -722,24 +694,24 @@ def redeem_code(username, code):
     if int(item["tokens"] or 0) > 0:
         cur.execute(
             "UPDATE users SET tokens = tokens + ? WHERE username = ?",
-            (int(item["tokens"]), username)
+            (int(item["tokens"]), username),
         )
 
     if item["plan"]:
         cur.execute(
             "UPDATE users SET plan = ? WHERE username = ?",
-            (item["plan"], username)
+            (item["plan"], username),
         )
 
     cur.execute(
         "UPDATE redeem_codes SET used_count = used_count + 1 WHERE code = ?",
-        (code,)
+        (code,),
     )
 
     conn.commit()
     conn.close()
 
-    return True, "Code eingelÃ¶st."
+    return True, "Code eingelöst."
 
 
 def save_usage(
@@ -749,7 +721,7 @@ def save_usage(
     tokens_used=0,
     cost_tokens=0,
     api_provider="",
-    status="success"
+    status="success",
 ):
     conn = get_connection()
     cur = conn.cursor()
@@ -767,14 +739,14 @@ def save_usage(
     )
     VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     """, (
-        username,
+        normalize_username(username),
         tool,
         prompt,
         int(tokens_used or 0),
         int(cost_tokens or 0),
         api_provider,
         status,
-        now()
+        now(),
     ))
 
     conn.commit()
@@ -786,54 +758,173 @@ def list_usage(username=None):
     cur = conn.cursor()
 
     if username:
-        cur.execute(
+        rows = cur.execute(
             "SELECT * FROM usage_logs WHERE username = ? ORDER BY id DESC",
-            ((username or "").strip().lower(),)
-        )
+            (normalize_username(username),),
+        ).fetchall()
     else:
-        cur.execute("SELECT * FROM usage_logs ORDER BY id DESC")
+        rows = cur.execute(
+            "SELECT * FROM usage_logs ORDER BY id DESC"
+        ).fetchall()
 
-    rows = cur.fetchall()
     conn.close()
-
     return rows_to_dicts(rows)
 
 
-def add_audit_log(actor, action, target="", details=""):
+def usage_summary(username=None, days=7):
     conn = get_connection()
     cur = conn.cursor()
 
-    cur.execute("""
-    INSERT INTO audit_logs (
-        actor,
-        action,
-        target,
-        details,
-        created_at
-    )
-    VALUES (?, ?, ?, ?, ?)
-    """, (
-        actor,
-        action,
-        target,
-        details,
-        now()
-    ))
+    since = (datetime.utcnow() - timedelta(days=int(days))).isoformat()
 
-    conn.commit()
-    conn.close()
-
-
-def list_audit_logs():
-    conn = get_connection()
-    cur = conn.cursor()
-
-    cur.execute("SELECT * FROM audit_logs ORDER BY id DESC")
-    rows = cur.fetchall()
+    if username:
+        rows = cur.execute("""
+        SELECT tool, COUNT(*) AS runs, SUM(cost_tokens) AS total_tokens
+        FROM usage_logs
+        WHERE username = ?
+        AND created_at >= ?
+        GROUP BY tool
+        ORDER BY runs DESC
+        """, (
+            normalize_username(username),
+            since,
+        )).fetchall()
+    else:
+        rows = cur.execute("""
+        SELECT tool, COUNT(*) AS runs, SUM(cost_tokens) AS total_tokens
+        FROM usage_logs
+        WHERE created_at >= ?
+        GROUP BY tool
+        ORDER BY runs DESC
+        """, (
+            since,
+        )).fetchall()
 
     conn.close()
-
     return rows_to_dicts(rows)
+
+
+def recent_activity(username=None, limit=8):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    if username:
+        rows = cur.execute("""
+        SELECT tool, prompt, cost_tokens, api_provider, status, created_at
+        FROM usage_logs
+        WHERE username = ?
+        ORDER BY id DESC
+        LIMIT ?
+        """, (
+            normalize_username(username),
+            int(limit),
+        )).fetchall()
+    else:
+        rows = cur.execute("""
+        SELECT tool, prompt, cost_tokens, api_provider, status, created_at
+        FROM usage_logs
+        ORDER BY id DESC
+        LIMIT ?
+        """, (
+            int(limit),
+        )).fetchall()
+
+    conn.close()
+    return rows_to_dicts(rows)
+
+
+def total_tokens_used(username=None):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    if username:
+        row = cur.execute("""
+        SELECT SUM(cost_tokens) AS total
+        FROM usage_logs
+        WHERE username = ?
+        AND cost_tokens > 0
+        """, (
+            normalize_username(username),
+        )).fetchone()
+    else:
+        row = cur.execute("""
+        SELECT SUM(cost_tokens) AS total
+        FROM usage_logs
+        WHERE cost_tokens > 0
+        """).fetchone()
+
+    conn.close()
+    return int(row["total"] or 0)
+
+
+def successful_jobs_count(username=None):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    if username:
+        row = cur.execute("""
+        SELECT COUNT(*) AS total
+        FROM usage_logs
+        WHERE username = ?
+        AND status IN ('success', 'charged')
+        """, (
+            normalize_username(username),
+        )).fetchone()
+    else:
+        row = cur.execute("""
+        SELECT COUNT(*) AS total
+        FROM usage_logs
+        WHERE status IN ('success', 'charged')
+        """).fetchone()
+
+    conn.close()
+    return int(row["total"] or 0)
+
+
+def failed_jobs_count(username=None):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    if username:
+        row = cur.execute("""
+        SELECT COUNT(*) AS total
+        FROM usage_logs
+        WHERE username = ?
+        AND status IN ('failed', 'error', 'refunded')
+        """, (
+            normalize_username(username),
+        )).fetchone()
+    else:
+        row = cur.execute("""
+        SELECT COUNT(*) AS total
+        FROM usage_logs
+        WHERE status IN ('failed', 'error', 'refunded')
+        """).fetchone()
+
+    conn.close()
+    return int(row["total"] or 0)
+
+
+def workspace_activity_score(username=None):
+    summary = usage_summary(username=username, days=7)
+    score = 0
+
+    for row in summary:
+        runs = int(row.get("runs") or 0)
+        tokens = int(row.get("total_tokens") or 0)
+        score += runs * 5
+        score += min(tokens // 10, 100)
+
+    return min(score, 100)
+
+
+def latest_tool_used(username=None):
+    activity = recent_activity(username=username, limit=1)
+
+    if not activity:
+        return "None"
+
+    return activity[0].get("tool", "None")
 
 
 def record_purchase(username, plan, amount, session_id, payment_status, status):
@@ -852,13 +943,13 @@ def record_purchase(username, plan, amount, session_id, payment_status, status):
     )
     VALUES (?, ?, ?, ?, ?, ?, ?)
     """, (
-        username,
+        normalize_username(username),
         plan,
         int(amount or 0),
         session_id,
         payment_status,
         status,
-        now()
+        now(),
     ))
 
     conn.commit()
@@ -870,40 +961,20 @@ def list_purchases(username=None):
     cur = conn.cursor()
 
     if username:
-        cur.execute(
+        rows = cur.execute(
             "SELECT * FROM payments WHERE username = ? ORDER BY id DESC",
-            ((username or "").strip().lower(),)
-        )
+            (normalize_username(username),),
+        ).fetchall()
     else:
-        cur.execute("SELECT * FROM payments ORDER BY id DESC")
+        rows = cur.execute(
+            "SELECT * FROM payments ORDER BY id DESC"
+        ).fetchall()
 
-    rows = cur.fetchall()
     conn.close()
-
     return rows_to_dicts(rows)
-
-def ensure_owner_tables():
-    conn = get_connection()
-    cur = conn.cursor()
-
-    cur.execute("""
-    CREATE TABLE IF NOT EXISTS login_logs (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        username TEXT,
-        ip_address TEXT,
-        user_agent TEXT,
-        success INTEGER DEFAULT 0,
-        created_at TEXT
-    )
-    """)
-
-    conn.commit()
-    conn.close()
 
 
 def record_login_event(username, ip_address="", user_agent="", success=True):
-    ensure_owner_tables()
-
     conn = get_connection()
     cur = conn.cursor()
 
@@ -917,7 +988,7 @@ def record_login_event(username, ip_address="", user_agent="", success=True):
     )
     VALUES (?, ?, ?, ?, ?)
     """, (
-        (username or "").strip().lower(),
+        normalize_username(username),
         ip_address,
         user_agent,
         1 if success else 0,
@@ -929,35 +1000,41 @@ def record_login_event(username, ip_address="", user_agent="", success=True):
 
 
 def list_login_logs(username=None, limit=200):
-    ensure_owner_tables()
-
     conn = get_connection()
     cur = conn.cursor()
 
     if username:
-        cur.execute("""
+        rows = cur.execute("""
         SELECT * FROM login_logs
         WHERE username = ?
         ORDER BY id DESC
         LIMIT ?
-        """, ((username or "").strip().lower(), int(limit)))
+        """, (
+            normalize_username(username),
+            int(limit),
+        )).fetchall()
     else:
-        cur.execute("""
+        rows = cur.execute("""
         SELECT * FROM login_logs
         ORDER BY id DESC
         LIMIT ?
-        """, (int(limit),))
+        """, (
+            int(limit),
+        )).fetchall()
 
-    rows = cur.fetchall()
+    conn.close()
+    return rows_to_dicts(rows)
+
+
+def clear_login_logs():
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM login_logs")
+    conn.commit()
     conn.close()
 
-    return rows_to_dicts(rows)
-# =========================================================
-# PROJECTS
-# =========================================================
 
 def ensure_project_tables():
-
     conn = get_connection()
     cur = conn.cursor()
 
@@ -990,7 +1067,6 @@ def ensure_project_tables():
 
 
 def create_project(username, title, description="", workspace="general"):
-
     ensure_project_tables()
 
     conn = get_connection()
@@ -1007,7 +1083,7 @@ def create_project(username, title, description="", workspace="general"):
     )
     VALUES (?, ?, ?, ?, ?, ?)
     """, (
-        (username or "").strip().lower(),
+        normalize_username(username),
         title,
         description,
         workspace,
@@ -1016,65 +1092,48 @@ def create_project(username, title, description="", workspace="general"):
     ))
 
     conn.commit()
-
     project_id = cur.lastrowid
-
     conn.close()
 
     return project_id
 
 
 def list_projects(username):
-
     ensure_project_tables()
 
     conn = get_connection()
     cur = conn.cursor()
 
-    cur.execute("""
+    rows = cur.execute("""
     SELECT * FROM projects
     WHERE username = ?
     ORDER BY id DESC
     """, (
-        (username or "").strip().lower(),
-    ))
-
-    rows = cur.fetchall()
+        normalize_username(username),
+    )).fetchall()
 
     conn.close()
-
     return rows_to_dicts(rows)
 
 
 def get_project(project_id):
-
     ensure_project_tables()
 
     conn = get_connection()
     cur = conn.cursor()
 
-    cur.execute("""
+    row = cur.execute("""
     SELECT * FROM projects
     WHERE id = ?
     """, (
         int(project_id),
-    ))
-
-    row = cur.fetchone()
+    )).fetchone()
 
     conn.close()
-
     return row_to_dict(row)
 
 
-def save_project_memory(
-    project_id,
-    username,
-    workspace,
-    memory_type,
-    content,
-):
-
+def save_project_memory(project_id, username, workspace, memory_type, content):
     ensure_project_tables()
 
     conn = get_connection()
@@ -1092,7 +1151,7 @@ def save_project_memory(
     VALUES (?, ?, ?, ?, ?, ?)
     """, (
         int(project_id),
-        (username or "").strip().lower(),
+        normalize_username(username),
         workspace,
         memory_type,
         content,
@@ -1104,32 +1163,24 @@ def save_project_memory(
 
 
 def list_project_memory(project_id):
-
     ensure_project_tables()
 
     conn = get_connection()
     cur = conn.cursor()
 
-    cur.execute("""
+    rows = cur.execute("""
     SELECT * FROM project_memory
     WHERE project_id = ?
     ORDER BY id DESC
     """, (
         int(project_id),
-    ))
-
-    rows = cur.fetchall()
+    )).fetchall()
 
     conn.close()
-
     return rows_to_dicts(rows)
 
-# =========================================================
-# PROJECT CHAT MEMORY
-# =========================================================
 
 def ensure_chat_memory_tables():
-
     conn = get_connection()
     cur = conn.cursor()
 
@@ -1148,13 +1199,7 @@ def ensure_chat_memory_tables():
     conn.close()
 
 
-def save_project_chat_message(
-    project_id,
-    username,
-    role,
-    message,
-):
-
+def save_project_chat_message(project_id, username, role, message):
     ensure_chat_memory_tables()
 
     conn = get_connection()
@@ -1171,7 +1216,7 @@ def save_project_chat_message(
     VALUES (?, ?, ?, ?, ?)
     """, (
         int(project_id),
-        (username or "").strip().lower(),
+        normalize_username(username),
         role,
         message,
         now(),
@@ -1181,17 +1226,13 @@ def save_project_chat_message(
     conn.close()
 
 
-def list_project_chat_memory(
-    project_id,
-    limit=30,
-):
-
+def list_project_chat_memory(project_id, limit=30):
     ensure_chat_memory_tables()
 
     conn = get_connection()
     cur = conn.cursor()
 
-    cur.execute("""
+    rows = cur.execute("""
     SELECT * FROM project_chat_memory
     WHERE project_id = ?
     ORDER BY id DESC
@@ -1199,22 +1240,15 @@ def list_project_chat_memory(
     """, (
         int(project_id),
         int(limit),
-    ))
-
-    rows = cur.fetchall()
+    )).fetchall()
 
     conn.close()
 
     rows = rows_to_dicts(rows)
-
     rows.reverse()
 
     return rows
 
-
-# =========================================================
-# AUTOMATION LAB
-# =========================================================
 
 def ensure_automation_tables():
     conn = get_connection()
@@ -1280,7 +1314,7 @@ def create_automation(
     )
     VALUES (?, ?, ?, ?, ?, ?, ?, 'active', ?, ?)
     """, (
-        (username or "").strip().lower(),
+        normalize_username(username),
         int(project_id or 0),
         name,
         automation_type,
@@ -1305,20 +1339,20 @@ def list_automations(username=None):
     cur = conn.cursor()
 
     if username:
-        cur.execute("""
+        rows = cur.execute("""
         SELECT * FROM automations
         WHERE username = ?
         ORDER BY id DESC
-        """, ((username or "").strip().lower(),))
+        """, (
+            normalize_username(username),
+        )).fetchall()
     else:
-        cur.execute("""
+        rows = cur.execute("""
         SELECT * FROM automations
         ORDER BY id DESC
-        """)
+        """).fetchall()
 
-    rows = cur.fetchall()
     conn.close()
-
     return rows_to_dicts(rows)
 
 
@@ -1359,7 +1393,7 @@ def create_automation_run(automation_id, username, status, result=""):
     VALUES (?, ?, ?, ?, ?)
     """, (
         int(automation_id),
-        (username or "").strip().lower(),
+        normalize_username(username),
         status,
         result,
         now(),
@@ -1379,29 +1413,29 @@ def list_automation_runs(username=None, limit=100):
     cur = conn.cursor()
 
     if username:
-        cur.execute("""
+        rows = cur.execute("""
         SELECT * FROM automation_runs
         WHERE username = ?
         ORDER BY id DESC
         LIMIT ?
-        """, ((username or "").strip().lower(), int(limit)))
+        """, (
+            normalize_username(username),
+            int(limit),
+        )).fetchall()
     else:
-        cur.execute("""
+        rows = cur.execute("""
         SELECT * FROM automation_runs
         ORDER BY id DESC
         LIMIT ?
-        """, (int(limit),))
+        """, (
+            int(limit),
+        )).fetchall()
 
-    rows = cur.fetchall()
     conn.close()
-
     return rows_to_dicts(rows)
-# =========================================================
-# GLOBAL MEMORY ENGINE
-# =========================================================
+
 
 def ensure_global_memory_tables():
-
     conn = get_connection()
     cur = conn.cursor()
 
@@ -1420,13 +1454,7 @@ def ensure_global_memory_tables():
     conn.close()
 
 
-def save_global_memory(
-    username,
-    memory_type,
-    content,
-    importance=1,
-):
-
+def save_global_memory(username, memory_type, content, importance=1):
     ensure_global_memory_tables()
 
     conn = get_connection()
@@ -1442,7 +1470,7 @@ def save_global_memory(
     )
     VALUES (?, ?, ?, ?, ?)
     """, (
-        (username or "").strip().lower(),
+        normalize_username(username),
         memory_type,
         content,
         int(importance),
@@ -1454,38 +1482,26 @@ def save_global_memory(
 
 
 def list_global_memory(username, limit=100):
-
     ensure_global_memory_tables()
 
     conn = get_connection()
     cur = conn.cursor()
 
-    cur.execute("""
+    rows = cur.execute("""
     SELECT * FROM global_memory
     WHERE username = ?
     ORDER BY importance DESC, id DESC
     LIMIT ?
     """, (
-        (username or "").strip().lower(),
+        normalize_username(username),
         int(limit),
-    ))
-
-    rows = cur.fetchall()
+    )).fetchall()
 
     conn.close()
-
     return rows_to_dicts(rows)
 
-# =========================================================
-# SMART MEMORY SEARCH
-# =========================================================
 
-def search_global_memory(
-    username,
-    query,
-    limit=10,
-):
-
+def search_global_memory(username, query, limit=10):
     ensure_global_memory_tables()
 
     conn = get_connection()
@@ -1493,248 +1509,67 @@ def search_global_memory(
 
     q = f"%{(query or '').lower()}%"
 
-    cur.execute("""
+    rows = cur.execute("""
     SELECT * FROM global_memory
     WHERE username = ?
     AND LOWER(content) LIKE ?
     ORDER BY importance DESC, id DESC
     LIMIT ?
     """, (
-        (username or "").strip().lower(),
+        normalize_username(username),
         q,
         int(limit),
-    ))
-
-    rows = cur.fetchall()
+    )).fetchall()
 
     conn.close()
-
     return rows_to_dicts(rows)
 
-init_db()
 
-user = get_user("mepro1337")
+def unlock_automation(username):
+    conn = get_connection()
+    cur = conn.cursor()
 
-if user:
-    make_admin("mepro1337")
+    cur.execute("""
+    UPDATE users
+    SET automation_unlocked = 1
+    WHERE username = ?
+    """, (
+        normalize_username(username),
+    ))
 
-    if user.get("plan") != "elite":
-        set_plan("mepro1337", "elite")
-
-
-import base64
-from pathlib import Path
-import streamlit as st
-
-
-ASSET_DIR = Path("assets")
-WORDMARK = ASSET_DIR / "wordmark.png"
-SLOGAN_HEADER = ASSET_DIR / "sloganheader.png"
+    conn.commit()
+    conn.close()
 
 
-def img_base64(path):
-    if not path.exists():
-        return ""
-    return base64.b64encode(path.read_bytes()).decode()
+def has_automation_access(username):
+    user = get_user(username)
+
+    if not user:
+        return False
+
+    return int(user.get("automation_unlocked") or 0) == 1
 
 
-def load_css():
-    slogan = img_base64(SLOGAN_HEADER)
-
-    slogan_css = ""
-    if slogan:
-        slogan_css = f"""
-.custom-topbar {{
-    background-image:url("data:image/png;base64,{slogan}");
-    background-size:cover;
-    background-position:center;
-    background-repeat:no-repeat;
-}}
-"""
-
-    st.markdown(
-        f"""
-<style>
-#MainMenu,
-header,
-footer,
-[data-testid="stToolbar"]{{
-    display:none!important;
-}}
-
-.stApp{{
-    background:
-        radial-gradient(circle at top left, rgba(0,180,255,.18), transparent 25%),
-        radial-gradient(circle at top right, rgba(139,92,246,.18), transparent 25%),
-        linear-gradient(180deg,#071120 0%,#0b1d35 45%,#08172b 100%);
-}}
-
-.main .block-container{{
-    max-width:1500px;
-    padding-top:105px;
-    padding-bottom:40px;
-}}
-
-.custom-topbar{{
-    position:fixed;
-    top:0;
-    left:0;
-    right:0;
-    height:82px;
-    z-index:999999;
-    background:linear-gradient(90deg,rgba(5,10,20,.98),rgba(8,22,40,.98));
-    border-bottom:1px solid rgba(255,255,255,.05);
-    backdrop-filter:blur(16px);
-}}
-
-{slogan_css}
-
-[data-testid="stSidebar"]{{
-    background:linear-gradient(180deg,#07111d 0%,#0a1b31 100%)!important;
-    border-right:1px solid rgba(255,255,255,.05);
-}}
-
-[data-testid="stSidebar"] *{{
-    color:#ffe7a3!important;
-}}
-
-h1,h2,h3,h4,h5,h6{{
-    color:#ffe7a3!important;
-    font-weight:900!important;
-}}
-
-p,span,label,div{{
-    color:#f8e7b0!important;
-}}
-
-.stButton > button{{
-    width:100%;
-    min-height:50px!important;
-    border-radius:18px!important;
-    border:1px solid rgba(0,180,255,.14)!important;
-    background:linear-gradient(135deg,#38bdf8,#0ea5e9)!important;
-    color:white!important;
-    font-weight:850!important;
-    font-size:15px!important;
-    box-shadow:0 0 18px rgba(0,180,255,.12);
-    transition:.22s;
-}}
-
-.stButton > button:hover{{
-    transform:translateY(-2px) scale(1.01);
-    box-shadow:0 0 28px rgba(0,180,255,.35);
-}}
-
-textarea,
-input,
-select{{
-    background:rgba(255,255,255,.05)!important;
-    color:#ffe7a3!important;
-    border:1px solid rgba(0,180,255,.16)!important;
-    border-radius:16px!important;
-}}
-
-[data-testid="metric-container"]{{
-    background:linear-gradient(180deg,rgba(11,24,44,.98),rgba(8,16,30,.98))!important;
-    border-radius:24px!important;
-    border:1px solid rgba(255,255,255,.05)!important;
-    padding:22px!important;
-}}
-
-.stTabs [data-baseweb="tab"]{{
-    background:rgba(255,255,255,.04)!important;
-    border-radius:14px!important;
-    color:#ffe7a3!important;
-    font-weight:800!important;
-    padding:12px 20px!important;
-}}
-
-[data-testid="stHeader"]{{
-    background:transparent!important;
-}}
-
-::-webkit-scrollbar{{
-    width:10px;
-}}
-
-::-webkit-scrollbar-thumb{{
-    background:#1ea7ff;
-    border-radius:20px;
-}}
-</style>
-
-<div class="custom-topbar"></div>
-        """,
-        unsafe_allow_html=True,
-    )
+def add_audit_log(actor, action, target="", details=""):
+    return None
 
 
-def require_login():
-    if not st.session_state.get("logged_in") or not st.session_state.get("user"):
-        st.session_state.page = "auth"
-        st.stop()
+def list_audit_logs():
+    return []
 
 
-def sync_session_user(user):
+def force_owner_account():
+    user = get_user(OWNER_USERNAME)
+
     if not user:
         return
 
-    st.session_state.logged_in = True
-    st.session_state.user = user.get("username", "User")
-    st.session_state.email = user.get("email", "")
-    st.session_state.plan = user.get("plan", "free")
-    st.session_state.tokens = int(user.get("tokens", 0) or 0)
-    st.session_state.role = user.get("role", "user")
-    st.session_state.admin_level = int(user.get("admin_level", 0) or 0)
+    if user.get("role") != "owner" or int(user.get("admin_level") or 0) != 1337:
+        set_role(OWNER_USERNAME, "owner", 1337)
+
+    if user.get("plan") != "elite":
+        set_plan(OWNER_USERNAME, "elite")
 
 
-def nav(label, page, icon):
-    if st.button(f"{icon}  {label}", key=f"nav_{page}", width="stretch"):
-        st.session_state.page = page
-        st.rerun()
-
-
-def render_sidebar():
-    with st.sidebar:
-        if WORDMARK.exists():
-            st.image(str(WORDMARK), width="stretch")
-        else:
-            st.markdown("## MaByte")
-
-        st.write("")
-
-        nav("Mission Control", "home", "ðŸ ")
-        nav("AI Assistant", "chat", "ðŸ’¬")
-        nav("Projects", "projects", "ðŸ“")
-        nav("Automations", "automation_lab", "âš¡")
-        nav("Football AI", "football", "âš½")
-
-        st.caption("MEDIA")
-        nav("Image Studio", "image", "ðŸŽ¨")
-        nav("Video Studio", "video", "ðŸŽ¬")
-        nav("Reels Studio", "reels", "ðŸ“£")
-        nav("Music Studio", "music", "ðŸŽµ")
-        nav("Code Studio", "coding", "ðŸ’»")
-
-        st.caption("ACCOUNT")
-        nav("Dashboard", "dashboard", "ðŸ‘¤")
-        nav("Premium", "premium", "ðŸ’Ž")
-        nav("Redeem", "redeem", "ðŸŽ")
-        nav("Support", "support", "ðŸ›Ÿ")
-
-        admin_level = int(st.session_state.get("admin_level", 0) or 0)
-
-        if admin_level >= 1:
-            st.caption("SYSTEM")
-            nav("Admin Panel", "admin", "ðŸ› ï¸")
-
-        st.divider()
-
-        user = st.session_state.get("user", "User")
-        plan = st.session_state.get("plan", "free")
-        tokens = int(st.session_state.get("tokens", 0) or 0)
-
-        with st.container(border=True):
-            st.subheader(user)
-            st.caption(plan.upper())
-            st.metric("Tokens", f"{tokens:,}")
+init_db()
+force_owner_account()
