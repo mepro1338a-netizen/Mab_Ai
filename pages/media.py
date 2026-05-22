@@ -14,33 +14,14 @@ except Exception:
     unlock_automation = None
     has_automation_access = None
 
-try:
-    from pricing import (
-        get_reel_script_cost,
-        get_reel_video_cost,
-        get_automation_unlock_cost,
-        get_image_cost,
-        get_music_cost,
-        get_coding_cost,
-    )
-except Exception:
-    def get_reel_script_cost():
-        return 90
-
-    def get_reel_video_cost(seconds=7):
-        return 100
-
-    def get_automation_unlock_cost():
-        return 1000
-
-    def get_image_cost(quality="standard", size="1024"):
-        return 35
-
-    def get_music_cost(length="short"):
-        return 120
-
-    def get_coding_cost(complexity="normal"):
-        return 20
+from pricing import (
+    get_reel_script_cost,
+    get_reel_video_cost,
+    get_automation_unlock_cost,
+    get_image_cost,
+    get_music_cost,
+    get_coding_cost,
+)
 
 
 client = OpenAI(api_key=OPENAI_API_KEY)
@@ -97,7 +78,6 @@ def automation_unlocked():
             return bool(has_automation_access(username()))
         except Exception:
             return fallback_has_automation_access()
-
     return fallback_has_automation_access()
 
 
@@ -108,7 +88,6 @@ def unlock_user_automation():
             return
         except Exception:
             pass
-
     fallback_unlock_automation()
 
 
@@ -253,21 +232,6 @@ def media_css():
     font-weight: 800;
 }
 
-.mb-section {
-    color: #c084fc !important;
-    font-size: 12px;
-    font-weight: 1000;
-    letter-spacing: .20em;
-    text-transform: uppercase;
-    margin-bottom: 12px;
-}
-
-.mb-small {
-    color: #cbd5e1 !important;
-    font-size: 14px;
-    font-weight: 700;
-}
-
 div[data-testid="stVerticalBlockBorderWrapper"] {
     background:
         radial-gradient(circle at top left, rgba(168,85,247,.12), transparent 32%),
@@ -289,11 +253,6 @@ div[data-testid="stVerticalBlockBorderWrapper"] {
 
 .stTextArea textarea {
     padding-top: 14px !important;
-}
-
-.stTextArea textarea::placeholder,
-.stTextInput input::placeholder {
-    color: rgba(255,231,163,.50) !important;
 }
 
 .stButton > button {
@@ -397,16 +356,7 @@ def render_reel_script():
 
             category = st.selectbox(
                 "Kategorie",
-                [
-                    "Football",
-                    "Business",
-                    "Luxury",
-                    "Meme",
-                    "Faceless",
-                    "Storytelling",
-                    "AI News",
-                    "Motivation",
-                ],
+                ["Football", "Business", "Luxury", "Meme", "Faceless", "Storytelling", "AI News", "Motivation"],
                 key="script_category",
             )
 
@@ -420,22 +370,11 @@ def render_reel_script():
 
             target = st.selectbox(
                 "Ziel",
-                [
-                    "Viralität",
-                    "Follower",
-                    "Kommentare",
-                    "Sales",
-                    "Branding",
-                    "Retention",
-                ],
+                ["Viralität", "Follower", "Kommentare", "Sales", "Branding", "Retention"],
                 key="script_target",
             )
 
-            cta = st.text_input(
-                "CTA",
-                placeholder="Folge für mehr",
-                key="script_cta",
-            )
+            cta = st.text_input("CTA", placeholder="Folge für mehr", key="script_cta")
 
             st.info("Script, Hook, Caption, Szenenplan und Hashtags.")
 
@@ -484,13 +423,7 @@ Erstelle exakt:
 
 
 def render_reel_video():
-    seconds = st.slider(
-        "Videolänge",
-        min_value=3,
-        max_value=7,
-        value=5,
-        key="video_seconds",
-    )
+    seconds = st.slider("Videolänge", min_value=3, max_value=7, value=5, key="video_seconds")
 
     cost = get_reel_video_cost(seconds)
 
@@ -526,14 +459,7 @@ def render_reel_video():
 
             category = st.selectbox(
                 "Video Kategorie",
-                [
-                    "Football Edit",
-                    "Luxury",
-                    "Meme",
-                    "Business",
-                    "Cinematic",
-                    "Storytelling",
-                ],
+                ["Football Edit", "Luxury", "Meme", "Business", "Cinematic", "Storytelling"],
                 key="video_category",
             )
 
@@ -545,17 +471,9 @@ def render_reel_video():
                 key="video_style",
             )
 
-            provider = st.selectbox(
-                "Provider später",
-                ["Kling", "Runway"],
-                key="video_provider",
-            )
+            provider = st.selectbox("Provider später", ["Kling", "Runway"], key="video_provider")
 
-            audio = st.checkbox(
-                "Audio vorbereiten",
-                value=True,
-                key="video_audio",
-            )
+            audio = st.checkbox("Audio vorbereiten", value=True, key="video_audio")
 
             st.info("Bereitet ein echtes Video-Paket vor. API-Anbindung kommt danach.")
 
@@ -716,16 +634,9 @@ def render_image_ai():
     render_hero("Image AI", "Create thumbnails, covers and visuals.")
 
     with st.container(border=True):
-        prompt = st.text_area(
-            "Image Prompt",
-            height=150,
-            placeholder="z.B. Premium Football Thumbnail, dark blue purple, gold text...",
-            key="image_prompt",
-        )
-
+        prompt = st.text_area("Image Prompt", height=150, key="image_prompt")
         quality = st.selectbox("Qualität", ["standard", "hd"], key="image_quality")
         size = st.selectbox("Größe", ["1024", "2048"], key="image_size")
-
         cost = get_image_cost(quality=quality, size=size)
         st.metric("Kosten", f"{cost} Tokens")
 
@@ -733,27 +644,7 @@ def render_image_ai():
         if not prompt:
             st.warning("Bitte Prompt eingeben.")
             return
-
-        full_prompt = f"""
-Optimiere diesen Image Prompt.
-
-Qualität:
-{quality}
-
-Größe:
-{size}
-
-Prompt:
-{prompt}
-
-Erstelle:
-# Final Image Prompt
-# Negative Prompt
-# Format Empfehlung
-# Social Usage
-"""
-
-        run_paid_ai("image_prompt", full_prompt, cost, "mabyte_image")
+        run_paid_ai("image_prompt", prompt, cost, "mabyte_image")
 
 
 def render_music_ai():
@@ -761,13 +652,8 @@ def render_music_ai():
 
     with st.container(border=True):
         topic = st.text_input("Song Thema", key="music_topic")
-        genre = st.selectbox(
-            "Genre",
-            ["Rap", "Trap", "Pop", "EDM", "Phonk", "Afro", "Rock"],
-            key="music_genre",
-        )
+        genre = st.selectbox("Genre", ["Rap", "Trap", "Pop", "EDM", "Phonk", "Afro", "Rock"], key="music_genre")
         length = st.selectbox("Länge", ["short", "medium", "long"], key="music_length")
-
         cost = get_music_cost(length=length)
         st.metric("Kosten", f"{cost} Tokens")
 
@@ -775,49 +661,15 @@ def render_music_ai():
         if not topic:
             st.warning("Bitte Thema eingeben.")
             return
-
-        prompt = f"""
-Erstelle ein professionelles Song Package.
-
-Thema:
-{topic}
-
-Genre:
-{genre}
-
-Länge:
-{length}
-
-Erstelle:
-# Song Title
-# Hook
-# Chorus
-# Verse
-# Lyrics
-# Music Prompt
-# Social Caption
-# Hashtags
-"""
-
-        run_paid_ai("music", prompt, cost, "mabyte_music")
+        run_paid_ai("music", topic, cost, "mabyte_music")
 
 
 def render_coding_ai():
     render_hero("Coding Studio", "Build, debug and ship code faster.")
 
     with st.container(border=True):
-        task = st.text_area(
-            "Was soll MaByte bauen oder fixen?",
-            height=160,
-            key="coding_task",
-        )
-
-        complexity = st.selectbox(
-            "Komplexität",
-            ["normal", "advanced", "fullstack"],
-            key="coding_complexity",
-        )
-
+        task = st.text_area("Was soll MaByte bauen oder fixen?", height=160, key="coding_task")
+        complexity = st.selectbox("Komplexität", ["normal", "advanced", "fullstack"], key="coding_complexity")
         cost = get_coding_cost(complexity=complexity)
         st.metric("Kosten", f"{cost} Tokens")
 
@@ -825,33 +677,13 @@ def render_coding_ai():
         if not task:
             st.warning("Bitte Aufgabe eingeben.")
             return
-
-        prompt = f"""
-Du bist MaByte Coding Studio.
-
-Komplexität:
-{complexity}
-
-Aufgabe:
-{task}
-
-Antworte mit:
-# Architektur
-# Schrittfolge
-# Code
-# Test
-# Deployment Hinweis
-"""
-
-        run_paid_ai("coding", prompt, cost, "mabyte_code")
+        run_paid_ai("coding", task, cost, "mabyte_code")
 
 
 def render_reels_studio():
     render_hero("Reels Studio", "Create scripts, videos and automation flows.")
 
-    tab_script, tab_video, tab_auto = st.tabs(
-        ["Script · 90", "Video · 3–7s", "Automation · Unlock"]
-    )
+    tab_script, tab_video, tab_auto = st.tabs(["Script · 90", "Video · 3–7s", "Automation · Unlock"])
 
     with tab_script:
         render_reel_script()
