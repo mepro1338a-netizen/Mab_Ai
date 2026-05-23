@@ -1,40 +1,43 @@
 ﻿import random
 import streamlit as st
 
-from database import (
-    create_user,
-    verify_login,
-    record_login_event,
-)
-
-from security import (
-    is_valid_username,
-    is_valid_email,
-    check_login_rate,
-)
-
+from database import create_user, verify_login, record_login_event
+from security import is_valid_username, is_valid_email, check_login_rate
 from ui_core import sync_session_user
 
 
-# =========================================================
-# CAPTCHA
-# =========================================================
-
-def refresh_captcha():
+def refresh_captcha() -> None:
     st.session_state.captcha_a = random.randint(1, 5)
     st.session_state.captcha_b = random.randint(1, 5)
 
 
-def ensure_captcha():
-    if "captcha_a" not in st.session_state:
+def ensure_captcha() -> None:
+    if "captcha_a" not in st.session_state or "captcha_b" not in st.session_state:
         refresh_captcha()
 
 
-# =========================================================
-# LOGIN
-# =========================================================
+def client_meta() -> tuple[str, str]:
+    ip_address = "unknown"
+    user_agent = "streamlit-client"
 
-def do_login(username, password):
+    try:
+        from streamlit.runtime.scriptrunner import get_script_run_ctx
+
+        ctx = get_script_run_ctx()
+        headers = getattr(ctx, "request_headers", {}) if ctx else {}
+
+        if headers:
+            ip_address = headers.get("X-Forwarded-For", "unknown")
+            user_agent = headers.get("User-Agent", "streamlit-client")
+
+    except Exception:
+        pass
+
+    return ip_address, user_agent
+
+
+def do_login(username: str, password: str) -> None:
+    username = (username or "").strip().lower()
 
     allowed, msg = check_login_rate(username)
 
@@ -54,24 +57,7 @@ def do_login(username, password):
         return
 
     ok, msg, user = verify_login(username, password)
-
-    ip_address = "unknown"
-    user_agent = "streamlit-client"
-
-    try:
-        from streamlit.runtime.scriptrunner import get_script_run_ctx
-
-        ctx = get_script_run_ctx()
-
-        if ctx:
-            headers = getattr(ctx, "request_headers", {})
-
-            if headers:
-                ip_address = headers.get("X-Forwarded-For", "unknown")
-                user_agent = headers.get("User-Agent", "streamlit-client")
-
-    except Exception:
-        pass
+    ip_address, user_agent = client_meta()
 
     try:
         record_login_event(
@@ -86,457 +72,347 @@ def do_login(username, password):
     if ok and user:
         sync_session_user(user)
         st.session_state.page = "home"
-        st.success("Login erfolgreich")
+        st.success("Login erfolgreich.")
         st.rerun()
 
-    else:
-        st.error(msg)
+    st.error(msg)
 
 
-# =========================================================
-# REGISTER
-# =========================================================
+def do_register(username: str, email: str, password: str, captcha: int) -> None:
+    username = (username or "").strip().lower()
+    email = (email or "").strip().lower()
 
-def do_register(username, email, password, captcha):
-
-    result = st.session_state.captcha_a + st.session_state.captcha_b
+    result = int(st.session_state.captcha_a) + int(st.session_state.captcha_b)
 
     if not is_valid_username(username):
-        st.error("UngÃ¼ltiger Username")
+        st.error("Ungültiger Username.")
         return
 
     if not is_valid_email(email):
-        st.error("UngÃ¼ltige Email")
+        st.error("Ungültige Email.")
         return
 
-    if len(password) < 6:
-        st.error("Passwort zu kurz")
+    if len(password or "") < 6:
+        st.error("Passwort muss mindestens 6 Zeichen haben.")
         return
 
-    if captcha != result:
-        st.error("Captcha falsch")
+    if int(captcha or 0) != result:
+        st.error("Captcha falsch.")
         refresh_captcha()
         return
 
-    ok, msg = create_user(
-        username=username,
-        email=email,
-        password=password,
-    )
+    ok, msg = create_user(username=username, email=email, password=password)
 
     if ok:
-        st.success("Registrierung erfolgreich")
+        st.success("Account erstellt. Du kannst dich jetzt einloggen.")
         refresh_captcha()
     else:
         st.error(msg)
 
 
-# =========================================================
-# CSS
-# =========================================================
+def social_login(provider: str) -> None:
+    st.info(f"{provider} Login ist vorbereitet. OAuth API wird als nächster Schritt angebunden.")
 
-def auth_css():
 
+def auth_css() -> None:
     st.markdown(
         """
 <style>
-
 #MainMenu,
 header,
 footer,
-[data-testid="stToolbar"]{
-    display:none!important;
+[data-testid="stToolbar"],
+[data-testid="stDecoration"] {
+    display: none !important;
 }
 
-.stApp{
+.stApp {
     background:
-        radial-gradient(circle at 18% 12%, rgba(56,189,248,.20), transparent 28%),
-        radial-gradient(circle at 82% 18%, rgba(168,85,247,.18), transparent 30%),
-        radial-gradient(circle at 50% 100%, rgba(14,165,233,.10), transparent 34%),
-        linear-gradient(135deg,#020617 0%,#061225 48%,#020617 100%)!important;
+        radial-gradient(circle at 20% 10%, rgba(168,85,247,.22), transparent 26%),
+        radial-gradient(circle at 82% 18%, rgba(96,165,250,.16), transparent 28%),
+        linear-gradient(135deg,#050816 0%,#081226 48%,#050711 100%) !important;
 }
 
-.main .block-container{
-    max-width:1280px;
-    padding-top:2.2rem;
-    padding-bottom:4rem;
+.main .block-container {
+    max-width: 980px !important;
+    padding-top: 52px !important;
+    padding-bottom: 60px !important;
 }
 
-h1,h2,h3,label{
-    color:white!important;
+.auth-shell {
+    max-width: 920px;
+    margin: 0 auto;
 }
 
-p,span{
-    color:#cbd5e1!important;
+.auth-brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 26px;
 }
 
-.auth-nav{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    margin-bottom:42px;
-}
-
-.auth-brand{
-    display:flex;
-    align-items:center;
-    gap:12px;
-    color:white;
-    font-size:26px;
-    font-weight:950;
-}
-
-.auth-logo{
-    width:42px;
-    height:42px;
-    border-radius:14px;
-    background:linear-gradient(135deg,#2563eb,#38bdf8,#a855f7);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    box-shadow:0 0 34px rgba(56,189,248,.35);
-}
-
-.auth-pill{
-    padding:10px 16px;
-    border-radius:999px;
-    border:1px solid rgba(125,211,252,.20);
-    background:rgba(15,23,42,.55);
-    color:#dbeafe;
-    font-weight:800;
-    font-size:14px;
-}
-
-.hero-eyebrow{
-    display:inline-block;
-    padding:10px 16px;
-    border-radius:999px;
-    background:rgba(59,130,246,.14);
-    border:1px solid rgba(96,165,250,.28);
-    color:#93c5fd;
-    font-weight:900;
-    margin-bottom:18px;
-}
-
-.hero-title{
-    color:white;
-    font-size:66px;
-    line-height:1.02;
-    font-weight:1000;
-    letter-spacing:-.055em;
-    margin-bottom:22px;
-}
-
-.hero-gradient{
-    background:linear-gradient(135deg,#38bdf8,#818cf8,#e879f9);
-    -webkit-background-clip:text;
-    -webkit-text-fill-color:transparent;
-}
-
-.hero-sub{
-    color:#cbd5e1;
-    font-size:20px;
-    line-height:1.55;
-    max-width:680px;
-    font-weight:650;
-    margin-bottom:26px;
-}
-
-.hero-points{
-    display:grid;
-    grid-template-columns:repeat(2,minmax(0,1fr));
-    gap:12px;
-    margin:26px 0 30px 0;
-}
-
-.point{
-    border:1px solid rgba(125,211,252,.16);
-    background:linear-gradient(145deg,rgba(15,23,42,.75),rgba(30,41,90,.42));
-    padding:14px 16px;
-    border-radius:18px;
-    color:#dbeafe;
-    font-weight:850;
-}
-
-.auth-box{
+.auth-logo {
+    width: 46px;
+    height: 46px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     background:
-        linear-gradient(145deg,rgba(8,19,45,.88),rgba(10,25,55,.76));
-    border:1px solid rgba(125,211,252,.18);
-    border-radius:30px;
-    padding:34px;
+        radial-gradient(circle at top left, rgba(255,231,163,.30), transparent 35%),
+        linear-gradient(135deg,#7c3aed,#2563eb);
+    color: #ffe7a3 !important;
+    font-size: 22px;
+    font-weight: 1000;
+    box-shadow: 0 0 34px rgba(168,85,247,.34);
+}
+
+.auth-name {
+    color: #ffffff !important;
+    font-size: 30px;
+    font-weight: 1000;
+    letter-spacing: -.05em;
+}
+
+.auth-card {
+    background:
+        radial-gradient(circle at top right, rgba(168,85,247,.18), transparent 34%),
+        linear-gradient(145deg,rgba(12,13,32,.94),rgba(6,7,18,.98));
+    border: 1px solid rgba(168,85,247,.22);
+    border-radius: 30px;
+    padding: 30px;
     box-shadow:
-        0 24px 80px rgba(0,0,0,.32),
+        0 24px 80px rgba(0,0,0,.34),
         inset 0 1px 0 rgba(255,255,255,.05);
 }
 
-.login-box{
-    position:sticky;
-    top:24px;
+.auth-title {
+    text-align: center;
+    font-size: 44px;
+    line-height: .96;
+    font-weight: 1000;
+    letter-spacing: -2px;
+    background: linear-gradient(135deg,#ffe7a3,#c084fc,#60a5fa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 10px;
 }
 
-.feature-grid{
-    display:grid;
-    grid-template-columns:repeat(4,minmax(0,1fr));
-    gap:16px;
-    margin-top:40px;
+.auth-sub {
+    text-align: center;
+    color: #cbd5e1 !important;
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 24px;
 }
 
-.feature-card{
-    min-height:150px;
-    border:1px solid rgba(125,211,252,.16);
-    background:
-        linear-gradient(145deg,rgba(15,23,42,.82),rgba(7,27,58,.54));
-    border-radius:24px;
-    padding:22px;
-    box-shadow:0 18px 45px rgba(0,0,0,.20);
+.auth-social-grid {
+    display: grid;
+    grid-template-columns: repeat(3,minmax(0,1fr));
+    gap: 10px;
+    margin-bottom: 18px;
 }
 
-.feature-icon{
-    font-size:30px;
-    margin-bottom:14px;
+.auth-social {
+    padding: 12px;
+    border-radius: 16px;
+    text-align: center;
+    background: rgba(168,85,247,.10);
+    border: 1px solid rgba(168,85,247,.20);
+    color: #ffe7a3 !important;
+    font-weight: 1000;
+    font-size: 14px;
 }
 
-.feature-title{
-    color:white;
-    font-size:18px;
-    font-weight:950;
-    margin-bottom:8px;
+.auth-sep {
+    text-align: center;
+    color: #64748b !important;
+    font-size: 12px;
+    font-weight: 900;
+    margin: 10px 0 16px 0;
+    letter-spacing: .14em;
+    text-transform: uppercase;
 }
 
-.feature-text{
-    color:#9fb3d1;
-    font-size:14px;
-    line-height:1.45;
-    font-weight:650;
+.auth-mini {
+    display: grid;
+    grid-template-columns: repeat(3,minmax(0,1fr));
+    gap: 10px;
+    margin-top: 18px;
 }
 
-.pricing-grid{
-    display:grid;
-    grid-template-columns:repeat(3,minmax(0,1fr));
-    gap:18px;
-    margin-top:22px;
-}
-
-.price-card{
-    border:1px solid rgba(125,211,252,.16);
-    background:
-        linear-gradient(145deg,rgba(8,19,45,.90),rgba(15,23,42,.72));
-    border-radius:26px;
-    padding:26px;
-}
-
-.price-card.highlight{
-    border-color:rgba(168,85,247,.55);
-    box-shadow:0 0 40px rgba(168,85,247,.18);
-}
-
-.price-title{
-    color:white;
-    font-size:23px;
-    font-weight:950;
-}
-
-.price{
-    color:white;
-    font-size:38px;
-    font-weight:1000;
-    margin:14px 0;
-}
-
-.price-sub{
-    color:#93a4bd;
-    font-size:14px;
-    margin-bottom:18px;
-}
-
-.price-feature{
-    color:#dbeafe;
-    margin:9px 0;
-    font-weight:750;
-}
-
-.section-title{
-    color:white;
-    font-size:36px;
-    font-weight:1000;
-    margin-top:54px;
-    margin-bottom:10px;
-}
-
-.section-sub{
-    color:#9fb3d1;
-    font-size:17px;
-    margin-bottom:24px;
+.auth-mini-card {
+    border: 1px solid rgba(168,85,247,.14);
+    background: rgba(15,23,42,.42);
+    border-radius: 18px;
+    padding: 14px;
+    text-align: center;
+    color: #cbd5e1 !important;
+    font-size: 12px;
+    font-weight: 800;
 }
 
 .stTextInput input,
-.stNumberInput input{
-    background:rgba(2,6,23,.92)!important;
-    border:1px solid rgba(96,165,250,.30)!important;
-    color:white!important;
-    -webkit-text-fill-color:white!important;
-    border-radius:16px!important;
-    min-height:52px!important;
-    font-weight:750!important;
+.stNumberInput input {
+    background: rgba(14,10,28,.96) !important;
+    border: 1px solid rgba(168,85,247,.30) !important;
+    color: #ffe7a3 !important;
+    -webkit-text-fill-color: #ffe7a3 !important;
+    border-radius: 16px !important;
+    min-height: 50px !important;
+    font-weight: 800 !important;
 }
 
-.stButton > button{
-    min-height:52px!important;
-    border-radius:16px!important;
-    border:1px solid rgba(96,165,250,.26)!important;
-    background:linear-gradient(135deg,#2563eb,#38bdf8)!important;
-    color:white!important;
-    font-weight:950!important;
-    box-shadow:0 0 28px rgba(56,189,248,.24);
+.stTextInput input::placeholder {
+    color: rgba(255,231,163,.42) !important;
 }
 
-.stButton > button:hover{
-    transform:translateY(-1px);
-    box-shadow:0 0 36px rgba(56,189,248,.34);
+.stButton > button {
+    min-height: 50px !important;
+    border-radius: 16px !important;
+    border: 1px solid rgba(168,85,247,.34) !important;
+    background:
+        radial-gradient(circle at top left, rgba(168,85,247,.22), transparent 34%),
+        linear-gradient(145deg, rgba(36,8,56,.98), rgba(12,3,25,.98)) !important;
+    color: #ffe7a3 !important;
+    font-weight: 1000 !important;
+    box-shadow: 0 0 28px rgba(168,85,247,.20);
 }
 
-[data-testid="stTabs"] button{
-    color:#dbeafe!important;
-    font-weight:850!important;
+.stButton > button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 0 34px rgba(168,85,247,.30);
+    border-color: rgba(255,231,163,.34) !important;
 }
 
-@media(max-width:900px){
-    .hero-title{
-        font-size:44px;
+[data-testid="stTabs"] button {
+    color: #cbd5e1 !important;
+    font-weight: 900 !important;
+}
+
+[data-testid="stTabs"] button[aria-selected="true"] {
+    color: #ffe7a3 !important;
+}
+
+@media(max-width:800px) {
+    .main .block-container {
+        padding-top: 28px !important;
     }
 
-    .hero-points,
-    .feature-grid,
-    .pricing-grid{
-        grid-template-columns:1fr;
+    .auth-title {
+        font-size: 34px;
     }
 
-    .auth-nav{
-        flex-direction:column;
-        align-items:flex-start;
-        gap:14px;
+    .auth-social-grid,
+    .auth-mini {
+        grid-template-columns: 1fr;
     }
 }
-
 </style>
-        """,
+""",
         unsafe_allow_html=True,
     )
 
 
-# =========================================================
-# PAGE
-# =========================================================
+def render_social_buttons() -> None:
+    c1, c2, c3 = st.columns(3)
 
-def render_auth():
+    with c1:
+        if st.button("Gmail", width="stretch", key="oauth_gmail"):
+            social_login("Gmail")
 
+    with c2:
+        if st.button("Instagram", width="stretch", key="oauth_instagram"):
+            social_login("Instagram")
+
+    with c3:
+        if st.button("TikTok", width="stretch", key="oauth_tiktok"):
+            social_login("TikTok")
+
+
+def render_auth() -> None:
     ensure_captcha()
     auth_css()
 
     st.markdown(
         """
-<div class="auth-nav">
+<div class="auth-shell">
     <div class="auth-brand">
         <div class="auth-logo">M</div>
-        <div>MaByte</div>
+        <div class="auth-name">MaByte</div>
     </div>
-    <div class="auth-pill">AI Creator Operating System</div>
+
+    <div class="auth-card">
+        <div class="auth-title">Creator OS Login</div>
+        <div class="auth-sub">Reels, Automationen, Football AI und Creator Workflows an einem Ort.</div>
 </div>
-        """,
+""",
         unsafe_allow_html=True,
     )
 
-    left, right = st.columns([1.35, .85], gap="large")
+    render_social_buttons()
 
-    with left:
+    st.markdown('<div class="auth-sep">oder mit account</div>', unsafe_allow_html=True)
 
-        st.markdown(
-            """
-<div class="hero-eyebrow">ðŸš€ Built for creators, brands, agencies and football media teams</div>
+    tab_login, tab_register = st.tabs(["Login", "Registrieren"])
 
-<div class="hero-title">
-Create viral content with <span class="hero-gradient">AI workflows</span>.
-</div>
-
-<div class="hero-sub">
-MaByte is the AI Creator Operating System for social media growth.
-Generate hooks, reels, captions, thumbnails, threads, automation flows and creator-ready content packages in seconds.
-</div>
-
-<div class="hero-points">
-    <div class="point">âš½ Football Intelligence</div>
-    <div class="point">ðŸ“£ Multi-Platform Content</div>
-    <div class="point">ðŸ”¥ Viral Score Engine</div>
-    <div class="point">ðŸ§ª AI Automation Lab</div>
-    <div class="point">ðŸ–¼ï¸ Thumbnail Intelligence</div>
-    <div class="point">ðŸ§  Project Memory</div>
-</div>
-            """,
-            unsafe_allow_html=True,
+    with tab_login:
+        login_user = st.text_input(
+            "Username",
+            placeholder="dein username",
+            key="login_user",
         )
 
-    with right:
+        login_pw = st.text_input(
+            "Passwort",
+            type="password",
+            placeholder="dein Passwort",
+            key="login_pw",
+        )
 
-        st.markdown('<div class="auth-box login-box">', unsafe_allow_html=True)
+        if st.button("Einloggen", width="stretch", key="btn_login"):
+            do_login(login_user, login_pw)
 
-        st.markdown("### ðŸ” Access MaByte")
-        st.caption("Login or create your creator workspace.")
+    with tab_register:
+        reg_user = st.text_input(
+            "Username",
+            placeholder="z.B. creator123",
+            key="reg_user",
+        )
 
-        tab1, tab2 = st.tabs(["ðŸ‘¤ Login", "âœ¨ Start Free"])
+        reg_email = st.text_input(
+            "Email",
+            placeholder="name@email.com",
+            key="reg_email",
+        )
 
-        with tab1:
+        reg_pw = st.text_input(
+            "Passwort",
+            type="password",
+            placeholder="mindestens 6 Zeichen",
+            key="reg_pw",
+        )
 
-            username = st.text_input(
-                "Username",
-                placeholder="dein username",
-                key="login_user",
-            )
+        captcha = st.number_input(
+            f"{st.session_state.captcha_a} + {st.session_state.captcha_b}",
+            min_value=0,
+            max_value=20,
+            step=1,
+            key="reg_captcha",
+        )
 
-            password = st.text_input(
-                "Passwort",
-                type="password",
-                placeholder="dein Passwort",
-                key="login_pw",
-            )
+        if st.button("Account erstellen", width="stretch", key="btn_register"):
+            do_register(reg_user, reg_email, reg_pw, captcha)
 
-            if st.button("ðŸš€ Einloggen", width="stretch"):
-                do_login(username, password)
-
-            st.caption("Google Login wird spÃ¤ter verbunden.")
-
-        with tab2:
-
-            reg_user = st.text_input(
-                "Username",
-                key="reg_user",
-            )
-
-            reg_email = st.text_input(
-                "Email",
-                key="reg_email",
-            )
-
-            reg_pw = st.text_input(
-                "Passwort",
-                type="password",
-                key="reg_pw",
-            )
-
-            captcha = st.number_input(
-                f"{st.session_state.captcha_a} + {st.session_state.captcha_b}",
-                min_value=0,
-                max_value=20,
-                step=1,
-            )
-
-            if st.button("âœ¨ Kostenlos starten", width="stretch"):
-                do_register(
-                    reg_user,
-                    reg_email,
-                    reg_pw,
-                    captcha,
-                )
-
-        st.markdown("</div>", unsafe_allow_html=True)
-
-
+    st.markdown(
+        """
+<div class="auth-mini">
+    <div class="auth-mini-card">Reels Studio</div>
+    <div class="auth-mini-card">Social Automation</div>
+    <div class="auth-mini-card">Football AI</div>
+</div>
+</div>
+""",
+        unsafe_allow_html=True,
+    )
