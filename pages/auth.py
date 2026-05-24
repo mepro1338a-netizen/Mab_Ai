@@ -599,12 +599,24 @@ section.main [data-testid="stForm"] [data-testid="stVerticalBlock"] {
 }
 
 /* Letzter Override gegen Streamlit/ui_core auf der Auth-Card */
+section.main div[data-testid="stVerticalBlockBorderWrapper"] label,
+section.main div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stWidgetLabel"] p {
+    color: #cbd5e1 !important;
+}
+
 section.main div[data-testid="stVerticalBlockBorderWrapper"] .stTextInput input,
 section.main div[data-testid="stVerticalBlockBorderWrapper"] .stNumberInput input {
     border: none !important;
     background: transparent !important;
     color: #f1f5f9 !important;
     -webkit-text-fill-color: #f1f5f9 !important;
+}
+
+section.main div[data-testid="stVerticalBlockBorderWrapper"] .stTextInput div[data-baseweb="input"],
+section.main div[data-testid="stVerticalBlockBorderWrapper"] .stNumberInput div[data-baseweb="input"] {
+    border: 1px solid rgba(168, 85, 247, .38) !important;
+    background: rgba(6, 10, 24, .96) !important;
+    box-shadow: none !important;
 }
 </style>
 """,
@@ -659,47 +671,6 @@ def card_intro(title: str, subtitle: str) -> None:
 
 def render_mode_switch() -> str:
     mode = st.session_state.get("auth_mode", "login")
-    if mode == "login":
-        login_btn = "linear-gradient(135deg, #9333ea 0%, #7c3aed 50%, #2563eb 100%)"
-        login_color = "#ffffff"
-        login_border = "rgba(255, 231, 163, .28)"
-        login_shadow = "0 8px 22px rgba(124, 58, 237, .32)"
-        register_btn = "rgba(168, 85, 247, .07)"
-        register_color = "#94a3b8"
-        register_border = "rgba(168, 85, 247, .18)"
-        register_shadow = "none"
-    else:
-        register_btn = "linear-gradient(135deg, #9333ea 0%, #7c3aed 50%, #2563eb 100%)"
-        register_color = "#ffffff"
-        register_border = "rgba(255, 231, 163, .28)"
-        register_shadow = "0 8px 22px rgba(124, 58, 237, .32)"
-        login_btn = "rgba(168, 85, 247, .07)"
-        login_color = "#94a3b8"
-        login_border = "rgba(168, 85, 247, .18)"
-        login_shadow = "none"
-
-    st.markdown(
-        f"""
-<style>
-.mb-auth-tabs [data-testid="stColumn"]:nth-of-type(1) .stButton > button,
-.mb-auth-tabs [data-testid="stColumn"]:nth-of-type(1) button {{
-    background: {login_btn} !important;
-    color: {login_color} !important;
-    border: 1px solid {login_border} !important;
-    box-shadow: {login_shadow} !important;
-}}
-.mb-auth-tabs [data-testid="stColumn"]:nth-of-type(2) .stButton > button,
-.mb-auth-tabs [data-testid="stColumn"]:nth-of-type(2) button {{
-    background: {register_btn} !important;
-    color: {register_color} !important;
-    border: 1px solid {register_border} !important;
-    box-shadow: {register_shadow} !important;
-}}
-</style>
-""",
-        unsafe_allow_html=True,
-    )
-
     tab_login, tab_register = st.columns(2, gap="small")
 
     with tab_login:
@@ -819,3 +790,5 @@ def render_auth() -> None:
 """,
                 unsafe_allow_html=True,
             )
+
+    auth_css()
