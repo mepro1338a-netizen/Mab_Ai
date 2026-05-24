@@ -320,13 +320,14 @@ section.main div[data-testid="stVerticalBlockBorderWrapper"] {
     font-weight: 500;
 }
 
-/* Segmented control */
+/* Segmented control — Anmelden / Registrieren oben */
 section.main [data-testid="stSegmentedControl"] {
-    margin: 0 0 12px 0 !important;
-    background: rgba(15,23,42,.65) !important;
-    border: 1px solid var(--mb-line) !important;
+    margin: 0 0 16px 0 !important;
+    background: rgba(6, 10, 24, .85) !important;
+    border: 1px solid rgba(168, 85, 247, .22) !important;
     border-radius: 12px !important;
     padding: 4px !important;
+    box-shadow: none !important;
 }
 
 section.main [data-testid="stSegmentedControl"] button {
@@ -345,7 +346,25 @@ section.main [data-testid="stSegmentedControl"] button[aria-checked="true"] {
     box-shadow: 0 4px 16px rgba(124,58,237,.30) !important;
 }
 
-/* Inputs */
+/* Inputs — keine weißen Ränder, dunkles MaByte-Design */
+section.main .stTextInput > div,
+section.main .stNumberInput > div,
+section.main .stTextInput div[data-baseweb="input"],
+section.main .stNumberInput div[data-baseweb="input"],
+section.main .stTextInput div[data-baseweb="base-input"],
+section.main .stNumberInput div[data-baseweb="base-input"] {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+section.main .stTextInput fieldset,
+section.main .stNumberInput fieldset {
+    border: none !important;
+    padding: 0 !important;
+}
+
 section.main .stTextInput label,
 section.main .stNumberInput label,
 section.main .stTextInput p,
@@ -353,13 +372,14 @@ section.main .stNumberInput p {
     color: var(--mb-soft) !important;
     font-size: 12px !important;
     font-weight: 700 !important;
-    margin-bottom: 2px !important;
+    margin-bottom: 4px !important;
 }
 
 section.main .stTextInput input,
 section.main .stNumberInput input {
-    background: rgba(8,12,28,.92) !important;
-    border: 1px solid var(--mb-line) !important;
+    background: rgba(6, 10, 24, .95) !important;
+    border: 1px solid rgba(168, 85, 247, .28) !important;
+    outline: none !important;
     color: #f1f5f9 !important;
     -webkit-text-fill-color: #f1f5f9 !important;
     border-radius: 12px !important;
@@ -367,16 +387,27 @@ section.main .stNumberInput input {
     font-size: 14px !important;
     font-weight: 600 !important;
     padding: 8px 14px !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.03) !important;
 }
 
 section.main .stTextInput input:focus,
 section.main .stNumberInput input:focus {
-    border-color: rgba(255,231,163,.35) !important;
-    box-shadow: 0 0 0 2px rgba(168,85,247,.18) !important;
+    border-color: rgba(168, 85, 247, .55) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.04),
+        0 0 0 2px rgba(168, 85, 247, .16) !important;
+    outline: none !important;
 }
 
 section.main .stTextInput input::placeholder {
     color: #64748b !important;
+}
+
+/* Passwort-Auge-Button */
+section.main .stTextInput button {
+    background: transparent !important;
+    border: none !important;
+    color: var(--mb-muted) !important;
 }
 
 section.main [data-testid="stForm"] {
@@ -413,26 +444,27 @@ section.main .stButton > button[kind="primary"]:hover {
         inset 0 1px 0 rgba(255,255,255,.16) !important;
 }
 
-/* OAuth buttons */
+/* OAuth — unter dem Login, SaaS-Stil (gestapelt) */
 .mb-oauth-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: 1fr;
     gap: 8px;
-    margin-top: 4px;
+    margin-top: 2px;
+    margin-bottom: 4px;
 }
 
 .mb-oauth-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    min-height: 40px;
-    padding: 0 10px;
+    gap: 8px;
+    min-height: 42px;
+    padding: 0 14px;
     border-radius: 12px;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 800;
     text-decoration: none !important;
-    border: 1px solid transparent;
+    border: 1px solid rgba(168, 85, 247, .18);
     transition: transform .15s ease, box-shadow .15s ease, filter .15s ease;
     cursor: pointer;
 }
@@ -450,10 +482,10 @@ section.main .stButton > button[kind="primary"]:hover {
 }
 
 .mb-oauth-google {
-    background: linear-gradient(135deg, #ffffff, #f1f5f9) !important;
+    background: rgba(255, 255, 255, .96) !important;
     color: #1e293b !important;
-    border-color: rgba(255,255,255,.25) !important;
-    box-shadow: 0 6px 18px rgba(0,0,0,.18);
+    border-color: rgba(255, 255, 255, .12) !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, .20);
 }
 
 .mb-oauth-instagram {
@@ -478,7 +510,7 @@ section.main .stButton > button[kind="primary"]:hover {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin: 10px 0 6px 0;
+    margin: 16px 0 10px 0;
     color: #64748b !important;
     font-size: 10px;
     font-weight: 800;
@@ -491,7 +523,7 @@ section.main .stButton > button[kind="primary"]:hover {
     content: "";
     flex: 1;
     height: 1px;
-    background: var(--mb-line);
+    background: rgba(168, 85, 247, .16);
 }
 
 .mb-auth-foot {
@@ -612,11 +644,11 @@ def oauth_button(provider: str, label: str, icon: str, css_class: str) -> str:
 def render_social_row() -> None:
     st.markdown(
         f"""
-<div class="mb-auth-divider">Schnell anmelden</div>
+<div class="mb-auth-divider">oder fortfahren mit</div>
 <div class="mb-oauth-grid">
-    {oauth_button("google", "Google", "G", "mb-oauth-google")}
-    {oauth_button("instagram", "Instagram", "◎", "mb-oauth-instagram")}
-    {oauth_button("tiktok", "TikTok", "♪", "mb-oauth-tiktok")}
+    {oauth_button("google", "Weiter mit Google", "G", "mb-oauth-google")}
+    {oauth_button("instagram", "Weiter mit Instagram", "◎", "mb-oauth-instagram")}
+    {oauth_button("tiktok", "Weiter mit TikTok", "♪", "mb-oauth-tiktok")}
 </div>
 """,
         unsafe_allow_html=True,
@@ -685,13 +717,12 @@ def render_auth() -> None:
             mode = render_mode_switch()
             st.session_state.auth_mode = mode
 
-            render_social_row()
-            st.markdown('<div class="mb-auth-divider">oder mit Email</div>', unsafe_allow_html=True)
-
             if mode == "register":
                 render_register_form()
             else:
                 render_login_form()
+
+            render_social_row()
 
             st.markdown(
                 """
