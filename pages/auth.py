@@ -3,9 +3,10 @@ import random
 
 import streamlit as st
 
-from config import APP_NAME, APP_TAGLINE, APP_POSITIONING
+from config import APP_NAME, APP_TAGLINE
 from database import create_user, record_login_event, verify_login
 from security import check_login_rate, is_valid_email, is_valid_username
+from oauth_service import auth_url, complete_oauth, make_state, provider_configured, verify_state
 from ui_core import WORDMARK, img_base64, sync_session_user
 
 
@@ -111,8 +112,30 @@ def do_register(username: str, email: str, password: str, captcha: int) -> None:
         st.error(msg)
 
 
-def social_login(provider: str) -> None:
-    st.info(f"{provider} OAuth ist vorbereitet. Die echte API-Anbindung kommt danach.")
+def handle_oauth_callback() -> bool:
+    params = st.query_params
+    code = params.get("code")
+    state = params.get("state")
+
+    if not code or not state:
+        return False
+
+    provider = verify_state(state)
+    if not provider:
+        st.error("OAuth-Sitzung abgelaufen oder ungültig. Bitte erneut versuchen.")
+        st.query_params.clear()
+        return True
+
+    ok, msg, user = complete_oauth(provider, code)
+    st.query_params.clear()
+
+    if ok and user:
+        sync_session_user(user)
+        st.session_state.page = "home"
+        st.rerun()
+
+    st.error(msg)
+    return True
 
 
 def auth_css() -> None:
@@ -201,6 +224,9 @@ section.main [data-testid="stHorizontalBlock"] {
     font-weight: 900;
     letter-spacing: -1px;
     margin: 0 0 10px 0;
+}
+
+.mb-auth-headline span {
     background: linear-gradient(135deg, var(--mb-gold) 0%, #e9d5ff 50%, var(--mb-blue) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -209,33 +235,53 @@ section.main [data-testid="stHorizontalBlock"] {
 .mb-auth-desc {
     color: var(--mb-muted) !important;
     font-size: 14px;
-    line-height: 1.55;
+    line-height: 1.6;
     font-weight: 500;
-    margin: 0 0 18px 0;
+    margin: 0 0 14px 0;
 }
 
-.mb-auth-pills {
-    display: flex;
-    flex-wrap: wrap;
+.mb-auth-highlight {
+    color: #e2e8f0 !important;
+    font-size: 13px;
+    line-height: 1.55;
+    font-weight: 600;
+    margin: 0 0 16px 0;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: rgba(168,85,247,.10);
+    border: 1px solid rgba(168,85,247,.18);
+}
+
+.mb-auth-highlight strong {
+    color: var(--mb-gold) !important;
+}
+
+.mb-auth-bullets {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
     gap: 8px;
 }
 
-.mb-auth-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 7px 12px;
-    border-radius: 999px;
-    background: rgba(168,85,247,.10);
-    border: 1px solid var(--mb-line);
-    color: #e2e8f0 !important;
-    font-size: 12px;
-    font-weight: 700;
+.mb-auth-bullets li {
+    color: #cbd5e1 !important;
+    font-size: 13px;
+    font-weight: 600;
+    padding-left: 18px;
+    position: relative;
 }
 
-.mb-auth-pill em {
-    font-style: normal;
-    color: var(--mb-gold) !important;
+.mb-auth-bullets li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 7px;
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, var(--mb-gold), var(--mb-purple));
+    box-shadow: 0 0 8px rgba(168,85,247,.45);
 }
 
 /* ── Login card (rechts) ── */
@@ -344,38 +390,88 @@ section.main [data-testid="stForm"] [data-testid="stVerticalBlock"] {
 /* Primary button */
 section.main .stFormSubmitButton > button,
 section.main .stButton > button[kind="primary"] {
-    min-height: 44px !important;
-    border-radius: 12px !important;
-    border: 1px solid rgba(255,231,163,.20) !important;
-    background: linear-gradient(135deg, var(--mb-violet) 0%, #2563eb 100%) !important;
+    min-height: 46px !important;
+    border-radius: 13px !important;
+    border: 1px solid rgba(255,231,163,.28) !important;
+    background: linear-gradient(135deg, #9333ea 0%, #7c3aed 45%, #2563eb 100%) !important;
     color: #fff !important;
     font-weight: 900 !important;
     font-size: 14px !important;
-    box-shadow: 0 8px 24px rgba(124,58,237,.26) !important;
-    margin-top: 4px !important;
+    letter-spacing: .02em !important;
+    box-shadow:
+        0 10px 28px rgba(124,58,237,.32),
+        inset 0 1px 0 rgba(255,255,255,.12) !important;
+    margin-top: 6px !important;
+    transition: transform .15s ease, box-shadow .15s ease !important;
 }
 
 section.main .stFormSubmitButton > button:hover,
 section.main .stButton > button[kind="primary"]:hover {
-    transform: translateY(-1px) !important;
-    box-shadow: 0 10px 28px rgba(124,58,237,.34) !important;
+    transform: translateY(-2px) !important;
+    box-shadow:
+        0 14px 34px rgba(124,58,237,.40),
+        inset 0 1px 0 rgba(255,255,255,.16) !important;
 }
 
-/* Social buttons */
-section.main .stButton > button[kind="secondary"] {
-    min-height: 36px !important;
-    border-radius: 10px !important;
-    background: rgba(168,85,247,.08) !important;
-    border: 1px solid var(--mb-line) !important;
-    color: #cbd5e1 !important;
-    font-size: 12px !important;
-    font-weight: 700 !important;
-    box-shadow: none !important;
-    padding: 0 8px !important;
+/* OAuth buttons */
+.mb-oauth-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 4px;
 }
 
-section.main .stButton > button {
-    width: 100% !important;
+.mb-oauth-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-height: 40px;
+    padding: 0 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 800;
+    text-decoration: none !important;
+    border: 1px solid transparent;
+    transition: transform .15s ease, box-shadow .15s ease, filter .15s ease;
+    cursor: pointer;
+}
+
+.mb-oauth-btn:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.06);
+}
+
+.mb-oauth-btn.disabled {
+    opacity: .45;
+    cursor: not-allowed;
+    pointer-events: none;
+    filter: grayscale(.2);
+}
+
+.mb-oauth-google {
+    background: linear-gradient(135deg, #ffffff, #f1f5f9) !important;
+    color: #1e293b !important;
+    border-color: rgba(255,255,255,.25) !important;
+    box-shadow: 0 6px 18px rgba(0,0,0,.18);
+}
+
+.mb-oauth-instagram {
+    background: linear-gradient(135deg, #f58529, #dd2a7b, #8134af) !important;
+    color: #fff !important;
+    box-shadow: 0 6px 18px rgba(221,42,123,.28);
+}
+
+.mb-oauth-tiktok {
+    background: linear-gradient(135deg, #0f172a, #111827 60%, #0891b2) !important;
+    color: #f0fdfa !important;
+    border-color: rgba(45,212,191,.25) !important;
+    box-shadow: 0 6px 18px rgba(8,145,178,.22);
+}
+
+.mb-oauth-icon {
+    font-size: 14px;
+    line-height: 1;
 }
 
 .mb-auth-divider {
@@ -429,8 +525,8 @@ section.main .stButton > button {
         margin-right: auto;
     }
 
-    .mb-auth-pills {
-        justify-content: center;
+    .mb-oauth-grid {
+        grid-template-columns: 1fr;
     }
 }
 </style>
@@ -447,20 +543,27 @@ def brand_panel_html() -> str:
         logo = f'<div class="mb-auth-logo"><div class="mb-auth-logo-fallback">{html.escape(APP_NAME[:1])}</div></div>'
 
     tagline = html.escape(APP_TAGLINE)
-    desc = html.escape(APP_POSITIONING)
 
     return f"""
 <div class="mb-auth-brand">
     {logo}
-    <p class="mb-auth-kicker">{html.escape(APP_NAME)} · Creator OS</p>
-    <h1 class="mb-auth-headline">{tagline}</h1>
-    <p class="mb-auth-desc">{desc}</p>
-    <div class="mb-auth-pills">
-        <span class="mb-auth-pill"><em>🎬</em> Reels</span>
-        <span class="mb-auth-pill"><em>⚡</em> Automations</span>
-        <span class="mb-auth-pill"><em>🤖</em> AI Chat</span>
-        <span class="mb-auth-pill"><em>⚽</em> Football</span>
-    </div>
+    <p class="mb-auth-kicker">{html.escape(APP_NAME)} · Creator Operating System</p>
+    <h1 class="mb-auth-headline"><span>{tagline}</span></h1>
+    <p class="mb-auth-desc">
+        Baue deine eigenen AI-Videos &amp; Reels, automatisiere deinen Content
+        und skaliere deine Creator-Workflows — alles in einem System.
+    </p>
+    <p class="mb-auth-highlight">
+        <strong>Deine Idee → AI Video → Reel → Automation.</strong>
+        MaByte macht aus Prompts fertige Shorts und lässt deine Workflows
+        im Hintergrund laufen.
+    </p>
+    <ul class="mb-auth-bullets">
+        <li>Eigene Reels &amp; Short-Videos mit AI erstellen</li>
+        <li>Video-Studio für schnelle, professionelle Clips</li>
+        <li>Automationen die posten, planen &amp; skalieren</li>
+        <li>Chat, Coding &amp; Content — vereint in MaByte</li>
+    </ul>
 </div>
 """
 
@@ -493,18 +596,34 @@ def render_mode_switch() -> str:
     return reverse.get(selected, "login")
 
 
+def oauth_button(provider: str, label: str, icon: str, css_class: str) -> str:
+    if provider_configured(provider):
+        url = html.escape(auth_url(provider, make_state(provider)), quote=True)
+        return (
+            f'<a class="mb-oauth-btn {css_class}" href="{url}">'
+            f'<span class="mb-oauth-icon">{icon}</span>{html.escape(label)}</a>'
+        )
+    return (
+        f'<span class="mb-oauth-btn {css_class} disabled" title="API Key fehlt">'
+        f'<span class="mb-oauth-icon">{icon}</span>{html.escape(label)}</span>'
+    )
+
+
 def render_social_row() -> None:
-    st.markdown('<div class="mb-auth-divider">Social Login</div>', unsafe_allow_html=True)
-    c1, c2, c3 = st.columns(3, gap="small")
-    with c1:
-        if st.button("Google", key="oauth_gmail", type="secondary", width="stretch"):
-            social_login("Google")
-    with c2:
-        if st.button("Instagram", key="oauth_instagram", type="secondary", width="stretch"):
-            social_login("Instagram")
-    with c3:
-        if st.button("TikTok", key="oauth_tiktok", type="secondary", width="stretch"):
-            social_login("TikTok")
+    st.markdown(
+        f"""
+<div class="mb-auth-divider">Schnell anmelden</div>
+<div class="mb-oauth-grid">
+    {oauth_button("google", "Google", "G", "mb-oauth-google")}
+    {oauth_button("instagram", "Instagram", "◎", "mb-oauth-instagram")}
+    {oauth_button("tiktok", "TikTok", "♪", "mb-oauth-tiktok")}
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
+    if not any(provider_configured(p) for p in ("google", "instagram", "tiktok")):
+        st.caption("OAuth: Trage GOOGLE_CLIENT_ID/SECRET (und optional Meta/TikTok Keys) in Railway ein.")
 
 
 def render_login_form() -> None:
@@ -550,6 +669,9 @@ def render_auth() -> None:
     ensure_captcha()
     auth_css()
 
+    if handle_oauth_callback():
+        return
+
     if "auth_mode" not in st.session_state:
         st.session_state.auth_mode = "login"
 
@@ -563,17 +685,18 @@ def render_auth() -> None:
             mode = render_mode_switch()
             st.session_state.auth_mode = mode
 
+            render_social_row()
+            st.markdown('<div class="mb-auth-divider">oder mit Email</div>', unsafe_allow_html=True)
+
             if mode == "register":
                 render_register_form()
             else:
                 render_login_form()
 
-            render_social_row()
-
             st.markdown(
                 """
 <div class="mb-auth-foot">
-    <strong>MaByte</strong> · Sicherer Zugang · Token-System · Support Inbox
+    <strong>MaByte</strong> · Dein Creator OS · Token-System · Support Inbox
 </div>
 """,
                 unsafe_allow_html=True,
