@@ -307,10 +307,11 @@ section.main div[data-testid="stVerticalBlockBorderWrapper"] {
 
 .mb-auth-card-top h2 {
     color: #fff !important;
-    font-size: 20px;
+    font-size: 19px;
     font-weight: 900;
     margin: 0 0 4px 0;
-    letter-spacing: -.3px;
+    letter-spacing: -.2px;
+    line-height: 1.25;
 }
 
 .mb-auth-card-top p {
@@ -320,30 +321,49 @@ section.main div[data-testid="stVerticalBlockBorderWrapper"] {
     font-weight: 500;
 }
 
-/* Segmented control — Anmelden / Registrieren oben */
-section.main [data-testid="stSegmentedControl"] {
-    margin: 0 0 16px 0 !important;
-    background: rgba(6, 10, 24, .85) !important;
-    border: 1px solid rgba(168, 85, 247, .22) !important;
-    border-radius: 12px !important;
-    padding: 4px !important;
-    box-shadow: none !important;
+/* Anmelden / Registrieren Tabs */
+.mb-auth-tabs {
+    margin-bottom: 16px;
 }
 
-section.main [data-testid="stSegmentedControl"] button {
+.mb-auth-tabs [data-testid="stHorizontalBlock"] {
+    gap: 8px !important;
+}
+
+.mb-auth-tabs .stButton > button {
+    min-height: 42px !important;
+    border-radius: 12px !important;
+    background: rgba(168, 85, 247, .07) !important;
+    border: 1px solid rgba(168, 85, 247, .18) !important;
+    color: #94a3b8 !important;
     font-weight: 800 !important;
     font-size: 13px !important;
-    background: transparent !important;
-    color: var(--mb-muted) !important;
-    border: none !important;
-    border-radius: 9px !important;
-    min-height: 36px !important;
+    letter-spacing: .02em !important;
+    box-shadow: none !important;
+    transition: all .18s ease !important;
 }
 
-section.main [data-testid="stSegmentedControl"] button[aria-checked="true"] {
-    background: linear-gradient(135deg, var(--mb-violet), #2563eb) !important;
-    color: #fff !important;
-    box-shadow: 0 4px 16px rgba(124,58,237,.30) !important;
+.mb-auth-tabs .stButton > button:hover {
+    color: #e2e8f0 !important;
+    border-color: rgba(168, 85, 247, .32) !important;
+    background: rgba(168, 85, 247, .12) !important;
+    transform: none !important;
+}
+
+.mb-auth-tab-active .stButton > button {
+    background: linear-gradient(135deg, #9333ea 0%, #7c3aed 50%, #2563eb 100%) !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 231, 163, .28) !important;
+    box-shadow:
+        0 8px 22px rgba(124, 58, 237, .32),
+        inset 0 1px 0 rgba(255, 255, 255, .14) !important;
+}
+
+.mb-auth-tab-active .stButton > button:hover {
+    color: #ffffff !important;
+    box-shadow:
+        0 10px 26px rgba(124, 58, 237, .38),
+        inset 0 1px 0 rgba(255, 255, 255, .16) !important;
 }
 
 /* Inputs — keine weißen Ränder, dunkles MaByte-Design */
@@ -614,18 +634,63 @@ def card_intro(title: str, subtitle: str) -> None:
 
 def render_mode_switch() -> str:
     mode = st.session_state.get("auth_mode", "login")
-    labels = {"login": "Anmelden", "register": "Registrieren"}
-    reverse = {v: k for k, v in labels.items()}
+    if mode == "login":
+        login_btn = "linear-gradient(135deg, #9333ea 0%, #7c3aed 50%, #2563eb 100%)"
+        login_color = "#ffffff"
+        login_border = "rgba(255, 231, 163, .28)"
+        login_shadow = "0 8px 22px rgba(124, 58, 237, .32)"
+        register_btn = "rgba(168, 85, 247, .07)"
+        register_color = "#94a3b8"
+        register_border = "rgba(168, 85, 247, .18)"
+        register_shadow = "none"
+    else:
+        register_btn = "linear-gradient(135deg, #9333ea 0%, #7c3aed 50%, #2563eb 100%)"
+        register_color = "#ffffff"
+        register_border = "rgba(255, 231, 163, .28)"
+        register_shadow = "0 8px 22px rgba(124, 58, 237, .32)"
+        login_btn = "rgba(168, 85, 247, .07)"
+        login_color = "#94a3b8"
+        login_border = "rgba(168, 85, 247, .18)"
+        login_shadow = "none"
 
-    selected = st.segmented_control(
-        "Modus",
-        options=list(labels.values()),
-        default=labels[mode],
-        label_visibility="collapsed",
-        key="auth_mode_segment",
+    st.markdown(
+        f"""
+<style>
+.mb-auth-tabs [data-testid="column"]:nth-child(1) .stButton > button {{
+    background: {login_btn} !important;
+    color: {login_color} !important;
+    border-color: {login_border} !important;
+    box-shadow: {login_shadow} !important;
+}}
+.mb-auth-tabs [data-testid="column"]:nth-child(2) .stButton > button {{
+    background: {register_btn} !important;
+    color: {register_color} !important;
+    border-color: {register_border} !important;
+    box-shadow: {register_shadow} !important;
+}}
+</style>
+""",
+        unsafe_allow_html=True,
     )
 
-    return reverse.get(selected, "login")
+    st.markdown('<div class="mb-auth-tabs">', unsafe_allow_html=True)
+    tab_login, tab_register = st.columns(2, gap="small")
+
+    with tab_login:
+        if st.button("Anmelden", key="auth_tab_login", width="stretch", type="secondary"):
+            st.session_state.auth_mode = "login"
+            st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    with tab_register:
+        st.markdown(f'<div class="{register_active}">', unsafe_allow_html=True)
+        if st.button("Registrieren", key="auth_tab_register", width="stretch", type="secondary"):
+            st.session_state.auth_mode = "register"
+            st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    st.markdown("</div>", unsafe_allow_html=True)
+    return mode
 
 
 def oauth_button(provider: str, label: str, icon: str, css_class: str) -> str:
@@ -659,7 +724,7 @@ def render_social_row() -> None:
 
 
 def render_login_form() -> None:
-    card_intro("Willkommen zurück", "Melde dich an und starte deine Workflows.")
+    card_intro("Herzlich Willkommen auf MaByte", "Melde dich an und starte deine Creator-Workflows.")
 
     with st.form("login_form", clear_on_submit=False, border=False):
         user = st.text_input("Username", placeholder="dein username")
