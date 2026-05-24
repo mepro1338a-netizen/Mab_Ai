@@ -330,37 +330,54 @@ section.main div[data-testid="stVerticalBlockBorderWrapper"] {
     gap: 8px !important;
 }
 
-/* Tab-Buttons — MaByte (Override Streamlit Weiß) */
-section.main .mb-auth-tabs .stButton > button,
-section.main .mb-auth-tabs button[kind="secondary"],
-section.main .mb-auth-tabs [data-testid="stBaseButton-secondary"] {
+/* Tab-Buttons in Auth-Card (erstes Horizontal-Block = Anmelden/Registrieren) */
+section.main div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stHorizontalBlock"]:first-of-type .stButton > button,
+section.main div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stHorizontalBlock"]:first-of-type button {
     min-height: 42px !important;
     border-radius: 12px !important;
-    background: rgba(168, 85, 247, .08) !important;
-    border: 1px solid rgba(168, 85, 247, .22) !important;
-    color: #94a3b8 !important;
     font-weight: 800 !important;
     font-size: 13px !important;
-    box-shadow: none !important;
     width: 100% !important;
+    box-shadow: none !important;
 }
 
-section.main .mb-auth-tabs .stButton > button:hover {
-    background: rgba(168, 85, 247, .14) !important;
-    color: #e2e8f0 !important;
-    border-color: rgba(168, 85, 247, .35) !important;
-    transform: none !important;
+section.main div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stHorizontalBlock"]:first-of-type button[kind="secondary"],
+section.main div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stHorizontalBlock"]:first-of-type button[data-testid="stBaseButton-secondary"] {
+    background: rgba(168, 85, 247, .08) !important;
+    background-color: rgba(168, 85, 247, .08) !important;
+    border: 1px solid rgba(168, 85, 247, .24) !important;
+    color: #94a3b8 !important;
+}
+
+section.main div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stHorizontalBlock"]:first-of-type button[kind="primary"],
+section.main div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stHorizontalBlock"]:first-of-type button[data-testid="stBaseButton-primary"] {
+    background: linear-gradient(135deg, #9333ea 0%, #7c3aed 50%, #2563eb 100%) !important;
+    background-color: #7c3aed !important;
+    border: 1px solid rgba(168, 85, 247, .40) !important;
+    color: #ffffff !important;
+    box-shadow: 0 6px 20px rgba(124, 58, 237, .28) !important;
+}
+
+section.main div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stHorizontalBlock"]:first-of-type button[kind="tertiary"],
+section.main div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stHorizontalBlock"]:first-of-type button[data-testid="stBaseButton-tertiary"] {
+    background: rgba(168, 85, 247, .08) !important;
+    background-color: rgba(168, 85, 247, .08) !important;
+    border: 1px solid rgba(168, 85, 247, .24) !important;
+    color: #94a3b8 !important;
 }
 
 /* Primary — Einloggen / Account erstellen */
 section.main div[data-testid="stVerticalBlockBorderWrapper"] .stFormSubmitButton > button,
 section.main div[data-testid="stVerticalBlockBorderWrapper"] .stFormSubmitButton button,
+section.main div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stFormSubmitButton"] > button,
 section.main div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stFormSubmitButton"] button,
-section.main div[data-testid="stVerticalBlockBorderWrapper"] .stButton > button[kind="primary"] {
+section.main div[data-testid="stVerticalBlockBorderWrapper"] form button[kind="primaryFormSubmit"],
+section.main div[data-testid="stVerticalBlockBorderWrapper"] form button[data-testid="stBaseButton-primary"] {
     min-height: 46px !important;
     border-radius: 13px !important;
-    border: 1px solid rgba(168, 85, 247, .35) !important;
+    border: 1px solid rgba(168, 85, 247, .40) !important;
     background: linear-gradient(135deg, #9333ea 0%, #7c3aed 45%, #2563eb 100%) !important;
+    background-color: #7c3aed !important;
     color: #ffffff !important;
     font-weight: 900 !important;
     font-size: 14px !important;
@@ -369,94 +386,89 @@ section.main div[data-testid="stVerticalBlockBorderWrapper"] .stButton > button[
 }
 
 section.main div[data-testid="stVerticalBlockBorderWrapper"] .stFormSubmitButton > button:hover,
-section.main div[data-testid="stVerticalBlockBorderWrapper"] .stFormSubmitButton button:hover {
+section.main div[data-testid="stVerticalBlockBorderWrapper"] .stFormSubmitButton button:hover,
+section.main div[data-testid="stVerticalBlockBorderWrapper"] form button[kind="primaryFormSubmit"]:hover {
     background: linear-gradient(135deg, #a855f7 0%, #8b5cf6 45%, #3b82f6 100%) !important;
+    background-color: #8b5cf6 !important;
     color: #ffffff !important;
     transform: translateY(-1px) !important;
     box-shadow: 0 12px 32px rgba(124, 58, 237, .38) !important;
 }
 
-/* Inputs — keine weißen Ränder */
-section.main [data-testid="stTextInput"],
-section.main [data-testid="stNumberInput"] {
+section.main div[data-testid="stVerticalBlockBorderWrapper"] .stFormSubmitButton > button p,
+section.main div[data-testid="stVerticalBlockBorderWrapper"] .stFormSubmitButton button p {
+    color: #ffffff !important;
+}
+
+/* Inputs — nur in Auth-Card, keine weißen Ränder */
+section.main div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stTextInput"],
+section.main div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stNumberInput"] {
     background: transparent !important;
 }
 
-section.main [data-testid="stTextInput"] > div,
-section.main [data-testid="stNumberInput"] > div,
-section.main [data-testid="stTextInput"] > div > div,
-section.main [data-testid="stNumberInput"] > div > div,
-section.main [data-testid="stTextInput"] div[data-baseweb="input"],
-section.main [data-testid="stNumberInput"] div[data-baseweb="input"],
-section.main [data-testid="stTextInput"] div[data-baseweb="base-input"],
-section.main [data-testid="stNumberInput"] div[data-baseweb="base-input"] {
+section.main div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stTextInput"] > div,
+section.main div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stNumberInput"] > div,
+section.main div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stTextInput"] > div > div,
+section.main div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stNumberInput"] > div > div,
+section.main div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stTextInput"] fieldset,
+section.main div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stNumberInput"] fieldset {
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
     outline: none !important;
-}
-
-section.main [data-testid="stTextInput"] fieldset,
-section.main [data-testid="stNumberInput"] fieldset {
-    border: none !important;
     padding: 0 !important;
     margin: 0 !important;
 }
 
-section.main [data-testid="stTextInput"] label,
-section.main [data-testid="stNumberInput"] label,
-section.main [data-testid="stTextInput"] p,
-section.main [data-testid="stNumberInput"] p {
-    color: var(--mb-soft) !important;
+section.main div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stTextInput"] label,
+section.main div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stNumberInput"] label,
+section.main div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stTextInput"] p,
+section.main div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stNumberInput"] p {
+    color: #cbd5e1 !important;
     font-size: 12px !important;
     font-weight: 700 !important;
     margin-bottom: 4px !important;
 }
 
-section.main [data-testid="stTextInput"] div[data-baseweb="input"],
-section.main [data-testid="stNumberInput"] div[data-baseweb="input"] {
+section.main div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stTextInput"] div[data-baseweb="input"],
+section.main div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stNumberInput"] div[data-baseweb="input"] {
     background: rgba(6, 10, 24, .96) !important;
-    border: 1px solid rgba(168, 85, 247, .32) !important;
+    background-color: rgba(6, 10, 24, .96) !important;
+    border: 1px solid rgba(168, 85, 247, .38) !important;
     border-radius: 12px !important;
     min-height: 42px !important;
     overflow: hidden !important;
+    box-shadow: none !important;
 }
 
-section.main [data-testid="stTextInput"] input,
-section.main [data-testid="stNumberInput"] input {
+section.main div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stTextInput"] input,
+section.main div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stNumberInput"] input {
     background: transparent !important;
+    background-color: transparent !important;
     border: none !important;
     outline: none !important;
     color: #f1f5f9 !important;
     -webkit-text-fill-color: #f1f5f9 !important;
-    border-radius: 0 !important;
+    box-shadow: none !important;
     min-height: 40px !important;
     font-size: 14px !important;
-    font-weight: 600 !important;
     padding: 8px 14px !important;
-    box-shadow: none !important;
 }
 
-section.main [data-testid="stTextInput"] input:focus,
-section.main [data-testid="stNumberInput"] input:focus {
-    outline: none !important;
-    box-shadow: none !important;
+section.main div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stTextInput"] div[data-baseweb="input"]:focus-within,
+section.main div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stNumberInput"] div[data-baseweb="input"]:focus-within {
+    border-color: rgba(168, 85, 247, .60) !important;
+    box-shadow: 0 0 0 2px rgba(168, 85, 247, .16) !important;
 }
 
-section.main [data-testid="stTextInput"] div[data-baseweb="input"]:focus-within,
-section.main [data-testid="stNumberInput"] div[data-baseweb="input"]:focus-within {
-    border-color: rgba(168, 85, 247, .55) !important;
-    box-shadow: 0 0 0 2px rgba(168, 85, 247, .14) !important;
-}
-
-section.main [data-testid="stTextInput"] input::placeholder {
+section.main div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stTextInput"] input::placeholder {
     color: #64748b !important;
 }
 
-section.main [data-testid="stTextInput"] button {
+section.main div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stTextInput"] button {
     background: transparent !important;
     border: none !important;
-    color: var(--mb-muted) !important;
+    color: #94a3b8 !important;
     box-shadow: none !important;
 }
 
@@ -688,20 +700,18 @@ def render_mode_switch() -> str:
         unsafe_allow_html=True,
     )
 
-    st.markdown('<div class="mb-auth-tabs">', unsafe_allow_html=True)
     tab_login, tab_register = st.columns(2, gap="small")
 
     with tab_login:
-        if st.button("Anmelden", key="auth_tab_login", width="stretch", type="secondary"):
+        if st.button("Anmelden", key="auth_tab_login", width="stretch", type="primary" if mode == "login" else "tertiary"):
             st.session_state.auth_mode = "login"
             st.rerun()
 
     with tab_register:
-        if st.button("Registrieren", key="auth_tab_register", width="stretch", type="secondary"):
+        if st.button("Registrieren", key="auth_tab_register", width="stretch", type="primary" if mode == "register" else "tertiary"):
             st.session_state.auth_mode = "register"
             st.rerun()
 
-    st.markdown("</div>", unsafe_allow_html=True)
     return mode
 
 
