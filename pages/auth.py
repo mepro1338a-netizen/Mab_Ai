@@ -791,4 +791,3 @@ def render_auth() -> None:
                 unsafe_allow_html=True,
             )
 
-    auth_css()

@@ -8,6 +8,14 @@ from database import (
     save_project_memory,
     get_project,
 )
+from services.football_service import (
+    FootballAPIError,
+    fixture_label,
+    fixture_team_names,
+    format_fixture_stats,
+    get_football_service,
+    team_display_name,
+)
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 
@@ -205,7 +213,7 @@ def active_project():
     if not project_id:
         return None
 
-    return get_project(project_id)
+    return get_project(project_id, username=st.session_state.get("user"))
 
 
 # =========================================================
@@ -449,29 +457,207 @@ def render_full_export(result, filename="mabyte_matchday_package.txt"):
 
 
 # =========================================================
-# MAIN UI
+# LIVE DATA UI
 # =========================================================
 
-def render_football():
-    if not st.session_state.get("logged_in"):
-        st.session_state.page = "auth"
-        st.rerun()
+def render_football_live_data() -> None:
+    service = get_football_service()
+    username = st.session_state.get("user") or ""
+
+    if not service.is_configured():
+        st.info(
+            "Live Match Data benoetigt einen API-Football Key. "
+            "Setze `FOOTBALL_API_KEY` in Railway oder `.env`."
+        )
+        st.caption("Provider: API-Football (api-sports.io)")
         return
 
-    st.title("âš½ Football Intelligence")
+    st.subheader("Live Match Data")
+    st.caption("Fixtures, Live-Spiele und Head-to-Head via API-Football.")
 
-    st.caption(
-        "Multi Platform AI Matchday Engine fÃ¼r viralen Football Content."
-    )
+    search_col, search_btn_col = st.columns([3, 1])
+    with search_col:
+        team_query = st.text_input(
+            "Team suchen",
+            placeholder="z.B. Arsenal, Bayern, Real Madrid",
+            key="football_team_search_query",
+        )
+    with search_btn_col:
+        st.write("")
+        search_teams = st.button(
+            "Teams suchen",
+            width="stretch",
+            key="football_search_teams_btn",
+        )
 
+    if search_teams and team_query.strip():
+        try:
+            with st.spinner("Suche Teams..."):
+                st.session_state.football_team_results = service.search_teams(
+                    team_query.strip(),
+                    username=username,
+                )
+        except FootballAPIError as exc:
+            st.error(str(exc))
+
+    teams = st.session_state.get("football_team_results") or []
+    team_id = None
+
+    if teams:
+        team_options = {}
+        for row in teams:
+            team = row.get("team") or {}
+            team_key = team.get("id")
+            if team_key:
+                team_options[team_display_name(row)] = int(team_key)
+
+        if team_options:
+            selected_name = st.selectbox(
+                "Team auswaehlen",
+                list(team_options.keys()),
+                key="football_selected_team_name",
+            )
+            team_id = team_options.get(selected_name)
+    elif search_teams and team_query.strip():
+        st.warning("Keine Teams gefunden.")
+
+    live_col, fixture_col = st.columns(2)
+
+    with live_col:
+        st.markdown("### Live Spiele")
+        if st.button("Live aktualisieren", key="football_refresh_live", width="stretch"):
+            try:
+                with st.spinner("Lade Live-Spiele..."):
+                    st.session_state.football_live_fixtures = service.get_live_fixtures(
+                        username=username,
+                    )
+            except FootballAPIError as exc:
+                st.error(str(exc))
+
+        live_fixtures = st.session_state.get("football_live_fixtures") or []
+        if live_fixtures:
+            for item in live_fixtures[:12]:
+                home, away = fixture_team_names(item)
+                goals = item.get("goals") or {}
+                status = ((item.get("fixture") or {}).get("status") or {}).get("long") or "Live"
+                st.write(f"**{home}** {goals.get('home', '-')} : {goals.get('away', '-')} **{away}**")
+                st.caption(f"{status} | {fixture_label(item)}")
+        else:
+            st.caption("Keine Live-Spiele geladen. Klicke auf Live aktualisieren.")
+
+    with fixture_col:
+        st.markdown("### Team Fixtures")
+        if team_id:
+            next_n = st.slider("Anzahl naechste Spiele", 1, 10, 5, key="football_next_n")
+            if st.button("Fixtures laden", key="football_load_fixtures", width="stretch"):
+                try:
+                    with st.spinner("Lade Fixtures..."):
+                        st.session_state.football_upcoming_fixtures = service.get_upcoming_fixtures(
+                            team_id,
+                            next_count=next_n,
+                            username=username,
+                        )
+                except FootballAPIError as exc:
+                    st.error(str(exc))
+        else:
+            st.caption("Suche und waehle zuerst ein Team.")
+
+    upcoming = st.session_state.get("football_upcoming_fixtures") or []
+    selected_fixture = None
+
+    if upcoming:
+        fixture_map = {
+            fixture_label(row): row
+            for row in upcoming
+        }
+        selected_label = st.selectbox(
+            "Fixture auswaehlen",
+            list(fixture_map.keys()),
+            key="football_selected_fixture_label",
+        )
+        selected_fixture = fixture_map.get(selected_label)
+
+    if selected_fixture:
+        home, away = fixture_team_names(selected_fixture)
+        meta = selected_fixture.get("fixture") or {}
+        league = selected_fixture.get("league") or {}
+        venue = meta.get("venue") or {}
+
+        info1, info2, info3 = st.columns(3)
+        with info1:
+            st.metric("Heim", home)
+        with info2:
+            st.metric("Auswaerts", away)
+        with info3:
+            st.metric("Status", ((meta.get("status") or {}).get("short") or "NS"))
+
+        st.caption(
+            f"{league.get('name', '')} | {meta.get('date', '')} | "
+            f"{venue.get('name', 'Unbekanntes Stadion')}"
+        )
+
+        action1, action2, action3 = st.columns(3)
+        with action1:
+            if st.button("Details laden", key="football_load_fixture_detail", width="stretch"):
+                fixture_id = meta.get("id")
+                if fixture_id:
+                    try:
+                        with st.spinner("Lade Fixture-Details..."):
+                            st.session_state.football_fixture_detail = service.get_fixture(
+                                int(fixture_id),
+                                username=username,
+                            )
+                            st.session_state.football_fixture_stats = service.get_fixture_statistics(
+                                int(fixture_id),
+                                username=username,
+                            )
+                    except FootballAPIError as exc:
+                        st.error(str(exc))
+
+        with action2:
+            if st.button("Head-to-Head", key="football_load_h2h", width="stretch"):
+                home_id = ((selected_fixture.get("teams") or {}).get("home") or {}).get("id")
+                away_id = ((selected_fixture.get("teams") or {}).get("away") or {}).get("id")
+                if home_id and away_id:
+                    try:
+                        with st.spinner("Lade Head-to-Head..."):
+                            st.session_state.football_h2h = service.get_head_to_head(
+                                int(home_id),
+                                int(away_id),
+                                username=username,
+                            )
+                    except FootballAPIError as exc:
+                        st.error(str(exc))
+
+        with action3:
+            if st.button("Fuer AI uebernehmen", key="football_use_for_ai", width="stretch"):
+                st.session_state.football_ai_club_input = home
+                st.session_state.football_ai_opponent_input = away
+                st.success(f"Uebernommen: {home} vs {away}. Wechsle zum Tab AI Content Engine.")
+
+        detail = st.session_state.get("football_fixture_detail")
+        if detail:
+            with st.expander("Fixture Details", expanded=False):
+                st.json(detail)
+
+        stats = st.session_state.get("football_fixture_stats") or []
+        if stats:
+            with st.expander("Match Statistiken", expanded=False):
+                st.markdown(format_fixture_stats(stats))
+
+        h2h_rows = st.session_state.get("football_h2h") or []
+        if h2h_rows:
+            with st.expander("Head-to-Head Historie", expanded=False):
+                for row in h2h_rows:
+                    st.write(fixture_label(row))
+
+
+# =========================================================
+# AI CONTENT UI
+# =========================================================
+
+def render_football_ai_engine() -> None:
     project = active_project()
-
-    if project:
-        st.success(f"Aktives Projekt: {project.get('title')}")
-    else:
-        st.info("Kein aktives Projekt ausgewÃ¤hlt. Memory wird nicht gespeichert.")
-
-    st.divider()
 
     top1, top2, top3, top4 = st.columns(4)
 
@@ -492,9 +678,17 @@ def render_football():
     left, right = st.columns([1, 1], gap="large")
 
     with left:
-        club = st.text_input("Club", placeholder="Arsenal")
+        club = st.text_input(
+            "Club",
+            placeholder="Arsenal",
+            key="football_ai_club_input",
+        )
 
-        opponent = st.text_input("Opponent", placeholder="Manchester City")
+        opponent = st.text_input(
+            "Opponent",
+            placeholder="Manchester City",
+            key="football_ai_opponent_input",
+        )
 
         platform = st.selectbox(
             "Primary Platform",
@@ -662,3 +856,32 @@ def render_football():
             )
 
             st.success("Package in Projekt-Memory gespeichert.")
+
+
+def render_football() -> None:
+    if not st.session_state.get("logged_in"):
+        st.session_state.page = "auth"
+        st.rerun()
+        return
+
+    st.title("Football Intelligence")
+
+    st.caption(
+        "Live Match Data + Multi Platform AI Matchday Engine fuer viralen Football Content."
+    )
+
+    project = active_project()
+    if project:
+        st.success(f"Aktives Projekt: {project.get('title')}")
+    else:
+        st.info("Kein aktives Projekt ausgewaehlt. Memory wird nicht gespeichert.")
+
+    st.divider()
+
+    tab_live, tab_ai = st.tabs(["Live Match Data", "AI Content Engine"])
+
+    with tab_live:
+        render_football_live_data()
+
+    with tab_ai:
+        render_football_ai_engine()

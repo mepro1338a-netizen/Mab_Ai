@@ -68,6 +68,17 @@ STRIPE_PRICE_FOOTBALL_STARTER = os.getenv("STRIPE_PRICE_FOOTBALL_STARTER", "")
 STRIPE_PRICE_FOOTBALL_PRO = os.getenv("STRIPE_PRICE_FOOTBALL_PRO", "")
 STRIPE_PRICE_FOOTBALL_ELITE = os.getenv("STRIPE_PRICE_FOOTBALL_ELITE", "")
 
+# API-Football (api-sports.io) — Live-Daten für Football Intelligence
+FOOTBALL_API_KEY = os.getenv("FOOTBALL_API_KEY", "")
+FOOTBALL_API_BASE_URL = os.getenv(
+    "FOOTBALL_API_BASE_URL",
+    "https://v3.football.api-sports.io",
+)
+FOOTBALL_API_CACHE_TTL = int(os.getenv("FOOTBALL_API_CACHE_TTL", "300") or 300)
+FOOTBALL_API_LIVE_CACHE_TTL = int(os.getenv("FOOTBALL_API_LIVE_CACHE_TTL", "60") or 60)
+FOOTBALL_API_TIMEOUT = int(os.getenv("FOOTBALL_API_TIMEOUT", "20") or 20)
+FOOTBALL_DEFAULT_SEASON = int(os.getenv("FOOTBALL_DEFAULT_SEASON", "2025") or 2025)
+
 ROLE_LABELS = {
     "user": "User",
     "supporter": "Supporter",

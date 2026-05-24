@@ -30,6 +30,8 @@ def normalize_username(username):
 def get_connection():
     conn = sqlite3.connect(DB_PATH, check_same_thread=False, timeout=30)
     conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA busy_timeout=30000")
     return conn
 
 
@@ -141,6 +143,17 @@ def init_db():
         ip_address TEXT,
         user_agent TEXT,
         success INTEGER DEFAULT 0,
+        created_at TEXT
+    )
+    """)
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS audit_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        actor TEXT,
+        action TEXT,
+        target TEXT,
+        details TEXT,
         created_at TEXT
     )
     """)
@@ -314,27 +327,18 @@ def oauth_login_or_register(email, display_name, provider, provider_sub):
     ).fetchone()
 
     if not user and email:
-        user = cur.execute(
+        existing = cur.execute(
             "SELECT * FROM users WHERE email = ?",
             (email,),
         ).fetchone()
 
-        if user:
-            cur.execute(
-                """
-                UPDATE users
-                SET oauth_provider = ?, oauth_sub = ?, last_login = ?
-                WHERE username = ?
-                """,
-                (provider, provider_sub, now(), user["username"]),
-            )
-            conn.commit()
-            updated = cur.execute(
-                "SELECT * FROM users WHERE username = ?",
-                (user["username"],),
-            ).fetchone()
+        if existing:
             conn.close()
-            return True, "Login erfolgreich.", row_to_dict(updated)
+            return (
+                False,
+                "Diese Email ist bereits registriert. Bitte mit Passwort anmelden.",
+                None,
+            )
 
     if user:
         if int(user["is_banned"] or 0) == 1:
@@ -489,20 +493,49 @@ def can_assign_role(actor, target, new_role):
     return True, ""
 
 
-def set_role(username, role, admin_level=0):
+def is_protected_account(username):
+    username = normalize_username(username)
+    return username == OWNER_USERNAME or is_owner_user(username)
+
+
+def can_modify_target(actor, target):
+    actor = normalize_username(actor)
+    target = normalize_username(target)
+
+    if is_protected_account(target) and not is_owner_user(actor):
+        return False, "Dieser Account ist geschuetzt."
+
+    if actor == target:
+        return True, ""
+
+    actor_level = get_role_level(actor)
+    target_level = get_role_level(target)
+
+    if target_level >= actor_level and not is_owner_user(actor):
+        return False, "Keine Berechtigung fuer gleich/hoehergestellte User."
+
+    return True, ""
+
+
+def set_role(username, role, admin_level=None):
     username = normalize_username(username)
     role = str(role or "user").lower()
 
+    if role not in ROLE_LEVELS:
+        role = "user"
+
     if username == OWNER_USERNAME:
         role = "owner"
-        admin_level = 1337
+        level = 1337
+    else:
+        level = ROLE_LEVELS.get(role, 0)
 
     conn = get_connection()
     cur = conn.cursor()
 
     cur.execute(
         "UPDATE users SET role = ?, admin_level = ? WHERE username = ?",
-        (role, int(admin_level), username),
+        (role, int(level), username),
     )
 
     conn.commit()
@@ -515,7 +548,12 @@ def secure_set_role(actor, target, new_role):
     if not ok:
         return False, msg
 
-    set_role(target, new_role, ROLE_LEVELS.get(new_role, 0))
+    ok, msg = can_modify_target(actor, target)
+    if not ok:
+        return False, msg
+
+    set_role(target, new_role)
+    add_audit_log(actor, "set_role", target, new_role)
     return True, "Rolle gespeichert."
 
 
@@ -549,21 +587,52 @@ def set_plan(username, plan):
 
 
 def update_tokens(username, tokens):
+    tokens = max(0, int(tokens))
+
     conn = get_connection()
     cur = conn.cursor()
 
     cur.execute(
         "UPDATE users SET tokens = ? WHERE username = ?",
-        (int(tokens), normalize_username(username)),
+        (tokens, normalize_username(username)),
     )
 
     conn.commit()
     conn.close()
 
 
+def secure_update_tokens(actor, target, tokens):
+    if not can_manage_users(actor):
+        return False, "Keine Berechtigung."
+
+    ok, msg = can_modify_target(actor, target)
+    if not ok:
+        return False, msg
+
+    update_tokens(target, tokens)
+    add_audit_log(actor, "update_tokens", target, f"tokens={max(0, int(tokens))}")
+    return True, "Tokens gespeichert."
+
+
+def secure_set_plan(actor, target, plan):
+    if not can_manage_users(actor):
+        return False, "Keine Berechtigung."
+
+    ok, msg = can_modify_target(actor, target)
+    if not ok:
+        return False, msg
+
+    set_plan(target, plan)
+    add_audit_log(actor, "set_plan", target, str(plan))
+    return True, "Plan gespeichert."
+
+
 def spend_tokens(username, amount):
     username = normalize_username(username)
     amount = int(amount)
+
+    if amount <= 0:
+        return False, "Ungueltiger Token-Betrag."
 
     conn = get_connection()
     cur = conn.cursor()
@@ -593,7 +662,7 @@ def spend_tokens(username, amount):
 def ban_user(username, banned=True):
     username = normalize_username(username)
 
-    if username == OWNER_USERNAME:
+    if is_protected_account(username):
         return False
 
     conn = get_connection()
@@ -616,17 +685,22 @@ def secure_ban_user(actor, target, banned=True):
 
     target = normalize_username(target)
 
-    if target == OWNER_USERNAME:
-        return False, "Owner kann nicht gebannt werden."
+    ok, msg = can_modify_target(actor, target)
+    if not ok:
+        return False, msg
 
-    ban_user(target, banned)
-    return True, "Status geändert."
+    if not ban_user(target, banned):
+        return False, "Account ist geschuetzt."
+
+    action = "ban_user" if banned else "unban_user"
+    add_audit_log(actor, action, target, "")
+    return True, "Status geaendert."
 
 
 def delete_user(username):
     username = normalize_username(username)
 
-    if username == OWNER_USERNAME:
+    if is_protected_account(username):
         return False
 
     conn = get_connection()
@@ -649,11 +723,15 @@ def secure_delete_user(actor, target):
 
     target = normalize_username(target)
 
-    if target == OWNER_USERNAME:
-        return False, "Owner kann nicht gelöscht werden."
+    ok, msg = can_modify_target(actor, target)
+    if not ok:
+        return False, msg
 
-    delete_user(target)
-    return True, "User gelöscht."
+    if not delete_user(target):
+        return False, "Account ist geschuetzt."
+
+    add_audit_log(actor, "delete_user", target, "")
+    return True, "User geloescht."
 
 
 def create_support_message(username, email, category, subject, message):
@@ -1266,7 +1344,7 @@ def list_projects(username):
     return rows_to_dicts(rows)
 
 
-def get_project(project_id):
+def get_project(project_id, username=None):
     ensure_project_tables()
 
     conn = get_connection()
@@ -1280,7 +1358,15 @@ def get_project(project_id):
     )).fetchone()
 
     conn.close()
-    return row_to_dict(row)
+    project = row_to_dict(row)
+
+    if not project:
+        return None
+
+    if username and normalize_username(project.get("username")) != normalize_username(username):
+        return None
+
+    return project
 
 
 def save_project_memory(project_id, username, workspace, memory_type, content):
@@ -1701,11 +1787,36 @@ def has_automation_access(username):
 
 
 def add_audit_log(actor, action, target="", details=""):
-    return None
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("""
+    INSERT INTO audit_logs (actor, action, target, details, created_at)
+    VALUES (?, ?, ?, ?, ?)
+    """, (
+        normalize_username(actor) or str(actor or ""),
+        str(action or "")[:120],
+        str(target or "")[:120],
+        str(details or "")[:2000],
+        now(),
+    ))
+
+    conn.commit()
+    conn.close()
 
 
-def list_audit_logs():
-    return []
+def list_audit_logs(limit=200):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    rows = cur.execute("""
+    SELECT * FROM audit_logs
+    ORDER BY id DESC
+    LIMIT ?
+    """, (int(limit),)).fetchall()
+
+    conn.close()
+    return rows_to_dicts(rows)
 
 
 def force_owner_account():

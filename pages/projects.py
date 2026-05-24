@@ -132,7 +132,7 @@ def render_project_list():
 
 
 def render_project_memory(project_id):
-    project = get_project(project_id)
+    project = get_project(project_id, username=current_user())
 
     if not project:
         st.error("Projekt nicht gefunden.")

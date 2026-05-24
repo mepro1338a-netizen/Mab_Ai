@@ -4,13 +4,16 @@ import streamlit as st
 
 from config import DB_PATH, PLANS
 from database import (
+    OWNER_USERNAME,
+    ROLE_LEVELS,
     get_user,
     list_users,
-    update_tokens,
-    set_plan,
+    secure_update_tokens,
+    secure_set_plan,
+    secure_set_role,
+    secure_ban_user,
+    secure_delete_user,
     set_role,
-    ban_user,
-    delete_user,
     create_redeem_code,
     list_codes,
     list_usage,
@@ -18,6 +21,7 @@ from database import (
     list_support_messages,
     set_support_status,
     delete_support_message,
+    clear_login_logs,
 )
 
 try:
@@ -26,16 +30,12 @@ except Exception:
     list_login_logs = None
 
 
-OWNER_USERNAME = "mepro1337"
-
-
-ROLE_LEVELS = {
-    "user": 0,
-    "supporter": 1,
-    "moderator": 2,
-    "admin": 3,
-    "owner": 1337,
-}
+def refresh_actor_from_db():
+    user = get_user(current_username())
+    if not user:
+        return
+    st.session_state.role = str(user.get("role") or "user")
+    st.session_state.admin_level = int(user.get("admin_level") or 0)
 
 
 def current_username():
@@ -91,15 +91,6 @@ def force_owner():
         set_role(OWNER_USERNAME, "owner", 1337)
         st.session_state.role = "owner"
         st.session_state.admin_level = 1337
-
-
-def clear_login_logs():
-    conn = sqlite3.connect(DB_PATH, check_same_thread=False, timeout=30)
-    cur = conn.cursor()
-    cur.execute("CREATE TABLE IF NOT EXISTS login_logs (id INTEGER PRIMARY KEY AUTOINCREMENT)")
-    cur.execute("DELETE FROM login_logs")
-    conn.commit()
-    conn.close()
 
 
 def safe_int(value):
@@ -332,6 +323,9 @@ def render_users():
         st.warning("Supporter können nur Tickets bearbeiten.")
         return
 
+    refresh_actor_from_db()
+    actor = current_username()
+
     st.subheader("User Management")
 
     users = list_users()
@@ -366,8 +360,11 @@ def render_users():
                 )
 
                 if st.button("Tokens speichern", key=f"save_tokens_{uname}"):
-                    update_tokens(uname, int(new_tokens))
-                    st.success("Tokens gespeichert.")
+                    ok, msg = secure_update_tokens(actor, uname, int(new_tokens))
+                    if ok:
+                        st.success(msg)
+                    else:
+                        st.error(msg)
                     st.rerun()
 
             with c2:
@@ -380,8 +377,11 @@ def render_users():
                 )
 
                 if st.button("Plan speichern", key=f"save_plan_{uname}"):
-                    set_plan(uname, new_plan)
-                    st.success("Plan gespeichert.")
+                    ok, msg = secure_set_plan(actor, uname, new_plan)
+                    if ok:
+                        st.success(msg)
+                    else:
+                        st.error(msg)
                     st.rerun()
 
             with c3:
@@ -402,14 +402,13 @@ def render_users():
                     )
 
                     if st.button("Rolle speichern", key=f"save_role_{uname}"):
-                        if uname == OWNER_USERNAME and not is_owner():
-                            st.error("Owner ist geschützt.")
-                        elif new_role == "owner" and not is_owner():
-                            st.error("Nur Owner darf Owner vergeben.")
+                        ok, msg = secure_set_role(actor, uname, new_role)
+                        if ok:
+                            st.success(msg)
+                            refresh_actor_from_db()
                         else:
-                            set_role(uname, new_role, ROLE_LEVELS.get(new_role, 0))
-                            st.success("Rolle gespeichert.")
-                            st.rerun()
+                            st.error(msg)
+                        st.rerun()
                 else:
                     st.info("Rollenverwaltung für Moderatoren gesperrt.")
 
@@ -418,12 +417,20 @@ def render_users():
                     st.info("Owner geschützt.")
                 else:
                     if st.button("Ban" if not banned else "Unban", key=f"ban_{uname}"):
-                        ban_user(uname, not banned)
+                        ok, msg = secure_ban_user(actor, uname, not banned)
+                        if ok:
+                            st.success(msg)
+                        else:
+                            st.error(msg)
                         st.rerun()
 
                     if is_admin() and uname != OWNER_USERNAME:
                         if st.button("User löschen", key=f"delete_{uname}"):
-                            delete_user(uname)
+                            ok, msg = secure_delete_user(actor, uname)
+                            if ok:
+                                st.success(msg)
+                            else:
+                                st.error(msg)
                             st.rerun()
 
 
@@ -520,6 +527,7 @@ def render_owner_console():
 
 def render_admin():
     require_panel_access()
+    refresh_actor_from_db()
     admin_css()
     render_header()
 

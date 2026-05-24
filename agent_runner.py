@@ -251,7 +251,8 @@ Du arbeitest modern, hochwertig und markenorientiert.
 def run_automation(automation):
 
     project = get_project(
-        automation.get("project_id")
+        automation.get("project_id"),
+        username=automation.get("username"),
     )
 
     if not project:

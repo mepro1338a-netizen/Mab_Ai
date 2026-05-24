@@ -212,7 +212,7 @@ def get_active_project():
         return None
 
     try:
-        return get_project(project_id)
+        return get_project(project_id, username=username())
     except Exception:
         return None
 

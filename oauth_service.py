@@ -25,7 +25,12 @@ PROVIDERS = ("google", "instagram", "tiktok")
 
 
 def _state_key() -> bytes:
-    secret = OAUTH_STATE_SECRET or GOOGLE_CLIENT_SECRET or "mabyte-oauth-dev"
+    secret = OAUTH_STATE_SECRET or GOOGLE_CLIENT_SECRET or ""
+    if not secret:
+        if "localhost" in APP_BASE_URL or "127.0.0.1" in APP_BASE_URL:
+            secret = "mabyte-oauth-dev-local-only"
+    if not secret:
+        return b""
     return secret.encode("utf-8")
 
 
@@ -45,7 +50,7 @@ def verify_state(state: str, max_age: int = 900) -> str:
         decoded = base64.urlsafe_b64decode(state.encode()).decode()
         raw, sig = decoded.rsplit("|", 1)
         expected = hmac.new(_state_key(), raw.encode(), hashlib.sha256).hexdigest()[:20]
-        if not hmac.compare_digest(sig, expected):
+        if not expected or not sig or not hmac.compare_digest(sig, expected):
             return ""
         payload = json.loads(raw)
         if int(time.time()) - int(payload["t"]) > max_age:

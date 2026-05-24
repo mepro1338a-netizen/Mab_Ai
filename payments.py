@@ -4,6 +4,7 @@ from config import PLANS, APP_BASE_URL
 from database import record_purchase, set_plan, update_tokens
 
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY", "")
+STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
 
 
 def create_checkout_session(username, plan_key):
@@ -53,4 +54,27 @@ def confirm_checkout_session(session_id):
         return False, f"Zahlung noch nicht bestÃ¤tigt: {status}"
     except Exception as e:
         return False, str(e)
+
+
+def handle_stripe_webhook(payload, sig):
+    if not STRIPE_WEBHOOK_SECRET:
+        return False, "STRIPE_WEBHOOK_SECRET fehlt."
+
+    if not stripe.api_key:
+        return False, "STRIPE_SECRET_KEY fehlt."
+
+    try:
+        event = stripe.Webhook.construct_event(payload, sig, STRIPE_WEBHOOK_SECRET)
+    except stripe.error.SignatureVerificationError:
+        return False, "Ungueltige Stripe Signatur."
+    except Exception as exc:
+        return False, str(exc)
+
+    if event.type == "checkout.session.completed":
+        session_id = event.data.object.get("id")
+        if session_id:
+            ok, msg = confirm_checkout_session(session_id)
+            return ok, msg
+
+    return True, f"Event ignoriert: {event.type}"
 

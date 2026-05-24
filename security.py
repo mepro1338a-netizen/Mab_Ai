@@ -74,5 +74,5 @@ def is_owner(user: dict) -> bool:
     if not user:
         return False
 
-    return user.get("role") == "owner" or int(user.get("admin_level", 0) or 0) >= 999
+    return user.get("role") == "owner" or int(user.get("admin_level", 0) or 0) >= 1337
 
