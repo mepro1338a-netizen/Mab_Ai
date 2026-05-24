@@ -680,14 +680,11 @@ def render_mode_switch() -> str:
         if st.button("Anmelden", key="auth_tab_login", width="stretch", type="secondary"):
             st.session_state.auth_mode = "login"
             st.rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
 
     with tab_register:
-        st.markdown(f'<div class="{register_active}">', unsafe_allow_html=True)
         if st.button("Registrieren", key="auth_tab_register", width="stretch", type="secondary"):
             st.session_state.auth_mode = "register"
             st.rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("</div>", unsafe_allow_html=True)
     return mode
