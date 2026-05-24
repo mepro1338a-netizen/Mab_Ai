@@ -1,4 +1,5 @@
 ﻿import random
+
 import streamlit as st
 
 from database import create_user, verify_login, record_login_event
@@ -72,7 +73,6 @@ def do_login(username: str, password: str) -> None:
     if ok and user:
         sync_session_user(user)
         st.session_state.page = "home"
-        st.success("Login erfolgreich.")
         st.rerun()
 
     st.error(msg)
@@ -111,7 +111,7 @@ def do_register(username: str, email: str, password: str, captcha: int) -> None:
 
 
 def social_login(provider: str) -> None:
-    st.info(f"{provider} Login ist vorbereitet. OAuth API wird als nächster Schritt angebunden.")
+    st.info(f"{provider} OAuth ist vorbereitet. Die echte API-Anbindung kommt danach.")
 
 
 def auth_css() -> None:
@@ -128,129 +128,116 @@ footer,
 
 .stApp {
     background:
-        radial-gradient(circle at 20% 10%, rgba(168,85,247,.22), transparent 26%),
-        radial-gradient(circle at 82% 18%, rgba(96,165,250,.16), transparent 28%),
-        linear-gradient(135deg,#050816 0%,#081226 48%,#050711 100%) !important;
+        radial-gradient(circle at 18% 8%, rgba(168,85,247,.20), transparent 26%),
+        radial-gradient(circle at 84% 14%, rgba(96,165,250,.14), transparent 28%),
+        linear-gradient(135deg,#050816 0%,#090b1f 48%,#050711 100%) !important;
 }
 
 .main .block-container {
     max-width: 980px !important;
-    padding-top: 52px !important;
+    padding-top: 58px !important;
     padding-bottom: 60px !important;
 }
 
-.auth-shell {
-    max-width: 920px;
+.auth-wrap {
+    max-width: 840px;
     margin: 0 auto;
 }
 
-.auth-brand {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    margin-bottom: 26px;
+.auth-top {
+    text-align: center;
+    margin-bottom: 24px;
 }
 
 .auth-logo {
-    width: 46px;
-    height: 46px;
-    border-radius: 16px;
+    width: 54px;
+    height: 54px;
+    border-radius: 19px;
+    margin: 0 auto 13px auto;
     display: flex;
     align-items: center;
     justify-content: center;
     background:
-        radial-gradient(circle at top left, rgba(255,231,163,.30), transparent 35%),
+        radial-gradient(circle at top left, rgba(255,231,163,.30), transparent 34%),
         linear-gradient(135deg,#7c3aed,#2563eb);
     color: #ffe7a3 !important;
-    font-size: 22px;
+    font-size: 24px;
     font-weight: 1000;
-    box-shadow: 0 0 34px rgba(168,85,247,.34);
+    box-shadow: 0 0 36px rgba(168,85,247,.34);
 }
 
-.auth-name {
-    color: #ffffff !important;
-    font-size: 30px;
+.auth-title {
+    font-size: 44px;
+    line-height: .96;
     font-weight: 1000;
-    letter-spacing: -.05em;
+    letter-spacing: -2.4px;
+    background: linear-gradient(135deg,#ffe7a3,#c084fc,#60a5fa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.auth-sub {
+    margin-top: 10px;
+    color: #cbd5e1 !important;
+    font-size: 15px;
+    font-weight: 750;
 }
 
 .auth-card {
     background:
-        radial-gradient(circle at top right, rgba(168,85,247,.18), transparent 34%),
-        linear-gradient(145deg,rgba(12,13,32,.94),rgba(6,7,18,.98));
+        radial-gradient(circle at top right, rgba(168,85,247,.16), transparent 34%),
+        linear-gradient(145deg,rgba(13,10,31,.96),rgba(6,7,18,.99));
     border: 1px solid rgba(168,85,247,.22);
     border-radius: 30px;
     padding: 30px;
     box-shadow:
-        0 24px 80px rgba(0,0,0,.34),
-        inset 0 1px 0 rgba(255,255,255,.05);
+        0 24px 80px rgba(0,0,0,.38),
+        inset 0 1px 0 rgba(255,255,255,.04);
 }
 
-.auth-title {
-    text-align: center;
-    font-size: 44px;
-    line-height: .96;
-    font-weight: 1000;
-    letter-spacing: -2px;
-    background: linear-gradient(135deg,#ffe7a3,#c084fc,#60a5fa);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    margin-bottom: 10px;
-}
-
-.auth-sub {
-    text-align: center;
-    color: #cbd5e1 !important;
-    font-size: 15px;
-    font-weight: 700;
-    margin-bottom: 24px;
-}
-
-.auth-social-grid {
+.auth-social {
     display: grid;
     grid-template-columns: repeat(3,minmax(0,1fr));
     gap: 10px;
     margin-bottom: 18px;
 }
 
-.auth-social {
-    padding: 12px;
-    border-radius: 16px;
-    text-align: center;
-    background: rgba(168,85,247,.10);
-    border: 1px solid rgba(168,85,247,.20);
-    color: #ffe7a3 !important;
-    font-weight: 1000;
-    font-size: 14px;
-}
-
-.auth-sep {
-    text-align: center;
+.auth-divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 18px 0;
     color: #64748b !important;
     font-size: 12px;
-    font-weight: 900;
-    margin: 10px 0 16px 0;
+    font-weight: 1000;
     letter-spacing: .14em;
     text-transform: uppercase;
 }
 
-.auth-mini {
+.auth-divider:before,
+.auth-divider:after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: rgba(168,85,247,.18);
+}
+
+.auth-foot {
     display: grid;
     grid-template-columns: repeat(3,minmax(0,1fr));
     gap: 10px;
     margin-top: 18px;
 }
 
-.auth-mini-card {
+.auth-foot-card {
     border: 1px solid rgba(168,85,247,.14);
-    background: rgba(15,23,42,.42);
+    background: rgba(15,23,42,.36);
     border-radius: 18px;
-    padding: 14px;
+    padding: 13px;
     text-align: center;
     color: #cbd5e1 !important;
     font-size: 12px;
-    font-weight: 800;
+    font-weight: 850;
 }
 
 .stTextInput input,
@@ -297,16 +284,20 @@ footer,
 
 @media(max-width:800px) {
     .main .block-container {
-        padding-top: 28px !important;
+        padding-top: 32px !important;
     }
 
     .auth-title {
         font-size: 34px;
     }
 
-    .auth-social-grid,
-    .auth-mini {
+    .auth-social,
+    .auth-foot {
         grid-template-columns: 1fr;
+    }
+
+    .auth-card {
+        padding: 22px;
     }
 }
 </style>
@@ -337,23 +328,20 @@ def render_auth() -> None:
 
     st.markdown(
         """
-<div class="auth-shell">
-    <div class="auth-brand">
+<div class="auth-wrap">
+    <div class="auth-top">
         <div class="auth-logo">M</div>
-        <div class="auth-name">MaByte</div>
+        <div class="auth-title">Welcome to MaByte</div>
+        <div class="auth-sub">Creator OS für Reels, Automationen und AI Workflows.</div>
     </div>
-
     <div class="auth-card">
-        <div class="auth-title">Creator OS Login</div>
-        <div class="auth-sub">Reels, Automationen, Football AI und Creator Workflows an einem Ort.</div>
-</div>
 """,
         unsafe_allow_html=True,
     )
 
     render_social_buttons()
 
-    st.markdown('<div class="auth-sep">oder mit account</div>', unsafe_allow_html=True)
+    st.markdown('<div class="auth-divider">Account Login</div>', unsafe_allow_html=True)
 
     tab_login, tab_register = st.tabs(["Login", "Registrieren"])
 
@@ -407,11 +395,12 @@ def render_auth() -> None:
 
     st.markdown(
         """
-<div class="auth-mini">
-    <div class="auth-mini-card">Reels Studio</div>
-    <div class="auth-mini-card">Social Automation</div>
-    <div class="auth-mini-card">Football AI</div>
-</div>
+        <div class="auth-foot">
+            <div class="auth-foot-card">Reels Studio</div>
+            <div class="auth-foot-card">Social Automation</div>
+            <div class="auth-foot-card">Football AI</div>
+        </div>
+    </div>
 </div>
 """,
         unsafe_allow_html=True,
