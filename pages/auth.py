@@ -330,104 +330,134 @@ section.main div[data-testid="stVerticalBlockBorderWrapper"] {
     gap: 8px !important;
 }
 
-.mb-auth-tabs .stButton > button {
+/* Tab-Buttons — MaByte (Override Streamlit Weiß) */
+section.main .mb-auth-tabs .stButton > button,
+section.main .mb-auth-tabs button[kind="secondary"],
+section.main .mb-auth-tabs [data-testid="stBaseButton-secondary"] {
     min-height: 42px !important;
     border-radius: 12px !important;
-    background: rgba(168, 85, 247, .07) !important;
-    border: 1px solid rgba(168, 85, 247, .18) !important;
+    background: rgba(168, 85, 247, .08) !important;
+    border: 1px solid rgba(168, 85, 247, .22) !important;
     color: #94a3b8 !important;
     font-weight: 800 !important;
     font-size: 13px !important;
-    letter-spacing: .02em !important;
     box-shadow: none !important;
-    transition: all .18s ease !important;
+    width: 100% !important;
 }
 
-.mb-auth-tabs .stButton > button:hover {
+section.main .mb-auth-tabs .stButton > button:hover {
+    background: rgba(168, 85, 247, .14) !important;
     color: #e2e8f0 !important;
-    border-color: rgba(168, 85, 247, .32) !important;
-    background: rgba(168, 85, 247, .12) !important;
+    border-color: rgba(168, 85, 247, .35) !important;
     transform: none !important;
 }
 
-.mb-auth-tab-active .stButton > button {
-    background: linear-gradient(135deg, #9333ea 0%, #7c3aed 50%, #2563eb 100%) !important;
+/* Primary — Einloggen / Account erstellen */
+section.main div[data-testid="stVerticalBlockBorderWrapper"] .stFormSubmitButton > button,
+section.main div[data-testid="stVerticalBlockBorderWrapper"] .stFormSubmitButton button,
+section.main div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stFormSubmitButton"] button,
+section.main div[data-testid="stVerticalBlockBorderWrapper"] .stButton > button[kind="primary"] {
+    min-height: 46px !important;
+    border-radius: 13px !important;
+    border: 1px solid rgba(168, 85, 247, .35) !important;
+    background: linear-gradient(135deg, #9333ea 0%, #7c3aed 45%, #2563eb 100%) !important;
     color: #ffffff !important;
-    border-color: rgba(255, 231, 163, .28) !important;
-    box-shadow:
-        0 8px 22px rgba(124, 58, 237, .32),
-        inset 0 1px 0 rgba(255, 255, 255, .14) !important;
+    font-weight: 900 !important;
+    font-size: 14px !important;
+    box-shadow: 0 10px 28px rgba(124, 58, 237, .32) !important;
+    margin-top: 6px !important;
 }
 
-.mb-auth-tab-active .stButton > button:hover {
+section.main div[data-testid="stVerticalBlockBorderWrapper"] .stFormSubmitButton > button:hover,
+section.main div[data-testid="stVerticalBlockBorderWrapper"] .stFormSubmitButton button:hover {
+    background: linear-gradient(135deg, #a855f7 0%, #8b5cf6 45%, #3b82f6 100%) !important;
     color: #ffffff !important;
-    box-shadow:
-        0 10px 26px rgba(124, 58, 237, .38),
-        inset 0 1px 0 rgba(255, 255, 255, .16) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 12px 32px rgba(124, 58, 237, .38) !important;
 }
 
-/* Inputs — keine weißen Ränder, dunkles MaByte-Design */
-section.main .stTextInput > div,
-section.main .stNumberInput > div,
-section.main .stTextInput div[data-baseweb="input"],
-section.main .stNumberInput div[data-baseweb="input"],
-section.main .stTextInput div[data-baseweb="base-input"],
-section.main .stNumberInput div[data-baseweb="base-input"] {
+/* Inputs — keine weißen Ränder */
+section.main [data-testid="stTextInput"],
+section.main [data-testid="stNumberInput"] {
+    background: transparent !important;
+}
+
+section.main [data-testid="stTextInput"] > div,
+section.main [data-testid="stNumberInput"] > div,
+section.main [data-testid="stTextInput"] > div > div,
+section.main [data-testid="stNumberInput"] > div > div,
+section.main [data-testid="stTextInput"] div[data-baseweb="input"],
+section.main [data-testid="stNumberInput"] div[data-baseweb="input"],
+section.main [data-testid="stTextInput"] div[data-baseweb="base-input"],
+section.main [data-testid="stNumberInput"] div[data-baseweb="base-input"] {
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
     outline: none !important;
 }
 
-section.main .stTextInput fieldset,
-section.main .stNumberInput fieldset {
+section.main [data-testid="stTextInput"] fieldset,
+section.main [data-testid="stNumberInput"] fieldset {
     border: none !important;
     padding: 0 !important;
+    margin: 0 !important;
 }
 
-section.main .stTextInput label,
-section.main .stNumberInput label,
-section.main .stTextInput p,
-section.main .stNumberInput p {
+section.main [data-testid="stTextInput"] label,
+section.main [data-testid="stNumberInput"] label,
+section.main [data-testid="stTextInput"] p,
+section.main [data-testid="stNumberInput"] p {
     color: var(--mb-soft) !important;
     font-size: 12px !important;
     font-weight: 700 !important;
     margin-bottom: 4px !important;
 }
 
-section.main .stTextInput input,
-section.main .stNumberInput input {
-    background: rgba(6, 10, 24, .95) !important;
-    border: 1px solid rgba(168, 85, 247, .28) !important;
+section.main [data-testid="stTextInput"] div[data-baseweb="input"],
+section.main [data-testid="stNumberInput"] div[data-baseweb="input"] {
+    background: rgba(6, 10, 24, .96) !important;
+    border: 1px solid rgba(168, 85, 247, .32) !important;
+    border-radius: 12px !important;
+    min-height: 42px !important;
+    overflow: hidden !important;
+}
+
+section.main [data-testid="stTextInput"] input,
+section.main [data-testid="stNumberInput"] input {
+    background: transparent !important;
+    border: none !important;
     outline: none !important;
     color: #f1f5f9 !important;
     -webkit-text-fill-color: #f1f5f9 !important;
-    border-radius: 12px !important;
-    min-height: 42px !important;
+    border-radius: 0 !important;
+    min-height: 40px !important;
     font-size: 14px !important;
     font-weight: 600 !important;
     padding: 8px 14px !important;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.03) !important;
+    box-shadow: none !important;
 }
 
-section.main .stTextInput input:focus,
-section.main .stNumberInput input:focus {
-    border-color: rgba(168, 85, 247, .55) !important;
-    box-shadow:
-        inset 0 1px 0 rgba(255,255,255,.04),
-        0 0 0 2px rgba(168, 85, 247, .16) !important;
+section.main [data-testid="stTextInput"] input:focus,
+section.main [data-testid="stNumberInput"] input:focus {
     outline: none !important;
+    box-shadow: none !important;
 }
 
-section.main .stTextInput input::placeholder {
+section.main [data-testid="stTextInput"] div[data-baseweb="input"]:focus-within,
+section.main [data-testid="stNumberInput"] div[data-baseweb="input"]:focus-within {
+    border-color: rgba(168, 85, 247, .55) !important;
+    box-shadow: 0 0 0 2px rgba(168, 85, 247, .14) !important;
+}
+
+section.main [data-testid="stTextInput"] input::placeholder {
     color: #64748b !important;
 }
 
-/* Passwort-Auge-Button */
-section.main .stTextInput button {
+section.main [data-testid="stTextInput"] button {
     background: transparent !important;
     border: none !important;
     color: var(--mb-muted) !important;
+    box-shadow: none !important;
 }
 
 section.main [data-testid="stForm"] {
@@ -436,32 +466,6 @@ section.main [data-testid="stForm"] {
 
 section.main [data-testid="stForm"] [data-testid="stVerticalBlock"] {
     gap: .35rem !important;
-}
-
-/* Primary button */
-section.main .stFormSubmitButton > button,
-section.main .stButton > button[kind="primary"] {
-    min-height: 46px !important;
-    border-radius: 13px !important;
-    border: 1px solid rgba(255,231,163,.28) !important;
-    background: linear-gradient(135deg, #9333ea 0%, #7c3aed 45%, #2563eb 100%) !important;
-    color: #fff !important;
-    font-weight: 900 !important;
-    font-size: 14px !important;
-    letter-spacing: .02em !important;
-    box-shadow:
-        0 10px 28px rgba(124,58,237,.32),
-        inset 0 1px 0 rgba(255,255,255,.12) !important;
-    margin-top: 6px !important;
-    transition: transform .15s ease, box-shadow .15s ease !important;
-}
-
-section.main .stFormSubmitButton > button:hover,
-section.main .stButton > button[kind="primary"]:hover {
-    transform: translateY(-2px) !important;
-    box-shadow:
-        0 14px 34px rgba(124,58,237,.40),
-        inset 0 1px 0 rgba(255,255,255,.16) !important;
 }
 
 /* OAuth — unter dem Login, SaaS-Stil (gestapelt) */
@@ -581,6 +585,15 @@ section.main .stButton > button[kind="primary"]:hover {
         grid-template-columns: 1fr;
     }
 }
+
+/* Letzter Override gegen Streamlit/ui_core auf der Auth-Card */
+section.main div[data-testid="stVerticalBlockBorderWrapper"] .stTextInput input,
+section.main div[data-testid="stVerticalBlockBorderWrapper"] .stNumberInput input {
+    border: none !important;
+    background: transparent !important;
+    color: #f1f5f9 !important;
+    -webkit-text-fill-color: #f1f5f9 !important;
+}
 </style>
 """,
         unsafe_allow_html=True,
@@ -656,16 +669,18 @@ def render_mode_switch() -> str:
     st.markdown(
         f"""
 <style>
-.mb-auth-tabs [data-testid="column"]:nth-child(1) .stButton > button {{
+.mb-auth-tabs [data-testid="stColumn"]:nth-of-type(1) .stButton > button,
+.mb-auth-tabs [data-testid="stColumn"]:nth-of-type(1) button {{
     background: {login_btn} !important;
     color: {login_color} !important;
-    border-color: {login_border} !important;
+    border: 1px solid {login_border} !important;
     box-shadow: {login_shadow} !important;
 }}
-.mb-auth-tabs [data-testid="column"]:nth-child(2) .stButton > button {{
+.mb-auth-tabs [data-testid="stColumn"]:nth-of-type(2) .stButton > button,
+.mb-auth-tabs [data-testid="stColumn"]:nth-of-type(2) button {{
     background: {register_btn} !important;
     color: {register_color} !important;
-    border-color: {register_border} !important;
+    border: 1px solid {register_border} !important;
     box-shadow: {register_shadow} !important;
 }}
 </style>
