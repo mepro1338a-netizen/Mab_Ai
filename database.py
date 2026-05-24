@@ -1,4 +1,5 @@
-﻿import sqlite3
+﻿import re
+import sqlite3
 import secrets
 from datetime import datetime, timedelta
 
@@ -65,6 +66,15 @@ def init_db():
         cur.execute("ALTER TABLE users ADD COLUMN automation_unlocked INTEGER DEFAULT 0")
     except Exception:
         pass
+
+    for column, definition in (
+        ("oauth_provider", "TEXT"),
+        ("oauth_sub", "TEXT"),
+    ):
+        try:
+            cur.execute(f"ALTER TABLE users ADD COLUMN {column} {definition}")
+        except Exception:
+            pass
 
     cur.execute("""
     CREATE TABLE IF NOT EXISTS support_tickets (
@@ -260,6 +270,146 @@ def verify_login(username, password):
 
     conn.close()
     return True, "Login erfolgreich.", row_to_dict(updated_user)
+
+
+def _username_from_email(email: str) -> str:
+    local = (email or "").split("@")[0].lower()
+    local = re.sub(r"[^a-z0-9_]", "_", local)
+    local = re.sub(r"_+", "_", local).strip("_")
+
+    if len(local) < 3:
+        local = f"user_{secrets.token_hex(3)}"
+
+    return local[:40]
+
+
+def _unique_username(base: str) -> str:
+    username = base[:40]
+    if not get_user(username):
+        return username
+
+    for _ in range(20):
+        candidate = f"{base[:32]}_{secrets.token_hex(2)}"
+        if not get_user(candidate):
+            return candidate
+
+    return f"user_{secrets.token_hex(4)}"
+
+
+def oauth_login_or_register(email, display_name, provider, provider_sub):
+    email = (email or "").strip().lower()
+    provider = (provider or "").strip().lower()
+    provider_sub = str(provider_sub or "").strip()
+    display_name = (display_name or "").strip()
+
+    if not provider or not provider_sub:
+        return False, "OAuth Daten unvollständig.", None
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    user = cur.execute(
+        "SELECT * FROM users WHERE oauth_provider = ? AND oauth_sub = ?",
+        (provider, provider_sub),
+    ).fetchone()
+
+    if not user and email:
+        user = cur.execute(
+            "SELECT * FROM users WHERE email = ?",
+            (email,),
+        ).fetchone()
+
+        if user:
+            cur.execute(
+                """
+                UPDATE users
+                SET oauth_provider = ?, oauth_sub = ?, last_login = ?
+                WHERE username = ?
+                """,
+                (provider, provider_sub, now(), user["username"]),
+            )
+            conn.commit()
+            updated = cur.execute(
+                "SELECT * FROM users WHERE username = ?",
+                (user["username"],),
+            ).fetchone()
+            conn.close()
+            return True, "Login erfolgreich.", row_to_dict(updated)
+
+    if user:
+        if int(user["is_banned"] or 0) == 1:
+            conn.close()
+            return False, "Account gesperrt.", None
+
+        cur.execute(
+            "UPDATE users SET last_login = ? WHERE username = ?",
+            (now(), user["username"]),
+        )
+        conn.commit()
+        updated = cur.execute(
+            "SELECT * FROM users WHERE username = ?",
+            (user["username"],),
+        ).fetchone()
+        conn.close()
+        return True, "Login erfolgreich.", row_to_dict(updated)
+
+    if not email:
+        conn.close()
+        return False, "Keine Email vom Provider erhalten.", None
+
+    base_username = _username_from_email(email)
+    if display_name:
+        cleaned = re.sub(r"[^a-zA-Z0-9_]", "", display_name.replace(" ", "_").lower())
+        if len(cleaned) >= 3:
+            base_username = cleaned[:40]
+
+    username = _unique_username(base_username)
+    password_hash = bcrypt.hashpw(
+        secrets.token_urlsafe(32).encode("utf-8"),
+        bcrypt.gensalt(),
+    ).decode("utf-8")
+
+    try:
+        cur.execute(
+            """
+            INSERT INTO users (
+                username, email, password_hash, plan, tokens,
+                automation_unlocked, role, admin_level, is_banned,
+                created_at, last_login, oauth_provider, oauth_sub
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                username,
+                email,
+                password_hash,
+                "free",
+                int(PLANS["free"]["tokens"]),
+                0,
+                "user",
+                0,
+                0,
+                now(),
+                now(),
+                provider,
+                provider_sub,
+            ),
+        )
+        conn.commit()
+        created = cur.execute(
+            "SELECT * FROM users WHERE username = ?",
+            (username,),
+        ).fetchone()
+        conn.close()
+        return True, "Account erstellt.", row_to_dict(created)
+
+    except sqlite3.IntegrityError:
+        conn.close()
+        return False, "Account konnte nicht erstellt werden.", None
+
+    except Exception as exc:
+        conn.close()
+        return False, f"Datenbankfehler: {exc}", None
 
 
 def get_user(username):

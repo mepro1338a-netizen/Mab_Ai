@@ -26,6 +26,13 @@ HEADER_PATH = BASE_DIR / "neuerheader.png"
 
 APP_BASE_URL = os.getenv("APP_BASE_URL", "http://localhost:8501")
 
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
+META_APP_ID = os.getenv("META_APP_ID", "")
+META_APP_SECRET = os.getenv("META_APP_SECRET", "")
+TIKTOK_CLIENT_KEY = os.getenv("TIKTOK_CLIENT_KEY", "")
+TIKTOK_CLIENT_SECRET = os.getenv("TIKTOK_CLIENT_SECRET", "")
+
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 REPLICATE_API_TOKEN = os.getenv("REPLICATE_API_TOKEN", "")
 STABILITY_API_KEY = os.getenv("STABILITY_API_KEY", "")
