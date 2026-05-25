@@ -82,9 +82,17 @@ def init_db():
         usage_date TEXT NOT NULL,
         api_calls INTEGER DEFAULT 0,
         ai_actions INTEGER DEFAULT 0,
+        ai_analyses INTEGER DEFAULT 0,
         UNIQUE(username, usage_date)
     )
     """)
+
+    try:
+        cur.execute(
+            "ALTER TABLE football_daily_usage ADD COLUMN ai_analyses INTEGER DEFAULT 0"
+        )
+    except Exception:
+        pass
 
     cur.execute("""
     CREATE TABLE IF NOT EXISTS support_tickets (

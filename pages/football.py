@@ -3,16 +3,25 @@ import re
 import streamlit as st
 from openai import OpenAI
 
-from config import FOOTBALL_PLANS, OPENAI_API_KEY, OPENAI_TEXT_MODEL
+from config import FOOTBALL_FEATURES, FOOTBALL_PLANS, OPENAI_API_KEY, OPENAI_TEXT_MODEL
 from database import (
     save_project_memory,
     get_project,
 )
 from services.football_access import (
     FootballAccessError as FootballGateError,
+    can_access_feature,
+    can_export_reels,
     can_run_action,
     consume_action,
+    feature_label,
     usage_summary,
+)
+from ui.premium_foundation import (
+    premium_foundation_css,
+    render_feature_grid,
+    render_page_hero,
+    render_upgrade_card,
 )
 from services.football_service import (
     FootballAPIError,
@@ -232,7 +241,13 @@ def session_football_plan() -> str:
 
 
 def football_css() -> None:
-    inject_css(page_layout_css(1280, 88, 48) + gradient_title_css("fb-title") + """
+    premium_foundation_css(1280, 88, """
+.fb-title {
+    font-size: 38px;
+    font-weight: 1000;
+    color: #ffe7a3 !important;
+    margin-top: 8px;
+}
 .fb-hero {
     border-radius: 28px;
     padding: 28px 32px;
@@ -285,11 +300,6 @@ def football_css() -> None:
     color: #ffe7a3 !important;
     margin: 0 0 8px 0;
 }
-.fb-upgrade p {
-    color: #94a3b8 !important;
-    font-size: 14px;
-    line-height: 1.5;
-}
 """)
 
 
@@ -300,50 +310,68 @@ def open_premium() -> None:
 
 def render_plan_status() -> dict:
     summary = usage_summary(current_username(), session_football_plan())
+    ai_lim = summary["ai_limit"]
+    ai_lim_txt = str(ai_lim) if isinstance(ai_lim, int) else ai_lim
     c1, c2, c3, c4 = st.columns(4)
     with c1:
         st.metric("Football Plan", summary["plan_label"])
     with c2:
         st.metric(
-            "AI Actions heute",
-            f"{summary['actions_used']:,}".replace(",", "."),
-            help=f"Limit-Pool: {summary['actions_limit']:,}".replace(",", ".") if summary["actions_limit"] else "Kein Plan",
+            "AI Analysen heute",
+            f"{summary['ai_used']}/{ai_lim_txt}",
         )
     with c3:
         if summary["live_api"]:
             st.metric(
                 "API Requests heute",
                 f"{summary['api_used']:,}".replace(",", "."),
-                help=f"Elite Limit: {summary['api_limit']:,}".replace(",", "."),
+                help=f"Tageslimit: {summary['api_limit']:,}".replace(",", "."),
             )
         else:
-            st.metric("Live API", "Gesperrt", help="Nur Football Elite")
+            st.metric("API", "—", help="Football Plan erforderlich")
     with c4:
-        tier = summary["tier"]
-        st.metric("Stufe", tier if tier else "—")
+        st.metric("Stufe", summary["tier"] or "—")
     return summary
 
 
-def render_live_upgrade_panel() -> None:
-    st.markdown(
-        """
-<div class="fb-upgrade">
-    <h4>Live Match Data — nur Football Elite</h4>
-    <p>
-        API-Football (Live-Spiele, Fixtures, Head-to-Head) ist das Premium-Infrastruktur-Feature.
-        <strong>Starter</strong> und <strong>Pro</strong> nutzen die volle
-        <strong>AI Content Engine</strong> mit manueller Club/Gegner-Eingabe.
-    </p>
-</div>
-        """,
-        unsafe_allow_html=True,
-    )
-    c1, c2 = st.columns(2)
-    with c1:
-        if st.button("Football Elite ansehen", key="fb_go_elite", width="stretch"):
-            open_premium()
-    with c2:
-        st.caption("Pro = AI Matchday Engine · Elite = Live API + 100k Requests")
+def render_feature_matrix(summary: dict) -> None:
+    feats = summary.get("features") or {}
+    by_cat: dict[str, list[tuple[str, bool]]] = {}
+    for fid, meta in FOOTBALL_FEATURES.items():
+        cat = meta.get("category", "api")
+        by_cat.setdefault(cat, []).append(
+            (meta.get("label", fid), bool(feats.get(fid)))
+        )
+    labels = {
+        "api": "API & Live Data",
+        "ai": "AI Content",
+        "export": "Export",
+        "automation": "Automation",
+    }
+    for cat, items in by_cat.items():
+        st.markdown(f"**{labels.get(cat, cat)}**")
+        render_feature_grid(items)
+
+
+def gated_api_block(
+    feature_id: str,
+    title: str,
+    description: str,
+    render_fn,
+) -> None:
+    user = current_username()
+    plan = session_football_plan()
+    ok, msg, need = can_access_feature(user, feature_id, plan)
+    if ok:
+        render_fn()
+    else:
+        render_upgrade_card(
+            title,
+            description or msg,
+            need,
+            button_key=f"up_{feature_id}",
+            on_upgrade=open_premium,
+        )
 
 
 # =========================================================
@@ -590,209 +618,188 @@ def render_full_export(result, filename="mabyte_matchday_package.txt"):
 # LIVE DATA UI
 # =========================================================
 
+def _pick_team_id() -> int | None:
+    teams = st.session_state.get("football_team_results") or []
+    if not teams:
+        return None
+    team_options = {}
+    for row in teams:
+        team = row.get("team") or {}
+        tid = team.get("id")
+        if tid:
+            team_options[team_display_name(row)] = int(tid)
+    if not team_options:
+        return None
+    selected_name = st.selectbox(
+        "Team auswählen",
+        list(team_options.keys()),
+        key="football_selected_team_name",
+    )
+    return team_options.get(selected_name)
+
+
 def render_football_live_data(summary: dict) -> None:
-    if not summary.get("live_api"):
-        render_live_upgrade_panel()
-        with st.expander("Was ist in Starter & Pro enthalten?", expanded=False):
-            for key in ("football_starter", "football_pro"):
-                plan = FOOTBALL_PLANS.get(key, {})
-                st.markdown(f"**{plan.get('label')}**")
-                for item in plan.get("highlights", [])[:4]:
-                    st.write(f"- {item}")
+    if summary.get("plan") == "none":
+        render_upgrade_card(
+            "Football Premium erforderlich",
+            "API-Daten und Football AI starten ab Football Starter.",
+            "football_starter",
+            button_key="fb_need_starter",
+            on_upgrade=open_premium,
+        )
         return
 
     service = get_football_service()
     username = current_username()
 
     if not service.is_configured():
-        st.warning(
-            "Server-seitig fehlt `FOOTBALL_API_KEY` (Railway/.env). "
-            "Elite-Nutzer sehen Live-Daten sobald der Key aktiv ist."
+        st.info(
+            "API-Football Key fehlt auf dem Server (FOOTBALL_API_KEY). "
+            "Dein Plan ist aktiv — Daten erscheinen nach Konfiguration in Railway/.env."
         )
-        st.caption("Provider: API-Football (api-sports.io)")
+        st.caption("Provider: api-sports.io · Requests werden gecacht")
         return
 
-    st.subheader("Live Match Data")
+    st.subheader("Daten & API")
     st.caption(
-        "Elite: Fixtures, Live-Spiele und Head-to-Head via API-Football. "
-        f"Heute: {summary['api_used']:,} / {summary['api_limit']:,} Requests.".replace(",", ".")
+        f"Gecachte Requests · heute {summary['api_used']:,} / {summary['api_limit']:,}".replace(",", ".")
     )
 
     search_col, search_btn_col = st.columns([3, 1])
     with search_col:
-        team_query = st.text_input(
+        st.text_input(
             "Team suchen",
             placeholder="z.B. Arsenal, Bayern, Real Madrid",
             key="football_team_search_query",
         )
     with search_btn_col:
         st.write("")
-        search_teams = st.button(
-            "Teams suchen",
-            width="stretch",
-            key="football_search_teams_btn",
-        )
-
-    if search_teams and team_query.strip():
-        try:
-            with st.spinner("Suche Teams..."):
-                st.session_state.football_team_results = service.search_teams(
-                    team_query.strip(),
-                    username=username,
-                )
-        except FootballAPIError as exc:
-            st.error(str(exc))
-
-    teams = st.session_state.get("football_team_results") or []
-    team_id = None
-
-    if teams:
-        team_options = {}
-        for row in teams:
-            team = row.get("team") or {}
-            team_key = team.get("id")
-            if team_key:
-                team_options[team_display_name(row)] = int(team_key)
-
-        if team_options:
-            selected_name = st.selectbox(
-                "Team auswaehlen",
-                list(team_options.keys()),
-                key="football_selected_team_name",
-            )
-            team_id = team_options.get(selected_name)
-    elif search_teams and team_query.strip():
-        st.warning("Keine Teams gefunden.")
-
-    live_col, fixture_col = st.columns(2)
-
-    with live_col:
-        st.markdown("### Live Spiele")
-        if st.button("Live aktualisieren", key="football_refresh_live", width="stretch"):
-            try:
-                with st.spinner("Lade Live-Spiele..."):
-                    st.session_state.football_live_fixtures = service.get_live_fixtures(
-                        username=username,
-                    )
-            except FootballAPIError as exc:
-                st.error(str(exc))
-
-        live_fixtures = st.session_state.get("football_live_fixtures") or []
-        if live_fixtures:
-            for item in live_fixtures[:12]:
-                home, away = fixture_team_names(item)
-                goals = item.get("goals") or {}
-                status = ((item.get("fixture") or {}).get("status") or {}).get("long") or "Live"
-                st.write(f"**{home}** {goals.get('home', '-')} : {goals.get('away', '-')} **{away}**")
-                st.caption(f"{status} | {fixture_label(item)}")
-        else:
-            st.caption("Keine Live-Spiele geladen. Klicke auf Live aktualisieren.")
-
-    with fixture_col:
-        st.markdown("### Team Fixtures")
-        if team_id:
-            next_n = st.slider("Anzahl naechste Spiele", 1, 10, 5, key="football_next_n")
-            if st.button("Fixtures laden", key="football_load_fixtures", width="stretch"):
+        if st.button("Teams suchen", width="stretch", key="football_search_teams_btn"):
+            q = st.session_state.get("football_team_search_query", "").strip()
+            if q:
                 try:
-                    with st.spinner("Lade Fixtures..."):
-                        st.session_state.football_upcoming_fixtures = service.get_upcoming_fixtures(
-                            team_id,
-                            next_count=next_n,
-                            username=username,
+                    with st.spinner("Suche Teams..."):
+                        st.session_state.football_team_results = service.search_teams(
+                            q, username=username,
                         )
                 except FootballAPIError as exc:
                     st.error(str(exc))
-        else:
-            st.caption("Suche und waehle zuerst ein Team.")
+            else:
+                st.warning("Bitte Teamname eingeben.")
 
-    upcoming = st.session_state.get("football_upcoming_fixtures") or []
-    selected_fixture = None
+    team_id = _pick_team_id()
 
-    if upcoming:
-        fixture_map = {
-            fixture_label(row): row
-            for row in upcoming
-        }
-        selected_label = st.selectbox(
-            "Fixture auswaehlen",
-            list(fixture_map.keys()),
-            key="football_selected_fixture_label",
+    st.markdown("#### Starter — Fixtures, Results, Standings")
+    fc1, fc2 = st.columns(2)
+    with fc1:
+        if team_id and st.button("Fixtures laden", key="football_load_fixtures", width="stretch"):
+            try:
+                n = st.session_state.get("football_next_n", 5)
+                st.session_state.football_upcoming_fixtures = service.get_upcoming_fixtures(
+                    team_id, next_count=n, username=username,
+                )
+            except FootballAPIError as exc:
+                st.error(str(exc))
+        if team_id:
+            st.slider("Nächste Spiele", 1, 10, 5, key="football_next_n")
+    with fc2:
+        if team_id and st.button("Results laden", key="football_load_results", width="stretch"):
+            try:
+                st.session_state.football_recent_fixtures = service.get_recent_fixtures(
+                    team_id, last_count=5, username=username,
+                )
+            except FootballAPIError as exc:
+                st.error(str(exc))
+
+    for label, key in (
+        ("Anstehend", "football_upcoming_fixtures"),
+        ("Ergebnisse", "football_recent_fixtures"),
+    ):
+        rows = st.session_state.get(key) or []
+        if rows:
+            st.caption(label)
+            for item in rows[:8]:
+                st.write(fixture_label(item))
+
+    league_id = st.number_input("Liga-ID (Standings)", min_value=1, value=39, key="fb_league_id")
+    if st.button("Standings laden", key="football_load_standings"):
+        try:
+            st.session_state.football_standings = service.get_standings(
+                int(league_id), username=username,
+            )
+        except FootballAPIError as exc:
+            st.error(str(exc))
+    if st.session_state.get("football_standings"):
+        with st.expander("Tabelle", expanded=False):
+            st.json(st.session_state.football_standings)
+
+    st.divider()
+    st.markdown("#### Pro — Live, H2H, Stats, Predictions")
+
+    def _live_block():
+        if st.button("Live Scores", key="football_refresh_live", width="stretch"):
+            try:
+                st.session_state.football_live_fixtures = service.get_live_fixtures(
+                    username=username,
+                )
+            except FootballAPIError as exc:
+                st.error(str(exc))
+        for item in (st.session_state.get("football_live_fixtures") or [])[:10]:
+            h, a = fixture_team_names(item)
+            g = item.get("goals") or {}
+            st.write(f"**{h}** {g.get('home','-')} : {g.get('away','-')} **{a}**")
+
+    gated_api_block(
+        "api_live_scores",
+        feature_label("api_live_scores"),
+        "Live-Spiele weltweit",
+        _live_block,
+    )
+
+    if team_id:
+        def _h2h_block():
+            opp = st.text_input("Gegner Team-ID", key="fb_opp_team_id")
+            if st.button("H2H laden", key="football_load_h2h"):
+                try:
+                    st.session_state.football_h2h = service.get_head_to_head(
+                        team_id, int(opp), username=username,
+                    )
+                except FootballAPIError as exc:
+                    st.error(str(exc))
+            for row in st.session_state.get("football_h2h") or []:
+                st.write(fixture_label(row))
+
+        gated_api_block(
+            "api_head_to_head",
+            "Head-to-Head",
+            "Direktvergleich zweier Teams",
+            _h2h_block,
         )
-        selected_fixture = fixture_map.get(selected_label)
 
-    if selected_fixture:
-        home, away = fixture_team_names(selected_fixture)
-        meta = selected_fixture.get("fixture") or {}
-        league = selected_fixture.get("league") or {}
-        venue = meta.get("venue") or {}
+    st.divider()
+    st.markdown("#### Elite — Multi-League & erweitert")
 
-        info1, info2, info3 = st.columns(3)
-        with info1:
-            st.metric("Heim", home)
-        with info2:
-            st.metric("Auswaerts", away)
-        with info3:
-            st.metric("Status", ((meta.get("status") or {}).get("short") or "NS"))
+    def _multi_league_block():
+        q = st.text_input("Liga suchen", key="fb_league_search")
+        if st.button("Ligen suchen", key="fb_search_leagues"):
+            try:
+                st.session_state.football_leagues = service.search_leagues(
+                    q, username=username,
+                )
+            except FootballAPIError as exc:
+                st.error(str(exc))
+        for row in (st.session_state.get("football_leagues") or [])[:8]:
+            league = row.get("league") or {}
+            st.write(f"{league.get('name')} ({league.get('country')})")
 
-        st.caption(
-            f"{league.get('name', '')} | {meta.get('date', '')} | "
-            f"{venue.get('name', 'Unbekanntes Stadion')}"
-        )
+    gated_api_block(
+        "api_multi_league",
+        "Multi-League Monitoring",
+        "Mehrere Ligen parallel durchsuchen",
+        _multi_league_block,
+    )
 
-        action1, action2, action3 = st.columns(3)
-        with action1:
-            if st.button("Details laden", key="football_load_fixture_detail", width="stretch"):
-                fixture_id = meta.get("id")
-                if fixture_id:
-                    try:
-                        with st.spinner("Lade Fixture-Details..."):
-                            st.session_state.football_fixture_detail = service.get_fixture(
-                                int(fixture_id),
-                                username=username,
-                            )
-                            st.session_state.football_fixture_stats = service.get_fixture_statistics(
-                                int(fixture_id),
-                                username=username,
-                            )
-                    except FootballAPIError as exc:
-                        st.error(str(exc))
-
-        with action2:
-            if st.button("Head-to-Head", key="football_load_h2h", width="stretch"):
-                home_id = ((selected_fixture.get("teams") or {}).get("home") or {}).get("id")
-                away_id = ((selected_fixture.get("teams") or {}).get("away") or {}).get("id")
-                if home_id and away_id:
-                    try:
-                        with st.spinner("Lade Head-to-Head..."):
-                            st.session_state.football_h2h = service.get_head_to_head(
-                                int(home_id),
-                                int(away_id),
-                                username=username,
-                            )
-                    except FootballAPIError as exc:
-                        st.error(str(exc))
-
-        with action3:
-            if st.button("Fuer AI uebernehmen", key="football_use_for_ai", width="stretch"):
-                st.session_state.football_ai_club_input = home
-                st.session_state.football_ai_opponent_input = away
-                st.success(f"Uebernommen: {home} vs {away}. Wechsle zum Tab AI Content Engine.")
-
-        detail = st.session_state.get("football_fixture_detail")
-        if detail:
-            with st.expander("Fixture Details", expanded=False):
-                st.json(detail)
-
-        stats = st.session_state.get("football_fixture_stats") or []
-        if stats:
-            with st.expander("Match Statistiken", expanded=False):
-                st.markdown(format_fixture_stats(stats))
-
-        h2h_rows = st.session_state.get("football_h2h") or []
-        if h2h_rows:
-            with st.expander("Head-to-Head Historie", expanded=False):
-                for row in h2h_rows:
-                    st.write(fixture_label(row))
+    st.caption("Player Stats, Injuries & Predictions — ab Football Pro.")
 
 
 # =========================================================
@@ -825,8 +832,9 @@ def render_football_ai_engine(summary: dict) -> None:
         st.metric("Matchday Engine", min_plan)
 
     with top4:
-        st.metric("Actions heute", summary["actions_used"])
+        st.metric("AI heute", summary.get("ai_used", 0))
 
+    render_feature_matrix(summary)
     st.divider()
 
     left, right = st.columns([1, 1], gap="large")
@@ -866,10 +874,25 @@ def render_football_ai_engine(summary: dict) -> None:
             ],
         )
 
-        generate = st.button(
-            "ðŸš€ Generate Multi Platform Package",
-            width="stretch",
+        can_preview, _, _ = can_access_feature(
+            current_username(), "ai_match_preview", session_football_plan(),
         )
+        can_summary, _, _ = can_access_feature(
+            current_username(), "ai_match_summary", session_football_plan(),
+        )
+
+        generate_summary = st.button(
+            "Simple AI Match Summary (Starter)",
+            width="stretch",
+            disabled=not can_summary,
+        )
+        generate = st.button(
+            "Multi Platform Matchday Package (Pro+)",
+            width="stretch",
+            disabled=not can_preview,
+        )
+        if not can_preview and plan != "none":
+            st.caption("Matchday Package ab Football Pro.")
 
     with right:
         with st.container(border=True):
@@ -889,6 +912,21 @@ def render_football_ai_engine(summary: dict) -> None:
             st.write("âœ… Export System")
 
     st.divider()
+
+    if generate_summary:
+        if not club or not opponent:
+            st.warning("Bitte Club und Gegner eingeben.")
+            return
+        try:
+            consume_action(current_username(), "match_recap", session_football_plan())
+        except FootballGateError as exc:
+            st.error(str(exc))
+            return
+        with st.spinner("Erstelle Match Summary..."):
+            summary_text = generate_matchday_package(club, opponent, platform, tone)[:2500]
+        st.subheader("AI Match Summary")
+        st.markdown(summary_text)
+        return
 
     if generate:
         if not club or not opponent:
@@ -1060,23 +1098,14 @@ def render_football() -> None:
     football_css()
 
     summary = usage_summary(current_username(), session_football_plan())
-    pill_class = "fb-plan-pill" if summary["live_api"] else "fb-plan-pill locked"
-    live_label = "Live API aktiv" if summary["live_api"] else "Live API: Elite erforderlich"
 
-    st.markdown(
-        f"""
-<div class="fb-hero">
-    <div class="fb-kicker">Football Intelligence</div>
-    <div class="fb-title">Matchday AI & Live Data</div>
-    <div class="fb-sub">
-        Drei Stufen: Starter (AI Content), Pro (Matchday Engine), Elite (Live API-Football).
-        API-Requests werden gecacht — keine Dauer-Polls.
-    </div>
-    <span class="{pill_class}">{summary['plan_label']} · {live_label}</span>
-</div>
-        """,
-        unsafe_allow_html=True,
+    render_page_hero(
+        "Football Intelligence",
+        "Starter · Pro · Elite",
+        "Stufenweise API & AI: Starter (Basis-Daten + Summary), Pro (Predictions, H2H, Reels-Export), "
+        "Elite (Multi-League, Automation, hohe Limits). Gecacht — keine Dauer-Polls.",
     )
+    st.caption(f"Aktiver Plan: **{summary['plan_label']}**")
 
     project = active_project()
     if project:
@@ -1088,7 +1117,7 @@ def render_football() -> None:
     st.divider()
 
     tab_live, tab_ai, tab_plans = st.tabs(
-        ["Live Match Data", "AI Content Engine", "Pläne & Limits"]
+        ["Daten & API", "AI Content Engine", "Dein Plan"]
     )
 
     with tab_live:
@@ -1098,6 +1127,8 @@ def render_football() -> None:
         render_football_ai_engine(summary)
 
     with tab_plans:
+        render_feature_matrix(summary)
+        st.divider()
         st.subheader("Football Premium Stufen")
         for key in ("football_starter", "football_pro", "football_elite"):
             plan = FOOTBALL_PLANS[key]

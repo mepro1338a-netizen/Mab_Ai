@@ -21,7 +21,13 @@ from config import (
 )
 from logger import log_error, log_info, log_warning
 from security import check_rate_limit
-from services.football_access import FootballAccessError, preflight_api_request, record_api_success
+from services.football_access import (
+    FootballAccessError,
+    football_priority_cache,
+    preflight_api_request,
+    record_api_success,
+    resolve_football_plan,
+)
 
 
 class FootballAPIError(Exception):
@@ -58,10 +64,14 @@ class FootballService:
       )
       return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
-  def _ttl_for(self, endpoint: str, live: bool) -> int:
+  def _ttl_for(self, endpoint: str, live: bool, username: str = "") -> int:
       if live or endpoint in {"fixtures", "fixtures/statistics"}:
-          return max(15, int(FOOTBALL_API_LIVE_CACHE_TTL))
-      return max(30, int(FOOTBALL_API_CACHE_TTL))
+          base = max(15, int(FOOTBALL_API_LIVE_CACHE_TTL))
+      else:
+          base = max(30, int(FOOTBALL_API_CACHE_TTL))
+      if username and football_priority_cache(resolve_football_plan(username)):
+          return max(15, base // 2)
+      return base
 
   def _read_cache(self, key: str, ttl: int) -> Any | None:
       now = time.time()
@@ -108,24 +118,30 @@ class FootballService:
       endpoint: str,
       params: dict[str, Any] | None = None,
       *,
+      feature: str = "api_fixtures",
       live: bool = False,
       username: str = "",
       use_cache: bool = True,
   ) -> list[dict[str, Any]]:
-      if not self.is_configured():
-          raise FootballAPIError(
-              "FOOTBALL_API_KEY fehlt. Trage den Key in Railway / .env ein."
-          )
-
       if username:
           try:
-              preflight_api_request(username)
+              preflight_api_request(
+                  username,
+                  feature,
+                  api_configured=self.is_configured(),
+              )
           except FootballAccessError as exc:
               raise FootballAPIError(str(exc)) from exc
 
+      if not self.is_configured():
+          raise FootballAPIError(
+              "API-Football ist auf dem Server noch nicht konfiguriert "
+              "(FOOTBALL_API_KEY in Railway/.env). Dein Plan bleibt aktiv."
+          )
+
       clean_params = {k: v for k, v in (params or {}).items() if v not in (None, "")}
       cache_key = self._cache_key(endpoint, clean_params)
-      ttl = self._ttl_for(endpoint, live)
+      ttl = self._ttl_for(endpoint, live, username)
 
       if use_cache:
           cached = self._read_cache(cache_key, ttl)
@@ -217,10 +233,20 @@ class FootballService:
       query = (name or "").strip()
       if len(query) < 2:
           raise FootballAPIError("Bitte mindestens 2 Zeichen fuer die Teamsuche eingeben.")
-      return self._request("teams", {"search": query}, username=username)
+      return self._request(
+          "teams",
+          {"search": query},
+          feature="api_team_overview",
+          username=username,
+      )
 
   def get_team(self, team_id: int, *, username: str = "") -> dict[str, Any] | None:
-      rows = self._request("teams", {"id": int(team_id)}, username=username)
+      rows = self._request(
+          "teams",
+          {"id": int(team_id)},
+          feature="api_team_overview",
+          username=username,
+      )
       return rows[0] if rows else None
 
   def get_upcoming_fixtures(
@@ -233,6 +259,7 @@ class FootballService:
       return self._request(
           "fixtures",
           {"team": int(team_id), "next": max(1, min(int(next_count), 15))},
+          feature="api_fixtures",
           username=username,
       )
 
@@ -246,6 +273,7 @@ class FootballService:
       return self._request(
           "fixtures",
           {"team": int(team_id), "last": max(1, min(int(last_count), 15))},
+          feature="api_results",
           username=username,
       )
 
@@ -253,6 +281,7 @@ class FootballService:
       return self._request(
           "fixtures",
           {"live": "all"},
+          feature="api_live_scores",
           live=True,
           username=username,
       )
@@ -261,6 +290,7 @@ class FootballService:
       rows = self._request(
           "fixtures",
           {"id": int(fixture_id)},
+          feature="api_fixtures",
           live=True,
           username=username,
       )
@@ -275,6 +305,7 @@ class FootballService:
       return self._request(
           "fixtures/statistics",
           {"fixture": int(fixture_id)},
+          feature="api_player_stats",
           live=True,
           username=username,
       )
@@ -291,6 +322,7 @@ class FootballService:
       return self._request(
           "fixtures/headtohead",
           {"h2h": h2h, "last": max(1, min(int(last_count), 15))},
+          feature="api_head_to_head",
           username=username,
       )
 
@@ -307,6 +339,37 @@ class FootballService:
               "league": int(league_id),
               "season": int(season or FOOTBALL_DEFAULT_SEASON),
           },
+          feature="api_standings",
+          username=username,
+      )
+
+  def get_fixture_predictions(
+      self,
+      fixture_id: int,
+      *,
+      username: str = "",
+  ) -> list[dict[str, Any]]:
+      return self._request(
+          "predictions",
+          {"fixture": int(fixture_id)},
+          feature="api_predictions",
+          username=username,
+      )
+
+  def get_team_injuries(
+      self,
+      team_id: int,
+      *,
+      season: int | None = None,
+      username: str = "",
+  ) -> list[dict[str, Any]]:
+      return self._request(
+          "injuries",
+          {
+              "team": int(team_id),
+              "season": int(season or FOOTBALL_DEFAULT_SEASON),
+          },
+          feature="api_injuries",
           username=username,
       )
 
@@ -323,7 +386,12 @@ class FootballService:
       params: dict[str, Any] = {"search": query}
       if country.strip():
           params["country"] = country.strip()
-      return self._request("leagues", params, username=username)
+      return self._request(
+          "leagues",
+          params,
+          feature="api_multi_league",
+          username=username,
+      )
 
 
 def fixture_label(fixture: dict[str, Any]) -> str:

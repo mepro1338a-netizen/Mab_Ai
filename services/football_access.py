@@ -1,43 +1,45 @@
-"""Football Premium access control — live API only on Elite."""
+"""Football Premium feature guards — Starter / Pro / Elite."""
 from __future__ import annotations
 
 from config import (
+    FOOTBALL_FEATURES,
     FOOTBALL_PLAN_ORDER,
     FOOTBALL_PLANS,
-    football_action_cost,
-    football_actions_for_plan,
-    football_api_limit,
-    football_has_live_api,
+    football_daily_ai_limit,
+    football_daily_api_limit,
+    football_feature_meta,
+    football_has_feature,
+    football_plan_allows,
+    football_plan_rank,
+    football_priority_cache,
     get_football_plan,
 )
 
 from db.football_billing import (
     get_football_plan as db_get_football_plan,
     get_football_usage_today,
-    record_football_ai_actions,
+    record_football_ai_analysis,
     record_football_api_call,
 )
 from db.users import is_owner_user
 
-# Minimum football plan per AI action type
-ACTION_MIN_PLAN: dict[str, str] = {
-    "basic_stats": "football_starter",
-    "basic_prediction": "football_starter",
-    "ai_caption": "football_starter",
-    "viral_hook": "football_starter",
-    "match_recap": "football_starter",
-    "thumbnail_system": "football_pro",
-    "viral_analysis": "football_pro",
-    "reel_script": "football_pro",
-    "matchday_package": "football_pro",
-    "optimized_package": "football_pro",
-    "deep_match_analysis": "football_pro",
-    "auto_posting": "football_pro",
-    "full_campaign": "football_elite",
-}
-
 PLAN_LABELS = {key: val.get("label", key) for key, val in FOOTBALL_PLANS.items()}
 PLAN_LABELS["none"] = "Kein Football Plan"
+
+# Map legacy action keys to feature ids
+ACTION_TO_FEATURE = {
+    "match_recap": "ai_match_summary",
+    "basic_prediction": "ai_predictions",
+    "reel_script": "ai_reel_hooks",
+    "viral_hook": "ai_reel_hooks",
+    "matchday_package": "ai_match_preview",
+    "optimized_package": "ai_match_preview",
+    "viral_analysis": "ai_viral_analysis",
+    "thumbnail_system": "ai_match_preview",
+    "deep_match_analysis": "ai_match_preview",
+    "full_campaign": "ai_matchday_reports",
+    "auto_posting": "automation_triggers",
+}
 
 
 class FootballAccessError(Exception):
@@ -56,48 +58,84 @@ def plan_label(plan_key: str) -> str:
     return PLAN_LABELS.get(plan_key, plan_key)
 
 
-def can_use_live_api(username: str, session_plan: str | None = None) -> bool:
+def feature_label(feature_id: str) -> str:
+    meta = football_feature_meta(feature_id)
+    return str(meta.get("label") or feature_id)
+
+
+def can_access_feature(
+    username: str,
+    feature_id: str,
+    session_plan: str | None = None,
+) -> tuple[bool, str, str]:
+    """Returns ok, message, required_plan_key."""
+    meta = football_feature_meta(feature_id)
+    if not meta:
+        return False, "Unbekanntes Feature.", "football_starter"
+
     plan = resolve_football_plan(username, session_plan)
-    if is_owner_user(username):
-        return True
-    return football_has_live_api(plan)
+    min_plan = str(meta.get("min_plan") or "football_starter")
 
+    if is_owner_user(username) or football_has_feature(plan, feature_id):
+        return True, "", plan
 
-def assert_live_api_access(username: str, session_plan: str | None = None) -> str:
-    plan = resolve_football_plan(username, session_plan)
-    if can_use_live_api(username, session_plan):
-        return plan
-
-    raise FootballAccessError(
-        "Live Match Data (API-Football) ist nur in **Football Elite** enthalten. "
-        "Starter und Pro nutzen die **AI Content Engine** mit manueller Eingabe. "
-        "Upgrade unter Premium → Football Elite."
+    need = get_football_plan(min_plan) or {}
+    return (
+        False,
+        f"**{feature_label(feature_id)}** erfordert mindestens **{need.get('label', min_plan)}**. "
+        f"Dein Plan: **{plan_label(plan)}**.",
+        min_plan,
     )
 
 
-def preflight_api_request(username: str, session_plan: str | None = None) -> str:
-    plan = resolve_football_plan(username, session_plan)
-    assert_live_api_access(username, session_plan)
+def assert_feature(username: str, feature_id: str, session_plan: str | None = None) -> str:
+    ok, msg, _ = can_access_feature(username, feature_id, session_plan)
+    if not ok:
+        raise FootballAccessError(msg)
+    return resolve_football_plan(username, session_plan)
 
-    limit = int(football_api_limit(plan) or 0)
-    if limit <= 0:
+
+def preflight_api_request(
+    username: str,
+    feature_id: str,
+    session_plan: str | None = None,
+    *,
+    api_configured: bool = True,
+) -> str:
+    plan = assert_feature(username, feature_id, session_plan)
+
+    if not api_configured:
+        raise FootballAccessError(
+            "API-Football ist auf dem Server noch nicht konfiguriert "
+            "(FOOTBALL_API_KEY in Railway/.env). Dein Plan bleibt aktiv — "
+            "Live-Daten erscheinen sobald der Key gesetzt ist."
+        )
+
+    if plan == "none" and not is_owner_user(username):
+        raise FootballAccessError("Kein Football Premium Plan aktiv.")
+
+    daily_limit = int(football_daily_api_limit(plan) or 0)
+    if daily_limit <= 0 and not is_owner_user(username):
         raise FootballAccessError("Dein Plan enthält keine API-Requests.")
 
     used = get_football_usage_today(username)["api_calls"]
-    if used >= limit and not is_owner_user(username):
+    if used >= daily_limit and not is_owner_user(username):
         raise FootballAccessError(
-            f"Tageslimit API-Requests erreicht ({used:,}/{limit:,}). "
-            "Morgen reset oder höheres Football Elite Kontingent."
+            f"Tageslimit API erreicht ({used:,}/{daily_limit:,}). "
+            "Morgen Reset oder Upgrade auf Football Elite.".replace(",", ".")
         )
     return plan
 
 
 def record_api_success(username: str, session_plan: str | None = None) -> dict:
-    preflight_api_request(username, session_plan)
-    total = record_football_api_call(username)
     plan = resolve_football_plan(username, session_plan)
-    limit = int(football_api_limit(plan) or 0)
+    total = record_football_api_call(username)
+    limit = int(football_daily_api_limit(plan) or 0)
     return {"used": total, "limit": limit, "plan": plan}
+
+
+def _action_feature(action: str) -> str:
+    return ACTION_TO_FEATURE.get(action, "ai_match_summary")
 
 
 def can_run_action(
@@ -105,29 +143,22 @@ def can_run_action(
     action: str,
     session_plan: str | None = None,
 ) -> tuple[bool, str]:
-    action = str(action or "").strip().lower()
-    min_plan = ACTION_MIN_PLAN.get(action, "football_starter")
+    feature_id = _action_feature(action)
+    ok, msg, _ = can_access_feature(username, feature_id, session_plan)
+    if not ok:
+        return False, msg
+
     plan = resolve_football_plan(username, session_plan)
+    if plan == "none" and not is_owner_user(username):
+        return False, "Kein Football Premium Plan. Upgrade unter Premium."
 
-    if FOOTBALL_PLAN_ORDER.get(plan, 0) < FOOTBALL_PLAN_ORDER.get(min_plan, 1):
-        need = get_football_plan(min_plan) or {}
+    daily_limit = int(football_daily_ai_limit(plan) or 0)
+    used = get_football_usage_today(username)["ai_analyses"]
+    if used >= daily_limit and not is_owner_user(username):
         return False, (
-            f"Diese Funktion benötigt mindestens **{need.get('label', min_plan)}**. "
-            f"Dein Plan: **{plan_label(plan)}**."
+            f"Tageslimit AI-Analysen erreicht ({used}/{daily_limit}). "
+            f"Upgrade für mehr Kapazität."
         )
-
-    cost = football_action_cost(action)
-    actions_limit = int(football_actions_for_plan(plan) or 0)
-    if actions_limit <= 0 and not is_owner_user(username):
-        return False, "Kein aktiver Football Premium Plan."
-
-    used = get_football_usage_today(username)["ai_actions"]
-    if used + cost > actions_limit and not is_owner_user(username):
-        return False, (
-            f"Football AI Actions aufgebraucht ({used:,}+{cost} > {actions_limit:,}/Monat-Tag). "
-            "Upgrade für mehr Actions."
-        )
-
     return True, ""
 
 
@@ -139,30 +170,57 @@ def consume_action(
     ok, msg = can_run_action(username, action, session_plan)
     if not ok:
         raise FootballAccessError(msg)
-
-    cost = football_action_cost(action)
     if is_owner_user(username):
-        return cost
-    return record_football_ai_actions(username, cost)
+        return 1
+    return record_football_ai_analysis(username)
+
+
+def can_export_reels(username: str, session_plan: str | None = None) -> tuple[bool, str]:
+    return can_access_feature(username, "export_reels_studio", session_plan)[:2]
+
+
+def feature_matrix(plan_key: str) -> list[dict]:
+    """UI list: each feature with available flag for plan."""
+    rank = football_plan_rank(plan_key)
+    rows = []
+    for fid, meta in FOOTBALL_FEATURES.items():
+        min_rank = football_plan_rank(meta.get("min_plan", "football_starter"))
+        rows.append({
+            "id": fid,
+            "label": meta.get("label", fid),
+            "category": meta.get("category", "api"),
+            "description": meta.get("description", ""),
+            "min_plan": meta.get("min_plan"),
+            "available": rank >= min_rank,
+        })
+    return rows
 
 
 def usage_summary(username: str, session_plan: str | None = None) -> dict:
     plan = resolve_football_plan(username, session_plan)
     cfg = get_football_plan(plan) or {}
     usage = get_football_usage_today(username)
-    api_limit = int(football_api_limit(plan) or 0)
-    actions_limit = int(football_actions_for_plan(plan) or 0)
+    api_daily = int(football_daily_api_limit(plan) or 0)
+    ai_daily = int(football_daily_ai_limit(plan) or 0)
+    owner = is_owner_user(username)
 
     return {
         "plan": plan,
         "plan_label": plan_label(plan),
         "badge": cfg.get("badge", ""),
-        "live_api": football_has_live_api(plan) or is_owner_user(username),
+        "live_api": bool(cfg.get("live_api_access")) or owner,
+        "priority_cache": football_priority_cache(plan) or owner,
         "api_used": usage["api_calls"],
-        "api_limit": api_limit,
-        "actions_used": usage["ai_actions"],
-        "actions_limit": actions_limit,
+        "api_limit": api_daily,
+        "ai_used": usage["ai_analyses"],
+        "ai_limit": ai_daily if ai_daily < 9000 else "Unbegrenzt",
+        "actions_used": usage["ai_analyses"],
+        "actions_limit": ai_daily,
         "tier": FOOTBALL_PLAN_ORDER.get(plan, 0),
+        "features": {
+            fid: football_has_feature(plan, fid) or owner
+            for fid in FOOTBALL_FEATURES
+        },
     }
 
 
@@ -170,4 +228,4 @@ def tier_features(plan_key: str) -> list[str]:
     plan = get_football_plan(plan_key)
     if not plan:
         return []
-    return list(plan.get("highlights") or plan.get("features") or [])
+    return list(plan.get("highlights") or [])

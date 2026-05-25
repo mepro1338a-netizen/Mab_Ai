@@ -2,6 +2,7 @@
 from config import PLANS, FOOTBALL_PLANS
 from database import get_user
 from payments import create_checkout_session
+from ui.premium_foundation import premium_foundation_css, render_page_hero
 from ui.styles import inject_css, page_layout_css
 from ui_core import sync_session_user
 
@@ -12,7 +13,7 @@ ICON_B2B = """<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path 
 
 
 def premium_css():
-    inject_css(page_layout_css(1180, 80, 40) + """
+    premium_foundation_css(1180, 80, """
 .stApp,
 [data-testid="stAppViewContainer"] {
     background:
@@ -407,18 +408,11 @@ def render_premium():
     if user:
         sync_session_user(user)
 
-    st.markdown(
-        """
-<div class="hero">
-    <div class="hero-top">MABYTE PREMIUM</div>
-    <div class="hero-title">AI-Pläne für Creator, Automation und Football.</div>
-    <div class="hero-sub">
-        MaByte Tokens für allgemeine AI-Workflows. Football Premium separat mit Actions,
-        API Requests und skalierbarer Infrastruktur.
-    </div>
-</div>
-        """,
-        unsafe_allow_html=True,
+    render_page_hero(
+        "MaByte Premium",
+        "AI-Pläne & Football Premium",
+        "MaByte Tokens für Chat, Reels und Automation. Football separat: Starter, Pro, Elite — "
+        "mit Stripe Checkout (STRIPE_PRICE_FOOTBALL_*).",
     )
 
     section_header(

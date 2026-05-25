@@ -2,7 +2,7 @@
 import pandas as pd
 import streamlit as st
 
-from config import DB_PATH, PLANS
+from config import DB_PATH, PLANS, FOOTBALL_PLANS
 from ui.styles import inject_css, page_layout_css, gradient_title_css
 from database import (
     OWNER_USERNAME,
@@ -11,6 +11,7 @@ from database import (
     list_users,
     secure_update_tokens,
     secure_set_plan,
+    secure_set_football_plan,
     secure_set_role,
     secure_ban_user,
     secure_delete_user,
@@ -331,6 +332,7 @@ def render_users():
             continue
 
         current_plan = str(item.get("plan") or "free")
+        current_football_plan = str(item.get("football_plan") or "none")
         current_role = str(item.get("role") or "user")
         current_level = safe_int(item.get("admin_level"))
         current_tokens = safe_int(item.get("tokens"))
@@ -338,9 +340,12 @@ def render_users():
 
         with st.container(border=True):
             st.markdown(f"### {uname}")
-            st.caption(f"{email} · {current_role} · Level {current_level}")
+            st.caption(
+                f"{email} · {current_role} · Level {current_level} · "
+                f"FB: {current_football_plan}"
+            )
 
-            c1, c2, c3, c4 = st.columns(4)
+            c1, c2, c3, c4, c5 = st.columns(5)
 
             with c1:
                 new_tokens = st.number_input(
@@ -404,6 +409,30 @@ def render_users():
                     st.info("Rollenverwaltung für Moderatoren gesperrt.")
 
             with c4:
+                fb_plans = ["none"] + list(FOOTBALL_PLANS.keys())
+                fb_index = (
+                    fb_plans.index(current_football_plan)
+                    if current_football_plan in fb_plans
+                    else 0
+                )
+                new_fb_plan = st.selectbox(
+                    "Football Plan",
+                    fb_plans,
+                    index=fb_index,
+                    format_func=lambda x: (
+                        "Keiner" if x == "none" else FOOTBALL_PLANS.get(x, {}).get("label", x)
+                    ),
+                    key=f"fb_plan_{uname}",
+                )
+                if st.button("FB-Plan speichern", key=f"save_fb_{uname}"):
+                    ok, msg = secure_set_football_plan(actor, uname, new_fb_plan)
+                    if ok:
+                        st.success(msg)
+                    else:
+                        st.error(msg)
+                    st.rerun()
+
+            with c5:
                 if uname == OWNER_USERNAME and not is_owner():
                     st.info("Owner geschützt.")
                 else:

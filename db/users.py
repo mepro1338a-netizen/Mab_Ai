@@ -5,7 +5,7 @@ import secrets
 
 import bcrypt
 
-from config import PLANS
+from config import PLANS, FOOTBALL_PLANS
 
 from db.core import (
     OWNER_USERNAME,
@@ -481,6 +481,25 @@ def secure_set_plan(actor, target, plan):
     set_plan(target, plan)
     add_audit_log(actor, "set_plan", target, str(plan))
     return True, "Plan gespeichert."
+
+
+def secure_set_football_plan(actor, target, football_plan):
+    if not can_manage_users(actor):
+        return False, "Keine Berechtigung."
+
+    ok, msg = can_modify_target(actor, target)
+    if not ok:
+        return False, msg
+
+    from db.football_billing import set_football_plan
+
+    plan_key = str(football_plan or "none").strip().lower()
+    if plan_key not in FOOTBALL_PLANS:
+        plan_key = "none"
+
+    set_football_plan(target, plan_key)
+    add_audit_log(actor, "set_football_plan", target, plan_key)
+    return True, "Football Plan gespeichert."
 
 
 def spend_tokens(username, amount):

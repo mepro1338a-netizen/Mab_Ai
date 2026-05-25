@@ -375,15 +375,155 @@ FOOTBALL_ACTION_COSTS = {
     "basic_prediction": 1,
     "ai_caption": 1,
     "viral_hook": 1,
-    "match_recap": 2,
+    "match_recap": 1,
     "thumbnail_system": 2,
     "viral_analysis": 2,
-    "reel_script": 3,
-    "matchday_package": 5,
-    "optimized_package": 4,
+    "reel_script": 2,
+    "matchday_package": 3,
+    "optimized_package": 2,
     "auto_posting": 5,
-    "deep_match_analysis": 6,
-    "full_campaign": 10,
+    "deep_match_analysis": 3,
+    "full_campaign": 5,
+}
+
+# Feature registry: min_plan + category for guards & UI
+FOOTBALL_FEATURES = {
+    "api_fixtures": {
+        "min_plan": "football_starter",
+        "label": "Fixtures",
+        "category": "api",
+        "description": "Anstehende Spiele eines Teams",
+    },
+    "api_results": {
+        "min_plan": "football_starter",
+        "label": "Results",
+        "category": "api",
+        "description": "Letzte Ergebnisse & Spielverlauf",
+    },
+    "api_standings": {
+        "min_plan": "football_starter",
+        "label": "Standings",
+        "category": "api",
+        "description": "Tabellen & Ligapositionen",
+    },
+    "api_team_overview": {
+        "min_plan": "football_starter",
+        "label": "Team Overview",
+        "category": "api",
+        "description": "Teamsuche & Vereinsprofil",
+    },
+    "api_player_stats": {
+        "min_plan": "football_pro",
+        "label": "Player Stats",
+        "category": "api",
+        "description": "Spielstatistiken pro Fixture",
+    },
+    "api_injuries": {
+        "min_plan": "football_pro",
+        "label": "Injuries",
+        "category": "api",
+        "description": "Verletzungen & Ausfälle (API)",
+    },
+    "api_predictions": {
+        "min_plan": "football_pro",
+        "label": "Predictions",
+        "category": "api",
+        "description": "API-Prognosen & Wahrscheinlichkeiten",
+    },
+    "api_form_analysis": {
+        "min_plan": "football_pro",
+        "label": "Form Analysis",
+        "category": "api",
+        "description": "Formkurve aus letzten Spielen",
+    },
+    "api_head_to_head": {
+        "min_plan": "football_pro",
+        "label": "Head-to-Head",
+        "category": "api",
+        "description": "Direktvergleich zweier Teams",
+    },
+    "api_live_scores": {
+        "min_plan": "football_pro",
+        "label": "Live Scores",
+        "category": "api",
+        "description": "Live-Spiele weltweit",
+    },
+    "api_multi_league": {
+        "min_plan": "football_elite",
+        "label": "Multi-League Monitoring",
+        "category": "api",
+        "description": "Mehrere Ligen parallel überwachen",
+    },
+    "api_watchlists": {
+        "min_plan": "football_elite",
+        "label": "Team/Player Watchlists",
+        "category": "api",
+        "description": "Watchlists für Teams & Spieler",
+    },
+    "api_priority_cache": {
+        "min_plan": "football_elite",
+        "label": "Priority Cache",
+        "category": "api",
+        "description": "Kürzere Cache-TTL für Elite",
+    },
+    "ai_match_summary": {
+        "min_plan": "football_starter",
+        "label": "Simple AI Match Summary",
+        "category": "ai",
+        "action": "match_recap",
+    },
+    "ai_match_preview": {
+        "min_plan": "football_pro",
+        "label": "AI Match Preview",
+        "category": "ai",
+        "action": "matchday_package",
+    },
+    "ai_reel_hooks": {
+        "min_plan": "football_pro",
+        "label": "AI Reel Hooks",
+        "category": "ai",
+        "action": "reel_script",
+    },
+    "ai_predictions": {
+        "min_plan": "football_pro",
+        "label": "AI Predictions",
+        "category": "ai",
+        "action": "basic_prediction",
+    },
+    "ai_viral_analysis": {
+        "min_plan": "football_pro",
+        "label": "Viral Analysis",
+        "category": "ai",
+        "action": "viral_analysis",
+    },
+    "ai_matchday_reports": {
+        "min_plan": "football_elite",
+        "label": "Matchday Reports",
+        "category": "ai",
+        "action": "full_campaign",
+    },
+    "ai_viral_reel_generator": {
+        "min_plan": "football_elite",
+        "label": "Viral Football Reel Generator",
+        "category": "ai",
+        "action": "matchday_package",
+    },
+    "ai_content_calendar": {
+        "min_plan": "football_elite",
+        "label": "Content Calendar",
+        "category": "ai",
+        "action": "full_campaign",
+    },
+    "export_reels_studio": {
+        "min_plan": "football_pro",
+        "label": "Export to Reels Studio",
+        "category": "export",
+    },
+    "automation_triggers": {
+        "min_plan": "football_elite",
+        "label": "Automation Triggers",
+        "category": "automation",
+    },
 }
 
 FOOTBALL_PLANS = {
@@ -392,24 +532,27 @@ FOOTBALL_PLANS = {
         "tier": 1,
         "price": "19,99€ / Monat",
         "monthly_price": 19.99,
-        "ai_actions": 100,
-        "api_requests": 0,
-        "live_api_access": False,
-        "rate_limit_per_minute": 0,
+        "daily_ai_analyses": 5,
+        "daily_api_requests": 80,
+        "api_requests": 2500,
+        "live_api_access": True,
+        "priority_cache": False,
+        "rate_limit_per_minute": 20,
         "stripe_price_env": "STRIPE_PRICE_FOOTBALL_STARTER",
-        "badge": "Creator",
-        "description": "AI Football Content ohne Live-API — ideal zum Einstieg.",
+        "badge": "Starter",
+        "description": "Basis-API + einfache AI Match Summaries für Einsteiger.",
         "features": [
-            "AI Captions",
-            "Match Recaps",
-            "Reel Ideas",
-            "Basic Predictions (AI)",
+            "api_fixtures",
+            "api_results",
+            "api_standings",
+            "api_team_overview",
+            "ai_match_summary",
         ],
         "highlights": [
-            "100 Football AI Actions / Monat",
-            "AI Captions & Match Recaps",
-            "Reel-Ideen & Hooks",
-            "Kein Live-API-Zugriff",
+            "Fixtures, Results, Standings, Team Overview",
+            "Simple AI Match Summary",
+            "5 AI Analysen / Tag",
+            "Keine Predictions · kein Reel-Export",
         ],
     },
 
@@ -418,25 +561,32 @@ FOOTBALL_PLANS = {
         "tier": 2,
         "price": "99,99€ / Monat",
         "monthly_price": 99.99,
-        "ai_actions": 750,
-        "api_requests": 0,
-        "live_api_access": False,
-        "rate_limit_per_minute": 0,
+        "daily_ai_analyses": 30,
+        "daily_api_requests": 800,
+        "api_requests": 25000,
+        "live_api_access": True,
+        "priority_cache": False,
+        "rate_limit_per_minute": 60,
         "stripe_price_env": "STRIPE_PRICE_FOOTBALL_PRO",
         "badge": "Growth",
-        "description": "Volle AI Content Engine — Matchday Packages & Automation-Ready.",
+        "description": "Volle Analyse-API + AI Previews, Hooks & Reels-Export.",
         "features": [
-            "AI Matchday Packages",
-            "Reel Generator",
-            "Viral Analysis",
-            "Thumbnail Intelligence",
-            "Deep Match Analysis (AI)",
+            "api_player_stats",
+            "api_injuries",
+            "api_predictions",
+            "api_form_analysis",
+            "api_head_to_head",
+            "api_live_scores",
+            "ai_match_preview",
+            "ai_reel_hooks",
+            "ai_predictions",
+            "export_reels_studio",
         ],
         "highlights": [
-            "750 Football AI Actions / Monat",
-            "Multi-Platform Matchday Engine",
-            "Viral Score & Thumbnail System",
-            "Live-API nur mit Elite",
+            "Alles aus Starter",
+            "Player Stats, H2H, Live Scores, Predictions",
+            "30 AI Analysen / Tag",
+            "Export zu Reels Studio",
         ],
     },
 
@@ -445,26 +595,30 @@ FOOTBALL_PLANS = {
         "tier": 3,
         "price": "249,99€ / Monat",
         "monthly_price": 249.99,
-        "ai_actions": 2500,
+        "daily_ai_analyses": 9999,
+        "daily_api_requests": 5000,
         "api_requests": 100000,
         "live_api_access": True,
+        "priority_cache": True,
         "rate_limit_per_minute": 240,
         "stripe_price_env": "STRIPE_PRICE_FOOTBALL_ELITE",
         "badge": "Infrastructure",
-        "description": "Live API-Football + maximale AI Actions für automatisierte Systeme.",
+        "description": "Maximale Limits, Multi-League, Automation-ready.",
         "features": [
-            "Everything in Football Pro",
-            "Live Match Data (API-Football)",
-            "Fixtures, H2H, Live Scores",
-            "100k API Requests / Monat",
-            "Priority Processing",
+            "api_multi_league",
+            "api_watchlists",
+            "api_priority_cache",
+            "ai_matchday_reports",
+            "ai_viral_reel_generator",
+            "ai_content_calendar",
+            "automation_triggers",
         ],
         "highlights": [
-            "2.500 Football AI Actions / Monat",
-            "100k Live API Requests",
-            "Live Match Data & Head-to-Head",
+            "Alles aus Pro",
+            "Multi-League & Matchday Reports",
+            "Viral Reel Generator & Content Calendar",
             "Bald: Zugriff auf alle Sport-APIs",
-            "Webhooks & Priority Processing",
+            "Hohe/unbegrenzte Tageslimits",
         ],
     },
 
@@ -558,13 +712,30 @@ def football_actions_for_plan(plan_key):
     return plan.get("ai_actions")
 
 
-def football_api_limit(plan_key):
+def football_daily_ai_limit(plan_key):
+    plan = get_football_plan(plan_key)
+    if not plan:
+        return 0
+    return int(plan.get("daily_ai_analyses") or 0)
+
+
+def football_daily_api_limit(plan_key):
     plan = get_football_plan(plan_key)
     if not plan:
         return 0
     if not plan.get("live_api_access"):
         return 0
-    return plan.get("api_requests") or 0
+    return int(plan.get("daily_api_requests") or 0)
+
+
+def football_api_limit(plan_key):
+    """Monthly-style cap (Elite); daily enforcement uses football_daily_api_limit."""
+    plan = get_football_plan(plan_key)
+    if not plan:
+        return 0
+    if not plan.get("live_api_access"):
+        return 0
+    return int(plan.get("api_requests") or 0)
 
 
 def football_has_live_api(plan_key):
@@ -572,6 +743,32 @@ def football_has_live_api(plan_key):
     if not plan:
         return False
     return bool(plan.get("live_api_access"))
+
+
+def football_has_feature(plan_key, feature_id):
+    if feature_id not in FOOTBALL_FEATURES:
+        return False
+    min_plan = FOOTBALL_FEATURES[feature_id]["min_plan"]
+    return football_plan_allows(plan_key, min_plan)
+
+
+def football_feature_meta(feature_id):
+    return FOOTBALL_FEATURES.get(feature_id) or {}
+
+
+def football_features_for_plan(plan_key):
+    """All features unlocked at or below this plan tier."""
+    rank = football_plan_rank(plan_key)
+    out = []
+    for fid, meta in FOOTBALL_FEATURES.items():
+        if football_plan_rank(meta.get("min_plan", "football_starter")) <= rank:
+            out.append((fid, meta))
+    return out
+
+
+def football_priority_cache(plan_key):
+    plan = get_football_plan(plan_key)
+    return bool(plan and plan.get("priority_cache"))
 
 
 def token_value_euro(tokens):

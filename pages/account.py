@@ -180,14 +180,29 @@ def render_redeem():
 def render_support():
     require_login()
 
-    st.title("ðŸ†˜ Support Center")
-    st.caption("Tickets erstellen, Bugs melden und Hilfe bekommen.")
+    from ui.premium_foundation import premium_foundation_css, render_page_hero
+
+    premium_foundation_css(1100, 88)
+    render_page_hero(
+        "Support Center",
+        "Tickets & Hilfe",
+        "Professioneller Support für Account, Zahlung, Football Premium und technische Fragen.",
+    )
 
     with st.container(border=True):
+        st.markdown('<div class="mb-ticket-card">', unsafe_allow_html=True)
         with st.form("support_ticket_form"):
             category = st.selectbox(
                 "Kategorie",
-                ["Account", "Payment", "Tokens", "Workspace", "Bug", "Sonstiges"],
+                [
+                    "Account",
+                    "Payment",
+                    "Football Premium",
+                    "Tokens",
+                    "Workspace",
+                    "Bug",
+                    "Sonstiges",
+                ],
             )
 
             subject = st.text_input("Betreff")
@@ -209,12 +224,12 @@ def render_support():
                         subject,
                         message,
                     )
-
                     if ok:
                         st.success(msg)
                         st.rerun()
                     else:
                         st.error(msg)
+        st.markdown("</div>", unsafe_allow_html=True)
 
     st.divider()
 
@@ -228,11 +243,15 @@ def render_support():
     ]
 
     if own_tickets:
-        st.dataframe(
-            pd.DataFrame(own_tickets),
-            width="stretch",
-            hide_index=True,
-        )
+        for ticket in own_tickets:
+            status = str(ticket.get("status") or "open")
+            with st.container(border=True):
+                st.markdown(f"**{ticket.get('subject', 'Ticket')}**")
+                st.caption(
+                    f"{ticket.get('category', '')} · {status.upper()} · "
+                    f"{ticket.get('created_at', '')}"
+                )
+                st.write(ticket.get("message", ""))
     else:
         st.info("Du hast noch keine Tickets.")
 
