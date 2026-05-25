@@ -68,11 +68,23 @@ def init_db():
     for column, definition in (
         ("oauth_provider", "TEXT"),
         ("oauth_sub", "TEXT"),
+        ("football_plan", "TEXT DEFAULT 'none'"),
     ):
         try:
             cur.execute(f"ALTER TABLE users ADD COLUMN {column} {definition}")
         except Exception:
             pass
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS football_daily_usage (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL,
+        usage_date TEXT NOT NULL,
+        api_calls INTEGER DEFAULT 0,
+        ai_actions INTEGER DEFAULT 0,
+        UNIQUE(username, usage_date)
+    )
+    """)
 
     cur.execute("""
     CREATE TABLE IF NOT EXISTS support_tickets (

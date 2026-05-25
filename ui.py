@@ -1,7 +1,8 @@
 ﻿import streamlit as st
 
-from database import init_db
-from ui_core import load_css, render_sidebar
+from database import init_db, get_user
+from payments import confirm_checkout_session
+from ui_core import load_css, render_sidebar, sync_session_user
 
 from pages.auth import render_auth
 from pages.home import render_home
@@ -106,6 +107,35 @@ if not logged_in:
     render_auth()
     st.stop()
 
+
+def handle_payment_callback() -> None:
+    params = st.query_params
+    if params.get("payment_cancel") == "1":
+        st.query_params.clear()
+        st.session_state.payment_notice = ("info", "Checkout abgebrochen.")
+        return
+
+    if params.get("payment_success") != "1":
+        return
+
+    session_id = params.get("session_id") or ""
+    st.query_params.clear()
+
+    if not session_id:
+        st.session_state.payment_notice = ("error", "Keine Stripe-Session gefunden.")
+        return
+
+    ok, msg = confirm_checkout_session(session_id)
+    user = get_user(st.session_state.get("user"))
+    if user:
+        sync_session_user(user)
+
+    level = "success" if ok else "warning"
+    st.session_state.payment_notice = (level, msg)
+
+
+handle_payment_callback()
+
 load_css()
 
 
@@ -114,6 +144,18 @@ load_css()
 # =========================================================
 
 render_sidebar()
+
+notice = st.session_state.pop("payment_notice", None)
+if notice:
+    level, text = notice
+    if level == "success":
+        st.success(text)
+    elif level == "error":
+        st.error(text)
+    elif level == "info":
+        st.info(text)
+    else:
+        st.warning(text)
 
 
 # =========================================================

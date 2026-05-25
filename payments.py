@@ -1,33 +1,60 @@
 ﻿import os
 import stripe
-from config import PLANS, APP_BASE_URL
-from database import record_purchase, set_plan, update_tokens
+from config import PLANS, FOOTBALL_PLANS, APP_BASE_URL
+from database import record_purchase, set_plan, set_football_plan, update_tokens
 
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY", "")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
 
 
+def is_checkout_plan(plan_key: str) -> bool:
+    return plan_key in PLANS or plan_key in FOOTBALL_PLANS
+
+
+def is_football_plan(plan_key: str) -> bool:
+    return plan_key in FOOTBALL_PLANS
+
+
+def _plan_config(plan_key: str) -> dict | None:
+    if plan_key in PLANS:
+        return PLANS[plan_key]
+    if plan_key in FOOTBALL_PLANS:
+        return FOOTBALL_PLANS[plan_key]
+    return None
+
+
 def create_checkout_session(username, plan_key):
-    if plan_key not in PLANS or plan_key == "free":
+    if plan_key == "free" or not is_checkout_plan(plan_key):
         return None, "Ungültiger Plan."
 
     if not stripe.api_key:
         return None, "STRIPE_SECRET_KEY fehlt in Railway Variables."
 
-    price_env = PLANS[plan_key].get("stripe_price_env")
+    plan = _plan_config(plan_key) or {}
+    price_env = plan.get("stripe_price_env")
     price_id = os.getenv(price_env or "")
     if not price_id:
         return None, f"{price_env} fehlt in Railway Variables."
+
+    category = "football" if is_football_plan(plan_key) else "normal"
 
     try:
         session = stripe.checkout.Session.create(
             mode="subscription",
             payment_method_types=["card"],
             line_items=[{"price": price_id, "quantity": 1}],
-            success_url=f"{APP_BASE_URL}?payment_success=1&session_id={{CHECKOUT_SESSION_ID}}&plan={plan_key}",
+            success_url=(
+                f"{APP_BASE_URL}?payment_success=1"
+                f"&session_id={{CHECKOUT_SESSION_ID}}&plan={plan_key}"
+                f"&category={category}"
+            ),
             cancel_url=f"{APP_BASE_URL}?payment_cancel=1",
             client_reference_id=username,
-            metadata={"username": username, "plan": plan_key},
+            metadata={
+                "username": username,
+                "plan": plan_key,
+                "category": category,
+            },
         )
         record_purchase(username, plan_key, 0, session.id, "created", "created")
         return session.url, None
@@ -45,11 +72,17 @@ def confirm_checkout_session(session_id):
         plan = session.get("metadata", {}).get("plan")
         status = session.get("payment_status", "unknown")
 
-        if status == "paid" and username and plan in PLANS:
+        if status == "paid" and username and is_checkout_plan(plan):
+            if is_football_plan(plan):
+                set_football_plan(username, plan)
+                label = FOOTBALL_PLANS[plan].get("label", plan)
+                record_purchase(username, plan, 0, session.id, status, "paid")
+                return True, f"{label} aktiviert."
             set_plan(username, plan)
             update_tokens(username, PLANS[plan]["tokens"])
             record_purchase(username, plan, 0, session.id, status, "paid")
             return True, f"{PLANS[plan]['label']} aktiviert."
+
         record_purchase(username or "", plan or "", 0, session.id, status, "pending")
         return False, f"Zahlung noch nicht bestätigt: {status}"
     except Exception as e:
@@ -77,4 +110,3 @@ def handle_stripe_webhook(payload, sig):
             return ok, msg
 
     return True, f"Event ignoriert: {event.type}"
-

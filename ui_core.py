@@ -388,6 +388,7 @@ def sync_session_user(user: dict | None) -> None:
     st.session_state.user = user.get("username", "User")
     st.session_state.email = user.get("email", "")
     st.session_state.plan = user.get("plan", "free")
+    st.session_state.football_plan = str(user.get("football_plan") or "none")
     st.session_state.tokens = int(user.get("tokens", 0) or 0)
     st.session_state.role = user.get("role", "user")
     st.session_state.admin_level = int(user.get("admin_level", 0) or 0)

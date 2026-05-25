@@ -8,6 +8,13 @@ from db.automations import *  # noqa: F403
 from db.users import *  # noqa: F403
 from db.memory import *  # noqa: F403
 from db.bootstrap import force_owner_account
+from db.football_billing import (  # noqa: F401
+    get_football_plan,
+    set_football_plan,
+    get_football_usage_today,
+    record_football_api_call,
+    record_football_ai_actions,
+)
 
 init_db()
 force_owner_account()

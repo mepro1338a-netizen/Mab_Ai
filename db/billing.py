@@ -94,10 +94,16 @@ def redeem_code(username, code):
         )
 
     if item["plan"]:
-        cur.execute(
-            "UPDATE users SET plan = ? WHERE username = ?",
-            (item["plan"], username),
-        )
+        plan_value = str(item["plan"])
+        if plan_value.startswith("football_"):
+            from db.football_billing import set_football_plan
+
+            set_football_plan(username, plan_value)
+        else:
+            cur.execute(
+                "UPDATE users SET plan = ? WHERE username = ?",
+                (plan_value, username),
+            )
 
     cur.execute(
         "UPDATE redeem_codes SET used_count = used_count + 1 WHERE code = ?",

@@ -21,6 +21,7 @@ from config import (
 )
 from logger import log_error, log_info, log_warning
 from security import check_rate_limit
+from services.football_access import FootballAccessError, preflight_api_request, record_api_success
 
 
 class FootballAPIError(Exception):
@@ -116,6 +117,12 @@ class FootballService:
               "FOOTBALL_API_KEY fehlt. Trage den Key in Railway / .env ein."
           )
 
+      if username:
+          try:
+              preflight_api_request(username)
+          except FootballAccessError as exc:
+              raise FootballAPIError(str(exc)) from exc
+
       clean_params = {k: v for k, v in (params or {}).items() if v not in (None, "")}
       cache_key = self._cache_key(endpoint, clean_params)
       ttl = self._ttl_for(endpoint, live)
@@ -194,6 +201,12 @@ class FootballService:
 
       if use_cache:
           self._write_cache(cache_key, data)
+
+      if username:
+          try:
+              record_api_success(username)
+          except FootballAccessError as exc:
+              raise FootballAPIError(str(exc)) from exc
 
       log_info(
           f"Football API {endpoint} params={clean_params} results={len(data)}"

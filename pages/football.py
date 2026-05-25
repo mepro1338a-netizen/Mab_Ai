@@ -3,10 +3,16 @@ import re
 import streamlit as st
 from openai import OpenAI
 
-from config import OPENAI_API_KEY, OPENAI_TEXT_MODEL
+from config import FOOTBALL_PLANS, OPENAI_API_KEY, OPENAI_TEXT_MODEL
 from database import (
     save_project_memory,
     get_project,
+)
+from services.football_access import (
+    FootballAccessError as FootballGateError,
+    can_run_action,
+    consume_action,
+    usage_summary,
 )
 from services.football_service import (
     FootballAPIError,
@@ -16,6 +22,7 @@ from services.football_service import (
     get_football_service,
     team_display_name,
 )
+from ui.styles import inject_css, page_layout_css, gradient_title_css
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 
@@ -214,6 +221,129 @@ def active_project():
         return None
 
     return get_project(project_id, username=st.session_state.get("user"))
+
+
+def current_username() -> str:
+    return str(st.session_state.get("user") or "")
+
+
+def session_football_plan() -> str:
+    return str(st.session_state.get("football_plan") or "none")
+
+
+def football_css() -> None:
+    inject_css(page_layout_css(1280, 88, 48) + gradient_title_css("fb-title") + """
+.fb-hero {
+    border-radius: 28px;
+    padding: 28px 32px;
+    margin-bottom: 22px;
+    background:
+        radial-gradient(circle at 88% 18%, rgba(34,197,94,.18), transparent 32%),
+        radial-gradient(circle at 12% 0%, rgba(168,85,247,.20), transparent 34%),
+        linear-gradient(135deg, rgba(12,18,42,.96), rgba(7,22,18,.94));
+    border: 1px solid rgba(255,231,163,.14);
+    box-shadow: 0 24px 60px rgba(0,0,0,.32);
+}
+.fb-kicker {
+    color: #86efac !important;
+    font-size: 11px;
+    font-weight: 1000;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+}
+.fb-title {
+    margin-top: 8px;
+}
+.fb-sub {
+    color: #cbd5e1 !important;
+    font-size: 15px;
+    line-height: 1.55;
+    max-width: 820px;
+    margin-top: 10px;
+}
+.fb-plan-pill {
+    display: inline-flex;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #166534, #15803d);
+    color: #ecfccb !important;
+    font-size: 12px;
+    font-weight: 1000;
+    margin-top: 12px;
+}
+.fb-plan-pill.locked {
+    background: linear-gradient(135deg, #4c1d95, #312e81);
+}
+.fb-upgrade {
+    border-radius: 22px;
+    padding: 22px 24px;
+    border: 1px dashed rgba(255,231,163,.28);
+    background: rgba(15,23,42,.55);
+    margin-bottom: 16px;
+}
+.fb-upgrade h4 {
+    color: #ffe7a3 !important;
+    margin: 0 0 8px 0;
+}
+.fb-upgrade p {
+    color: #94a3b8 !important;
+    font-size: 14px;
+    line-height: 1.5;
+}
+""")
+
+
+def open_premium() -> None:
+    st.session_state.page = "premium"
+    st.rerun()
+
+
+def render_plan_status() -> dict:
+    summary = usage_summary(current_username(), session_football_plan())
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        st.metric("Football Plan", summary["plan_label"])
+    with c2:
+        st.metric(
+            "AI Actions heute",
+            f"{summary['actions_used']:,}".replace(",", "."),
+            help=f"Limit-Pool: {summary['actions_limit']:,}".replace(",", ".") if summary["actions_limit"] else "Kein Plan",
+        )
+    with c3:
+        if summary["live_api"]:
+            st.metric(
+                "API Requests heute",
+                f"{summary['api_used']:,}".replace(",", "."),
+                help=f"Elite Limit: {summary['api_limit']:,}".replace(",", "."),
+            )
+        else:
+            st.metric("Live API", "Gesperrt", help="Nur Football Elite")
+    with c4:
+        tier = summary["tier"]
+        st.metric("Stufe", tier if tier else "—")
+    return summary
+
+
+def render_live_upgrade_panel() -> None:
+    st.markdown(
+        """
+<div class="fb-upgrade">
+    <h4>Live Match Data — nur Football Elite</h4>
+    <p>
+        API-Football (Live-Spiele, Fixtures, Head-to-Head) ist das Premium-Infrastruktur-Feature.
+        <strong>Starter</strong> und <strong>Pro</strong> nutzen die volle
+        <strong>AI Content Engine</strong> mit manueller Club/Gegner-Eingabe.
+    </p>
+</div>
+        """,
+        unsafe_allow_html=True,
+    )
+    c1, c2 = st.columns(2)
+    with c1:
+        if st.button("Football Elite ansehen", key="fb_go_elite", width="stretch"):
+            open_premium()
+    with c2:
+        st.caption("Pro = AI Matchday Engine · Elite = Live API + 100k Requests")
 
 
 # =========================================================
@@ -460,20 +590,33 @@ def render_full_export(result, filename="mabyte_matchday_package.txt"):
 # LIVE DATA UI
 # =========================================================
 
-def render_football_live_data() -> None:
+def render_football_live_data(summary: dict) -> None:
+    if not summary.get("live_api"):
+        render_live_upgrade_panel()
+        with st.expander("Was ist in Starter & Pro enthalten?", expanded=False):
+            for key in ("football_starter", "football_pro"):
+                plan = FOOTBALL_PLANS.get(key, {})
+                st.markdown(f"**{plan.get('label')}**")
+                for item in plan.get("highlights", [])[:4]:
+                    st.write(f"- {item}")
+        return
+
     service = get_football_service()
-    username = st.session_state.get("user") or ""
+    username = current_username()
 
     if not service.is_configured():
-        st.info(
-            "Live Match Data benoetigt einen API-Football Key. "
-            "Setze `FOOTBALL_API_KEY` in Railway oder `.env`."
+        st.warning(
+            "Server-seitig fehlt `FOOTBALL_API_KEY` (Railway/.env). "
+            "Elite-Nutzer sehen Live-Daten sobald der Key aktiv ist."
         )
         st.caption("Provider: API-Football (api-sports.io)")
         return
 
     st.subheader("Live Match Data")
-    st.caption("Fixtures, Live-Spiele und Head-to-Head via API-Football.")
+    st.caption(
+        "Elite: Fixtures, Live-Spiele und Head-to-Head via API-Football. "
+        f"Heute: {summary['api_used']:,} / {summary['api_limit']:,} Requests.".replace(",", ".")
+    )
 
     search_col, search_btn_col = st.columns([3, 1])
     with search_col:
@@ -656,8 +799,18 @@ def render_football_live_data() -> None:
 # AI CONTENT UI
 # =========================================================
 
-def render_football_ai_engine() -> None:
+def render_football_ai_engine(summary: dict) -> None:
     project = active_project()
+    plan = summary.get("plan", "none")
+
+    if plan == "none":
+        st.warning(
+            "Kein Football Premium Plan aktiv. "
+            "Starter ab 19,99€ — Pro für Matchday Engine — Elite für Live API."
+        )
+        if st.button("Football Pläne vergleichen", key="fb_ai_go_premium", width="stretch"):
+            open_premium()
+        st.divider()
 
     top1, top2, top3, top4 = st.columns(4)
 
@@ -668,10 +821,11 @@ def render_football_ai_engine() -> None:
         st.metric("Content Types", "10+")
 
     with top3:
-        st.metric("AI Pipeline", "Active")
+        min_plan = "Pro" if summary["tier"] >= 2 else ("Starter" if summary["tier"] >= 1 else "—")
+        st.metric("Matchday Engine", min_plan)
 
     with top4:
-        st.metric("Export Engine", "Online")
+        st.metric("Actions heute", summary["actions_used"])
 
     st.divider()
 
@@ -739,6 +893,27 @@ def render_football_ai_engine() -> None:
     if generate:
         if not club or not opponent:
             st.warning("Bitte Club und Gegner eingeben.")
+            return
+
+        ok, gate_msg = can_run_action(
+            current_username(),
+            "matchday_package",
+            session_football_plan(),
+        )
+        if not ok:
+            st.error(gate_msg)
+            if st.button("Plan upgraden", key="fb_upgrade_matchday"):
+                open_premium()
+            return
+
+        try:
+            consume_action(
+                current_username(),
+                "matchday_package",
+                session_football_plan(),
+            )
+        except FootballGateError as exc:
+            st.error(str(exc))
             return
 
         with st.spinner("MaByte generiert Multi Platform Matchday Package..."):
@@ -816,6 +991,24 @@ def render_football_ai_engine() -> None:
         )
 
         if improve:
+            ok, gate_msg = can_run_action(
+                current_username(),
+                "optimized_package",
+                session_football_plan(),
+            )
+            if not ok:
+                st.error(gate_msg)
+                return
+            try:
+                consume_action(
+                    current_username(),
+                    "optimized_package",
+                    session_football_plan(),
+                )
+            except FootballGateError as exc:
+                st.error(str(exc))
+                return
+
             with st.spinner("MaByte optimiert Viralität..."):
                 improved = improve_package(result)
 
@@ -864,24 +1057,64 @@ def render_football() -> None:
         st.rerun()
         return
 
-    st.title("Football Intelligence")
+    football_css()
 
-    st.caption(
-        "Live Match Data + Multi Platform AI Matchday Engine fuer viralen Football Content."
+    summary = usage_summary(current_username(), session_football_plan())
+    pill_class = "fb-plan-pill" if summary["live_api"] else "fb-plan-pill locked"
+    live_label = "Live API aktiv" if summary["live_api"] else "Live API: Elite erforderlich"
+
+    st.markdown(
+        f"""
+<div class="fb-hero">
+    <div class="fb-kicker">Football Intelligence</div>
+    <div class="fb-title">Matchday AI & Live Data</div>
+    <div class="fb-sub">
+        Drei Stufen: Starter (AI Content), Pro (Matchday Engine), Elite (Live API-Football).
+        API-Requests werden gecacht — keine Dauer-Polls.
+    </div>
+    <span class="{pill_class}">{summary['plan_label']} · {live_label}</span>
+</div>
+        """,
+        unsafe_allow_html=True,
     )
 
     project = active_project()
     if project:
         st.success(f"Aktives Projekt: {project.get('title')}")
     else:
-        st.info("Kein aktives Projekt ausgewaehlt. Memory wird nicht gespeichert.")
+        st.info("Kein aktives Projekt. AI-Ergebnisse werden ohne Projekt-Memory erzeugt.")
 
+    render_plan_status()
     st.divider()
 
-    tab_live, tab_ai = st.tabs(["Live Match Data", "AI Content Engine"])
+    tab_live, tab_ai, tab_plans = st.tabs(
+        ["Live Match Data", "AI Content Engine", "Pläne & Limits"]
+    )
 
     with tab_live:
-        render_football_live_data()
+        render_football_live_data(summary)
 
     with tab_ai:
-        render_football_ai_engine()
+        render_football_ai_engine(summary)
+
+    with tab_plans:
+        st.subheader("Football Premium Stufen")
+        for key in ("football_starter", "football_pro", "football_elite"):
+            plan = FOOTBALL_PLANS[key]
+            with st.container(border=True):
+                st.markdown(f"### {plan.get('label')} — {plan.get('price')}")
+                st.write(plan.get("description", ""))
+                api_note = (
+                    "Live API inklusive"
+                    if plan.get("live_api_access")
+                    else "Kein Live-API (nur AI)"
+                )
+                st.caption(
+                    f"{plan.get('ai_actions', 0):,} AI Actions · {api_note}".replace(",", ".")
+                )
+                for item in plan.get("highlights", []):
+                    st.write(f"✓ {item}")
+                if summary.get("plan") == key:
+                    st.success("Dein aktueller Plan")
+                elif st.button(f"{plan.get('label')} wählen", key=f"fb_pick_{key}"):
+                    open_premium()

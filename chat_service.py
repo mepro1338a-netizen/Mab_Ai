@@ -1,9 +1,9 @@
 ﻿from openai import OpenAI
-from config import OPENAI_API_KEY
+from config import OPENAI_API_KEY, OPENAI_TEXT_MODEL
 
 client = OpenAI(api_key=OPENAI_API_KEY)
 
-DEFAULT_CHAT_MODEL = "gpt-4o-mini"
+DEFAULT_CHAT_MODEL = OPENAI_TEXT_MODEL or "gpt-4o-mini"
 
 
 def generate_chat(prompt, history=None):

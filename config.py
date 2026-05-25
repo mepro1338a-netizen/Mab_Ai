@@ -42,7 +42,7 @@ FAL_KEY = os.getenv("FAL_KEY", "")
 SUNO_API_URL = os.getenv("SUNO_API_URL", "")
 SUNO_API_KEY = os.getenv("SUNO_API_KEY", "")
 
-OPENAI_TEXT_MODEL = os.getenv("OPENAI_TEXT_MODEL", "gpt-4.1-mini")
+OPENAI_TEXT_MODEL = os.getenv("OPENAI_TEXT_MODEL", "gpt-4o-mini")
 OPENAI_CODING_MODEL = os.getenv("OPENAI_CODING_MODEL", "gpt-4.1")
 OPENAI_IMAGE_MODEL = os.getenv("OPENAI_IMAGE_MODEL", "gpt-image-1")
 
@@ -394,23 +394,22 @@ FOOTBALL_PLANS = {
         "monthly_price": 19.99,
         "ai_actions": 100,
         "api_requests": 0,
+        "live_api_access": False,
         "rate_limit_per_minute": 0,
         "stripe_price_env": "STRIPE_PRICE_FOOTBALL_STARTER",
         "badge": "Creator",
-        "description": "Für kleine Football Creator & Seiten.",
+        "description": "AI Football Content ohne Live-API — ideal zum Einstieg.",
         "features": [
-            "Basic Match Stats",
-            "Basic Predictions",
             "AI Captions",
             "Match Recaps",
             "Reel Ideas",
+            "Basic Predictions (AI)",
         ],
         "highlights": [
-            "100 Football AI Actions",
-            "Basic Match Stats",
-            "AI Captions",
-            "Match Recaps",
-            "Reel Ideen",
+            "100 Football AI Actions / Monat",
+            "AI Captions & Match Recaps",
+            "Reel-Ideen & Hooks",
+            "Kein Live-API-Zugriff",
         ],
     },
 
@@ -420,25 +419,24 @@ FOOTBALL_PLANS = {
         "price": "99,99€ / Monat",
         "monthly_price": 99.99,
         "ai_actions": 750,
-        "api_requests": 25000,
-        "rate_limit_per_minute": 60,
+        "api_requests": 0,
+        "live_api_access": False,
+        "rate_limit_per_minute": 0,
         "stripe_price_env": "STRIPE_PRICE_FOOTBALL_PRO",
         "badge": "Growth",
-        "description": "Für ernsthafte Football Creator & Content Systeme.",
+        "description": "Volle AI Content Engine — Matchday Packages & Automation-Ready.",
         "features": [
-            "Live Match Data",
-            "AI Match Analysis",
+            "AI Matchday Packages",
             "Reel Generator",
-            "Auto Hooks",
-            "Auto Posting",
-            "High Volume API Access",
+            "Viral Analysis",
+            "Thumbnail Intelligence",
+            "Deep Match Analysis (AI)",
         ],
         "highlights": [
-            "750 Football AI Actions",
-            "Live Match Data",
-            "AI Match Analysis",
-            "Auto Posting",
-            "25k API Requests",
+            "750 Football AI Actions / Monat",
+            "Multi-Platform Matchday Engine",
+            "Viral Score & Thumbnail System",
+            "Live-API nur mit Elite",
         ],
     },
 
@@ -449,24 +447,24 @@ FOOTBALL_PLANS = {
         "monthly_price": 249.99,
         "ai_actions": 2500,
         "api_requests": 100000,
+        "live_api_access": True,
         "rate_limit_per_minute": 240,
         "stripe_price_env": "STRIPE_PRICE_FOOTBALL_ELITE",
         "badge": "Infrastructure",
-        "description": "Für automatisierte Football Content Systeme & Netzwerke.",
+        "description": "Live API-Football + maximale AI Actions für automatisierte Systeme.",
         "features": [
             "Everything in Football Pro",
-            "Multi Account Support",
-            "Webhooks",
+            "Live Match Data (API-Football)",
+            "Fixtures, H2H, Live Scores",
+            "100k API Requests / Monat",
             "Priority Processing",
-            "Advanced Automation",
-            "High Volume API Access",
         ],
         "highlights": [
-            "2.500 Football AI Actions",
-            "100k API Requests",
-            "Multi Account Support",
-            "Webhooks",
-            "Priority Processing",
+            "2.500 Football AI Actions / Monat",
+            "100k Live API Requests",
+            "Live Match Data & Head-to-Head",
+            "Bald: Zugriff auf alle Sport-APIs",
+            "Webhooks & Priority Processing",
         ],
     },
 
@@ -564,7 +562,16 @@ def football_api_limit(plan_key):
     plan = get_football_plan(plan_key)
     if not plan:
         return 0
+    if not plan.get("live_api_access"):
+        return 0
     return plan.get("api_requests") or 0
+
+
+def football_has_live_api(plan_key):
+    plan = get_football_plan(plan_key)
+    if not plan:
+        return False
+    return bool(plan.get("live_api_access"))
 
 
 def token_value_euro(tokens):

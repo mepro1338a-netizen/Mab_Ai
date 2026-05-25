@@ -1,6 +1,9 @@
 ﻿import streamlit as st
 from config import PLANS, FOOTBALL_PLANS
+from database import get_user
+from payments import create_checkout_session
 from ui.styles import inject_css, page_layout_css
+from ui_core import sync_session_user
 
 
 ICON_AI = """<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2L14.5 8.5L21 9L16 13.4L17.6 20L12 16.5L6.4 20L8 13.4L3 9L9.5 8.5L12 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>"""
@@ -271,10 +274,28 @@ div[data-testid="stAlert"] *{
     )
 
 
-def choose_plan(plan_key, category):
-    st.session_state.selected_plan = plan_key
-    st.session_state.selected_plan_category = category
-    st.success("Plan ausgewählt.")
+def start_checkout(plan_key: str) -> None:
+    username = st.session_state.get("user")
+    if not username:
+        st.warning("Bitte zuerst einloggen.")
+        return
+
+    url, err = create_checkout_session(username, plan_key)
+    if err:
+        st.error(err)
+        return
+
+    st.session_state.checkout_url = url
+    st.session_state.checkout_plan = plan_key
+    st.success("Stripe Checkout bereit — klicke auf den Button unten.")
+
+
+def render_checkout_link(plan_key: str) -> None:
+    if st.session_state.get("checkout_plan") != plan_key:
+        return
+    url = st.session_state.get("checkout_url")
+    if url:
+        st.link_button("Jetzt zur Kasse (Stripe)", url, type="primary", width="stretch")
 
 
 def section_header(icon, title, sub):
@@ -321,17 +342,20 @@ def normal_card(plan_key):
 
         st.markdown(
             "<div class='compact-list'>"
-            + "<br>".join([f"âœ“ {x}" for x in highlights])
+            + "<br>".join([f"✓ {x}" for x in highlights])
             + "</div>",
             unsafe_allow_html=True,
         )
 
+        current = st.session_state.get("plan") == plan_key
         if st.button(
-            f"{plan.get('label')} auswählen",
+            "Aktiv" if current else f"{plan.get('label')} abonnieren",
             key=f"normal_{plan_key}",
             width="stretch",
+            disabled=current,
         ):
-            choose_plan(plan_key, "normal")
+            start_checkout(plan_key)
+        render_checkout_link(plan_key)
 
 
 def football_card(plan_key):
@@ -351,27 +375,37 @@ def football_card(plan_key):
         st.markdown(f"### {plan.get('price', '')}")
 
         if plan_key == "football_elite":
-            bubble("Actions + API", f"{actions_text} Actions", "API Full Access")
+            bubble("Actions + Live API", f"{actions_text} Actions", "API-Football Elite")
         else:
-            bubble("Actions", actions_text, "Football AI Actions")
+            bubble("Actions", actions_text, "AI Content — kein Live-API")
 
         st.markdown(
             "<div class='compact-list'>"
-            + "<br>".join([f"âœ“ {x}" for x in highlights])
+            + "<br>".join([f"✓ {x}" for x in highlights])
             + "</div>",
             unsafe_allow_html=True,
         )
 
+        if plan_key == "football_elite":
+            st.caption("* Bald: Zugriff auf alle Sport-APIs (NBA, NFL, F1, …)")
+
+        current_fb = st.session_state.get("football_plan") == plan_key
         if st.button(
-            f"{plan.get('label')} wählen",
+            "Aktiv" if current_fb else f"{plan.get('label')} abonnieren",
             key=f"football_{plan_key}",
             width="stretch",
+            disabled=current_fb,
         ):
-            choose_plan(plan_key, "football")
+            start_checkout(plan_key)
+        render_checkout_link(plan_key)
 
 
 def render_premium():
     premium_css()
+
+    user = get_user(st.session_state.get("user"))
+    if user:
+        sync_session_user(user)
 
     st.markdown(
         """
@@ -409,7 +443,7 @@ def render_premium():
     section_header(
         ICON_BALL,
         "Football AI Premium",
-        "FÃ¼r Creator, Fußballseiten, Apps und automatisierte Content-Systeme.",
+        "Für Creator, Fußballseiten, Apps und automatisierte Content-Systeme.",
     )
 
     f1, f2, f3 = st.columns(3, gap="medium")
