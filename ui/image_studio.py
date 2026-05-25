@@ -15,99 +15,42 @@ from ui.styles import inject_css, page_layout_css
 IMAGE_STUDIO_CSS = """
 /* Weniger Leerraum unter der Topbar (nur Image Studio) */
 section.main .block-container {
-    padding-top: 8px !important;
-    padding-bottom: 36px !important;
+    padding-top: 4px !important;
+    padding-bottom: 28px !important;
 }
 section.main .block-container > div {
-    gap: 0.4rem !important;
+    gap: 0.25rem !important;
 }
 .img-studio {
-    margin-bottom: 16px;
+    margin-bottom: 12px;
     margin-top: 0 !important;
 }
-.img-hero {
-    border-radius: 20px;
-    padding: 18px 22px 16px 22px;
-    margin-bottom: 14px;
-    background:
-        radial-gradient(circle at 92% 8%, rgba(96,165,250,.18), transparent 38%),
-        radial-gradient(circle at 6% 0%, rgba(168,85,247,.16), transparent 36%),
-        linear-gradient(135deg, rgba(14,18,38,.97), rgba(8,10,24,.99));
-    border: 1px solid rgba(255,255,255,.08);
-    box-shadow: 0 24px 56px rgba(0,0,0,.28);
-}
-.img-kicker {
-    color: #94a3b8 !important;
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: .2em;
-    text-transform: uppercase;
-}
-.img-title {
-    color: #ffffff !important;
-    font-size: 26px;
-    font-weight: 800;
-    letter-spacing: -.6px;
-    margin-top: 6px;
-    line-height: 1.15;
-}
-.img-sub {
-    color: #94a3b8 !important;
-    font-size: 14px;
-    line-height: 1.5;
-    max-width: 680px;
-    margin-top: 8px;
-}
-.img-chip-row {
+.img-topbar {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
-    margin-top: 12px;
-}
-.img-chip {
-    display: inline-flex;
     align-items: center;
-    padding: 6px 12px;
-    border-radius: 999px;
-    font-size: 12px;
-    font-weight: 700;
-    color: #e2e8f0 !important;
-    background: rgba(255,255,255,.06);
-    border: 1px solid rgba(255,255,255,.1);
-}
-.img-stat-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-    margin-bottom: 18px;
-}
-@media (max-width: 768px) {
-    .img-stat-grid { grid-template-columns: 1fr; }
-}
-.img-stat {
-    border-radius: 18px;
-    padding: 16px 18px;
-    background: rgba(255,255,255,.04);
+    justify-content: space-between;
+    gap: 8px 16px;
+    padding: 10px 14px;
+    margin-bottom: 10px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(22,24,32,.95), rgba(14,16,22,.98));
     border: 1px solid rgba(255,255,255,.08);
 }
-.img-stat-lbl {
-    color: #94a3b8 !important;
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: .08em;
-}
-.img-stat-val {
+.img-topbar-title {
     color: #ffffff !important;
-    font-size: 22px;
+    font-size: 17px;
     font-weight: 800;
-    margin-top: 6px;
-    line-height: 1.1;
+    letter-spacing: -.3px;
 }
-.img-stat-sub {
-    color: #64748b !important;
+.img-topbar-meta {
+    color: #94a3b8 !important;
     font-size: 12px;
-    margin-top: 4px;
+    font-weight: 600;
+}
+.img-topbar-meta strong {
+    color: #ffffff !important;
+    font-weight: 800;
 }
 .img-card {
     border-radius: 22px;
@@ -186,82 +129,64 @@ section.main .block-container > div {
 }
 .img-size-section-title {
     color: #ffffff !important;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 800;
-    margin: 16px 0 4px 0;
+    margin: 12px 0 2px 0;
 }
 .img-size-section-sub {
     color: #64748b !important;
-    font-size: 12px;
-    margin: 0 0 12px 0;
-    line-height: 1.45;
+    font-size: 11px;
+    margin: 0 0 8px 0;
+    line-height: 1.4;
 }
 .img-size-group-title {
-    color: #cbd5e1 !important;
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: .12em;
-    text-transform: uppercase;
-    margin: 14px 0 8px 0;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-.img-size-group-icon {
     color: #94a3b8 !important;
-    font-size: 14px;
-}
-.img-preset-card {
-    border-radius: 14px;
-    padding: 12px 12px 10px 12px;
-    margin-bottom: 6px;
-    background: rgba(255,255,255,.03);
-    border: 1px solid rgba(255,255,255,.08);
-    transition: border-color .15s ease, box-shadow .15s ease;
-}
-.img-preset-card.is-active {
-    border-color: rgba(255,255,255,.35) !important;
-    background: rgba(255,255,255,.07);
-    box-shadow: 0 0 0 1px rgba(255,255,255,.12), 0 8px 24px rgba(0,0,0,.2);
-}
-.img-preset-tier {
-    color: #ffffff !important;
-    font-size: 14px;
+    font-size: 10px;
     font-weight: 800;
-    line-height: 1.2;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    margin: 10px 0 6px 0;
 }
-.img-preset-px {
-    color: #e2e8f0 !important;
-    font-size: 13px;
-    font-weight: 700;
-    margin-top: 4px;
+.img-size-btn-wrap {
+    margin-bottom: 4px;
 }
-.img-preset-hint {
-    color: #64748b !important;
-    font-size: 11px;
-    margin-top: 4px;
-    line-height: 1.35;
+.img-size-btn-wrap.is-active .stButton > button,
+.img-size-btn-wrap.is-active button {
+    border: 2px solid rgba(255,255,255,.45) !important;
+    background: linear-gradient(135deg, rgba(82,82,88,.98), rgba(52,52,58,.99)) !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 0 1px rgba(255,255,255,.1), 0 6px 16px rgba(0,0,0,.2) !important;
+}
+.img-studio .img-size-btn-wrap .stButton > button,
+.img-studio .img-size-btn-wrap button {
+    min-height: 48px !important;
+    padding: 8px 10px !important;
+    line-height: 1.3 !important;
+    white-space: pre-line !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    color: #ffffff !important;
+}
+.img-studio .img-size-btn-wrap .stButton > button p,
+.img-studio .img-size-btn-wrap button p {
+    color: #ffffff !important;
+    font-size: 12px !important;
+    line-height: 1.3 !important;
 }
 .img-preset-summary {
-    border-radius: 14px;
-    padding: 14px 16px;
-    margin-top: 12px;
-    background: rgba(255,255,255,.05);
-    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-top: 8px;
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.1);
+    font-size: 12px;
+    color: #94a3b8 !important;
 }
 .img-preset-summary strong {
     color: #ffffff !important;
-    font-size: 14px;
 }
-.img-preset-summary span {
-    color: #94a3b8 !important;
-    font-size: 13px;
-    line-height: 1.45;
-}
-.img-quality-label {
-    color: #94a3b8 !important;
-    font-size: 12px;
-    margin-bottom: 6px;
+.img-quality-row {
+    margin-top: 8px;
 }
 """
 
@@ -318,39 +243,42 @@ def _quality_label(q: str) -> str:
     return "HD · mehr Details" if q == "hd" else "Standard · schnell"
 
 
+def _preset_button_label(p: dict[str, str]) -> str:
+    return f"{p['format_name']} · {p['tier']}\n{p['pixels']}"
+
+
 def _render_size_preset_grid() -> None:
+    """Jede Größe = ein Auswahl-Button (ein Klick)."""
     st.session_state.setdefault("image_preset_id", "square_1k")
     active_id = str(st.session_state.image_preset_id)
 
-    for group_title, icon, preset_ids in PRESET_GROUPS:
+    for group_title, _icon, preset_ids in PRESET_GROUPS:
         st.markdown(
-            f'<div class="img-size-group-title">'
-            f'<span class="img-size-group-icon">{html.escape(icon)}</span>'
-            f'{html.escape(group_title)}</div>',
+            f'<div class="img-size-group-title">{html.escape(group_title)}</div>',
             unsafe_allow_html=True,
         )
         cols = st.columns(len(preset_ids), gap="small")
         for col, pid in zip(cols, preset_ids):
             p = _PRESET_BY_ID[pid]
             is_active = active_id == pid
-            active_cls = " is-active" if is_active else ""
+            wrap_cls = "img-size-btn-wrap is-active" if is_active else "img-size-btn-wrap"
             with col:
-                st.markdown(
-                    f'<div class="img-preset-card{active_cls}">'
-                    f'<div class="img-preset-tier">{html.escape(p["tier"])}</div>'
-                    f'<div class="img-preset-px">{html.escape(p["pixels"])}</div>'
-                    f'<div class="img-preset-hint">{html.escape(p["hint"])}</div>'
-                    f"</div>",
-                    unsafe_allow_html=True,
-                )
-                btn_label = "✓ Aktiv" if is_active else "Wählen"
-                if st.button(btn_label, key=f"preset_pick_{pid}", width="stretch"):
-                    st.session_state.image_preset_id = pid
-                    st.rerun()
+                st.markdown(f'<div class="{wrap_cls}">', unsafe_allow_html=True)
+                if st.button(
+                    _preset_button_label(p),
+                    key=f"preset_pick_{pid}",
+                    width="stretch",
+                    type="primary" if is_active else "secondary",
+                    help=p.get("hint", ""),
+                ):
+                    if not is_active:
+                        st.session_state.image_preset_id = pid
+                        st.rerun()
+                st.markdown("</div>", unsafe_allow_html=True)
 
 
 def inject_image_studio_css() -> None:
-    inject_css(page_layout_css(1200, 8, 40) + IMAGE_STUDIO_CSS)
+    inject_css(page_layout_css(1200, 4, 32) + IMAGE_STUDIO_CSS)
 
 
 def _build_image_prompt(
@@ -417,55 +345,24 @@ def render_image_studio(
 
     st.markdown('<div class="img-studio">', unsafe_allow_html=True)
 
-    st.markdown(
-        """
-<div class="img-hero">
-    <div class="img-kicker">MaByte Studios · Image</div>
-    <div class="img-title">Image Studio</div>
-    <div class="img-sub">
-        Thumbnails, Cover und Visuals in Minuten — mit fertigen KI-Prompts,
-        Farbpalette und Export-Vorgaben für deine Pipeline.
-    </div>
-    <div class="img-chip-row">
-        <span class="img-chip">Thumbnail</span>
-        <span class="img-chip">Social</span>
-        <span class="img-chip">Story</span>
-        <span class="img-chip">Banner</span>
-    </div>
-</div>
-        """,
-        unsafe_allow_html=True,
-    )
-
     preset = _preset_from_session()
     quality = st.session_state.get("image_quality", "standard")
     cost = get_image_cost(quality=quality, size=preset["size"])
-
     tokens_fmt = f"{tokens_available:,}".replace(",", ".")
+
     st.markdown(
         f"""
-<div class="img-stat-grid">
-    <div class="img-stat">
-        <div class="img-stat-lbl">Verfügbar</div>
-        <div class="img-stat-val">{tokens_fmt}</div>
-        <div class="img-stat-sub">Tokens</div>
-    </div>
-    <div class="img-stat">
-        <div class="img-stat-lbl">Diese Generierung</div>
-        <div class="img-stat-val">{cost}</div>
-        <div class="img-stat-sub">Tokens · live</div>
-    </div>
-    <div class="img-stat">
-        <div class="img-stat-lbl">Output</div>
-        <div class="img-stat-val">Paket</div>
-        <div class="img-stat-sub">Prompt + Specs</div>
+<div class="img-topbar">
+    <div class="img-topbar-title">Image Studio</div>
+    <div class="img-topbar-meta">
+        <strong>{tokens_fmt}</strong> Tokens · diese Generierung <strong>{cost}</strong> Tokens
     </div>
 </div>
         """,
         unsafe_allow_html=True,
     )
 
-    left, right = st.columns([1.35, 0.85], gap="large")
+    left, right = st.columns([1.4, 0.75], gap="medium")
 
     with left:
         st.markdown(
@@ -477,7 +374,7 @@ def render_image_studio(
             prompt = prompt_text_area(
                 placeholder="z.B. SaaS Dashboard Thumbnail, dunkler Hintergrund, lila Akzente, modern…",
                 key="image_prompt",
-                height=140,
+                height=110,
             )
 
             c1, c2 = st.columns(2)
@@ -492,35 +389,30 @@ def render_image_studio(
                 style = st.selectbox("Stil", STYLE_PRESETS, key="image_style")
 
             st.markdown(
-                '<div class="img-size-section-title">Format & Auflösung</div>'
-                '<div class="img-size-section-sub">Wähle Zielformat und Pixelgröße — alles in einem Schritt.</div>',
+                '<div class="img-size-section-title">Bildgröße</div>'
+                '<div class="img-size-section-sub">Format und Auflösung — ein Klick zum Auswählen.</div>',
                 unsafe_allow_html=True,
             )
             _render_size_preset_grid()
             preset = _preset_from_session()
 
-            st.markdown('<div class="img-quality-label">Render-Qualität</div>', unsafe_allow_html=True)
-            q1, q2 = st.columns([1.2, 0.8])
-            with q1:
+            with st.container():
+                st.markdown('<div class="img-quality-row">', unsafe_allow_html=True)
                 quality = st.radio(
                     "Qualität",
                     options=["standard", "hd"],
                     format_func=_quality_label,
                     horizontal=True,
                     key="image_quality",
-                    label_visibility="collapsed",
                 )
-            with q2:
-                cost = get_image_cost(quality=quality, size=preset["size"])
-                st.metric("Diese Generierung", f"{cost} Tokens")
+                st.markdown("</div>", unsafe_allow_html=True)
+
+            cost = get_image_cost(quality=quality, size=preset["size"])
 
             st.markdown(
-                f"""
-<div class="img-preset-summary">
-    <strong>{html.escape(preset["format_name"])} · {html.escape(preset["tier"])}</strong><br>
-    <span>{html.escape(preset["pixels"])} · Format {html.escape(preset["aspect"])} · {html.escape(preset["hint"])}</span>
-</div>
-                """,
+                f'<div class="img-preset-summary">Ausgewählt: <strong>'
+                f'{html.escape(preset["format_name"])} · {html.escape(preset["tier"])}</strong> · '
+                f'{html.escape(preset["pixels"])} ({html.escape(preset["aspect"])})</div>',
                 unsafe_allow_html=True,
             )
 
