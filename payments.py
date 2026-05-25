@@ -77,6 +77,16 @@ def create_checkout_session(username, plan_key):
         return session.url, None
     except Exception as e:
         log_stripe("checkout_failed", username=username, success=False)
+        msg = str(e).lower()
+        if "url_invalid" in msg or "success_url" in msg:
+            return (
+                None,
+                "Checkout-URL ungültig: APP_BASE_URL in Railway als reine https:// URL setzen.",
+            )
+        if "no such price" in msg or "invalid price" in msg:
+            return None, f"Stripe Price-ID ungültig. Prüfe {price_env} in Railway."
+        if os.getenv("MABYTE_DEBUG", "").strip() == "1":
+            return None, user_friendly_error("stripe", str(e))
         return None, user_friendly_error("stripe", str(e))
 
 

@@ -257,6 +257,9 @@ def start_checkout(plan_key: str) -> None:
         st.warning("Bitte zuerst einloggen.")
         return
 
+    st.session_state.pop("checkout_url", None)
+    st.session_state.pop("checkout_plan", None)
+
     with st.spinner("Stripe Checkout wird vorbereitet…"):
         url, err = create_checkout_session(username, plan_key)
     if err:
@@ -421,9 +424,9 @@ def render_premium():
     stripe_ok, stripe_missing = stripe_config_status()
     if not stripe_ok:
         st.warning(
-            "Stripe ist unvollständig konfiguriert: "
+            "Stripe Checkout: fehlende Variablen — "
             + ", ".join(stripe_missing)
-            + ". Checkout-Buttons bleiben deaktiviert bis die Variablen gesetzt sind."
+            + ". Webhook läuft separat (STRIPE_WEBHOOK_SECRET nur im Webhook-Service)."
         )
 
     section_header(

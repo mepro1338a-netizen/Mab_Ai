@@ -145,16 +145,11 @@ section[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {{
 }}
 
 section[data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"] {{
-    background:rgba(6,4,14,.55)!important;
-    border:1px solid rgba(168,85,247,.12)!important;
-    border-radius:18px!important;
-    padding:8px 6px 10px 6px!important;
-    margin-bottom:6px!important;
+    background:transparent!important;
+    border:none!important;
+    padding:0!important;
+    margin:0!important;
     box-shadow:none!important;
-}}
-
-section[data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"] > div {{
-    padding:4px 2px!important;
 }}
 
 .sidebar-logo-wrap {{
@@ -179,88 +174,85 @@ section[data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"] > 
     margin-top:6px;
 }}
 
-.mb-nav-row {{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    width:100%;
-    margin-bottom:6px;
+.mb-nav-section {{
+    margin-bottom:14px;
+    padding-bottom:4px;
+    border-bottom:1px solid rgba(168,85,247,.08);
+}}
+.mb-nav-section:last-of-type {{
+    border-bottom:none;
 }}
 
-.mb-nav-icon {{
-    width:42px;
-    height:42px;
-    min-width:42px;
-    border-radius:14px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    background:
-        radial-gradient(circle at top left, rgba(255,231,163,.16), transparent 34%),
-        linear-gradient(135deg, rgba(49,18,62,.95), rgba(20,9,32,.98));
-    border:1px solid rgba(255,231,163,.15);
-    box-shadow:
-        inset 0 0 0 1px rgba(255,255,255,.025),
-        0 10px 24px rgba(0,0,0,.18);
+.mb-nav-item {{
+    margin:0 0 8px 0!important;
+    padding:0!important;
 }}
-
-.mb-nav-icon img {{
-    width:25px;
-    height:25px;
-    object-fit:contain;
-    display:block;
+.mb-nav-item [data-testid="column"] {{
+    display:none!important;
 }}
-
-.mb-nav-button {{
-    flex:1;
+.mb-nav-item [data-testid="stVerticalBlock"] {{
+    gap:0!important;
 }}
-
-.mb-nav-button .stButton > button {{
+.mb-nav-item .stButton {{
     width:100%!important;
-    min-height:48px!important;
-    border-radius:17px!important;
+}}
+.mb-nav-item .stButton > button {{
+    width:100%!important;
+    min-height:50px!important;
+    border-radius:16px!important;
     border:1px solid rgba(255,231,163,.14)!important;
     background:
-        linear-gradient(135deg, rgba(32,9,48,.90), rgba(12,6,22,.98))!important;
+        linear-gradient(135deg, rgba(32,9,48,.92), rgba(12,6,22,.98))!important;
     color:var(--mb-gold)!important;
     font-weight:1000!important;
-    font-size:15px!important;
+    font-size:14px!important;
     text-align:left!important;
-    padding-left:18px!important;
-    padding-right:12px!important;
+    padding:12px 14px 12px 54px!important;
+    position:relative!important;
     box-shadow:
-        inset 0 0 0 1px rgba(255,255,255,.025),
-        0 10px 24px rgba(0,0,0,.16)!important;
-    transition:all .18s ease!important;
+        inset 0 0 0 1px rgba(255,255,255,.03),
+        0 8px 20px rgba(0,0,0,.14)!important;
+    transition:transform .16s ease, box-shadow .16s ease, border-color .16s ease!important;
 }}
-
-.mb-nav-button .stButton > button:hover {{
+.mb-nav-item .stButton > button::before {{
+    content:"";
+    position:absolute;
+    left:12px;
+    top:50%;
+    transform:translateY(-50%);
+    width:30px;
+    height:30px;
+    border-radius:11px;
+    background:
+        radial-gradient(circle at 30% 20%, rgba(255,231,163,.18), transparent 45%),
+        linear-gradient(135deg, rgba(49,18,62,.95), rgba(20,9,32,.98));
+    border:1px solid rgba(255,231,163,.14);
+    background-image:var(--mb-nav-icon);
+    background-repeat:no-repeat;
+    background-position:center;
+    background-size:20px 20px;
+    box-shadow:0 6px 14px rgba(0,0,0,.16);
+}}
+.mb-nav-item .stButton > button:hover {{
     transform:translateY(-1px)!important;
     color:#ffffff!important;
-    border-color:rgba(255,231,163,.34)!important;
+    border-color:rgba(255,231,163,.32)!important;
     background:
-        linear-gradient(135deg, rgba(91,33,182,.72), rgba(22,8,36,.98))!important;
-    box-shadow:0 0 24px rgba(168,85,247,.24)!important;
+        linear-gradient(135deg, rgba(91,33,182,.75), rgba(22,8,36,.98))!important;
+    box-shadow:0 0 22px rgba(168,85,247,.22)!important;
 }}
-
-.mb-nav-active .mb-nav-icon {{
-    background:
-        radial-gradient(circle at top left, rgba(255,231,163,.30), transparent 34%),
-        linear-gradient(135deg, rgba(126,34,206,.86), rgba(38,12,62,.98));
-    border-color:rgba(255,231,163,.48);
-    box-shadow:
-        0 0 26px rgba(168,85,247,.28),
-        0 0 14px rgba(255,231,163,.14);
-}}
-
-.mb-nav-active .mb-nav-button .stButton > button {{
+.mb-nav-active .stButton > button {{
     color:#ffffff!important;
-    border-color:rgba(255,231,163,.48)!important;
+    border-color:rgba(255,231,163,.45)!important;
     background:
-        linear-gradient(135deg, rgba(126,34,206,.80), rgba(38,12,62,.98))!important;
+        linear-gradient(135deg, rgba(126,34,206,.82), rgba(38,12,62,.98))!important;
     box-shadow:
-        0 0 30px rgba(168,85,247,.26),
+        0 0 28px rgba(168,85,247,.24),
         inset 0 0 0 1px rgba(255,255,255,.05)!important;
+}}
+.mb-nav-active .stButton > button::before {{
+    border-color:rgba(255,231,163,.42);
+    box-shadow:0 0 16px rgba(168,85,247,.28);
 }}
 
 .stTextInput input,
@@ -401,27 +393,9 @@ div[data-testid="stAlert"] {{
     }}
 }}
 
-/* Sidebar lock — page CSS must not override MaByte nav theme */
-section[data-testid="stSidebar"] {{
-    background:
-        radial-gradient(circle at top left, rgba(168,85,247,.24), transparent 25%),
-        radial-gradient(circle at bottom right, rgba(96,165,250,.10), transparent 34%),
-        linear-gradient(180deg,#16041f 0%,#230836 46%,#0d0315 100%)!important;
-    border-right:1px solid rgba(255,255,255,.09)!important;
-}}
-section[data-testid="stSidebar"] .stButton > button {{
-    background:
-        linear-gradient(135deg, rgba(32,9,48,.90), rgba(12,6,22,.98))!important;
-    color:#ffe7a3!important;
-    border:1px solid rgba(255,231,163,.14)!important;
-    border-radius:17px!important;
-    box-shadow:0 10px 24px rgba(0,0,0,.16)!important;
-}}
-section[data-testid="stSidebar"] .mb-nav-active .stButton > button {{
-    color:#ffffff!important;
-    border-color:rgba(255,231,163,.48)!important;
-    background:
-        linear-gradient(135deg, rgba(126,34,206,.80), rgba(38,12,62,.98))!important;
+/* Sidebar: only nav items + logout use themed buttons */
+section[data-testid="stSidebar"] .sidebar-logout-wrap .stButton > button {{
+    width:100%!important;
 }}
 """)
 
@@ -455,47 +429,24 @@ def nav(label: str, page: str) -> None:
     src = icon_src(page)
     is_active = st.session_state.get("page") == page
     active_class = "mb-nav-active" if is_active else ""
+    icon_var = f"url({src})" if src else "none"
 
     st.markdown(
-        f'<div class="mb-nav-row {active_class}">',
+        f'<div class="mb-nav-item {active_class}" style="--mb-nav-icon:{icon_var};">',
         unsafe_allow_html=True,
     )
-
-    icon_col, button_col = st.columns([0.19, 0.81], gap="small")
-
-    with icon_col:
-        if src:
-            st.markdown(
-                f"""
-<div class="mb-nav-icon">
-    <img src="{src}" alt="">
-</div>
-""",
-                unsafe_allow_html=True,
-            )
-        else:
-            st.markdown(
-                '<div class="mb-nav-icon"></div>',
-                unsafe_allow_html=True,
-            )
-
-    with button_col:
-        st.markdown('<div class="mb-nav-button">', unsafe_allow_html=True)
-
-        if st.button(label, key=f"nav_{page}", width="stretch"):
-            st.session_state.page = page
-            st.rerun()
-
-        st.markdown("</div>", unsafe_allow_html=True)
-
+    if st.button(label, key=f"nav_{page}", width="stretch"):
+        st.session_state.page = page
+        st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
 
 def _nav_section(title: str, items: list[tuple[str, str]]) -> None:
-    with st.container(border=True):
-        section_label(title)
-        for label, page in items:
-            nav(label, page)
+    st.markdown('<div class="mb-nav-section">', unsafe_allow_html=True)
+    section_label(title)
+    for label, page in items:
+        nav(label, page)
+    st.markdown("</div>", unsafe_allow_html=True)
 
 
 def render_sidebar() -> None:

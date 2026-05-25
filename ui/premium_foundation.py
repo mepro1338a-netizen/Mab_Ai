@@ -19,9 +19,7 @@ div[data-testid="stVerticalBlockBorderWrapper"] > div {
 .stDataFrame, [data-testid="stDataFrame"] {
     border-radius: 16px !important;
 }
-section[data-testid="stSidebar"] .stButton > button {
-    min-height: 44px !important;
-}
+/* Sidebar nav styled in ui_core.py */
 @media (max-width: 768px) {
     .mb-page-hero, .mb-hero {
         padding: 22px 20px !important;
@@ -215,13 +213,20 @@ def render_empty_state(title: str, message: str) -> None:
 
 
 def stripe_config_status() -> tuple[bool, list[str]]:
+    """Checkout needs STRIPE_SECRET_KEY + price IDs (webhook secret is separate service)."""
     import os
 
-    missing = []
+    from config import FOOTBALL_PLANS, PLANS
+
+    missing: list[str] = []
     if not os.getenv("STRIPE_SECRET_KEY", "").strip():
         missing.append("STRIPE_SECRET_KEY")
-    if not os.getenv("STRIPE_WEBHOOK_SECRET", "").strip():
-        missing.append("STRIPE_WEBHOOK_SECRET (Webhook-Service)")
+    for _key, plan in {**PLANS, **FOOTBALL_PLANS}.items():
+        if _key == "free":
+            continue
+        env_name = plan.get("stripe_price_env")
+        if env_name and not os.getenv(env_name, "").strip():
+            missing.append(env_name)
     return len(missing) == 0, missing
 
 
