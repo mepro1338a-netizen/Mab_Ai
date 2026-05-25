@@ -1,10 +1,12 @@
-# MaByte — Railway production
+# MaByte — Railway production (Config as Code)
 # https://docs.railway.com/reference/config-as-code
 
 [build]
-builder = "nixpacks"
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
 
 [deploy]
+# Fallback if Dockerfile CMD ignored; must match Dockerfile CMD exactly
 startCommand = "python gateway.py"
 healthcheckPath = "/healthz"
 healthcheckTimeout = 300

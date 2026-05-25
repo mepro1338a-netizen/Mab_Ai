@@ -330,6 +330,12 @@ async def run_gateway() -> None:
 
 
 def main() -> None:
+    print(
+        f"[MaByte] ENTRY gateway.py — public PORT={PUBLIC_PORT} "
+        f"streamlit internal={STREAMLIT_INTERNAL_PORT}",
+        file=sys.stderr,
+        flush=True,
+    )
     try:
         asyncio.run(run_gateway())
     except KeyboardInterrupt:
