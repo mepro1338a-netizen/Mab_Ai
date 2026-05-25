@@ -1,10 +1,32 @@
-﻿import sqlite3
+﻿"""MaByte Admin Control Panel — Owner / Admin / Moderator / Supporter."""
+from __future__ import annotations
+
+import html
+import io
+from datetime import datetime
+
 import pandas as pd
 import streamlit as st
 
 from config import DB_PATH, PLANS, FOOTBALL_PLANS
+from db.admin_stats import (
+    env_health_snapshot,
+    football_usage_aggregate,
+    platform_metrics,
+    staff_directory,
+)
+from ui.admin_ui import (
+    inject_admin_ui_css,
+    render_activity_feed,
+    render_distribution_bars,
+    render_hero,
+    render_kpi_grid,
+    render_section,
+    render_ticket_card,
+    render_user_header,
+)
 from ui.premium_foundation import render_status_badge, render_empty_state
-from ui.styles import inject_css, page_layout_css, gradient_title_css
+from ui.styles import inject_css, page_layout_css
 from database import (
     OWNER_USERNAME,
     ROLE_LEVELS,
@@ -25,12 +47,15 @@ from database import (
     set_support_status,
     delete_support_message,
     clear_login_logs,
+    list_login_logs,
+    list_audit_logs,
+    usage_summary,
 )
 
 try:
-    from database import list_login_logs
-except Exception:
-    list_login_logs = None
+    from database import recent_activity
+except ImportError:
+    recent_activity = None
 
 
 def refresh_actor_from_db():
@@ -77,19 +102,12 @@ def can_manage_roles():
     return is_admin()
 
 
-def can_manage_owner():
-    return is_owner()
-
-
 def force_owner():
     if current_username() != OWNER_USERNAME:
         return
-
     user = get_user(OWNER_USERNAME)
-
     if not user:
         return
-
     if user.get("role") != "owner" or int(user.get("admin_level") or 0) != 1337:
         set_role(OWNER_USERNAME, "owner", 1337)
         st.session_state.role = "owner"
@@ -99,312 +117,242 @@ def force_owner():
 def safe_int(value):
     try:
         return int(value or 0)
-    except Exception:
+    except (TypeError, ValueError):
         return 0
 
 
 def safe_float(value):
     try:
         return float(value or 0)
-    except Exception:
+    except (TypeError, ValueError):
         return 0.0
 
 
 def money(value):
-    return f"{safe_float(value):,.2f}€".replace(",", "X").replace(".", ",").replace("X", ".")
+    return f"{safe_float(value):,.2f} €".replace(",", "X").replace(".", ",").replace("X", ".")
 
 
-def safe_df(rows, height=430):
+def safe_df(rows, height=400):
     if not rows:
-        st.info("Keine Daten vorhanden.")
+        st.info("Keine Einträge.")
         return
-
-    st.dataframe(
-        pd.DataFrame(rows),
-        width="stretch",
-        hide_index=True,
-        height=height,
-    )
+    st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True, height=height)
 
 
 def require_panel_access():
     force_owner()
-
     if not is_supporter():
-        st.error("Kein Zugriff.")
+        st.error("Kein Zugriff auf das Admin Control Panel.")
         st.stop()
 
 
 def admin_css():
-    inject_css(page_layout_css(1380, 90, 90) + """
-.admin-title {
-    font-size: 56px;
-    line-height: .95;
-    font-weight: 1000;
-    letter-spacing: -3px;
-    background: linear-gradient(135deg, #ffe7a3, #c084fc, #60a5fa);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-.admin-sub {
-    color: #cbd5e1 !important;
-    font-size: 16px;
-    font-weight: 800;
-    margin-top: 10px;
-    margin-bottom: 26px;
-}
-
-.admin-pill {
-    display: inline-flex;
-    padding: 7px 13px;
-    border-radius: 999px;
-    background: linear-gradient(135deg, #7c3aed, #a855f7);
-    color: white !important;
-    font-size: 12px;
-    font-weight: 1000;
-    margin-right: 8px;
-}
-
-div[data-testid="stVerticalBlockBorderWrapper"] {
-    background:
-        radial-gradient(circle at top left, rgba(168,85,247,.12), transparent 32%),
-        linear-gradient(145deg, rgba(12,13,32,.92), rgba(6,7,18,.98)) !important;
-    border: 1px solid rgba(168,85,247,.16) !important;
-    border-radius: 24px !important;
-    box-shadow: 0 16px 40px rgba(0,0,0,.22) !important;
-}
-
+    inject_css(page_layout_css(1400, 88, 48))
+    inject_admin_ui_css()
+    inject_css("""
 .stButton > button {
-    min-height: 46px !important;
-    border-radius: 16px !important;
-    background:
-        radial-gradient(circle at top left, rgba(168,85,247,.22), transparent 34%),
-        linear-gradient(145deg, rgba(36,8,56,.98), rgba(12,3,25,.98)) !important;
-    border: 1px solid rgba(168,85,247,.34) !important;
-    color: #ffe7a3 !important;
-    font-size: 15px !important;
-    font-weight: 1000 !important;
+    min-height: 44px !important;
+    border-radius: 14px !important;
+    font-weight: 900 !important;
 }
-
-.stButton > button:hover {
-    transform: translateY(-2px) !important;
-    box-shadow: 0 0 24px rgba(168,85,247,.25) !important;
-}
-
-.stTextInput input,
-.stNumberInput input,
-.stSelectbox div[data-baseweb="select"] > div,
+.stTextInput input, .stNumberInput input, .stSelectbox div[data-baseweb="select"] > div,
 .stTextArea textarea {
-    background: rgba(14,10,28,.96) !important;
-    border: 1px solid rgba(168,85,247,.26) !important;
-    border-radius: 16px !important;
-    color: #ffe7a3 !important;
+    background: rgba(10,12,26,.95) !important;
+    border: 1px solid rgba(168,85,247,.22) !important;
+    border-radius: 14px !important;
+    color: #f8fafc !important;
 }
-
-[data-testid="metric-container"] {
-    background: linear-gradient(145deg, rgba(18,14,34,.88), rgba(8,7,18,.98)) !important;
-    border: 1px solid rgba(168,85,247,.18) !important;
-    border-radius: 22px !important;
-    padding: 18px !important;
-}
-
-[data-testid="metric-container"] label {
-    color: #c084fc !important;
-    font-size: 11px !important;
-    font-weight: 1000 !important;
-    text-transform: uppercase !important;
-}
-
-[data-testid="metric-container"] div {
-    color: #ffe7a3 !important;
-    font-weight: 1000 !important;
-}
-"""
-    )
+""")
 
 
-def render_header():
-    st.markdown(
-        f"""
-<div class="admin-title">Admin Control</div>
-<div class="admin-sub">
-    MaByte Internal Panel
-    <span class="admin-pill">{current_role().upper()}</span>
-    <span class="admin-pill">Level {current_level()}</span>
-</div>
-""",
-        unsafe_allow_html=True,
-    )
+def render_command_center():
+    m = platform_metrics()
+    render_kpi_grid([
+        ("Nutzer", str(m["users_total"]), f"+{m['users_new_7d']} diese Woche", "default"),
+        ("Aktiv 24h", str(m["users_active_24h"]), "Eingeloggt / aktiv", "good"),
+        ("Offene Tickets", str(m["tickets_open"]), f"{m['tickets_total']} gesamt", "warn" if m["tickets_open"] else "good"),
+        ("Umsatz", money(m["revenue_total"]), f"{money(m['revenue_7d'])} · 7T", "good"),
+        ("Usage 24h", str(m["usage_24h"]), f"{m['usage_total']} gesamt", "default"),
+        ("Tokens 7T", f"{m['tokens_7d']:,}".replace(",", "."), "Verbrauch", "default"),
+        ("Football Premium", str(m["football_paid"]), "Aktive FB-Pläne", "default"),
+        ("Security", str(m["failed_logins_24h"]), "Fehl-Logins 24h", "warn" if m["failed_logins_24h"] else "good"),
+    ])
 
-
-def render_overview():
-    users = list_users()
-    tickets = list_support_messages()
-    usage = list_usage()
-    payments = list_purchases()
-
-    open_tickets = len([t for t in tickets if t.get("status") == "open"])
-    banned = len([u for u in users if safe_int(u.get("is_banned")) == 1])
-    revenue = sum(safe_float(p.get("amount")) for p in payments)
-
-    c1, c2, c3, c4, c5 = st.columns(5)
-
+    c1, c2 = st.columns(2)
     with c1:
-        st.metric("User", len(users))
-
+        render_distribution_bars("Pläne (MaByte)", m.get("plans") or {})
     with c2:
-        st.metric("Tickets", open_tickets)
+        render_distribution_bars("Football Pläne", m.get("football_plans") or {})
 
-    with c3:
-        st.metric("Usage", len(usage))
+    st.markdown('<div class="adm-section" style="margin-top:12px">', unsafe_allow_html=True)
+    st.markdown('<div class="adm-section-title">Live Activity</div>', unsafe_allow_html=True)
+    feed = []
+    for row in (list_usage() or [])[:6]:
+        feed.append((
+            str(row.get("tool", "system")).replace("_", " ").title(),
+            f"{row.get('username', '')} · {str(row.get('created_at', ''))[:16]} · {row.get('cost_tokens', 0)} Tokens",
+        ))
+    for p in (list_purchases() or [])[:3]:
+        feed.append((
+            "Zahlung",
+            f"{p.get('username', '')} · {money(p.get('amount'))} · {str(p.get('created_at', ''))[:16]}",
+        ))
+    render_activity_feed(feed[:10])
+    st.markdown("</div>", unsafe_allow_html=True)
 
-    with c4:
-        st.metric("Revenue", money(revenue))
 
-    with c5:
-        st.metric("Banned", banned)
+def render_analytics():
+    if not is_moderator():
+        st.warning("Kein Zugriff.")
+        return
+    render_section("Platform Analytics", "Nutzung nach Workspace · letzte 7 Tage")
+    tool_rows = usage_summary(days=7)
+    if tool_rows:
+        tool_data = {str(r.get("tool") or "?"): int(r.get("runs") or 0) for r in tool_rows}
+        render_distribution_bars("Top Workspaces", tool_data)
+        safe_df(tool_rows, height=280)
+    else:
+        render_empty_state("Keine Usage-Daten", "Sobald Nutzer AI/Apps nutzen, erscheinen Stats hier.")
 
-    st.write("")
-
-    with st.container(border=True):
-        st.subheader("Role System")
-        st.write("Owner: alles. Admin: fast alles. Moderator: alles außer Rollen/Rechte. Supporter: nur Tickets.")
+    if is_owner():
+        fb_rows = football_usage_aggregate()
+        if fb_rows:
+            st.markdown('<div class="adm-section-title" style="margin-top:16px">Football API (7 Tage)</div>', unsafe_allow_html=True)
+            safe_df(fb_rows, height=220)
 
 
 def render_tickets():
-    st.subheader("Support Tickets")
-
+    render_section("Support Inbox", "Tickets bearbeiten, schließen, eskalieren")
     tickets = list_support_messages()
-
     if not tickets:
-        render_empty_state("Keine Tickets", "Sobald Nutzer Support anfragen, erscheinen sie hier.")
+        render_empty_state("Inbox leer", "Neue Support-Anfragen erscheinen hier.")
         return
 
-    status_filter = st.selectbox("Status", ["all", "open", "closed"])
+    f1, f2, f3 = st.columns(3)
+    with f1:
+        status_filter = st.selectbox("Status", ["all", "open", "closed"], key="adm_ticket_status")
+    with f2:
+        categories = sorted({str(t.get("category") or "Sonstiges") for t in tickets})
+        cat_filter = st.selectbox("Kategorie", ["all", *categories], key="adm_ticket_cat")
+    with f3:
+        st.metric("Offen", sum(1 for t in tickets if t.get("status") == "open"))
 
+    shown = 0
     for item in tickets:
         if status_filter != "all" and item.get("status") != status_filter:
             continue
+        if cat_filter != "all" and str(item.get("category") or "") != cat_filter:
+            continue
+        shown += 1
+        st.markdown(render_ticket_card(item), unsafe_allow_html=True)
+        c1, c2, c3, c4 = st.columns(4)
+        tid = item.get("id")
+        with c1:
+            if st.button("Öffnen", key=f"t_open_{tid}"):
+                set_support_status(tid, "open")
+                st.rerun()
+        with c2:
+            if st.button("Schließen", key=f"t_close_{tid}"):
+                set_support_status(tid, "closed")
+                st.rerun()
+        with c3:
+            render_status_badge(str(item.get("status") or "open"))
+        with c4:
+            if is_moderator() and st.button("Löschen", key=f"t_del_{tid}"):
+                delete_support_message(tid)
+                st.rerun()
+    if shown == 0:
+        st.info("Keine Tickets für diesen Filter.")
 
-        with st.container(border=True):
-            t1, t2 = st.columns([3, 1])
-            with t1:
-                st.markdown(f"### #{item.get('id')} · {item.get('subject', 'Ticket')}")
-            with t2:
-                render_status_badge(str(item.get("status") or "open"))
-            st.caption(
-                f"{item.get('category', 'Sonstiges')} · {item.get('username', '')} · "
-                f"{item.get('email', '')} · {str(item.get('created_at', ''))[:16]}"
-            )
-            st.write(item.get("message", ""))
 
-            c1, c2, c3 = st.columns(3)
-
-            with c1:
-                if st.button("Open", key=f"ticket_open_{item.get('id')}"):
-                    set_support_status(item.get("id"), "open")
-                    st.rerun()
-
-            with c2:
-                if st.button("Close", key=f"ticket_close_{item.get('id')}"):
-                    set_support_status(item.get("id"), "closed")
-                    st.rerun()
-
-            with c3:
-                if is_moderator():
-                    if st.button("Delete", key=f"ticket_delete_{item.get('id')}"):
-                        delete_support_message(item.get("id"))
-                        st.rerun()
+def _filter_users(users, search, role_f, plan_f, banned_f, fb_f):
+    for item in users:
+        uname = str(item.get("username") or "")
+        email = str(item.get("email") or "")
+        if search and search.lower() not in f"{uname} {email}".lower():
+            continue
+        if role_f != "all" and str(item.get("role") or "user") != role_f:
+            continue
+        if plan_f != "all" and str(item.get("plan") or "free") != plan_f:
+            continue
+        if fb_f != "all" and str(item.get("football_plan") or "none") != fb_f:
+            continue
+        if banned_f == "banned" and safe_int(item.get("is_banned")) != 1:
+            continue
+        if banned_f == "active" and safe_int(item.get("is_banned")) == 1:
+            continue
+        yield item
 
 
 def render_users():
     if not is_moderator():
-        st.warning("Supporter können nur Tickets bearbeiten.")
+        st.warning("Supporter: nur Tickets.")
         return
 
     refresh_actor_from_db()
     actor = current_username()
-
-    st.subheader("User Management")
-
     users = list_users()
 
-    search = st.text_input("User suchen", placeholder="Username oder Email")
+    render_section("User Operations", f"{len(users)} Accounts · sichere Verwaltung ohne Auto-Linking")
 
-    for item in users:
+    with st.container(border=True):
+        c1, c2, c3, c4, c5 = st.columns(5)
+        with c1:
+            search = st.text_input("Suche", placeholder="User / Email", key="adm_user_search")
+        with c2:
+            role_f = st.selectbox("Rolle", ["all", "user", "supporter", "moderator", "admin", "owner"], key="adm_f_role")
+        with c3:
+            plan_f = st.selectbox("Plan", ["all", *PLANS.keys()], key="adm_f_plan")
+        with c4:
+            fb_f = st.selectbox("Football", ["all", "none", *FOOTBALL_PLANS.keys()], key="adm_f_fb")
+        with c5:
+            banned_f = st.selectbox("Status", ["all", "active", "banned"], key="adm_f_ban")
+
+    filtered = list(_filter_users(users, search, role_f, plan_f, banned_f, fb_f))
+    st.caption(f"{len(filtered)} Treffer")
+
+    for item in filtered[:40]:
         uname = str(item.get("username") or "")
-        email = str(item.get("email") or "")
+        st.markdown(render_user_header(item), unsafe_allow_html=True)
 
-        if search and search.lower() not in f"{uname} {email}".lower():
-            continue
+        with st.expander(f"Verwalten · {uname}", expanded=False):
+            current_plan = str(item.get("plan") or "free")
+            current_fb = str(item.get("football_plan") or "none")
+            current_role_val = str(item.get("role") or "user")
+            current_tokens = safe_int(item.get("tokens"))
+            banned = safe_int(item.get("is_banned")) == 1
 
-        current_plan = str(item.get("plan") or "free")
-        current_football_plan = str(item.get("football_plan") or "none")
-        current_role = str(item.get("role") or "user")
-        current_level = safe_int(item.get("admin_level"))
-        current_tokens = safe_int(item.get("tokens"))
-        banned = safe_int(item.get("is_banned")) == 1
-
-        with st.container(border=True):
-            st.markdown(f"### {uname}")
-            st.caption(
-                f"{email} · {current_role} · Level {current_level} · "
-                f"FB: {current_football_plan}"
-            )
-
-            c1, c2, c3, c4, c5 = st.columns(5)
-
-            with c1:
-                new_tokens = st.number_input(
-                    "Tokens",
-                    min_value=0,
-                    value=current_tokens,
-                    key=f"tokens_{uname}",
-                )
-
-                if st.button("Tokens speichern", key=f"save_tokens_{uname}"):
+            g1, g2, g3 = st.columns(3)
+            with g1:
+                new_tokens = st.number_input("Tokens", 0, 1_000_000, current_tokens, key=f"tok_{uname}")
+                if st.button("Tokens speichern", key=f"save_tok_{uname}"):
                     ok, msg = secure_update_tokens(actor, uname, int(new_tokens))
-                    if ok:
-                        st.success(msg)
-                    else:
-                        st.error(msg)
+                    st.success(msg) if ok else st.error(msg)
                     st.rerun()
-
-            with c2:
+            with g2:
                 plans = list(PLANS.keys())
-                new_plan = st.selectbox(
-                    "Plan",
-                    plans,
-                    index=plans.index(current_plan) if current_plan in plans else 0,
-                    key=f"plan_{uname}",
-                )
-
-                if st.button("Plan speichern", key=f"save_plan_{uname}"):
+                new_plan = st.selectbox("Plan", plans, index=plans.index(current_plan) if current_plan in plans else 0, key=f"pl_{uname}")
+                if st.button("Plan speichern", key=f"save_pl_{uname}"):
                     ok, msg = secure_set_plan(actor, uname, new_plan)
-                    if ok:
-                        st.success(msg)
-                    else:
-                        st.error(msg)
+                    st.success(msg) if ok else st.error(msg)
+                    st.rerun()
+            with g3:
+                fb_plans = ["none", *FOOTBALL_PLANS.keys()]
+                fb_i = fb_plans.index(current_fb) if current_fb in fb_plans else 0
+                new_fb = st.selectbox("Football", fb_plans, index=fb_i, key=f"fb_{uname}",
+                    format_func=lambda x: "Keiner" if x == "none" else FOOTBALL_PLANS.get(x, {}).get("label", x))
+                if st.button("FB speichern", key=f"save_fb_{uname}"):
+                    ok, msg = secure_set_football_plan(actor, uname, new_fb)
+                    st.success(msg) if ok else st.error(msg)
                     st.rerun()
 
-            with c3:
+            g4, g5 = st.columns(2)
+            with g4:
                 if can_manage_roles():
-                    role_options = ["user", "supporter", "moderator", "admin"]
-
-                    if is_owner():
-                        role_options.append("owner")
-
-                    if current_role not in role_options:
-                        current_role = "user"
-
-                    new_role = st.selectbox(
-                        "Rolle",
-                        role_options,
-                        index=role_options.index(current_role),
-                        key=f"role_{uname}",
-                    )
-
+                    role_opts = ["user", "supporter", "moderator", "admin"] + (["owner"] if is_owner() else [])
+                    if current_role_val not in role_opts:
+                        current_role_val = "user"
+                    new_role = st.selectbox("Rolle", role_opts, index=role_opts.index(current_role_val), key=f"role_{uname}")
                     if st.button("Rolle speichern", key=f"save_role_{uname}"):
                         ok, msg = secure_set_role(actor, uname, new_role)
                         if ok:
@@ -414,76 +362,55 @@ def render_users():
                             st.error(msg)
                         st.rerun()
                 else:
-                    st.info("Rollenverwaltung für Moderatoren gesperrt.")
-
-            with c4:
-                fb_plans = ["none"] + list(FOOTBALL_PLANS.keys())
-                fb_index = (
-                    fb_plans.index(current_football_plan)
-                    if current_football_plan in fb_plans
-                    else 0
-                )
-                new_fb_plan = st.selectbox(
-                    "Football Plan",
-                    fb_plans,
-                    index=fb_index,
-                    format_func=lambda x: (
-                        "Keiner" if x == "none" else FOOTBALL_PLANS.get(x, {}).get("label", x)
-                    ),
-                    key=f"fb_plan_{uname}",
-                )
-                if st.button("FB-Plan speichern", key=f"save_fb_{uname}"):
-                    ok, msg = secure_set_football_plan(actor, uname, new_fb_plan)
-                    if ok:
-                        st.success(msg)
-                    else:
-                        st.error(msg)
-                    st.rerun()
-
-            with c5:
+                    st.info("Rollen: nur Admin/Owner")
+            with g5:
                 if uname == OWNER_USERNAME and not is_owner():
-                    st.info("Owner geschützt.")
+                    st.warning("Owner geschützt.")
                 else:
-                    if st.button("Ban" if not banned else "Unban", key=f"ban_{uname}"):
+                    if st.button("Sperren" if not banned else "Entsperren", key=f"ban_{uname}"):
                         ok, msg = secure_ban_user(actor, uname, not banned)
-                        if ok:
-                            st.success(msg)
-                        else:
-                            st.error(msg)
+                        st.success(msg) if ok else st.error(msg)
                         st.rerun()
-
                     if is_admin() and uname != OWNER_USERNAME:
-                        if st.button("User löschen", key=f"delete_{uname}"):
+                        if st.button("Account löschen", key=f"del_{uname}", type="primary"):
                             ok, msg = secure_delete_user(actor, uname)
-                            if ok:
-                                st.success(msg)
-                            else:
-                                st.error(msg)
+                            st.success(msg) if ok else st.error(msg)
                             st.rerun()
 
+    if len(filtered) > 40:
+        st.caption("Zeige max. 40 User — Filter verfeinern.")
 
-def render_redeem():
+
+def render_revenue():
     if not is_moderator():
-        st.warning("Kein Zugriff.")
         return
+    payments = list_purchases()
+    paid = [p for p in payments if str(p.get("payment_status") or "") == "paid"]
+    render_section("Revenue Center", f"{len(paid)} erfolgreiche Zahlungen")
+    render_kpi_grid([
+        ("Umsatz gesamt", money(sum(safe_float(p.get("amount")) for p in paid)), f"{len(paid)} Payments", "good"),
+        ("Durchschnitt", money(sum(safe_float(p.get("amount")) for p in paid) / max(len(paid), 1)), "pro Zahlung", "default"),
+        ("Stripe Sessions", str(len(payments)), "inkl. offen", "default"),
+        ("Letzte", str(payments[0].get("username", "—")) if payments else "—", str(payments[0].get("created_at", ""))[:16] if payments else "", "default"),
+    ])
+    safe_df(payments[:100], height=420)
 
-    st.subheader("Redeem Codes")
 
+def render_codes():
+    if not is_moderator():
+        return
+    render_section("Redeem Codes", "Tokens, Pläne & Combos ausgeben")
     with st.container(border=True):
         c1, c2, c3 = st.columns(3)
-
         with c1:
-            code_type = st.selectbox("Typ", ["tokens", "plan", "combo"])
-            tokens = st.number_input("Tokens", min_value=0, value=100)
-
+            code_type = st.selectbox("Typ", ["tokens", "plan", "combo"], key="adm_code_type")
+            tokens = st.number_input("Tokens", 0, 100000, 100, key="adm_code_tok")
         with c2:
-            plan = st.selectbox("Plan", ["", *PLANS.keys()])
-            max_uses = st.number_input("Max Uses", min_value=1, value=1)
-
+            plan = st.selectbox("Plan", ["", *PLANS.keys()], key="adm_code_plan")
+            max_uses = st.number_input("Max Uses", 1, 10000, 1, key="adm_code_uses")
         with c3:
-            days = st.number_input("Gültig Tage", min_value=1, value=30)
-
-        if st.button("Code erstellen", width="stretch"):
+            days = st.number_input("Gültig (Tage)", 1, 365, 30, key="adm_code_days")
+        if st.button("Code generieren", type="primary", width="stretch"):
             code = create_redeem_code(
                 code_type=code_type,
                 tokens=int(tokens),
@@ -492,120 +419,155 @@ def render_redeem():
                 created_by=current_username(),
                 days_valid=int(days),
             )
-            st.success("Code erstellt:")
+            st.success("Code erstellt")
             st.code(code)
-
-    st.write("")
     safe_df(list_codes(), height=360)
 
 
-def render_usage():
-    if not is_moderator():
-        st.warning("Kein Zugriff.")
-        return
-
-    st.subheader("Usage Logs")
-    safe_df(list_usage(), height=520)
-
-
-def render_payments():
-    if not is_moderator():
-        st.warning("Kein Zugriff.")
-        return
-
-    st.subheader("Payments")
-    safe_df(list_purchases(), height=520)
-
-
-def render_login_logs():
+def render_security():
     if not is_admin():
-        st.warning("Nur Admins und Owner.")
+        st.warning("Nur Admin & Owner.")
         return
+    render_section("Security & Audit", "Login-Versuche und Admin-Aktionen")
 
-    st.subheader("Login Logs")
+    c1, c2 = st.columns(2)
+    with c1:
+        if st.button("Login-Logs leeren", width="stretch"):
+            clear_login_logs()
+            st.success("Login-Logs gelöscht.")
+            st.rerun()
+    with c2:
+        failed = sum(1 for l in list_login_logs(limit=100) if not safe_int(l.get("success")))
+        st.metric("Fehlversuche (letzte 100)", failed)
 
-    if st.button("Login Logs clearen", width="stretch"):
-        clear_login_logs()
-        st.success("Login Logs gelöscht.")
-        st.rerun()
+    tab_login, tab_audit = st.tabs(["Login Logs", "Audit Trail"])
+    with tab_login:
+        safe_df(list_login_logs(limit=250), height=400)
+    with tab_audit:
+        if list_audit_logs:
+            safe_df(list_audit_logs(limit=250), height=400)
+        else:
+            st.info("Audit-Logs leer.")
 
-    if list_login_logs is None:
-        st.info("Login Logs sind nicht aktiviert.")
+
+def render_team():
+    if not is_admin():
+        st.warning("Nur Admin & Owner.")
         return
+    render_section("Team Directory", "Interne Rollen & Berechtigungen")
+    staff = staff_directory()
+    if not staff:
+        render_empty_state("Kein Team", "Weise Rollen unter Users zu.")
+        return
+    for member in staff:
+        st.markdown(render_user_header(member), unsafe_allow_html=True)
+    st.markdown(
+        """
+| Rolle | Level | Rechte |
+|--------|-------|--------|
+| Supporter | 1 | Tickets |
+| Moderator | 2 | + Users, Codes, Usage, Revenue |
+| Admin | 3 | + Rollen, Security, Audit |
+| Owner | 1337 | Vollzugriff + System |
+        """
+    )
 
-    safe_df(list_login_logs(limit=300), height=520)
 
-
-def render_owner_console():
+def render_owner_os():
     if not is_owner():
-        st.warning("Nur Owner.")
+        st.warning("Nur Owner (mepro1337).")
         return
 
-    st.subheader("Owner Console")
+    render_section("Owner Operations", "System, Export, Bulk-Aktionen")
 
-    with st.container(border=True):
-        st.write("Owner Mode aktiv.")
-        st.write("mepro1337 ist dauerhaft als Owner geschützt.")
-
-        if st.button("mepro1337 als Owner setzen", width="stretch"):
+    c1, c2 = st.columns(2)
+    with c1:
+        if st.button("Owner-Rechte für mepro1337 erzwingen", width="stretch"):
             set_role(OWNER_USERNAME, "owner", 1337)
             st.success("Owner gesetzt.")
             st.rerun()
+    with c2:
+        users = list_users()
+        csv_buf = io.StringIO()
+        if users:
+            pd.DataFrame(users).to_csv(csv_buf, index=False)
+            st.download_button(
+                "User-Export (CSV)",
+                csv_buf.getvalue(),
+                file_name=f"mabyte_users_{datetime.utcnow().strftime('%Y%m%d')}.csv",
+                mime="text/csv",
+                width="stretch",
+            )
+
+    with st.container(border=True):
+        st.markdown("**Bulk Token Grant**")
+        bc1, bc2 = st.columns(2)
+        with bc1:
+            bulk_user = st.text_input("Username", key="owner_bulk_user")
+        with bc2:
+            bulk_tokens = st.number_input("Tokens", 0, 10_000_000, 1000, key="owner_bulk_tok")
+        if st.button("Tokens vergeben", key="owner_bulk_grant"):
+            ok, msg = secure_update_tokens(current_username(), bulk_user.strip().lower(), int(bulk_tokens))
+            st.success(msg) if ok else st.error(msg)
+
+    st.markdown('<div class="adm-section-title" style="margin-top:16px">System Health (ENV)</div>', unsafe_allow_html=True)
+    env_rows = env_health_snapshot()
+    env_html = "".join(
+        f'<div class="adm-activity"><div class="t">{html.escape(label)}</div>'
+        f'<div class="d"><span class="{"adm-env-ok" if ok else "adm-env-miss"}">'
+        f'{"Konfiguriert" if ok else "Fehlt"}</span></div></div>'
+        for label, ok in env_rows
+    )
+    st.markdown(env_html, unsafe_allow_html=True)
+    st.caption(f"Datenbank: {DB_PATH}")
 
 
 def render_admin():
     require_panel_access()
     refresh_actor_from_db()
     admin_css()
-    render_header()
+    render_hero(current_role(), current_level(), is_owner=is_owner())
 
     if current_role() == "supporter" and not is_moderator():
-        tabs = st.tabs(["Tickets"])
-        with tabs[0]:
-            render_tickets()
+        render_tickets()
         return
 
-    tabs = ["Overview", "Tickets", "Users", "Redeem", "Usage", "Payments"]
-
+    tabs = ["Command Center", "Users", "Tickets", "Revenue", "Codes", "Analytics"]
     if is_admin():
-        tabs.append("Login Logs")
-
+        tabs.extend(["Security", "Team"])
     if is_owner():
-        tabs.append("Owner")
+        tabs.append("Owner OS")
 
-    tab_objects = st.tabs(tabs)
+    tab_objs = st.tabs(tabs)
+    idx = 0
 
-    index = 0
-
-    with tab_objects[index]:
-        render_overview()
-    index += 1
-
-    with tab_objects[index]:
-        render_tickets()
-    index += 1
-
-    with tab_objects[index]:
+    with tab_objs[idx]:
+        render_command_center()
+    idx += 1
+    with tab_objs[idx]:
         render_users()
-    index += 1
-
-    with tab_objects[index]:
-        render_redeem()
-    index += 1
-
-    with tab_objects[index]:
-        render_usage()
-    index += 1
-
-    with tab_objects[index]:
-        render_payments()
-    index += 1
+    idx += 1
+    with tab_objs[idx]:
+        render_tickets()
+    idx += 1
+    with tab_objs[idx]:
+        render_revenue()
+    idx += 1
+    with tab_objs[idx]:
+        render_codes()
+    idx += 1
+    with tab_objs[idx]:
+        render_analytics()
+    idx += 1
 
     if is_admin():
-        with tab_objects[index]:
-            render_login_logs()
-        index += 1
+        with tab_objs[idx]:
+            render_security()
+        idx += 1
+        with tab_objs[idx]:
+            render_team()
+        idx += 1
 
     if is_owner():
-        with tab_objects[index]:
-            render_owner_console()
+        with tab_objs[idx]:
+            render_owner_os()
