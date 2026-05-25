@@ -32,13 +32,17 @@ from stripe_webhook_handler import WEBHOOK_PATH, process_stripe_webhook
 STREAMLIT_INTERNAL_PORT = int(os.environ.get("STREAMLIT_INTERNAL_PORT", "8502"))
 STREAMLIT_BASE = f"http://127.0.0.1:{STREAMLIT_INTERNAL_PORT}"
 STREAMLIT_WS_BASE = f"ws://127.0.0.1:{STREAMLIT_INTERNAL_PORT}"
-PUBLIC_PORT = int(os.environ.get("PORT", "8501"))
 
 HEALTH_PATHS = {"/_stcore/health", "/healthz", "/"}
 
 
+def public_port() -> int:
+    """Railway injects PORT; local dev fallback 8080."""
+    return int(os.environ.get("PORT", "8080"))
+
+
 def configure_production_env() -> None:
-    os.environ.setdefault("PORT", str(PUBLIC_PORT))
+    os.environ.setdefault("PORT", "8080")
     os.environ.setdefault("STREAMLIT_SERVER_PORT", str(STREAMLIT_INTERNAL_PORT))
     os.environ.setdefault("STREAMLIT_SERVER_ADDRESS", "127.0.0.1")
     os.environ.setdefault("STREAMLIT_SERVER_HEADLESS", "true")
@@ -54,7 +58,7 @@ def bootstrap() -> None:
 
         base = os.environ.get("APP_BASE_URL", "").strip() or "(not set)"
         log_info(
-            f"Gateway boot — public_port={PUBLIC_PORT} "
+            f"Gateway boot — public_port={public_port()} "
             f"streamlit_internal={STREAMLIT_INTERNAL_PORT} APP_BASE_URL={base}"
         )
         if not base.startswith("https://"):
@@ -307,14 +311,15 @@ async def run_gateway() -> None:
 
     runner = web.AppRunner(app)
     await runner.setup()
-    site = web.TCPSite(runner, "0.0.0.0", PUBLIC_PORT)
+    port = public_port()
+    site = web.TCPSite(runner, "0.0.0.0", port)
     await site.start()
 
     try:
         from logger import log_info
-        log_info(f"Gateway listening on 0.0.0.0:{PUBLIC_PORT} (boot health OK)")
+        log_info(f"Gateway listening on 0.0.0.0:{port} (boot health OK)")
     except Exception:
-        print(f"[MaByte] Gateway on :{PUBLIC_PORT}", file=sys.stderr)
+        print(f"[MaByte] Gateway on 0.0.0.0:{port}", file=sys.stderr)
 
     asyncio.create_task(_warm_streamlit(app))
     asyncio.create_task(_watch_streamlit(app))
@@ -331,7 +336,8 @@ async def run_gateway() -> None:
 
 def main() -> None:
     print(
-        f"[MaByte] ENTRY gateway.py — public PORT={PUBLIC_PORT} "
+        f"[MaByte] ENTRY gateway.py — public PORT={public_port()} "
+        f"(env PORT={os.environ.get('PORT', '(unset)')}) "
         f"streamlit internal={STREAMLIT_INTERNAL_PORT}",
         file=sys.stderr,
         flush=True,
