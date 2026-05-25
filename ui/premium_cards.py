@@ -16,6 +16,7 @@ from services.billing_plans import (
 from services.stripe_verify import (
     STRIPE_VERIFY_CACHE_KEY,
     get_stripe_verify_cache,
+    refresh_stripe_verify_cache,
 )
 from ui.stripe_checkout import start_checkout_session
 
@@ -156,9 +157,13 @@ def render_stripe_status_banner() -> None:
         st.success(f"Stripe Checkout aktiv: {labels}")
 
     if broken:
+        details = []
+        for k in broken:
+            err = (cache.get(k) or {}).get("error") or ""
+            details.append(f"{k}" + (f" ({err})" if err else ""))
         st.warning(
-            "Diese Pläne haben eine ungültige Stripe Price-ID (Grand/football_starter als Vorlage): "
-            + ", ".join(broken)
+            "Diese Pläne sind bei Stripe nicht als Abo-Preis gültig: "
+            + "; ".join(details)
         )
 
 
@@ -186,7 +191,7 @@ def render_stripe_diagnostics_admin() -> None:
                 err = row.get("error") or "unbekannt"
                 st.markdown(f"❌ **{plan_key}** — `{env}` → `{pid}` — {err}")
         if st.button("Stripe erneut prüfen", key="stripe_verify_refresh"):
-            st.session_state.pop(STRIPE_VERIFY_CACHE_KEY, None)
+            refresh_stripe_verify_cache()
             st.rerun()
 
 

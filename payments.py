@@ -23,7 +23,8 @@ from services.billing_plans import (
     stripe_price_env_name,
 )
 
-stripe.api_key = os.getenv("STRIPE_SECRET_KEY", "")
+_stripe_key = os.getenv("STRIPE_SECRET_KEY", "").strip()
+stripe.api_key = _stripe_key
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
 
 

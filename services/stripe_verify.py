@@ -15,11 +15,35 @@ from services.billing_plans import (
     stripe_price_env_name,
 )
 
+try:
+    from stripe import InvalidRequestError as StripeInvalidRequestError
+except ImportError:
+    from stripe.error import InvalidRequestError as StripeInvalidRequestError  # type: ignore
+
 ALL_CHECKOUT_KEYS = (*AI_CHECKOUT_KEYS, *FOOTBALL_CHECKOUT_KEYS)
 
 
 def _stripe_ready() -> bool:
-    return bool(os.getenv("STRIPE_SECRET_KEY", "").strip())
+    key = os.getenv("STRIPE_SECRET_KEY", "").strip()
+    if key:
+        stripe.api_key = key
+    return bool(key)
+
+
+def _stripe_field(obj: Any, key: str, default: Any = None) -> Any:
+    """Stripe SDK v10+ Price objects have no .get() — use attr or []."""
+    if obj is None:
+        return default
+    try:
+        val = getattr(obj, key, None)
+        if val is not None:
+            return val
+    except Exception:
+        pass
+    try:
+        return obj[key]
+    except Exception:
+        return default
 
 
 def verify_price_id(price_id: str) -> dict[str, Any]:
@@ -51,9 +75,12 @@ def verify_price_id(price_id: str) -> dict[str, Any]:
 
     try:
         price = stripe.Price.retrieve(price_id)
-        result["active"] = bool(price.get("active"))
-        result["recurring"] = bool(price.get("recurring"))
-        result["livemode"] = price.get("livemode")
+        active = _stripe_field(price, "active", False)
+        recurring = _stripe_field(price, "recurring", None)
+        result["active"] = bool(active)
+        result["recurring"] = bool(recurring)
+        result["livemode"] = _stripe_field(price, "livemode", None)
+
         if not result["active"]:
             result["error"] = "Price ist in Stripe deaktiviert (inactive)"
             return result
@@ -61,12 +88,14 @@ def verify_price_id(price_id: str) -> dict[str, Any]:
             result["error"] = "Kein Abo-Preis — in Stripe „Recurring/monthly“ anlegen"
             return result
         result["ok"] = True
+        result["error"] = ""
         return result
-    except stripe.error.InvalidRequestError as exc:
-        result["error"] = str(exc.user_message or exc) or "Price-ID unbekannt in Stripe"
+    except StripeInvalidRequestError as exc:
+        msg = getattr(exc, "user_message", None) or str(exc)
+        result["error"] = str(msg) or "Price-ID unbekannt in Stripe"
         return result
     except Exception as exc:
-        result["error"] = str(exc)
+        result["error"] = str(exc) or "Stripe-Prüfung fehlgeschlagen"
         return result
 
 
@@ -107,6 +136,17 @@ def get_stripe_verify_cache() -> dict[str, dict[str, Any]]:
         if STRIPE_VERIFY_CACHE_KEY not in st.session_state:
             st.session_state[STRIPE_VERIFY_CACHE_KEY] = verify_all_checkout_plans()
         return st.session_state[STRIPE_VERIFY_CACHE_KEY]
+    except Exception:
+        return verify_all_checkout_plans()
+
+
+def refresh_stripe_verify_cache() -> dict[str, dict[str, Any]]:
+    try:
+        import streamlit as st
+
+        data = verify_all_checkout_plans()
+        st.session_state[STRIPE_VERIFY_CACHE_KEY] = data
+        return data
     except Exception:
         return verify_all_checkout_plans()
 
