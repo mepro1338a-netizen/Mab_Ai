@@ -14,30 +14,6 @@ ICON_B2B = """<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path 
 
 def premium_css():
     premium_foundation_css(1180, 80, """
-.stApp,
-[data-testid="stAppViewContainer"] {
-    background:
-        radial-gradient(circle at 18% 5%, rgba(56,189,248,.24), transparent 28%),
-        radial-gradient(circle at 90% 0%, rgba(124,58,237,.20), transparent 30%),
-        linear-gradient(180deg,#06111f 0%,#0a1d38 48%,#0b2a55 100%) !important;
-}
-
-[data-testid="stHeader"] {
-    background: transparent !important;
-}
-
-section[data-testid="stSidebar"] {
-    background:#06111f!important;
-}
-
-section[data-testid="stSidebar"] .stButton > button{
-    background:linear-gradient(135deg,#38bdf8,#0ea5e9)!important;
-    color:#ffffff!important;
-    border:none!important;
-    border-radius:18px!important;
-    box-shadow:0 12px 24px rgba(14,165,233,.22)!important;
-}
-
 h1,h2,h3,p,span,label,
 div[data-testid="stMarkdownContainer"],
 div[data-testid="stCaptionContainer"]{
@@ -325,7 +301,7 @@ def bubble(label, value, sub=""):
     )
 
 
-def normal_card(plan_key):
+def normal_card(plan_key, stripe_enabled: bool = True):
     plan = PLANS[plan_key]
     highlights = plan.get("highlights", [])[:3]
     token_text = f"{int(plan.get('tokens', 0)):,}".replace(",", ".")
@@ -353,13 +329,13 @@ def normal_card(plan_key):
             "Aktiv" if current else f"{plan.get('label')} abonnieren",
             key=f"normal_{plan_key}",
             width="stretch",
-            disabled=current or not stripe_ok,
+            disabled=current or not stripe_enabled,
         ):
             start_checkout(plan_key)
         render_checkout_link(plan_key)
 
 
-def football_card(plan_key):
+def football_card(plan_key, stripe_enabled: bool = True):
     plan = FOOTBALL_PLANS[plan_key]
     highlights = plan.get("highlights", [])[:3]
 
@@ -395,7 +371,7 @@ def football_card(plan_key):
             "Aktiv" if current_fb else f"{plan.get('label')} abonnieren",
             key=f"football_{plan_key}",
             width="stretch",
-            disabled=current_fb or not stripe_ok,
+            disabled=current_fb or not stripe_enabled,
         ):
             start_checkout(plan_key)
         render_checkout_link(plan_key)
@@ -432,13 +408,13 @@ def render_premium():
     c1, c2, c3 = st.columns(3, gap="medium")
 
     with c1:
-        normal_card("pro")
+        normal_card("pro", stripe_ok)
 
     with c2:
-        normal_card("grand")
+        normal_card("grand", stripe_ok)
 
     with c3:
-        normal_card("elite")
+        normal_card("elite", stripe_ok)
 
     st.info("Token-System: 1€ = 100 Tokens. Tokens gelten für normale MaByte AI Actions.")
 
@@ -451,13 +427,13 @@ def render_premium():
     f1, f2, f3 = st.columns(3, gap="medium")
 
     with f1:
-        football_card("football_starter")
+        football_card("football_starter", stripe_ok)
 
     with f2:
-        football_card("football_pro")
+        football_card("football_pro", stripe_ok)
 
     with f3:
-        football_card("football_elite")
+        football_card("football_elite", stripe_ok)
 
     st.markdown(
         f"""

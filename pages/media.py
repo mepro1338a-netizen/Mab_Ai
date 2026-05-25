@@ -659,8 +659,63 @@ def render_coding_ai():
         run_paid_ai("coding", task, cost, "mabyte_code")
 
 
+def render_video_studio():
+    """Long-form / cinematic video — separate from short Reels."""
+    render_hero(
+        "Video Studio",
+        "Cinematic & long-form AI video planning (Kling, Runway). Nicht dasselbe wie Reels Studio.",
+    )
+
+    seconds = st.slider("Ziel-Länge (Sekunden)", min_value=8, max_value=60, value=15, key="vs_seconds")
+    cost = get_reel_video_cost(min(seconds, 7)) + max(0, seconds - 7) * 15
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.metric("Preis (ca.)", f"{cost} Tokens")
+    with c2:
+        st.metric("Länge", f"{seconds}s")
+    with c3:
+        st.metric("Tokens", get_tokens())
+
+    with st.container(border=True):
+        topic = st.text_area(
+            "Video-Konzept",
+            height=140,
+            placeholder="z.B. 30s Brand Story, Produkt-Launch, Dokumentar-Stil...",
+            key="vs_topic",
+        )
+        platform = st.selectbox(
+            "Plattform",
+            ["YouTube", "Website", "Ads", "Instagram (Feed)", "LinkedIn"],
+            key="vs_platform",
+        )
+        style = st.selectbox(
+            "Stil",
+            ["Cinematic", "Documentary", "Premium", "Corporate", "Storytelling"],
+            key="vs_style",
+        )
+        provider = st.selectbox("Provider (später)", ["Kling", "Runway", "Replicate"], key="vs_provider")
+
+    if st.button("Video-Paket erstellen", width="stretch", key="btn_video_studio"):
+        if not topic.strip():
+            st.warning("Bitte ein Video-Konzept eingeben.")
+            return
+        prompt = f"""
+Erstelle ein professionelles LONG-FORM Video-Produktionspaket (kein 7s Reel).
+
+Thema: {topic}
+Länge: {seconds} Sekunden
+Plattform: {platform}
+Stil: {style}
+Provider-Ziel: {provider}
+
+Liefere: Storyboard, Shots, Voiceover-Skizze, Caption, Thumbnail-Konzept, Export-Checkliste.
+"""
+        run_paid_ai("reel_video", prompt, cost, "mabyte_video_studio")
+
+
 def render_reels_studio():
-    render_hero("Reels Studio", "Create scripts, videos and automation flows.")
+    render_hero("Reels Studio", "Kurzform: Script, 3–7s Clips & Automation — getrennt vom Video Studio.")
 
     tab_script, tab_video, tab_auto = st.tabs(["Script · 90", "Video · 3–7s", "Automation · Unlock"])
 
@@ -685,7 +740,6 @@ def render_media(active_tool="reels"):
     elif active_tool == "coding":
         render_coding_ai()
     elif active_tool == "video":
-        render_hero("Video AI", "Short video systems for creators.")
-        render_reel_video()
+        render_video_studio()
     else:
         render_reels_studio()

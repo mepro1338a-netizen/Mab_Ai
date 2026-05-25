@@ -21,7 +21,7 @@ ICON_MAP = {
     "football": "football",
     "image": "image",
     "video": "video",
-    "reels": "video",
+    "reels": "reels",
     "music": "music",
     "coding": "code",
     "dashboard": "dashboard",
@@ -370,6 +370,29 @@ div[data-testid="stAlert"] {{
     .custom-topbar {{
         height:64px;
     }}
+}}
+
+/* Sidebar lock — page CSS must not override MaByte nav theme */
+section[data-testid="stSidebar"] {{
+    background:
+        radial-gradient(circle at top left, rgba(168,85,247,.24), transparent 25%),
+        radial-gradient(circle at bottom right, rgba(96,165,250,.10), transparent 34%),
+        linear-gradient(180deg,#16041f 0%,#230836 46%,#0d0315 100%)!important;
+    border-right:1px solid rgba(255,255,255,.09)!important;
+}}
+section[data-testid="stSidebar"] .stButton > button {{
+    background:
+        linear-gradient(135deg, rgba(32,9,48,.90), rgba(12,6,22,.98))!important;
+    color:#ffe7a3!important;
+    border:1px solid rgba(255,231,163,.14)!important;
+    border-radius:17px!important;
+    box-shadow:0 10px 24px rgba(0,0,0,.16)!important;
+}}
+section[data-testid="stSidebar"] .mb-nav-active .stButton > button {{
+    color:#ffffff!important;
+    border-color:rgba(255,231,163,.48)!important;
+    background:
+        linear-gradient(135deg, rgba(126,34,206,.80), rgba(38,12,62,.98))!important;
 }}
 """)
 

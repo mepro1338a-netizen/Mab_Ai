@@ -242,7 +242,11 @@ def session_football_plan() -> str:
 
 
 def football_css() -> None:
-    premium_foundation_css(1280, 88, """
+    """Page-only styles — never override global sidebar (see ui_core)."""
+    from ui.premium_foundation import BETA_GLOBAL_CSS
+    from ui.styles import MB_THEME_VARS, inject_css, page_layout_css
+
+    inject_css(MB_THEME_VARS + page_layout_css(1280, 88, 48) + BETA_GLOBAL_CSS + """
 .fb-title {
     font-size: 38px;
     font-weight: 1000;

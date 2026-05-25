@@ -69,6 +69,7 @@ DEFAULTS = {
     "user": None,
     "email": "",
     "plan": "free",
+    "football_plan": "none",
     "tokens": 0,
     "role": "user",
     "admin_level": 0,
