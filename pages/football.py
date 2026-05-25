@@ -52,6 +52,14 @@ from ui.premium_foundation import (
     render_feature_grid,
     render_upgrade_card,
 )
+from ui.football_premium import inject_football_premium_css
+from pages.football_hub import (
+    render_tab_automation,
+    render_tab_betting_ai,
+    render_tab_live_intel,
+    render_tab_match_preview,
+    render_tab_viral_studio,
+)
 from ui.prompt_ui import prompt_text_input
 from services.football_odds import (
     calculate_tip_odds,
@@ -282,6 +290,7 @@ def football_css() -> None:
     from ui.styles import MB_THEME_VARS, inject_css, page_layout_css
 
     inject_football_ui_css()
+    inject_football_premium_css()
     inject_css(MB_THEME_VARS + page_layout_css(1280, 88, 48) + BETA_GLOBAL_CSS + """
 .fb-page-marker { display: none; }
 .fb-title {
@@ -1252,11 +1261,11 @@ def render_football_odds_calculator(summary: dict) -> None:
     )
     user = current_username()
     plan = session_football_plan()
-    ok, _, need = can_access_feature(user, "elite_odds_calculator", plan)
+    ok, _, need = can_access_feature(user, "ai_betting_intelligence", plan)
 
     if not ok:
         render_upgrade_card(
-            "Odds Lab — Football Elite",
+            "Betting Intelligence — Football Pro",
             "Live-Marktdaten, Prognosen und mathematische Value-Bet-Analyse.",
             need,
             button_key="fb_odds_upgrade",
@@ -1523,7 +1532,7 @@ def render_football() -> None:
         return
 
     football_css()
-    st.markdown('<div class="fb-page">', unsafe_allow_html=True)
+    st.markdown('<div class="fb-page fb-premium">', unsafe_allow_html=True)
 
     summary = usage_summary(current_username(), session_football_plan())
     api_line = (
@@ -1534,7 +1543,7 @@ def render_football() -> None:
 
     render_command_hero(
         "Football Intelligence",
-        "Dein professionelles SaaS für Live-Daten, Creator-Content und Elite-Analysen.",
+        "AI Plattform für Creator, Wett-Analysten & Fußball-Media — nicht nur Live Scores.",
         summary["plan_label"],
         api_line,
     )
@@ -1554,20 +1563,41 @@ def render_football() -> None:
     render_plan_status()
     st.divider()
 
-    tab_live, tab_ai, tab_odds, tab_plans = st.tabs(
-        ["Data Mesh", "AI Engine", "Odds Lab", "Dein Plan"]
+    user = current_username()
+    plan = session_football_plan()
+    hub_kw = dict(summary=summary, username=user, session_plan=plan, open_premium=open_premium)
+
+    tab_mesh, tab_live, tab_bet, tab_prev, tab_vir, tab_auto, tab_plan = st.tabs(
+        [
+            "Data Mesh",
+            "Live Intel",
+            "Betting AI",
+            "Match Preview",
+            "Viral Studio",
+            "Automation",
+            "Dein Plan",
+        ]
     )
 
-    with tab_live:
+    with tab_mesh:
         render_football_live_data(summary)
 
-    with tab_ai:
-        render_football_ai_engine(summary)
+    with tab_live:
+        render_tab_live_intel(**hub_kw)
 
-    with tab_odds:
-        render_football_odds_calculator(summary)
+    with tab_bet:
+        render_tab_betting_ai(**hub_kw)
 
-    with tab_plans:
+    with tab_prev:
+        render_tab_match_preview(**hub_kw)
+
+    with tab_vir:
+        render_tab_viral_studio(**hub_kw)
+
+    with tab_auto:
+        render_tab_automation(**hub_kw)
+
+    with tab_plan:
         render_football_plans_tab(summary)
 
     st.markdown("</div>", unsafe_allow_html=True)

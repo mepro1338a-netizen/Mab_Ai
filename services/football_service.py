@@ -404,7 +404,7 @@ class FootballService:
       return self._request(
           "odds",
           {"fixture": int(fixture_id)},
-          feature="elite_odds_calculator",
+          feature="ai_betting_intelligence",
           live=True,
           username=username,
       )
