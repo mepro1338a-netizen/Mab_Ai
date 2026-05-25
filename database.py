@@ -9,6 +9,7 @@ from db.projects import *  # noqa: F403
 from db.automations import *  # noqa: F403
 from db.users import *  # noqa: F403  # includes secure_set_football_plan
 from db.memory import *  # noqa: F403
+from db.errors import *  # noqa: F403
 from db.bootstrap import force_owner_account
 from db.billing import payment_already_paid  # noqa: F401
 from db.football_billing import (  # noqa: F401

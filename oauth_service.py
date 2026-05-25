@@ -342,6 +342,11 @@ def complete_oauth(provider: str, code: str) -> tuple[bool, str, dict | None]:
         )
 
     except requests.HTTPError as exc:
+        try:
+            from logger import log_oauth
+            log_oauth("oauth_http_error", provider=provider, success=False)
+        except Exception:
+            pass
         detail = ""
         try:
             detail = exc.response.json()
@@ -356,7 +361,12 @@ def complete_oauth(provider: str, code: str) -> tuple[bool, str, dict | None]:
             )
         return False, f"Anmeldung fehlgeschlagen ({provider}). Bitte erneut versuchen.", None
 
-    except Exception:
+    except Exception as exc:
+        try:
+            from logger import log_oauth
+            log_oauth("oauth_exception", provider=provider, success=False)
+        except Exception:
+            pass
         return False, "Anmeldung fehlgeschlagen. Bitte später erneut versuchen.", None
 
 

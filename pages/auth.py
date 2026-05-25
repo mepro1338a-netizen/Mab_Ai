@@ -5,7 +5,9 @@ import streamlit as st
 
 from config import APP_NAME, APP_TAGLINE
 from database import create_user, record_login_event, verify_login
-from security import check_login_rate, is_valid_email, is_valid_username
+from security import check_login_rate, record_login_failure, is_valid_email, is_valid_username
+from services.session_auth import rotate_session_on_login
+from logger import log_auth, log_oauth, user_friendly_error
 from oauth_service import (
     auth_url,
     complete_oauth,
@@ -83,11 +85,14 @@ def do_login(username: str, password: str) -> None:
         pass
 
     if ok and user:
-        sync_session_user(user)
+        rotate_session_on_login(user)
+        log_auth("login_success", username=username, success=True)
         st.session_state.page = "home"
         st.rerun()
 
-    st.error(msg)
+    record_login_failure(username)
+    log_auth("login_failed", username=username, success=False)
+    st.error(user_friendly_error("auth"))
 
 
 def do_register(username: str, email: str, password: str, captcha: int) -> None:
@@ -152,7 +157,8 @@ def finish_oauth_login(user: dict, *, provider: str) -> None:
         )
     except Exception:
         pass
-    sync_session_user(user)
+    rotate_session_on_login(user)
+    log_oauth("oauth_success", provider=provider, success=True, user=username)
     _set_oauth_notice("success", f"Willkommen zurück — eingeloggt via {provider.title()}.")
     st.session_state.page = "home"
     st.rerun()
@@ -189,6 +195,7 @@ def handle_oauth_callback() -> bool:
 
     provider = verify_state(str(state))
     if not provider:
+        log_oauth("oauth_invalid_state", success=False)
         _set_oauth_notice(
             "error",
             "Anmelde-Sitzung abgelaufen oder ungültig. Bitte «Mit Google anmelden» erneut klicken.",
@@ -214,7 +221,8 @@ def handle_oauth_callback() -> bool:
     except Exception:
         pass
 
-    _set_oauth_notice("error", msg)
+    log_oauth("oauth_failed", provider=provider or "?", success=False)
+    _set_oauth_notice("error", user_friendly_error("oauth", msg))
     return False
 
 
@@ -916,6 +924,21 @@ def render_auth() -> None:
                 render_register_form()
             else:
                 render_login_form()
+
+    st.caption("MaByte Production Beta · Mab AI")
+    l1, l2, l3 = st.columns(3)
+    with l1:
+        if st.button("Datenschutz", key="auth_privacy"):
+            st.session_state.page = "privacy"
+            st.rerun()
+    with l2:
+        if st.button("AGB", key="auth_terms"):
+            st.session_state.page = "terms"
+            st.rerun()
+    with l3:
+        if st.button("Impressum", key="auth_impressum"):
+            st.session_state.page = "impressum"
+            st.rerun()
 
             render_social_row()
 

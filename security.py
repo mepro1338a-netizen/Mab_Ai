@@ -29,6 +29,7 @@ def is_valid_email(email: str) -> bool:
 
 
 def check_login_rate(username: str):
+    """Check only — failures recorded via record_login_failure()."""
     now = time.time()
     username = clean_text(username, 40).lower()
 
@@ -40,8 +41,17 @@ def check_login_rate(username: str):
     if len(LOGIN_ATTEMPTS[username]) >= MAX_LOGIN_ATTEMPTS:
         return False, "Zu viele Login-Versuche. Bitte 5 Minuten warten."
 
-    LOGIN_ATTEMPTS[username].append(now)
     return True, ""
+
+
+def record_login_failure(username: str) -> None:
+    now = time.time()
+    username = clean_text(username, 40).lower()
+    LOGIN_ATTEMPTS[username] = [
+        t for t in LOGIN_ATTEMPTS[username]
+        if now - t < LOGIN_WINDOW_SECONDS
+    ]
+    LOGIN_ATTEMPTS[username].append(now)
 
 
 def check_rate_limit(key: str):

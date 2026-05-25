@@ -2,6 +2,7 @@
 import stripe
 from config import PLANS, FOOTBALL_PLANS, APP_BASE_URL
 from database import payment_already_paid, record_purchase, set_plan, set_football_plan, update_tokens
+from logger import log_stripe, user_friendly_error
 
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY", "")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
@@ -57,9 +58,11 @@ def create_checkout_session(username, plan_key):
             },
         )
         record_purchase(username, plan_key, 0, session.id, "created", "created")
+        log_stripe("checkout_created", username=username, success=True)
         return session.url, None
     except Exception as e:
-        return None, str(e)
+        log_stripe("checkout_failed", username=username, success=False)
+        return None, user_friendly_error("stripe", str(e))
 
 
 def confirm_checkout_session(session_id):

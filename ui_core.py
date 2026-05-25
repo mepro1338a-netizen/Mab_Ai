@@ -409,24 +409,13 @@ def require_login() -> None:
 
 
 def sync_session_user(user: dict | None) -> None:
-    if not user:
-        return
-
-    st.session_state.logged_in = True
-    st.session_state.user = user.get("username", "User")
-    st.session_state.email = user.get("email", "")
-    st.session_state.plan = user.get("plan", "free")
-    st.session_state.football_plan = str(user.get("football_plan") or "none")
-    st.session_state.tokens = int(user.get("tokens", 0) or 0)
-    st.session_state.role = user.get("role", "user")
-    st.session_state.admin_level = int(user.get("admin_level", 0) or 0)
+    from services.session_auth import sync_from_user_record
+    sync_from_user_record(user)
 
 
 def is_admin_user() -> bool:
-    role = str(st.session_state.get("role", "user") or "user").lower()
-    admin_level = int(st.session_state.get("admin_level", 0) or 0)
-
-    return role in ["admin", "owner"] or admin_level >= 1
+    from services.session_auth import server_is_admin
+    return server_is_admin()
 
 
 def section_label(label: str) -> None:
@@ -510,6 +499,7 @@ def render_sidebar() -> None:
         nav("Premium", "premium")
         nav("Redeem", "redeem")
         nav("Support", "support")
+        nav("Legal", "legal")
 
         if is_admin_user():
             section_label("System")
@@ -540,3 +530,8 @@ def render_sidebar() -> None:
 """,
             unsafe_allow_html=True,
         )
+
+        if st.button("Abmelden", key="nav_logout", width="stretch"):
+            from services.session_auth import logout_session
+            logout_session()
+            st.rerun()

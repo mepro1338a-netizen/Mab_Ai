@@ -8,7 +8,7 @@ from database import (
     workspace_activity_score,
 )
 
-from config import PLANS
+from config import PLANS, FOOTBALL_PLANS, APP_TAGLINE
 from ui.premium_foundation import inject_beta_global_css
 from ui.styles import inject_css, page_layout_css
 
@@ -179,10 +179,35 @@ div[data-testid="stVerticalBlockBorderWrapper"] {
     font-size: 13px;
 }
 
-@media(max-width: 1100px) {
-    .mb-title {
-        font-size: 42px;
-    }
+.mb-pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+@media(max-width: 900px) {
+    .mb-pricing-grid { grid-template-columns: 1fr; }
+    .mb-title { font-size: 42px; }
+}
+.mb-price-card {
+    border-radius: 20px;
+    padding: 18px;
+    border: 1px solid rgba(168,85,247,.2);
+    background: rgba(12,16,32,.75);
+}
+.mb-price-card h4 { color: #ffe7a3 !important; margin: 0 0 6px 0; }
+.mb-faq-item {
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 8px;
+    background: rgba(15,23,42,.55);
+    border: 1px solid rgba(255,255,255,.06);
+}
+.mb-footer {
+    margin-top: 32px;
+    padding: 24px 0 8px 0;
+    border-top: 1px solid rgba(255,255,255,.08);
+    color: #64748b !important;
+    font-size: 12px;
 }
 """
     )
@@ -252,12 +277,24 @@ def render_home() -> None:
         <span class="mb-badge">{plan_label}</span>
     </div>
     <div class="mb-sub">
-        Willkommen zurück, {user}. Dein Creator Operating System für AI, Reels, Automationen, Football Intelligence und Projekte.
+        {APP_TAGLINE}<br>
+        Willkommen zurück, <strong>{user}</strong> — ein OS für AI, Reels, Football Intelligence, Automation & Teams.
     </div>
 </div>
 """,
         unsafe_allow_html=True,
     )
+
+    hc1, hc2, hc3 = st.columns(3)
+    with hc1:
+        if st.button("Upgrade Premium", width="stretch", type="primary"):
+            open_page("premium")
+    with hc2:
+        if st.button("Football AI", width="stretch"):
+            open_page("football")
+    with hc3:
+        if st.button("Support", width="stretch"):
+            open_page("support")
 
     a1, a2, a3 = st.columns([1, 1, 1], gap="medium")
 
@@ -344,3 +381,74 @@ def render_home() -> None:
             f'<div class="mb-card-sub">{format_number(tokens)} Tokens verfügbar. MaByte ist bereit für AI Content, Video Workflows und Automationen.</div>',
             unsafe_allow_html=True,
         )
+
+    st.markdown('<div class="mb-section-title">Pricing Preview</div>', unsafe_allow_html=True)
+    cards = []
+    for key in ("pro", "grand", "elite"):
+        p = PLANS.get(key, {})
+        cards.append(
+            f'<div class="mb-price-card"><h4>{p.get("label", key)}</h4>'
+            f'<p style="color:#94a3b8;font-size:13px;">{p.get("price", "")} · {p.get("tokens", 0)} Tokens</p></div>'
+        )
+    st.markdown(f'<div class="mb-pricing-grid">{"".join(cards)}</div>', unsafe_allow_html=True)
+    st.caption("Football Premium: Starter / Pro / Elite — separates Abo.")
+    if st.button("Alle Pläne vergleichen", width="stretch"):
+        open_page("premium")
+
+    st.markdown('<div class="mb-section-title">Warum MaByte?</div>', unsafe_allow_html=True)
+    f1, f2, f3 = st.columns(3)
+    with f1:
+        with st.container(border=True):
+            st.markdown("**AI Operating System**")
+            st.caption("Chat, Code, Bild, Video, Music, Reels — ein Account.")
+    with f2:
+        with st.container(border=True):
+            st.markdown("**Football Intelligence**")
+            st.caption("Match Center, AI Engine, Odds Lab (Elite).")
+    with f3:
+        with st.container(border=True):
+            st.markdown("**Production Beta**")
+            st.caption("Stripe, OAuth, Admin OS, Support-Tickets.")
+
+    st.markdown('<div class="mb-section-title">FAQ</div>', unsafe_allow_html=True)
+    faqs = [
+        ("Was ist MaByte?", "Ein Premium-SaaS AI OS für Creator und Teams — nicht nur ein Chatbot."),
+        ("Wie funktionieren Tokens?", "1€ ≈ 100 Tokens. Jeder Workspace verbraucht unterschiedlich viele Tokens."),
+        ("Football Premium?", f"Separate Pläne: {', '.join(FOOTBALL_PLANS.keys())} — Features je Tier."),
+        ("Ist Odds Lab Wettberatung?", "Nein — nur mathematische Analyse und Bildung."),
+    ]
+    for q, a in faqs:
+        st.markdown(
+            f'<div class="mb-faq-item"><strong style="color:#f8fafc;">{q}</strong><br><span style="color:#94a3b8;font-size:13px;">{a}</span></div>',
+            unsafe_allow_html=True,
+        )
+
+    st.markdown('<div class="mb-section-title">Stimmen aus der Beta</div>', unsafe_allow_html=True)
+    t1, t2, t3 = st.columns(3)
+    for col, quote, who in (
+        (t1, "Endlich Reels und Video getrennt — fühlt sich wie ein echtes Studio an.", "Creator · DE"),
+        (t2, "Football Match Center spart uns Stunden Recherche pro Spieltag.", "Football Editor"),
+        (t3, "Admin Panel + Support machen den Launch beherrschbar.", "Operator"),
+    ):
+        with col:
+            with st.container(border=True):
+                st.markdown(f"*{quote}*")
+                st.caption(who)
+
+    st.markdown(
+        """
+<div class="mb-footer">
+    MaByte · Mab AI · Production Beta<br>
+    <span style="opacity:.8;">Impressum · Datenschutz · AGB über Legal Center</span>
+</div>
+        """,
+        unsafe_allow_html=True,
+    )
+    lc1, lc2, lc3, lc4 = st.columns(4)
+    for col, (label, page) in zip(
+        (lc1, lc2, lc3, lc4),
+        [("Impressum", "impressum"), ("Datenschutz", "privacy"), ("AGB", "terms"), ("Legal Center", "legal")],
+    ):
+        with col:
+            if st.button(label, key=f"home_legal_{page}", width="stretch"):
+                open_page(page)

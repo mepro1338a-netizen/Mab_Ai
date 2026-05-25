@@ -10,6 +10,15 @@ from db.core import get_connection, rows_to_dicts
 from db.support import list_support_messages
 from db.users import list_users
 
+try:
+    from db.errors import error_counts_24h, errors_last_24h
+except ImportError:
+    def error_counts_24h():
+        return {"total": 0, "by_category": {}}
+
+    def errors_last_24h(limit=50):
+        return []
+
 
 def _parse_dt(value: str) -> datetime | None:
     if not value:
@@ -66,12 +75,24 @@ def platform_metrics() -> dict:
         and (_parse_dt(str(l.get("created_at") or "")) or datetime.min) >= since_24h
     ])
 
+    premium_users = sum(
+        1 for u in users if str(u.get("plan") or "free") not in ("free", "")
+    )
+    premium_conversions_7d = sum(
+        1 for p in payments
+        if (_parse_dt(str(p.get("created_at") or "")) or datetime.min) >= since_7d
+        and str(p.get("payment_status") or p.get("status") or "") in ("paid", "complete", "completed")
+    )
+    err_stats = error_counts_24h()
+
     return {
         "users_total": len(users),
         "users_new_7d": new_7d,
         "users_active_24h": len(active_24h),
         "users_banned": sum(1 for u in users if int(u.get("is_banned") or 0)),
-        "tickets_open": sum(1 for t in tickets if t.get("status") == "open"),
+        "tickets_open": sum(
+            1 for t in tickets if str(t.get("status") or "") in ("open", "in_progress")
+        ),
         "tickets_total": len(tickets),
         "usage_total": len(usage),
         "usage_24h": usage_24h,
@@ -87,6 +108,10 @@ def platform_metrics() -> dict:
             1 for u in users
             if str(u.get("football_plan") or "none") != "none"
         ),
+        "premium_users": premium_users,
+        "premium_conversions_7d": premium_conversions_7d,
+        "errors_24h": err_stats.get("total", 0),
+        "errors_by_category": err_stats.get("by_category", {}),
     }
 
 

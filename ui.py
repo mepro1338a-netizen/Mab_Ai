@@ -4,6 +4,8 @@ from database import ensure_db_ready, get_user
 from payments import confirm_checkout_session
 from ui_core import load_css, render_sidebar, sync_session_user
 from ui.error_boundary import safe_render
+from ui.seo import inject_seo_meta
+from services.session_auth import enforce_active_session
 
 from pages.auth import render_auth
 from pages.home import render_home
@@ -116,12 +118,37 @@ def render_automations():
 # AUTH CHECK
 # =========================================================
 
+PUBLIC_LEGAL_PAGES = frozenset({
+    "legal",
+    "impressum",
+    "privacy",
+    "terms",
+    "cookies",
+    "refund",
+    "premium_terms",
+})
+
 logged_in = bool(
     st.session_state.get("logged_in")
     and st.session_state.get("user")
 )
 
-if not logged_in or _oauth_callback_pending():
+if _oauth_callback_pending():
+    st.session_state.page = "auth"
+    render_auth()
+    st.stop()
+
+if not logged_in:
+    page_guest = st.session_state.get("page", "auth")
+    if page_guest in PUBLIC_LEGAL_PAGES:
+        load_css()
+        inject_seo_meta()
+        label = page_guest.replace("_", " ").title()
+        if page_guest == "legal":
+            safe_render(label, lambda: render_legal("legal", public=True))
+        else:
+            safe_render(label, lambda: render_legal(page_guest, public=True))
+        st.stop()
     st.session_state.page = "auth"
     render_auth()
     st.stop()
@@ -155,7 +182,10 @@ def handle_payment_callback() -> None:
 
 handle_payment_callback()
 
+enforce_active_session()
+
 load_css()
+inject_seo_meta()
 
 
 # =========================================================
@@ -200,6 +230,13 @@ PAGE_HANDLERS = {
     "premium": ("Premium", render_premium),
     "redeem": ("Redeem", render_redeem),
     "admin": ("Admin Panel", render_admin),
+    "legal": ("Legal", render_legal),
+    "impressum": ("Impressum", lambda: render_legal("impressum")),
+    "privacy": ("Datenschutz", lambda: render_legal("privacy")),
+    "terms": ("AGB", lambda: render_legal("terms")),
+    "cookies": ("Cookies", lambda: render_legal("cookies")),
+    "refund": ("Refund", lambda: render_legal("refund")),
+    "premium_terms": ("Premium Terms", lambda: render_legal("premium_terms")),
 }
 
 if page == "auth":

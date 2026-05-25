@@ -143,6 +143,8 @@ def safe_df(rows, height=400):
 
 
 def require_panel_access():
+    from services.access_control import require_admin_panel
+    require_admin_panel()
     force_owner()
     if not is_supporter():
         st.error("Kein Zugriff auf das Admin Control Panel.")
@@ -178,6 +180,8 @@ def render_command_center():
         ("Usage 24h", str(m["usage_24h"]), f"{m['usage_total']} gesamt", "default"),
         ("Tokens 7T", f"{m['tokens_7d']:,}".replace(",", "."), "Verbrauch", "default"),
         ("Football Premium", str(m["football_paid"]), "Aktive FB-Pläne", "default"),
+        ("Premium", str(m.get("premium_users", 0)), f"+{m.get('premium_conversions_7d', 0)} Conv. 7T", "good"),
+        ("Errors 24h", str(m.get("errors_24h", 0)), "App-Fehler", "warn" if m.get("errors_24h") else "good"),
         ("Security", str(m["failed_logins_24h"]), "Fehl-Logins 24h", "warn" if m["failed_logins_24h"] else "good"),
     ])
 
@@ -208,7 +212,38 @@ def render_analytics():
     if not is_moderator():
         st.warning("Kein Zugriff.")
         return
-    render_section("Platform Analytics", "Nutzung nach Workspace · letzte 7 Tage")
+
+    m = platform_metrics()
+    render_section("Analytics Dashboard", "Production Beta · Live Metriken")
+    render_kpi_grid([
+        ("Aktiv 24h", str(m["users_active_24h"]), "Unique Nutzer", "good"),
+        ("Neu 7T", str(m["users_new_7d"]), "Registrierungen", "default"),
+        ("Premium Nutzer", str(m.get("premium_users", 0)), "Plan ≠ Free", "good"),
+        ("Conversions 7T", str(m.get("premium_conversions_7d", 0)), "Stripe paid", "good"),
+        ("AI Usage 24h", str(m["usage_24h"]), f"{m['usage_total']} total", "default"),
+        ("Tokens 7T", f"{m['tokens_7d']:,}".replace(",", "."), "Verbrauch", "default"),
+        ("Stripe 7T", money(m["revenue_7d"]), money(m["revenue_total"]), "good"),
+        ("Errors 24h", str(m.get("errors_24h", 0)), "App errors", "warn" if m.get("errors_24h") else "good"),
+    ])
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        render_distribution_bars("MaByte Pläne", m.get("plans") or {})
+    with c2:
+        render_distribution_bars("Football Pläne", m.get("football_plans") or {})
+    with c3:
+        render_distribution_bars("Errors nach Kategorie", m.get("errors_by_category") or {})
+
+    try:
+        from db.errors import errors_last_24h
+        err_rows = errors_last_24h(30)
+        if err_rows:
+            st.markdown('<div class="adm-section-title">Errors (24h)</div>', unsafe_allow_html=True)
+            safe_df(err_rows, height=220)
+    except Exception:
+        pass
+
+    render_section("Workspace Usage", "Nutzung nach Workspace · letzte 7 Tage")
     tool_rows = usage_summary(days=7)
     if tool_rows:
         tool_data = {str(r.get("tool") or "?"): int(r.get("runs") or 0) for r in tool_rows}

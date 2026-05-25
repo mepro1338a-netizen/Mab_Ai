@@ -19,6 +19,12 @@
 ## Media
 - **Import-Fehler**: `pages/media.py` Import-Fehler werden in `ui.py` abgefangen und als Fehlerseite gezeigt.
 
+## Auth / Session (Update)
+- Session-Rotation bei Login/OAuth aktiv (`services/session_auth.py`)
+- Logout leert volatile Session-Keys
+- Admin-Check lädt User aus DB (`server_is_admin`)
+- Rate Limit zählt nur fehlgeschlagene Logins
+
 ## Empfohlene Fixes (nächster Sprint)
 1. Stripe Yearly Price IDs + Checkout-Parameter
 2. Einheitliche `premium_foundation_css()` auf allen Account-Seiten

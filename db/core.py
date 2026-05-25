@@ -110,6 +110,18 @@ def init_db():
     """)
 
     cur.execute("""
+    CREATE TABLE IF NOT EXISTS app_error_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        category TEXT,
+        error_type TEXT,
+        message TEXT,
+        page TEXT,
+        username TEXT,
+        created_at TEXT
+    )
+    """)
+
+    cur.execute("""
     CREATE TABLE IF NOT EXISTS support_ticket_replies (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         ticket_id INTEGER NOT NULL,

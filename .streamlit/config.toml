@@ -7,6 +7,7 @@ address = "0.0.0.0"
 port = 8501
 enableCORS = false
 enableXsrfProtection = true
+# Session cookies: XSRF on; logout clears st.session_state (see services/session_auth.py)
 enableWebsocketCompression = true
 maxUploadSize = 200
 
