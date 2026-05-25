@@ -9,6 +9,7 @@ from database import (
 )
 
 from config import PLANS
+from ui.styles import inject_css, page_layout_css
 
 
 ASSET_DIR = Path("assets")
@@ -31,16 +32,7 @@ def asset_path(name: str) -> Path:
 
 
 def home_css() -> None:
-    st.markdown(
-        """
-<style>
-.main .block-container {
-    max-width: 1360px !important;
-    padding-top: 90px !important;
-    padding-bottom: 90px !important;
-}
-
-.mb-hero {
+    inject_css(page_layout_css(1360, 90, 90) + """
     background:
         radial-gradient(circle at top right, rgba(168,85,247,.24), transparent 34%),
         radial-gradient(circle at top left, rgba(96,165,250,.16), transparent 34%),
@@ -189,9 +181,7 @@ div[data-testid="stVerticalBlockBorderWrapper"] {
         font-size: 42px;
     }
 }
-</style>
-""",
-        unsafe_allow_html=True,
+"""
     )
 
 

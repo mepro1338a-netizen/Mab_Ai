@@ -4,6 +4,8 @@ from pathlib import Path
 
 import streamlit as st
 
+from ui.styles import MB_THEME_VARS, inject_css
+
 
 ASSET_DIR = Path("assets")
 WORDMARK = ASSET_DIR / "wordmark.png"
@@ -59,17 +61,8 @@ def load_css() -> None:
 }}
 """
 
-    st.markdown(
-        f"""
-<style>
-:root {{
-    --mb-gold:#ffe7a3;
-    --mb-soft:#f8e7b0;
-    --mb-purple:#a855f7;
-    --mb-blue:#60a5fa;
-    --mb-muted:#94a3b8;
-    --mb-line:rgba(255,255,255,.09);
-}}
+    inject_css(f"""
+{MB_THEME_VARS}
 
 #MainMenu,
 footer,
@@ -376,12 +369,9 @@ div[data-testid="stAlert"] {{
         height:64px;
     }}
 }}
-</style>
+""")
 
-<div class="custom-topbar"></div>
-""",
-        unsafe_allow_html=True,
-    )
+    st.markdown('<motion class="custom-topbar"></div>', unsafe_allow_html=True)
 
 
 def require_login() -> None:

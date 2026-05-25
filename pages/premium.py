@@ -1,5 +1,6 @@
 ﻿import streamlit as st
 from config import PLANS, FOOTBALL_PLANS
+from ui.styles import inject_css, page_layout_css
 
 
 ICON_AI = """<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2L14.5 8.5L21 9L16 13.4L17.6 20L12 16.5L6.4 20L8 13.4L3 9L9.5 8.5L12 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>"""
@@ -8,28 +9,20 @@ ICON_B2B = """<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path 
 
 
 def premium_css():
-    st.markdown(
-        """
-<style>
+    inject_css(page_layout_css(1180, 80, 40) + """
 .stApp,
-[data-testid="stAppViewContainer"]{
+[data-testid="stAppViewContainer"] {
     background:
         radial-gradient(circle at 18% 5%, rgba(56,189,248,.24), transparent 28%),
         radial-gradient(circle at 90% 0%, rgba(124,58,237,.20), transparent 30%),
         linear-gradient(180deg,#06111f 0%,#0a1d38 48%,#0b2a55 100%) !important;
 }
 
-[data-testid="stHeader"]{
-    background:transparent!important;
+[data-testid="stHeader"] {
+    background: transparent !important;
 }
 
-.main .block-container{
-    max-width:1180px!important;
-    padding-top:5rem!important;
-    padding-bottom:2.5rem!important;
-}
-
-section[data-testid="stSidebar"]{
+section[data-testid="stSidebar"] {
     background:#06111f!important;
 }
 
@@ -274,16 +267,14 @@ div[data-testid="stAlert"] *{
     line-height:1.65;
     margin-top:8px;
 }
-</style>
-        """,
-        unsafe_allow_html=True,
+"""
     )
 
 
 def choose_plan(plan_key, category):
     st.session_state.selected_plan = plan_key
     st.session_state.selected_plan_category = category
-    st.success("Plan ausgewÃ¤hlt.")
+    st.success("Plan ausgewählt.")
 
 
 def section_header(icon, title, sub):
@@ -336,7 +327,7 @@ def normal_card(plan_key):
         )
 
         if st.button(
-            f"{plan.get('label')} auswÃ¤hlen",
+            f"{plan.get('label')} auswählen",
             key=f"normal_{plan_key}",
             width="stretch",
         ):
@@ -372,7 +363,7 @@ def football_card(plan_key):
         )
 
         if st.button(
-            f"{plan.get('label')} wÃ¤hlen",
+            f"{plan.get('label')} wählen",
             key=f"football_{plan_key}",
             width="stretch",
         ):
@@ -386,9 +377,9 @@ def render_premium():
         """
 <div class="hero">
     <div class="hero-top">MABYTE PREMIUM</div>
-    <div class="hero-title">AI-PlÃ¤ne fÃ¼r Creator, Automation und Football.</div>
+    <div class="hero-title">AI-Pläne für Creator, Automation und Football.</div>
     <div class="hero-sub">
-        MaByte Tokens fÃ¼r allgemeine AI-Workflows. Football Premium separat mit Actions,
+        MaByte Tokens für allgemeine AI-Workflows. Football Premium separat mit Actions,
         API Requests und skalierbarer Infrastruktur.
     </div>
 </div>
@@ -413,12 +404,12 @@ def render_premium():
     with c3:
         normal_card("elite")
 
-    st.info("Token-System: 1â‚¬ = 100 Tokens. Tokens gelten fÃ¼r normale MaByte AI Actions.")
+    st.info("Token-System: 1€ = 100 Tokens. Tokens gelten für normale MaByte AI Actions.")
 
     section_header(
         ICON_BALL,
         "Football AI Premium",
-        "FÃ¼r Creator, FuÃŸballseiten, Apps und automatisierte Content-Systeme.",
+        "FÃ¼r Creator, Fußballseiten, Apps und automatisierte Content-Systeme.",
     )
 
     f1, f2, f3 = st.columns(3, gap="medium")
@@ -438,8 +429,8 @@ def render_premium():
     <div class="b2b-icon">{ICON_B2B}</div>
     <div class="b2b-title">Football Enterprise</div>
     <div class="b2b-sub">
-        FÃ¼r Agenturen, Football Apps und Netzwerke mit Custom Limits,
-        White Label, Webhooks, Team-ZugÃ¤ngen und Priority Support.
+        Für Agenturen, Football Apps und Netzwerke mit Custom Limits,
+        White Label, Webhooks, Team-Zugängen und Priority Support.
     </div>
 </div>
         """,

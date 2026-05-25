@@ -8,6 +8,7 @@ from database import create_user, record_login_event, verify_login
 from security import check_login_rate, is_valid_email, is_valid_username
 from oauth_service import auth_url, complete_oauth, make_state, provider_configured, verify_state
 from ui_core import WORDMARK, img_base64, sync_session_user
+from ui.styles import MB_THEME_VARS, inject_css
 
 
 def refresh_captcha() -> None:
@@ -139,20 +140,7 @@ def handle_oauth_callback() -> bool:
 
 
 def auth_css() -> None:
-    st.markdown(
-        """
-<style>
-:root {
-    --mb-gold: #ffe7a3;
-    --mb-soft: #f8e7b0;
-    --mb-purple: #a855f7;
-    --mb-violet: #7c3aed;
-    --mb-blue: #60a5fa;
-    --mb-muted: #94a3b8;
-    --mb-line: rgba(168, 85, 247, .20);
-    --mb-surface: rgba(12, 10, 28, .94);
-}
-
+    inject_css(MB_THEME_VARS + """
 .custom-topbar,
 #MainMenu, header, footer,
 [data-testid="stToolbar"],
@@ -618,9 +606,7 @@ section.main div[data-testid="stVerticalBlockBorderWrapper"] .stNumberInput div[
     background: rgba(6, 10, 24, .96) !important;
     box-shadow: none !important;
 }
-</style>
-""",
-        unsafe_allow_html=True,
+"""
     )
 
 

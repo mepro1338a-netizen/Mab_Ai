@@ -30,12 +30,12 @@ def render_agent_card(icon, title, desc, agent_type):
         st.caption(desc)
 
         if st.button(
-            "Agent auswÃ¤hlen",
+            "Agent auswählen",
             key=f"agent_{agent_type}",
             width="stretch",
         ):
             st.session_state.selected_agent_type = agent_type
-            st.success(f"{title} ausgewÃ¤hlt")
+            st.success(f"{title} ausgewählt")
 
 
 def render_create_automation():
@@ -112,11 +112,11 @@ def render_create_automation():
 
         if st.button("ðŸš€ Automation erstellen", width="stretch"):
             if not name or not trigger:
-                st.warning("Bitte Name und Trigger ausfÃ¼llen.")
+                st.warning("Bitte Name und Trigger ausfüllen.")
                 return
 
             if project_id == 0:
-                st.warning("Bitte ein Projekt auswÃ¤hlen.")
+                st.warning("Bitte ein Projekt auswählen.")
                 return
 
             automation_id = create_automation(
@@ -164,7 +164,7 @@ def render_automations():
                     key=f"run_{item.get('id')}",
                     width="stretch",
                 ):
-                    with st.spinner("Agent lÃ¤uft..."):
+                    with st.spinner("Agent läuft..."):
                         result = run_automation(item)
 
                     if result.get("success"):
@@ -241,7 +241,7 @@ def render_automation_lab():
         render_agent_card(
             "ðŸ’»",
             "Developer Report Agent",
-            "Code-Ã„nderungen analysieren und Reports erstellen.",
+            "Code-Änderungen analysieren und Reports erstellen.",
             "developer_report_agent",
         )
 

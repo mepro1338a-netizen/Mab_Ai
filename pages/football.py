@@ -29,7 +29,7 @@ def analyze_viral_score(content):
         return {
             "score": 82,
             "feedback": """
-- Hook stÃ¤rker emotionalisieren
+- Hook stärker emotionalisieren
 - Mehr Spannung im ersten Satz
 - CTA aggressiver formulieren
 """
@@ -44,11 +44,11 @@ def analyze_viral_score(content):
 Du bist ein Elite Social Media Growth Strategist.
 
 Bewerte Football Content auf:
-- ViralitÃ¤t
+- Viralität
 - Engagement Potential
 - Watchtime Potential
 - Plattform Fit
-- EmotionalitÃ¤t
+- Emotionalität
 
 Antworte exakt so:
 
@@ -101,12 +101,12 @@ def improve_package(original_content):
 Du bist ein Elite Viral Football Growth Strategist.
 
 Verbessere:
-- Hook StÃ¤rke
-- EmotionalitÃ¤t
+- Hook Stärke
+- Emotionalität
 - Engagement
 - Watchtime
-- ViralitÃ¤t
-- CTA StÃ¤rke
+- Viralität
+- CTA Stärke
 - Plattform Optimierung
 
 Mache den Content aggressiver, moderner und creator-orientierter.
@@ -149,7 +149,7 @@ low quality, blurry, ugly face, distorted anatomy, bad typography, watermark, lo
 """
 
     prompt = f"""
-Erstelle ein Football Thumbnail System fÃ¼r:
+Erstelle ein Football Thumbnail System für:
 
 Club:
 {club}
@@ -187,7 +187,7 @@ Du erstellst:
 - aggressive Football Visuals
 
 Denke wie:
-- groÃŸe YouTube Football Creator
+- große YouTube Football Creator
 - TikTok Sports Creators
 - moderne Sports Media Brands
 """
@@ -224,7 +224,7 @@ def generate_matchday_package(club, opponent, platform, tone):
     if not OPENAI_API_KEY:
         return f"""
 ## TikTok Hook
-Demo Hook fÃ¼r {club} gegen {opponent}
+Demo Hook für {club} gegen {opponent}
 
 ## TikTok Caption
 Demo TikTok Caption
@@ -248,7 +248,7 @@ Demo Thumbnail Prompt
 #{club} #Football #Matchday
 
 ## CTA
-Folge fÃ¼r mehr Football Content
+Folge für mehr Football Content
 
 ## Posting Strategy
 Poste 2 Stunden vor Kickoff
@@ -269,7 +269,7 @@ Hauptplattform:
 Ton:
 {tone}
 
-Erstelle hochwertige Inhalte fÃ¼r:
+Erstelle hochwertige Inhalte für:
 
 ## TikTok Hook
 
@@ -310,8 +310,8 @@ Du erstellst:
 - moderne Plattform-optimierte Inhalte
 
 Denke wie:
-- groÃŸe TikTok Football Creator
-- FuÃŸball Meme Pages
+- große TikTok Football Creator
+- Fußball Meme Pages
 - moderne Social Media Teams
 - Elite Football Media Brands
 """,
@@ -816,7 +816,7 @@ def render_football_ai_engine() -> None:
         )
 
         if improve:
-            with st.spinner("MaByte optimiert ViralitÃ¤t..."):
+            with st.spinner("MaByte optimiert Viralität..."):
                 improved = improve_package(result)
 
             st.subheader("ðŸš€ Optimized Package")

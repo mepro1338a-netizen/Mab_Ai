@@ -34,7 +34,7 @@ except Exception as e:
         st.error("Media Workspace konnte nicht geladen werden.")
         st.code(str(MEDIA_IMPORT_ERROR))
         st.info(
-            "PrÃ¼fe pages/media.py: Dort darf NICHT `from pages.media import render_media` stehen "
+            "Prüfe pages/media.py: Dort darf NICHT `from pages.media import render_media` stehen "
             "und ganz unten muss `def render_media(...)` existieren."
         )
 
@@ -45,7 +45,7 @@ except Exception as e:
 
 st.set_page_config(
     page_title="MaByte",
-    page_icon="ðŸš€",
+    page_icon="🚀",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -56,7 +56,6 @@ st.set_page_config(
 # =========================================================
 
 init_db()
-load_css()
 
 
 # =========================================================
@@ -85,8 +84,8 @@ for key, value in DEFAULTS.items():
 # =========================================================
 
 def render_automations():
-    st.title("âš™ï¸ Automations")
-    st.caption("Geplante AblÃ¤ufe, Posting Flows und System Actions.")
+    st.title("Automations")
+    st.caption("Geplante Abläufe, Posting Flows und System Actions.")
 
     with st.container(border=True):
         st.subheader("Automation Center")
@@ -106,6 +105,8 @@ if not logged_in:
     st.session_state.page = "auth"
     render_auth()
     st.stop()
+
+load_css()
 
 
 # =========================================================

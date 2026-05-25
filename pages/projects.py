@@ -53,7 +53,7 @@ def render_create_project():
         )
 
         workspace = st.selectbox(
-            "PrimÃ¤rer Workspace",
+            "Primärer Workspace",
             [
                 "general",
                 "football",
@@ -104,7 +104,7 @@ def render_project_card(project):
         c3, c4, c5 = st.columns(3)
 
         with c3:
-            if st.button("Ã–ffnen", key=f"open_project_{project_id}", width="stretch"):
+            if st.button("Öffnen", key=f"open_project_{project_id}", width="stretch"):
                 open_project(project_id)
 
         with c4:
@@ -143,7 +143,7 @@ def render_project_memory(project_id):
     c1, c2, c3 = st.columns(3)
 
     with c1:
-        if st.button("ðŸ§  Mit AI Ã¶ffnen", width="stretch"):
+        if st.button("ðŸ§  Mit AI öffnen", width="stretch"):
             open_page("chat")
 
     with c2:
@@ -152,7 +152,7 @@ def render_project_memory(project_id):
 
     with c3:
         if project.get("workspace") == "football":
-            if st.button("âš½ Football Ã¶ffnen", width="stretch"):
+            if st.button("âš½ Football öffnen", width="stretch"):
                 open_page("football")
         else:
             st.button("âš¡ Workspace aktiv", width="stretch", disabled=True)

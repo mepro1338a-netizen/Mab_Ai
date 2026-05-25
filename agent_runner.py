@@ -179,7 +179,7 @@ AUFGABE:
 Erstelle:
 - Dev Summary
 - Architektur Analyse
-- VerbesserungsvorschlÃ¤ge
+- Verbesserungsvorschläge
 - Security Hinweise
 - Skalierungsplan
 """

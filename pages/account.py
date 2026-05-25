@@ -157,12 +157,12 @@ def render_redeem():
     require_login()
 
     st.title("ðŸŽ Redeem Center")
-    st.caption("Codes einlÃ¶sen und Tokens oder Plan-Upgrades freischalten.")
+    st.caption("Codes einlösen und Tokens oder Plan-Upgrades freischalten.")
 
     with st.container(border=True):
         code = st.text_input("Code", placeholder="DEIN-CODE")
 
-        if st.button("Code einlÃ¶sen", width="stretch"):
+        if st.button("Code einlösen", width="stretch"):
             if not code:
                 st.warning("Bitte Code eingeben.")
                 return
@@ -200,7 +200,7 @@ def render_support():
 
             if submitted:
                 if not subject or not message:
-                    st.warning("Bitte Betreff und Nachricht ausfÃ¼llen.")
+                    st.warning("Bitte Betreff und Nachricht ausfüllen.")
                 else:
                     ok, msg = create_support_message(
                         st.session_state.get("user"),
@@ -259,7 +259,7 @@ def plan_card(plan_key):
 
         st.divider()
 
-        button_label = "Aktiv" if current else f"{plan.get('label', plan_key)} auswÃ¤hlen"
+        button_label = "Aktiv" if current else f"{plan.get('label', plan_key)} auswählen"
 
         if st.button(
             button_label,
@@ -269,7 +269,7 @@ def plan_card(plan_key):
         ):
             st.session_state.selected_plan = plan_key
             st.success(
-                f"{plan.get('label', plan_key)} ausgewÃ¤hlt. Stripe Checkout wird spÃ¤ter verbunden."
+                f"{plan.get('label', plan_key)} ausgewählt. Stripe Checkout wird später verbunden."
             )
 
 
@@ -302,5 +302,5 @@ def render_premium():
 
     with st.container(border=True):
         st.subheader("ðŸš€ Premium Roadmap")
-        st.write("Stripe Checkout, automatische Plan-Upgrades und Webhooks werden als nÃ¤chster Schritt verbunden.")
-        st.write("Bis dahin kÃ¶nnen PlÃ¤ne Ã¼ber Admin oder Redeem Codes freigeschaltet werden.")
+        st.write("Stripe Checkout, automatische Plan-Upgrades und Webhooks werden als nächster Schritt verbunden.")
+        st.write("Bis dahin können Pläne über Admin oder Redeem Codes freigeschaltet werden.")

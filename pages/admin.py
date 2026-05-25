@@ -3,6 +3,7 @@ import pandas as pd
 import streamlit as st
 
 from config import DB_PATH, PLANS
+from ui.styles import inject_css, page_layout_css, gradient_title_css
 from database import (
     OWNER_USERNAME,
     ROLE_LEVELS,
@@ -133,15 +134,7 @@ def require_panel_access():
 
 
 def admin_css():
-    st.markdown(
-        """
-<style>
-.main .block-container {
-    max-width: 1380px !important;
-    padding-top: 90px !important;
-    padding-bottom: 90px !important;
-}
-
+    inject_css(page_layout_css(1380, 90, 90) + """
 .admin-title {
     font-size: 56px;
     line-height: .95;
@@ -225,9 +218,7 @@ div[data-testid="stVerticalBlockBorderWrapper"] {
     color: #ffe7a3 !important;
     font-weight: 1000 !important;
 }
-</style>
-""",
-        unsafe_allow_html=True,
+"""
     )
 
 

@@ -7,6 +7,7 @@ from openai import OpenAI
 from config import OPENAI_API_KEY, OPENAI_TEXT_MODEL, DB_PATH
 from database import spend_tokens, save_usage, get_user, update_tokens
 from ui_core import sync_session_user
+from ui.styles import inject_css, page_layout_css, gradient_title_css
 
 try:
     from database import unlock_automation, has_automation_access
@@ -202,27 +203,7 @@ def run_paid_ai(tool, prompt, cost, filename_prefix):
 
 
 def media_css():
-    st.markdown(
-        """
-<style>
-.main .block-container {
-    max-width: 1180px !important;
-    padding-top: 28px !important;
-    padding-bottom: 100px !important;
-}
-
-.mb-title {
-    text-align: center;
-    font-size: 56px;
-    line-height: .95;
-    font-weight: 1000;
-    letter-spacing: -3px;
-    margin-top: 10px;
-    background: linear-gradient(135deg, #ffe7a3, #c084fc, #60a5fa);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
+    inject_css(page_layout_css(1180, 28, 100) + gradient_title_css("mb-title") + """
 .mb-sub {
     text-align: center;
     color: #cbd5e1 !important;
@@ -305,9 +286,7 @@ div[data-testid="stAlert"] {
     border: 1px solid rgba(168,85,247,.26) !important;
     border-radius: 16px !important;
 }
-</style>
-""",
-        unsafe_allow_html=True,
+"""
     )
 
 

@@ -15,8 +15,8 @@ if len(files) > MAX_BACKUPS:
 
         os.remove(path)
 
-        print(f"GelÃ¶scht: {file}")
+        print(f"Gelöscht: {file}")
 
 else:
-    print("Keine alten Backups zu lÃ¶schen.")
+    print("Keine alten Backups zu löschen.")
 

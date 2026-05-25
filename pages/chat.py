@@ -13,6 +13,7 @@ from database import (
 )
 
 from ui_core import sync_session_user
+from ui.styles import inject_css, page_layout_css
 
 
 client = OpenAI(api_key=OPENAI_API_KEY)
@@ -42,16 +43,7 @@ def ensure_messages() -> None:
 
 
 def load_chat_css() -> None:
-    st.markdown(
-        """
-<style>
-.main .block-container {
-    max-width: 980px !important;
-    padding-top: 24px !important;
-    padding-bottom: 130px !important;
-}
-
-/* HERO */
+    inject_css(page_layout_css(980, 24, 130) + """
 .mb-title-clean {
     text-align: center;
     font-size: 64px;
@@ -198,10 +190,7 @@ div[data-testid="stAlert"] * {
         padding-left: .8rem !important;
         padding-right: .8rem !important;
     }
-}
-</style>
-""",
-        unsafe_allow_html=True,
+"""
     )
 
 

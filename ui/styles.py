@@ -1,0 +1,59 @@
+"""Central MaByte UI CSS helpers and theme tokens."""
+from __future__ import annotations
+
+import streamlit as st
+
+MB_THEME_VARS = """
+:root {
+    --mb-gold: #ffe7a3;
+    --mb-soft: #f8e7b0;
+    --mb-purple: #a855f7;
+    --mb-violet: #7c3aed;
+    --mb-blue: #60a5fa;
+    --mb-muted: #94a3b8;
+    --mb-line: rgba(255, 255, 255, .09);
+    --mb-auth-line: rgba(168, 85, 247, .20);
+    --mb-surface: rgba(12, 10, 28, .94);
+}
+"""
+
+AUTH_EXTRA_VARS = """
+:root {
+    --mb-auth-surface: rgba(12, 10, 28, .94);
+}
+"""
+
+
+def inject_css(css: str) -> None:
+    st.markdown(f"<style>{css.strip()}</style>", unsafe_allow_html=True)
+
+
+def page_layout_css(
+    max_width: int,
+    padding_top: int,
+    padding_bottom: int = 42,
+    selector: str = ".main .block-container",
+) -> str:
+    return f"""
+{selector} {{
+    max-width: {max_width}px !important;
+    padding-top: {padding_top}px !important;
+    padding-bottom: {padding_bottom}px !important;
+}}
+"""
+
+
+def gradient_title_css(class_name: str = "mb-title") -> str:
+    return f"""
+.{class_name} {{
+    text-align: center;
+    font-size: 56px;
+    line-height: .95;
+    font-weight: 1000;
+    letter-spacing: -3px;
+    margin-top: 10px;
+    background: linear-gradient(135deg, #ffe7a3, #c084fc, #60a5fa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}}
+"""

@@ -9,7 +9,7 @@ STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
 
 def create_checkout_session(username, plan_key):
     if plan_key not in PLANS or plan_key == "free":
-        return None, "UngÃ¼ltiger Plan."
+        return None, "Ungültiger Plan."
 
     if not stripe.api_key:
         return None, "STRIPE_SECRET_KEY fehlt in Railway Variables."
@@ -51,7 +51,7 @@ def confirm_checkout_session(session_id):
             record_purchase(username, plan, 0, session.id, status, "paid")
             return True, f"{PLANS[plan]['label']} aktiviert."
         record_purchase(username or "", plan or "", 0, session.id, status, "pending")
-        return False, f"Zahlung noch nicht bestÃ¤tigt: {status}"
+        return False, f"Zahlung noch nicht bestätigt: {status}"
     except Exception as e:
         return False, str(e)
 
