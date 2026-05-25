@@ -14,15 +14,11 @@ from dotenv import load_dotenv
 load_dotenv(ROOT / ".env")
 
 from services.billing_plans import (
-    AI_CHECKOUT_KEYS,
-    FOOTBALL_CHECKOUT_KEYS,
     checkout_base_url,
-    checkout_plans_status,
-    plan_checkout_ready,
-    resolve_stripe_price_id,
     stripe_checkout_cancel_url,
     stripe_checkout_success_url,
 )
+from services.stripe_verify import verify_all_checkout_plans
 
 
 def main() -> None:
@@ -33,15 +29,11 @@ def main() -> None:
     print("success_url:", stripe_checkout_success_url())
     print("cancel_url:", stripe_checkout_cancel_url())
     print()
-    for key in (*AI_CHECKOUT_KEYS, *FOOTBALL_CHECKOUT_KEYS):
-        ready, reason = plan_checkout_ready(key)
-        price_id, env = resolve_stripe_price_id(key)
-        mark = "OK" if ready else "FAIL"
-        print(f"  [{mark}] {key}: env={env} price_id={'set' if price_id else 'MISSING'} reason={reason or '-'}")
-    print()
-    status = checkout_plans_status()
-    if status["missing_envs"]:
-        print("Missing Railway variables:", ", ".join(status["missing_envs"]))
+    for key, row in verify_all_checkout_plans().items():
+        mark = "OK" if row.get("ok") else "FAIL"
+        err = row.get("error") or "-"
+        pid = row.get("price_id") or "MISSING"
+        print(f"  [{mark}] {key}: {row.get('env')} -> {pid} | {err}")
 
 
 if __name__ == "__main__":

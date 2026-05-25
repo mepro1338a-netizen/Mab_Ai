@@ -108,6 +108,23 @@ def create_checkout_session(username: str, plan_key: str):
     plan = plan_catalog(plan_key) or {}
     category = plan_category(plan_key)
 
+    from services.stripe_verify import verify_price_id
+
+    price_check = verify_price_id(price_id)
+    if not price_check.get("ok"):
+        err_msg = price_check.get("error") or "invalid price"
+        _log_checkout_failure(
+            "checkout_price_rejected",
+            username=username,
+            plan_key=plan_key,
+            price_id=price_id,
+            success_url=success_url,
+            cancel_url=cancel_url,
+            stripe_error=err_msg,
+            price_env=price_env,
+        )
+        return None, USER_FRIENDLY_CHECKOUT_ERROR
+
     try:
         session = stripe.checkout.Session.create(
             mode="subscription",

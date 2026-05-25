@@ -13,6 +13,10 @@ from services.billing_plans import (
     plan_category,
     plan_checkout_ready,
 )
+from services.stripe_verify import (
+    STRIPE_VERIFY_CACHE_KEY,
+    get_stripe_verify_cache,
+)
 from ui.stripe_checkout import start_checkout_session
 
 
@@ -86,7 +90,8 @@ def render_plan_card(plan_key: str) -> None:
     active = is_plan_active(
         plan_key, user_plan=user_plan, football_plan=football_plan
     )
-    ready, missing_reason = plan_checkout_ready(plan_key)
+    stripe_cache = get_stripe_verify_cache()
+    ready, missing_reason = plan_checkout_ready(plan_key, stripe_cache=stripe_cache)
 
     highlights = plan.get("highlights", [])[:3]
     label = plan.get("label", plan_key)
@@ -124,7 +129,9 @@ def render_plan_card(plan_key: str) -> None:
         elif not ready:
             st.button(btn_label, key=f"subscribe_{plan_key}", width="stretch", disabled=True)
             if missing_reason and missing_reason != "no_checkout":
-                st.caption(f"Checkout: `{missing_reason}` in Railway setzen.")
+                st.caption(f"Stripe: {missing_reason}")
+            elif missing_reason == "STRIPE_SECRET_KEY":
+                st.caption("Stripe: STRIPE_SECRET_KEY fehlt")
         elif st.button(btn_label, key=f"subscribe_{plan_key}", width="stretch"):
             _on_subscribe(plan_key)
 
@@ -136,12 +143,51 @@ def render_stripe_status_banner() -> None:
     if not status["stripe_secret_ok"]:
         st.warning("Stripe: `STRIPE_SECRET_KEY` fehlt — keine Checkouts möglich.")
         return
-    missing = status["missing_envs"]
-    if missing:
-        st.info(
-            "Einige Pläne sind noch nicht konfiguriert (Buttons deaktiviert): "
-            + ", ".join(missing)
+
+    cache = get_stripe_verify_cache()
+    broken = [
+        k for k, v in cache.items()
+        if v.get("price_id") and not v.get("ok")
+    ]
+    ok_plans = [k for k, v in cache.items() if v.get("ok")]
+
+    if ok_plans:
+        labels = ", ".join(ok_plans)
+        st.success(f"Stripe Checkout aktiv: {labels}")
+
+    if broken:
+        st.warning(
+            "Diese Pläne haben eine ungültige Stripe Price-ID (Grand/football_starter als Vorlage): "
+            + ", ".join(broken)
         )
+
+
+def render_stripe_diagnostics_admin() -> None:
+    """Admin: exakte Stripe-Fehler pro Plan (zum Beheben in Railway/Stripe)."""
+    try:
+        from services.session_auth import server_is_admin
+        if not server_is_admin():
+            return
+    except Exception:
+        return
+
+    cache = get_stripe_verify_cache()
+    with st.expander("Stripe Diagnose (Admin)", expanded=bool(
+        any(not v.get("ok") for v in cache.values() if v.get("price_id"))
+    )):
+        for plan_key, row in cache.items():
+            env = row.get("env", "")
+            pid = row.get("price_id", "") or "—"
+            if row.get("ok"):
+                mode = "live" if row.get("livemode") else "test"
+                short = pid if len(pid) <= 28 else f"{pid[:28]}…"
+                st.markdown(f"✅ **{plan_key}** — `{env}` → `{short}` ({mode}, recurring)")
+            else:
+                err = row.get("error") or "unbekannt"
+                st.markdown(f"❌ **{plan_key}** — `{env}` → `{pid}` — {err}")
+        if st.button("Stripe erneut prüfen", key="stripe_verify_refresh"):
+            st.session_state.pop(STRIPE_VERIFY_CACHE_KEY, None)
+            st.rerun()
 
 
 def render_ai_plans_section() -> None:

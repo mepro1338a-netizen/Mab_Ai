@@ -5,6 +5,7 @@ import streamlit as st
 
 from payments import create_checkout_session
 from services.billing_plans import USER_FRIENDLY_CHECKOUT_ERROR, plan_checkout_ready
+from services.stripe_verify import get_stripe_verify_cache
 
 
 def start_checkout_session(plan_key: str, *, username: str) -> bool:
@@ -12,7 +13,7 @@ def start_checkout_session(plan_key: str, *, username: str) -> bool:
     Erstellt Stripe Checkout Session und speichert URL in session_state.
     Returns True bei Erfolg (dann Link-Button anzeigen).
     """
-    ready, _ = plan_checkout_ready(plan_key)
+    ready, _ = plan_checkout_ready(plan_key, stripe_cache=get_stripe_verify_cache())
     if not ready:
         st.error(USER_FRIENDLY_CHECKOUT_ERROR)
         return False

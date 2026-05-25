@@ -4,6 +4,7 @@ from ui.premium_cards import (
     render_ai_plans_section,
     render_enterprise_block,
     render_football_plans_section,
+    render_stripe_diagnostics_admin,
     render_stripe_status_banner,
 )
 from ui.premium_foundation import premium_foundation_css, render_page_hero
@@ -239,6 +240,7 @@ def render_premium():
             st.caption("Monatliche Abrechnung · Stripe Checkout")
 
     render_stripe_status_banner()
+    render_stripe_diagnostics_admin()
     render_ai_plans_section()
     st.info("Token-System: 1€ = 100 Tokens. Tokens gelten für normale MaByte AI Actions.")
     render_football_plans_section()

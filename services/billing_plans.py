@@ -101,6 +101,8 @@ def resolve_stripe_price_id(plan_key: str) -> tuple[str | None, str | None]:
         return None, None
     raw = os.getenv(env_name, "").strip().strip('"').strip("'")
     # Railway copy-paste sometimes adds newlines or label prefixes
+    if raw.startswith("prod_"):
+        return None, env_name
     if raw and not raw.startswith("price_"):
         match = _PRICE_ID_RE.search(raw)
         raw = match.group(0) if match else raw.split()[0] if raw.split() else raw
@@ -108,8 +110,12 @@ def resolve_stripe_price_id(plan_key: str) -> tuple[str | None, str | None]:
     return (price_id or None), env_name
 
 
-def plan_checkout_ready(plan_key: str) -> tuple[bool, str | None]:
-    """Per-plan readiness — Grand can work while Pro is missing a Price ID."""
+def plan_checkout_ready(
+    plan_key: str,
+    *,
+    stripe_cache: dict[str, dict[str, Any]] | None = None,
+) -> tuple[bool, str | None]:
+    """Per-plan readiness — env set + Stripe API confirms subscription price."""
     if not os.getenv("STRIPE_SECRET_KEY", "").strip():
         return False, "STRIPE_SECRET_KEY"
     env_name = stripe_price_env_name(plan_key)
@@ -118,6 +124,14 @@ def plan_checkout_ready(plan_key: str) -> tuple[bool, str | None]:
     price_id, _ = resolve_stripe_price_id(plan_key)
     if not price_id:
         return False, env_name
+
+    if stripe_cache is not None:
+        from services.stripe_verify import plan_stripe_ok
+        ok, err = plan_stripe_ok(plan_key, stripe_cache)
+        if not ok:
+            return False, err or env_name
+        return True, None
+
     return True, None
 
 
