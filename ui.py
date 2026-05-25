@@ -4,7 +4,6 @@ from database import ensure_db_ready, get_user
 from payments import confirm_checkout_session
 from ui_core import load_css, sync_session_user
 from ui.sidebar import render_sidebar
-from ui.stripe_checkout import process_pending_stripe_redirect
 from ui.error_boundary import safe_render
 from ui.seo import inject_seo_meta
 from services.session_auth import enforce_active_session
@@ -133,10 +132,6 @@ if _oauth_callback_pending():
 if not logged_in:
     st.session_state.page = "auth"
     render_auth()
-    st.stop()
-
-
-if process_pending_stripe_redirect():
     st.stop()
 
 

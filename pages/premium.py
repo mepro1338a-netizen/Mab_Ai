@@ -110,6 +110,39 @@ h3{
     box-shadow:none!important;
 }
 
+/* Goldener Stripe Checkout Button */
+.mb-stripe-checkout-wrap{
+    margin-top:10px;
+}
+.mb-stripe-checkout-wrap a[data-testid="stLinkButtonLink"],
+div[data-testid="stLinkButton"] a{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    width:100%!important;
+    min-height:48px!important;
+    border:none!important;
+    border-radius:15px!important;
+    font-size:15px!important;
+    font-weight:1000!important;
+    text-decoration:none!important;
+    color:#111827!important;
+    background:linear-gradient(135deg,#ffd36a 0%,#f59e0b 55%,#ea580c 100%)!important;
+    box-shadow:
+        0 12px 28px rgba(245,158,11,.35),
+        0 0 20px rgba(255,211,106,.25),
+        inset 0 1px 0 rgba(255,255,255,.45)!important;
+    transition:transform .15s ease, box-shadow .15s ease!important;
+}
+.mb-stripe-checkout-wrap a:hover,
+div[data-testid="stLinkButton"] a:hover{
+    transform:translateY(-2px)!important;
+    color:#0f172a!important;
+    box-shadow:
+        0 16px 36px rgba(245,158,11,.45),
+        0 0 28px rgba(255,211,106,.35)!important;
+}
+
 .section-head{
     display:flex;
     align-items:center;
