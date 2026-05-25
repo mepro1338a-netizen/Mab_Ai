@@ -16,6 +16,10 @@ _PRICE_ID_RE = re.compile(r"^price_[A-Za-z0-9]+$")
 # Display order on Premium page (matches screenshot layout)
 AI_CHECKOUT_KEYS = ("pro", "grand", "elite")
 FOOTBALL_CHECKOUT_KEYS = ("football_starter", "football_pro", "football_elite")
+ALL_SUBSCRIPTION_CHECKOUT_KEYS = (*AI_CHECKOUT_KEYS, *FOOTBALL_CHECKOUT_KEYS)
+
+# All Abo-Pläne: Stripe Checkout nur als Subscription + recurring price_…
+SUBSCRIPTION_CHECKOUT_MODE = "subscription"
 
 USER_FRIENDLY_CHECKOUT_ERROR = (
     "Zahlung konnte nicht gestartet werden. Bitte später erneut versuchen."
@@ -115,7 +119,7 @@ def plan_checkout_ready(
     *,
     stripe_cache: dict[str, dict[str, Any]] | None = None,
 ) -> tuple[bool, str | None]:
-    """Per-plan readiness — env set + Stripe API confirms subscription price."""
+    """Per-plan readiness — env set + Stripe API confirms recurring subscription price."""
     if not os.getenv("STRIPE_SECRET_KEY", "").strip():
         return False, "STRIPE_SECRET_KEY"
     env_name = stripe_price_env_name(plan_key)
@@ -125,13 +129,16 @@ def plan_checkout_ready(
     if not price_id:
         return False, env_name
 
-    if stripe_cache is not None:
-        from services.stripe_verify import plan_stripe_ok
-        ok, err = plan_stripe_ok(plan_key, stripe_cache)
-        if not ok:
-            return False, err or env_name
-        return True, None
+    from services.stripe_verify import plan_stripe_ok, verify_plan
 
+    if stripe_cache is not None:
+        ok, err = plan_stripe_ok(plan_key, stripe_cache)
+    else:
+        row = verify_plan(plan_key)
+        ok = bool(row.get("ok"))
+        err = str(row.get("error") or "")
+    if not ok:
+        return False, err or env_name
     return True, None
 
 
@@ -146,14 +153,17 @@ def is_plan_active(
     return user_plan == plan_key
 
 
-def checkout_plans_status() -> dict[str, Any]:
-    """Summary for Premium page warnings."""
+def checkout_plans_status(
+    *,
+    stripe_cache: dict[str, dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """Summary for Premium page warnings (uses recurring price verification)."""
     missing_secret = not os.getenv("STRIPE_SECRET_KEY", "").strip()
     per_plan: dict[str, dict[str, Any]] = {}
     missing_envs: list[str] = []
 
-    for key in (*AI_CHECKOUT_KEYS, *FOOTBALL_CHECKOUT_KEYS):
-        ready, reason = plan_checkout_ready(key)
+    for key in ALL_SUBSCRIPTION_CHECKOUT_KEYS:
+        ready, reason = plan_checkout_ready(key, stripe_cache=stripe_cache)
         env_name = stripe_price_env_name(key)
         price_id, _ = resolve_stripe_price_id(key)
         per_plan[key] = {
@@ -161,12 +171,14 @@ def checkout_plans_status() -> dict[str, Any]:
             "env": env_name,
             "has_price_id": bool(price_id),
             "reason": reason,
+            "checkout_mode": SUBSCRIPTION_CHECKOUT_MODE,
         }
         if not ready and reason and reason not in ("no_checkout", "STRIPE_SECRET_KEY"):
             missing_envs.append(reason)
 
     return {
         "stripe_secret_ok": not missing_secret,
+        "checkout_mode": SUBSCRIPTION_CHECKOUT_MODE,
         "per_plan": per_plan,
         "missing_envs": sorted(set(missing_envs)),
         "any_ready": any(p["ready"] for p in per_plan.values()) if not missing_secret else False,

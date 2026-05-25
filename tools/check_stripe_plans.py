@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 load_dotenv(ROOT / ".env")
 
 from services.billing_plans import (
+    SUBSCRIPTION_CHECKOUT_MODE,
     checkout_base_url,
     stripe_checkout_cancel_url,
     stripe_checkout_success_url,
@@ -28,12 +29,18 @@ def main() -> None:
     print("checkout_base_url():", checkout_base_url())
     print("success_url:", stripe_checkout_success_url())
     print("cancel_url:", stripe_checkout_cancel_url())
+    print("checkout mode:", SUBSCRIPTION_CHECKOUT_MODE, "(all Abo plans)")
     print()
     for key, row in verify_all_checkout_plans().items():
         mark = "OK" if row.get("ok") else "FAIL"
         err = row.get("error") or "-"
         pid = row.get("price_id") or "MISSING"
-        print(f"  [{mark}] {key}: {row.get('env')} -> {pid} | {err}")
+        ptype = row.get("price_type") or "-"
+        interval = row.get("recurring_interval") or "-"
+        print(
+            f"  [{mark}] {key}: {row.get('env')} -> {pid} | "
+            f"type={ptype} interval={interval} | {err}"
+        )
 
 
 if __name__ == "__main__":

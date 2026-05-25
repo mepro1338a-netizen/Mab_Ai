@@ -1,5 +1,6 @@
 """
-Stripe Price-ID verification — explains why Grand works but Pro/Elite may not.
+Stripe Price-ID verification for subscription checkout (mode=subscription only).
+One-off (type=one_time) prices must not be used for Abo plans.
 """
 from __future__ import annotations
 
@@ -9,8 +10,8 @@ from typing import Any
 import stripe
 
 from services.billing_plans import (
-    AI_CHECKOUT_KEYS,
-    FOOTBALL_CHECKOUT_KEYS,
+    ALL_SUBSCRIPTION_CHECKOUT_KEYS,
+    SUBSCRIPTION_CHECKOUT_MODE,
     resolve_stripe_price_id,
     stripe_price_env_name,
 )
@@ -20,18 +21,11 @@ try:
 except ImportError:
     from stripe.error import InvalidRequestError as StripeInvalidRequestError  # type: ignore
 
-ALL_CHECKOUT_KEYS = (*AI_CHECKOUT_KEYS, *FOOTBALL_CHECKOUT_KEYS)
+ALL_CHECKOUT_KEYS = ALL_SUBSCRIPTION_CHECKOUT_KEYS
 
 
-def _stripe_ready() -> bool:
-    key = os.getenv("STRIPE_SECRET_KEY", "").strip()
-    if key:
-        stripe.api_key = key
-    return bool(key)
-
-
-def _stripe_field(obj: Any, key: str, default: Any = None) -> Any:
-    """Stripe SDK v10+ Price objects have no .get() — use attr or []."""
+def stripe_field(obj: Any, key: str, default: Any = None) -> Any:
+    """Stripe SDK v10+ objects have no .get() — use attr or []."""
     if obj is None:
         return default
     try:
@@ -46,18 +40,73 @@ def _stripe_field(obj: Any, key: str, default: Any = None) -> Any:
         return default
 
 
+def _stripe_ready() -> bool:
+    key = os.getenv("STRIPE_SECRET_KEY", "").strip()
+    if key:
+        stripe.api_key = key
+    return bool(key)
+
+
+def price_is_recurring_subscription(price: Any) -> tuple[bool, str, dict[str, Any]]:
+    """
+    True only for active Stripe Prices usable with Checkout mode=subscription.
+    Rejects one_time / missing recurring.
+    """
+    meta: dict[str, Any] = {
+        "price_type": "",
+        "recurring_interval": "",
+        "recurring_interval_count": None,
+    }
+    if price is None:
+        return False, "Price nicht gefunden", meta
+
+    price_type = str(stripe_field(price, "type", "") or "").strip().lower()
+    meta["price_type"] = price_type
+
+    if price_type == "one_time":
+        return (
+            False,
+            "One-off Price (type=one_time) — für Abos einen Recurring-Preis in Stripe anlegen",
+            meta,
+        )
+
+    recurring = stripe_field(price, "recurring", None)
+    if not recurring:
+        return (
+            False,
+            "Kein Abo-Preis — in Stripe „Recurring“ (monthly/yearly) anlegen, kein One-time",
+            meta,
+        )
+
+    interval = str(stripe_field(recurring, "interval", "") or "").strip().lower()
+    count = stripe_field(recurring, "interval_count", 1)
+    meta["recurring_interval"] = interval
+    meta["recurring_interval_count"] = count
+
+    if not interval:
+        return False, "Recurring-Preis ohne Intervall (month/year)", meta
+
+    if not bool(stripe_field(price, "active", False)):
+        return False, "Price ist in Stripe deaktiviert (inactive)", meta
+
+    return True, "", meta
+
+
 def verify_price_id(price_id: str) -> dict[str, Any]:
     """
-    Check if price_id works with Checkout subscription mode.
-    Returns dict: ok (bool), error (str), recurring (bool), active (bool), livemode (bool|None)
+    Check if price_id works with Checkout mode=subscription.
+    Returns dict: ok, error, recurring, active, livemode, price_type, recurring_interval
     """
     result: dict[str, Any] = {
         "ok": False,
         "error": "",
         "price_id": price_id,
+        "checkout_mode": SUBSCRIPTION_CHECKOUT_MODE,
         "active": False,
         "recurring": False,
         "livemode": None,
+        "price_type": "",
+        "recurring_interval": "",
     }
     if not price_id:
         result["error"] = "Keine Price-ID gesetzt"
@@ -75,18 +124,17 @@ def verify_price_id(price_id: str) -> dict[str, Any]:
 
     try:
         price = stripe.Price.retrieve(price_id)
-        active = _stripe_field(price, "active", False)
-        recurring = _stripe_field(price, "recurring", None)
-        result["active"] = bool(active)
-        result["recurring"] = bool(recurring)
-        result["livemode"] = _stripe_field(price, "livemode", None)
+        ok, err, meta = price_is_recurring_subscription(price)
+        result["active"] = bool(stripe_field(price, "active", False))
+        result["recurring"] = ok
+        result["livemode"] = stripe_field(price, "livemode", None)
+        result["price_type"] = meta.get("price_type", "")
+        result["recurring_interval"] = meta.get("recurring_interval", "")
 
-        if not result["active"]:
-            result["error"] = "Price ist in Stripe deaktiviert (inactive)"
+        if not ok:
+            result["error"] = err
             return result
-        if not result["recurring"]:
-            result["error"] = "Kein Abo-Preis — in Stripe „Recurring/monthly“ anlegen"
-            return result
+
         result["ok"] = True
         result["error"] = ""
         return result
@@ -107,6 +155,7 @@ def verify_plan(plan_key: str) -> dict[str, Any]:
         "plan_key": plan_key,
         "env": env_name,
         "price_id": price_id or "",
+        "checkout_mode": SUBSCRIPTION_CHECKOUT_MODE,
         "ok": False,
         "error": "",
     }
@@ -156,4 +205,4 @@ def plan_stripe_ok(plan_key: str, cache: dict[str, dict[str, Any]] | None = None
     data = (cache or verify_all_checkout_plans()).get(plan_key, {})
     if data.get("ok"):
         return True, ""
-    return False, str(data.get("error") or "Stripe Price nicht gültig")
+    return False, str(data.get("error") or "Stripe Price nicht gültig (nur recurring für Abos)")

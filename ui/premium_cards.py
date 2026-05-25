@@ -140,12 +140,12 @@ def render_plan_card(plan_key: str) -> None:
 
 
 def render_stripe_status_banner() -> None:
-    status = checkout_plans_status()
+    cache = get_stripe_verify_cache()
+    status = checkout_plans_status(stripe_cache=cache)
     if not status["stripe_secret_ok"]:
         st.warning("Stripe: `STRIPE_SECRET_KEY` fehlt — keine Checkouts möglich.")
         return
 
-    cache = get_stripe_verify_cache()
     broken = [
         k for k, v in cache.items()
         if v.get("price_id") and not v.get("ok")
@@ -185,8 +185,12 @@ def render_stripe_diagnostics_admin() -> None:
             pid = row.get("price_id", "") or "—"
             if row.get("ok"):
                 mode = "live" if row.get("livemode") else "test"
+                interval = row.get("recurring_interval") or "recurring"
                 short = pid if len(pid) <= 28 else f"{pid[:28]}…"
-                st.markdown(f"✅ **{plan_key}** — `{env}` → `{short}` ({mode}, recurring)")
+                st.markdown(
+                    f"✅ **{plan_key}** — `{env}` → `{short}` "
+                    f"({mode}, {interval}, mode=subscription)"
+                )
             else:
                 err = row.get("error") or "unbekannt"
                 st.markdown(f"❌ **{plan_key}** — `{env}` → `{pid}` — {err}")

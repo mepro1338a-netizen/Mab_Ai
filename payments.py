@@ -12,6 +12,7 @@ from database import (
 )
 from logger import log_stripe, user_friendly_error
 from services.billing_plans import (
+    SUBSCRIPTION_CHECKOUT_MODE,
     USER_FRIENDLY_CHECKOUT_ERROR,
     checkout_base_url,
     plan_catalog,
@@ -22,6 +23,7 @@ from services.billing_plans import (
     stripe_checkout_success_url,
     stripe_price_env_name,
 )
+from services.stripe_verify import stripe_field, verify_price_id
 
 _stripe_key = os.getenv("STRIPE_SECRET_KEY", "").strip()
 stripe.api_key = _stripe_key
@@ -109,8 +111,6 @@ def create_checkout_session(username: str, plan_key: str):
     plan = plan_catalog(plan_key) or {}
     category = plan_category(plan_key)
 
-    from services.stripe_verify import verify_price_id
-
     price_check = verify_price_id(price_id)
     if not price_check.get("ok"):
         err_msg = price_check.get("error") or "invalid price"
@@ -128,7 +128,7 @@ def create_checkout_session(username: str, plan_key: str):
 
     try:
         session = stripe.checkout.Session.create(
-            mode="subscription",
+            mode=SUBSCRIPTION_CHECKOUT_MODE,
             payment_method_types=["card"],
             line_items=[{"price": price_id, "quantity": 1}],
             success_url=success_url,
@@ -138,10 +138,25 @@ def create_checkout_session(username: str, plan_key: str):
                 "username": username,
                 "plan": plan_key,
                 "category": category,
+                "checkout_mode": SUBSCRIPTION_CHECKOUT_MODE,
             },
         )
+        session_mode = str(stripe_field(session, "mode", "") or "")
+        if session_mode != SUBSCRIPTION_CHECKOUT_MODE:
+            _log_checkout_failure(
+                "checkout_wrong_mode",
+                username=username,
+                plan_key=plan_key,
+                price_id=price_id,
+                success_url=success_url,
+                cancel_url=cancel_url,
+                stripe_error=f"expected {SUBSCRIPTION_CHECKOUT_MODE}, got {session_mode}",
+                price_env=price_env,
+            )
+            return None, USER_FRIENDLY_CHECKOUT_ERROR
+        sid = stripe_field(session, "id", None) or ""
         try:
-            record_purchase(username, plan_key, 0, session.id, "created", "created")
+            record_purchase(username, plan_key, 0, sid, "created", "created")
         except Exception as db_exc:
             log_stripe(
                 "checkout_db_warn",
@@ -162,9 +177,9 @@ def create_checkout_session(username: str, plan_key: str):
             success_url=success_url,
             cancel_url=cancel_url,
             price_env=price_env,
-            session_id=session.id,
+            session_id=sid,
         )
-        return session.url, None
+        return stripe_field(session, "url", None), None
     except Exception as e:
         _log_checkout_failure(
             "checkout_failed",
@@ -186,26 +201,38 @@ def confirm_checkout_session(session_id):
 
     try:
         session = stripe.checkout.Session.retrieve(session_id)
-        username = session.get("client_reference_id") or session.get("metadata", {}).get("username")
-        plan = session.get("metadata", {}).get("plan")
-        status = session.get("payment_status", "unknown")
+        sid = stripe_field(session, "id", session_id) or session_id
+        session_mode = str(stripe_field(session, "mode", "") or "")
+        if session_mode != SUBSCRIPTION_CHECKOUT_MODE:
+            return (
+                False,
+                f"Ungültige Checkout-Session (mode={session_mode or 'unknown'}; "
+                f"nur {SUBSCRIPTION_CHECKOUT_MODE} für Abos).",
+            )
+
+        metadata = stripe_field(session, "metadata", {}) or {}
+        username = stripe_field(session, "client_reference_id", None) or stripe_field(
+            metadata, "username", None
+        )
+        plan = stripe_field(metadata, "plan", None)
+        status = str(stripe_field(session, "payment_status", "unknown") or "unknown")
 
         if status == "paid" and username and is_checkout_plan(plan):
-            if payment_already_paid(session.id):
+            if payment_already_paid(sid):
                 label = FOOTBALL_PLANS.get(plan, {}).get("label") or PLANS.get(plan, {}).get("label", plan)
                 return True, f"{label} war bereits aktiv (keine Doppelbuchung)."
 
             if is_football_plan(plan):
                 set_football_plan(username, plan)
                 label = FOOTBALL_PLANS[plan].get("label", plan)
-                record_purchase(username, plan, 0, session.id, status, "paid")
+                record_purchase(username, plan, 0, sid, status, "paid")
                 return True, f"{label} aktiviert."
             set_plan(username, plan)
             update_tokens(username, PLANS[plan]["tokens"])
-            record_purchase(username, plan, 0, session.id, status, "paid")
+            record_purchase(username, plan, 0, sid, status, "paid")
             return True, f"{PLANS[plan]['label']} aktiviert."
 
-        record_purchase(username or "", plan or "", 0, session.id, status, "pending")
+        record_purchase(username or "", plan or "", 0, sid, status, "pending")
         return False, f"Zahlung noch nicht bestätigt: {status}"
     except Exception as e:
         return False, str(e)
@@ -233,7 +260,15 @@ def handle_stripe_webhook(payload, sig):
     log_stripe(f"webhook_received:{event_type}", success=True)
 
     if event_type == "checkout.session.completed":
-        session_id = event.data.object.get("id")
+        obj = event.data.object
+        session_id = stripe_field(obj, "id", None)
+        session_mode = str(stripe_field(obj, "mode", "") or "")
+        if session_mode and session_mode != SUBSCRIPTION_CHECKOUT_MODE:
+            log_stripe(
+                f"webhook_skip_non_subscription:{session_mode}",
+                success=True,
+            )
+            return True, f"Ignoriert: Checkout mode={session_mode}"
         if session_id:
             ok, msg = confirm_checkout_session(session_id)
             log_stripe(
