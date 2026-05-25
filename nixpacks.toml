@@ -1,0 +1,5 @@
+# Force start command — prevents Nixpacks from auto-running `streamlit run`
+# https://nixpacks.com/docs/configuration/file
+
+[start]
+cmd = "python gateway.py"
