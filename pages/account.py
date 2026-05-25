@@ -12,7 +12,14 @@ from database import (
     list_usage,
     list_purchases,
 )
-from ui.premium_foundation import inject_beta_global_css, render_empty_state
+from ui.premium_foundation import (
+    inject_beta_global_css,
+    premium_foundation_css,
+    render_empty_state,
+    render_page_hero,
+    render_status_badge,
+)
+from redeem_tracking import list_redeem_redemptions, redeem_code_tracked
 from ui.styles import inject_css, page_layout_css
 from ui_core import require_login, sync_session_user
 
@@ -346,62 +353,296 @@ def render_dashboard():
                 render_empty_state("Keine Zahlungen", "Upgrades erscheinen nach Stripe Checkout.")
 
 
+def _redeem_extra_css() -> None:
+    inject_css("""
+.redeem-terminal {
+    border-radius: 22px;
+    padding: 20px 22px;
+    margin-bottom: 14px;
+    background:
+        radial-gradient(circle at 100% 0%, rgba(168,85,247,.18), transparent 42%),
+        linear-gradient(160deg, rgba(14,12,28,.96), rgba(8,8,18,.98));
+    border: 1px solid rgba(255,231,163,.14);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
+}
+.redeem-terminal .rt-label {
+    color: #c084fc !important;
+    font-size: 10px;
+    font-weight: 1000;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+}
+.redeem-terminal .rt-title {
+    color: #ffe7a3 !important;
+    font-size: 18px;
+    font-weight: 1000;
+    margin-top: 8px;
+}
+.redeem-terminal .rt-hint {
+    color: #64748b !important;
+    font-size: 12px;
+    margin-top: 8px;
+    line-height: 1.5;
+}
+.redeem-type-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+}
+.redeem-type {
+    border-radius: 16px;
+    padding: 14px 16px;
+    border: 1px solid rgba(255,255,255,.07);
+    background: rgba(12,16,32,.72);
+}
+.redeem-type .name {
+    color: #f8fafc !important;
+    font-size: 14px;
+    font-weight: 900;
+}
+.redeem-type .desc {
+    color: #94a3b8 !important;
+    font-size: 12px;
+    margin-top: 5px;
+    line-height: 1.45;
+}
+.redeem-type.tokens { border-color: rgba(96,165,250,.28); }
+.redeem-type.plan { border-color: rgba(168,85,247,.32); }
+.redeem-type.football { border-color: rgba(34,197,94,.28); }
+div[data-testid="stFormSubmitButton"] > button {
+    background: linear-gradient(135deg, #7c3aed, #5b21b6) !important;
+    color: #f8fafc !important;
+    border: 1px solid rgba(196,181,253,.35) !important;
+    border-radius: 14px !important;
+    font-weight: 900 !important;
+    letter-spacing: .04em !important;
+    min-height: 48px !important;
+    box-shadow: 0 12px 28px rgba(124,58,237,.28) !important;
+}
+div[data-testid="stFormSubmitButton"] > button:hover {
+    border-color: rgba(255,231,163,.45) !important;
+    filter: brightness(1.06);
+}
+.stTextInput input {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace !important;
+    letter-spacing: .12em !important;
+    text-transform: uppercase !important;
+}
+""")
+
+
+def _user_redeem_history(username: str, limit: int = 12) -> list[dict]:
+    rows = list_redeem_redemptions()
+    out = []
+    for row in rows:
+        if len(row) < 6:
+            continue
+        if str(row[1]) != username:
+            continue
+        out.append(
+            {
+                "id": row[0],
+                "code": row[2],
+                "created_at": row[5],
+            }
+        )
+        if len(out) >= limit:
+            break
+    return out
+
+
 def render_redeem():
     require_login()
+    refresh_user()
+    _dashboard_css()
+    _redeem_extra_css()
 
-    st.title("Redeem Center")
-    st.caption("Codes einlösen und Tokens oder Plan-Upgrades freischalten.")
+    plan_key = current_plan_key()
+    plan = current_plan()
+    tokens = int(st.session_state.get("tokens", 0) or 0)
+    fb_plan = str(st.session_state.get("football_plan") or "none")
+    fb_label = fb_plan.replace("football_", "").title() if fb_plan != "none" else "Kein Plan"
+    user = st.session_state.get("user", "User")
+    plan_label = plan.get("label", plan_key.title())
 
-    with st.container(border=True):
-        code = st.text_input("Code", placeholder="DEIN-CODE")
+    st.markdown(
+        f"""
+<div class="dash-hero">
+    <div class="dash-kicker">MaByte · License Activation</div>
+    <div class="dash-title">Redeem Center</div>
+    <div class="dash-sub">
+        Einlöse-Codes für <strong>Tokens</strong>, <strong>Plan-Upgrades</strong> und
+        <strong>Football Premium</strong> — sofort auf deinen Account gebucht.
+    </div>
+</div>
+        """,
+        unsafe_allow_html=True,
+    )
 
-        if st.button("Code einlösen", width="stretch"):
-            if not code:
-                st.warning("Bitte Code eingeben.")
-                return
+    cards = [
+        ("Tokens", f"{tokens:,}".replace(",", ".")),
+        ("MaByte Plan", plan_label),
+        ("Football", fb_label),
+    ]
+    stat_html = "".join(
+        f'<div class="dash-stat"><div class="lbl">{html.escape(l)}</div>'
+        f'<div class="val">{html.escape(v)}</div></div>'
+        for l, v in cards
+    )
+    st.markdown(
+        f'<div class="dash-stat-grid" style="grid-template-columns:repeat(3,minmax(0,1fr));">{stat_html}</div>',
+        unsafe_allow_html=True,
+    )
 
-            ok, msg = redeem_code(st.session_state.get("user"), code)
+    col_main, col_info = st.columns([1.15, 0.85], gap="large")
 
-            if ok:
-                refresh_user()
-                st.success(msg)
-                st.rerun()
-            else:
-                st.error(msg)
+    with col_main:
+        st.markdown(
+            """
+<div class="redeem-terminal">
+    <div class="rt-label">Activation Terminal</div>
+    <div class="rt-title">Code einlösen</div>
+    <div class="rt-hint">Gib deinen Code ein — Groß-/Kleinschreibung wird ignoriert. Ein Code pro Einlösung.</div>
+</div>
+            """,
+            unsafe_allow_html=True,
+        )
+        with st.container(border=True):
+            with st.form("redeem_code_form", clear_on_submit=True):
+                code = st.text_input(
+                    "Lizenz-Code",
+                    placeholder="MABYTE-XXXX-XXXX",
+                    help="Code vom Admin, Partner oder Aktion.",
+                )
+                submitted = st.form_submit_button(
+                    "Code aktivieren",
+                    width="stretch",
+                    type="primary",
+                )
+                if submitted:
+                    if not (code or "").strip():
+                        st.warning("Bitte einen Code eingeben.")
+                    else:
+                        ok, msg = redeem_code(st.session_state.get("user"), code)
+                        if ok:
+                            redeem_code_tracked(
+                                st.session_state.get("user"),
+                                (code or "").strip().upper(),
+                            )
+                            refresh_user()
+                            st.success(msg)
+                            st.rerun()
+                        else:
+                            st.error(msg)
+
+    with col_info:
+        with st.container(border=True):
+            st.markdown(
+                '<div class="dash-kicker" style="margin-bottom:12px;">Was Codes freischalten</div>',
+                unsafe_allow_html=True,
+            )
+            st.markdown(
+                """
+<div class="redeem-type-grid">
+    <div class="redeem-type tokens">
+        <div class="name">Token Boost</div>
+        <div class="desc">Guthaben für AI Workspaces — Chat, Bild, Video, Music, Reels.</div>
+    </div>
+    <div class="redeem-type plan">
+        <div class="name">MaByte Plan</div>
+        <div class="desc">Pro, Grand oder Elite — höhere Limits und Workspace-Freigaben.</div>
+    </div>
+    <div class="redeem-type football">
+        <div class="name">Football Premium</div>
+        <div class="desc">Starter, Pro oder Elite — Odds Lab, AI Engine und Match Center.</div>
+    </div>
+</div>
+                """,
+                unsafe_allow_html=True,
+            )
+            st.caption("Codes werden im Admin Panel erstellt. Bei Problemen: Support-Ticket.")
+
+    st.markdown(
+        '<div class="dash-kicker" style="margin:18px 0 10px 0;">Einlösungs-Verlauf</div>',
+        unsafe_allow_html=True,
+    )
+
+    history = _user_redeem_history(str(user))
+    if history:
+        for row in history:
+            code_mask = html.escape(str(row.get("code") or "—"))
+            when = html.escape(str(row.get("created_at") or "")[:16])
+            st.markdown(
+                f"""
+<div class="dash-activity" style="border-left:3px solid rgba(168,85,247,.45);">
+    <div class="t">{code_mask}</div>
+    <div class="d">Eingelöst · {when}</div>
+</div>
+                """,
+                unsafe_allow_html=True,
+            )
+    else:
+        render_empty_state(
+            "Noch keine Einlösungen",
+            "Nach der ersten Aktivierung erscheint dein Verlauf hier.",
+        )
+
+
+def _support_css() -> None:
+    premium_foundation_css(1100, 88)
 
 
 def render_support():
     require_login()
+    _support_css()
 
-    premium_foundation_css(1100, 88)
     render_page_hero(
         "Support Center",
         "Tickets & Hilfe",
-        "Professioneller Support für Account, Zahlung, Football Premium und technische Fragen.",
+        "Account, Zahlung, Football Premium und technische Fragen — Antwort im Admin Panel.",
     )
 
+    open_count = 0
+    tickets = list_support_messages()
+    own_tickets = [t for t in tickets if t.get("username") == st.session_state.get("user")]
+    open_count = sum(1 for t in own_tickets if str(t.get("status") or "open") == "open")
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.metric("Meine Tickets", len(own_tickets))
+    with c2:
+        st.metric("Offen", open_count)
+    with c3:
+        st.metric("Geschlossen", len(own_tickets) - open_count)
+
     with st.container(border=True):
+        st.markdown(
+            '<div class="dash-kicker" style="margin-bottom:12px;">Neues Ticket</div>',
+            unsafe_allow_html=True,
+        )
         with st.form("support_ticket_form"):
-            category = st.selectbox(
-                "Kategorie",
-                [
-                    "Account",
-                    "Payment",
-                    "Football Premium",
-                    "Tokens",
-                    "Workspace",
-                    "Bug",
-                    "Sonstiges",
-                ],
+            c1, c2 = st.columns(2)
+            with c1:
+                category = st.selectbox(
+                    "Kategorie",
+                    [
+                        "Account",
+                        "Payment",
+                        "Football Premium",
+                        "Tokens",
+                        "Workspace",
+                        "Bug",
+                        "Sonstiges",
+                    ],
+                )
+            with c2:
+                subject = st.text_input("Betreff", placeholder="Kurze Zusammenfassung")
+            message = st.text_area(
+                "Nachricht",
+                height=160,
+                placeholder="Beschreibe dein Anliegen so genau wie möglich…",
             )
-
-            subject = st.text_input("Betreff")
-            message = st.text_area("Nachricht", height=160)
-
-            submitted = st.form_submit_button(
-                "Ticket erstellen",
-                width="stretch",
-            )
+            submitted = st.form_submit_button("Ticket erstellen", width="stretch", type="primary")
 
             if submitted:
                 if not subject or not message:
@@ -420,34 +661,31 @@ def render_support():
                     else:
                         st.error(msg)
 
-    st.divider()
-
-    st.subheader("Meine Tickets")
-
-    tickets = list_support_messages()
-
-    own_tickets = [
-        t for t in tickets
-        if t.get("username") == st.session_state.get("user")
-    ]
+    st.markdown(
+        '<div class="dash-kicker" style="margin:16px 0 10px 0;">Meine Tickets</div>',
+        unsafe_allow_html=True,
+    )
 
     if own_tickets:
         for ticket in own_tickets:
             status = str(ticket.get("status") or "open")
-            with st.container(border=True):
-                h1, h2 = st.columns([3, 1])
-                with h1:
-                    st.markdown(f"**#{ticket.get('id')} · {ticket.get('subject', 'Ticket')}**")
-                with h2:
-                    render_status_badge(status)
-                st.caption(
-                    f"{ticket.get('category', '')} · {str(ticket.get('created_at', ''))[:16]}"
-                )
-                st.write(ticket.get("message", ""))
+            st.markdown(
+                f"""
+<div class="dash-activity" style="border-left:3px solid {"#22c55e" if status == "open" else "#64748b"};margin-bottom:10px;padding:14px 16px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+        <div class="t">#{ticket.get('id')} · {html.escape(str(ticket.get('subject') or 'Ticket'))}</div>
+    </div>
+    <div class="d">{html.escape(str(ticket.get('category') or ''))} · {html.escape(str(ticket.get('created_at', ''))[:16])}</div>
+    <div style="color:#cbd5e1;font-size:13px;line-height:1.55;margin-top:10px;">{html.escape(str(ticket.get('message') or '')[:800])}</div>
+</div>
+                """,
+                unsafe_allow_html=True,
+            )
+            render_status_badge(status)
     else:
         render_empty_state(
             "Noch keine Tickets",
-            "Erstelle oben ein Ticket — wir melden uns im Admin Panel.",
+            "Erstelle oben ein Ticket — unser Team sieht es im Admin Panel.",
         )
 
 
