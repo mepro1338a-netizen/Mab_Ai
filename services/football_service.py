@@ -409,6 +409,34 @@ class FootballService:
           username=username,
       )
 
+  def get_fixture_events(
+      self,
+      fixture_id: int,
+      *,
+      username: str = "",
+  ) -> list[dict[str, Any]]:
+      return self._request(
+          "fixtures/events",
+          {"fixture": int(fixture_id)},
+          feature="api_live_scores",
+          live=True,
+          username=username,
+      )
+
+  def get_fixture_lineups(
+      self,
+      fixture_id: int,
+      *,
+      username: str = "",
+  ) -> list[dict[str, Any]]:
+      return self._request(
+          "fixtures/lineups",
+          {"fixture": int(fixture_id)},
+          feature="api_player_stats",
+          live=True,
+          username=username,
+      )
+
   def get_team_injuries(
       self,
       team_id: int,

@@ -601,9 +601,16 @@ FOOTBALL_FEATURES = {
     },
     "ai_live_match_intelligence": {
         "min_plan": "football_pro",
-        "label": "Live Match Intelligence",
+        "label": "Live Match Intelligence (Preview)",
         "category": "analysis",
-        "description": "Momentum, Alerts, Upset Detection",
+        "description": "Momentum & Basis-Live-Alerts",
+    },
+    "ai_elite_live_intelligence": {
+        "min_plan": "football_elite",
+        "label": "Elite Live Match Intelligence",
+        "category": "analysis",
+        "description": "Vollstaendige Live AI Match Intelligence",
+        "action": "deep_match_analysis",
     },
     "elite_odds_calculator": {
         "min_plan": "football_pro",
@@ -704,6 +711,7 @@ FOOTBALL_PLANS = {
             "ai_content_calendar",
             "automation_triggers",
             "ai_betting_advanced",
+            "ai_elite_live_intelligence",
             "ai_viral_reel_generator",
             "elite_odds_calculator",
         ],

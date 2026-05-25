@@ -10,6 +10,7 @@ from services.football_access import (
     can_access_feature,
     can_run_action,
     consume_action,
+    resolve_football_plan,
 )
 from services.football_automation_hub import (
     WORKFLOW_CARDS,
@@ -18,19 +19,15 @@ from services.football_automation_hub import (
     load_jobs,
 )
 from services.football_betting_intel import full_betting_analysis
-from services.football_live_intel import (
-    build_live_alerts,
-    live_fixture_snapshot,
-    parse_fixture_statistics,
-)
+from services.football_elite_live import EliteLiveIntelEngine, pro_preview_from_bundle
 from services.football_match_preview import generate_match_preview
 from services.football_odds import fixture_options_from_list, parse_fixture_odds_payload, parse_prediction_insights
 from services.football_service import FootballAPIError, get_football_service
 from services.football_viral_studio import generate_viral_reel_package
+from ui.football_components import inject_football_components_css, render_elite_live_dashboard
 from ui.football_premium import (
     render_automation_dashboard,
     render_betting_intel_dashboard,
-    render_live_intel_panel,
     render_pulse_live,
     render_viral_export_bar,
 )
@@ -51,63 +48,127 @@ def _fixture_pick_options() -> dict[str, int]:
     return fixture_options_from_list(combined)
 
 
+def _plan_tier(session_plan: str) -> int:
+    from config import FOOTBALL_PLAN_ORDER
+    return int(FOOTBALL_PLAN_ORDER.get(session_plan or "none", 0))
+
+
 def render_tab_live_intel(summary: dict, *, username: str, session_plan: str, open_premium) -> None:
+    inject_football_components_css()
     render_section_header(
-        "Live Match Intelligence",
-        "Momentum, gefährliche Angriffe, Upset- & Value-Alerts in Echtzeit.",
+        "Elite Live Match Intelligence",
+        "Vollstaendige AI-Analyse fuer Live-Spiele — Momentum, Taktik, Value, Creator Output.",
     )
-    ok, _, need = can_access_feature(username, "ai_live_match_intelligence", session_plan)
-    if not ok:
+
+    tier = _plan_tier(session_plan)
+    elite_ok, _, elite_need = can_access_feature(username, "ai_elite_live_intelligence", session_plan)
+    pro_ok, _, pro_need = can_access_feature(username, "ai_live_match_intelligence", session_plan)
+
+    if tier < 1 or session_plan in ("none", ""):
         render_upgrade_card(
-            "Live Intelligence",
-            "Live Momentum & AI Alerts ab Football Pro.",
-            need,
-            button_key="fb_live_intel_up",
+            "Elite Live Intelligence",
+            "Live Match Intelligence ab Football Starter — Vollanalyse ab Elite.",
+            "football_starter",
+            button_key="fb_live_starter_up",
             on_upgrade=open_premium,
         )
         return
 
     service = get_football_service()
-    render_pulse_live("LIVE FEED")
-    if st.button("Live aktualisieren", key="fb_intel_refresh", width="stretch"):
-        if not service.is_configured():
-            st.error("API nicht konfiguriert.")
-        else:
-            try:
-                st.session_state.football_live_fixtures = service.get_live_fixtures(username=username)
-            except FootballAPIError as exc:
-                st.error(str(exc))
+    render_pulse_live("LIVE INTELLIGENCE")
+
+    c1, c2 = st.columns([3, 1])
+    with c1:
+        if st.button("Live-Spiele aktualisieren", key="fb_intel_refresh", width="stretch"):
+            if service.is_configured():
+                try:
+                    st.session_state.football_live_fixtures = service.get_live_fixtures(username=username)
+                except FootballAPIError as exc:
+                    st.error(str(exc))
+            else:
+                st.error("API nicht konfiguriert.")
+    with c2:
+        st.caption("Cache aktiv — weniger API-Calls")
 
     live_rows = st.session_state.get("football_live_fixtures") or []
     render_fixture_cards(live_rows, empty_msg="Keine Live-Spiele — Aktualisieren.")
 
     fx_opts = _fixture_pick_options()
+    if not fx_opts and live_rows:
+        from services.football_service import fixture_label
+        for fx in live_rows:
+            fid = (fx.get("fixture") or {}).get("id")
+            if fid:
+                fx_opts[fixture_label(fx)] = int(fid)
+
     fixture_id = None
     if fx_opts:
-        pick = st.selectbox("Spiel für Deep Intel", ["—"] + list(fx_opts.keys()), key="fb_intel_fx")
+        pick = st.selectbox("Live-Spiel analysieren", ["—"] + list(fx_opts.keys()), key="fb_intel_fx")
         if pick != "—":
             fixture_id = fx_opts[pick]
 
-    momentum = {"label": "Ausgeglichen", "leader": "—", "score": 0}
-    alerts = build_live_alerts(live_rows)
+    if not fixture_id:
+        st.info("Waehle ein Spiel aus der Liste oder lade Spiele im Data Mesh.")
+        return
 
-    if fixture_id and service.is_configured():
-        if st.button("Statistik & Momentum laden", key="fb_intel_stats"):
+    cache_key = f"fb_elite_bundle_{fixture_id}"
+    load = st.button(
+        "Elite Live Intelligence laden",
+        type="primary",
+        key="fb_elite_intel_load",
+        width="stretch",
+    )
+
+    if load:
+        if not elite_ok and not pro_ok:
+            render_upgrade_card("Live Intelligence", "Ab Football Pro.", pro_need, button_key="fb_live_pro_up", on_upgrade=open_premium)
+            return
+        action = "deep_match_analysis" if elite_ok else "basic_prediction"
+        ok_run, msg = can_run_action(username, action, session_plan)
+        if not ok_run:
+            st.error(msg)
+            return
+        try:
+            consume_action(username, action, session_plan)
+        except FootballAccessError as exc:
+            st.error(str(exc))
+            return
+        engine = EliteLiveIntelEngine(service)
+        with st.spinner("Live-Daten werden aggregiert…"):
             try:
-                stats = service.get_fixture_statistics(fixture_id, username=username)
-                parsed = parse_fixture_statistics(stats)
-                momentum = parsed.get("momentum") or momentum
-                st.session_state.fb_intel_momentum = momentum
-                st.session_state.fb_intel_stats = parsed
+                bundle = engine.fetch_bundle(fixture_id, username=username)
+                st.session_state[cache_key] = bundle
             except FootballAPIError as exc:
                 st.error(str(exc))
+                return
 
-    momentum = st.session_state.get("fb_intel_momentum") or momentum
-    if summary.get("tier", 0) >= 3:
-        markets = st.session_state.get("fb_odds_markets") or []
-        alerts = build_live_alerts(live_rows, value_markets=markets[:5])
+    bundle = st.session_state.get(cache_key)
+    if not bundle:
+        if not pro_ok:
+            render_upgrade_card(
+                "Pro Preview",
+                "Basis-Live-Intel ab Football Pro — Vollanalyse ab Elite.",
+                pro_need,
+                button_key="fb_live_intel_up",
+                on_upgrade=open_premium,
+            )
+        return
 
-    render_live_intel_panel(momentum, alerts)
+    if elite_ok:
+        render_elite_live_dashboard(bundle, is_preview=False)
+    elif pro_ok:
+        preview = pro_preview_from_bundle(bundle)
+        render_elite_live_dashboard(preview, is_preview=True)
+        if st.button("Upgrade auf Football Elite", key="fb_elite_live_up", width="stretch"):
+            open_premium()
+    else:
+        render_upgrade_card(
+            "Elite Live Intelligence",
+            "Vollstaendige 8-Bereich-Analyse nur mit Football Elite.",
+            elite_need,
+            button_key="fb_elite_live_gate",
+            on_upgrade=open_premium,
+        )
 
 
 def render_tab_betting_ai(summary: dict, *, username: str, session_plan: str, open_premium) -> None:
@@ -182,7 +243,7 @@ def render_tab_betting_ai(summary: dict, *, username: str, session_plan: str, op
 
 
 def render_tab_match_preview(summary: dict, *, username: str, session_plan: str, open_premium) -> None:
-    render_section_header("AI Match Preview", "Narrative, Taktik, Form, O/U & BTTS — für Creator & Analysten.")
+    render_section_header("AI Match Preview", "Narrative, Taktik, Form, O/U & BTTS — fuer Creator & Analysten.")
     ok, _, need = can_access_feature(username, "ai_match_preview", session_plan)
     if not ok:
         render_upgrade_card("Match Preview", "Ab Football Pro.", need, button_key="fb_prev_up", on_upgrade=open_premium)
@@ -192,7 +253,7 @@ def render_tab_match_preview(summary: dict, *, username: str, session_plan: str,
     with c1:
         club = st.text_input("Heim", key="fb_prev_home", placeholder="Bayern")
     with c2:
-        opp = st.text_input("Auswärts", key="fb_prev_away", placeholder="Dortmund")
+        opp = st.text_input("Auswaerts", key="fb_prev_away", placeholder="Dortmund")
 
     ins = st.session_state.get("fb_odds_prediction") or {}
     ctx = {
@@ -222,7 +283,7 @@ def render_tab_match_preview(summary: dict, *, username: str, session_plan: str,
             text, src = generate_match_preview(club, opp, context=ctx)
         st.session_state.fb_match_preview = text
         if src == "fallback":
-            st.info("Offline-Vorschau — OpenAI nicht verfügbar.")
+            st.info("Offline-Vorschau — OpenAI nicht verfuegbar.")
 
     if st.session_state.get("fb_match_preview"):
         st.markdown(st.session_state.fb_match_preview)

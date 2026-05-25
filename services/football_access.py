@@ -36,7 +36,7 @@ ACTION_TO_FEATURE = {
     "optimized_package": "ai_match_preview",
     "viral_analysis": "ai_viral_analysis",
     "thumbnail_system": "ai_match_preview",
-    "deep_match_analysis": "ai_match_preview",
+    "deep_match_analysis": "ai_elite_live_intelligence",
     "full_campaign": "ai_matchday_reports",
     "auto_posting": "automation_triggers",
 }
