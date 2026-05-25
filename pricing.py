@@ -23,9 +23,10 @@ def get_image_cost(quality: str = "standard", size: str = "1024") -> int:
     cost = BASE_IMAGE_COST
     if quality == "hd":
         cost += 30
-    if size == "2048":
-        cost += 40
-    return cost
+    size_key = str(size).strip()
+    addons = {"512": -5, "1024": 0, "1536": 20, "2048": 40}
+    cost += addons.get(size_key, 0)
+    return max(cost, 25)
 
 
 def get_music_cost(length: str = "short") -> int:

@@ -175,6 +175,26 @@ IMAGE_STUDIO_CSS = """
     border-radius: 22px !important;
     box-shadow: none !important;
 }
+.img-size-hint {
+    color: #64748b !important;
+    font-size: 12px;
+    margin: 8px 0 12px 0;
+    line-height: 1.45;
+}
+.img-preset-summary {
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-top: 8px;
+    background: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.1);
+}
+.img-preset-summary strong {
+    color: #ffffff !important;
+}
+.img-preset-summary span {
+    color: #94a3b8 !important;
+    font-size: 13px;
+}
 """
 
 
@@ -195,7 +215,105 @@ STYLE_PRESETS = [
     "Luxury Brand",
 ]
 
-ASPECT_RATIOS = ["1:1", "16:9", "9:16", "4:5"]
+# Ein Preset = Format + Auflösung (vereinfachte Auswahl)
+IMAGE_SIZE_PRESETS: list[dict[str, str]] = [
+    {
+        "id": "square_1k",
+        "label": "Quadrat · Standard",
+        "hint": "Instagram, Avatar, Icons",
+        "pixels": "1024 × 1024",
+        "aspect": "1:1",
+        "size": "1024",
+    },
+    {
+        "id": "square_2k",
+        "label": "Quadrat · Groß",
+        "hint": "Scharfe Posts & Print",
+        "pixels": "2048 × 2048",
+        "aspect": "1:1",
+        "size": "2048",
+    },
+    {
+        "id": "story_1k",
+        "label": "Story · Standard",
+        "hint": "TikTok, Reels, Stories",
+        "pixels": "1024 × 1820",
+        "aspect": "9:16",
+        "size": "1024",
+    },
+    {
+        "id": "story_2k",
+        "label": "Story · Groß",
+        "hint": "Full-HD Stories",
+        "pixels": "2048 × 3640",
+        "aspect": "9:16",
+        "size": "2048",
+    },
+    {
+        "id": "wide_1k",
+        "label": "Breit · Standard",
+        "hint": "YouTube, Banner, Header",
+        "pixels": "1024 × 576",
+        "aspect": "16:9",
+        "size": "1024",
+    },
+    {
+        "id": "wide_2k",
+        "label": "Breit · Groß",
+        "hint": "Hero & Web-Banner",
+        "pixels": "2048 × 1152",
+        "aspect": "16:9",
+        "size": "2048",
+    },
+    {
+        "id": "portrait_1k",
+        "label": "Hoch · Standard",
+        "hint": "Pinterest, Feed, Ads",
+        "pixels": "1024 × 1280",
+        "aspect": "4:5",
+        "size": "1024",
+    },
+    {
+        "id": "portrait_2k",
+        "label": "Hoch · Groß",
+        "hint": "Große Feed-Visuals",
+        "pixels": "2048 × 2560",
+        "aspect": "4:5",
+        "size": "2048",
+    },
+    {
+        "id": "compact",
+        "label": "Kompakt",
+        "hint": "Schnelle Previews",
+        "pixels": "512 × 512",
+        "aspect": "1:1",
+        "size": "512",
+    },
+    {
+        "id": "balanced",
+        "label": "Mittel",
+        "hint": "Balance Qualität/Speed",
+        "pixels": "1536 × 1536",
+        "aspect": "1:1",
+        "size": "1536",
+    },
+]
+
+_PRESET_BY_ID = {p["id"]: p for p in IMAGE_SIZE_PRESETS}
+
+
+def _preset_from_session() -> dict[str, str]:
+    pid = st.session_state.get("image_preset_id", "square_1k")
+    return _PRESET_BY_ID.get(pid) or IMAGE_SIZE_PRESETS[0]
+
+
+def _format_preset_option(idx: int) -> str:
+    p = IMAGE_SIZE_PRESETS[idx]
+    return f"{p['label']}  ·  {p['pixels']}"
+
+
+def _quality_label(q: str) -> str:
+    return "HD" if q == "hd" else "Standard"
 
 
 def inject_image_studio_css() -> None:
@@ -221,8 +339,8 @@ Einstellungen:
 - Use Case: {use_case}
 - Stil: {style}
 - Qualität: {quality}
-- Auflösung: {size}px
-- Seitenverhältnis: {aspect}
+- Export: {size}px ({aspect})
+- Ziel-Pixel: passend zum Preset
 
 Liefere strukturiert:
 
@@ -287,9 +405,9 @@ def render_image_studio(
         unsafe_allow_html=True,
     )
 
+    preset = _preset_from_session()
     quality = st.session_state.get("image_quality", "standard")
-    size = st.session_state.get("image_size", "1024")
-    cost = get_image_cost(quality=quality, size=size)
+    cost = get_image_cost(quality=quality, size=preset["size"])
 
     tokens_fmt = f"{tokens_available:,}".replace(",", ".")
     st.markdown(
@@ -333,24 +451,57 @@ def render_image_studio(
             c1, c2 = st.columns(2)
             with c1:
                 use_case_label = st.selectbox(
-                    "Use Case",
+                    "Verwendung",
                     [u[0] for u in USE_CASES],
                     key="image_use_case_label",
                 )
                 use_case = dict(USE_CASES).get(use_case_label, "thumbnail")
             with c2:
-                style = st.selectbox("Stil-Preset", STYLE_PRESETS, key="image_style")
+                style = st.selectbox("Stil", STYLE_PRESETS, key="image_style")
 
-            c3, c4, c5 = st.columns(3)
-            with c3:
-                quality = st.selectbox("Qualität", ["standard", "hd"], key="image_quality")
-            with c4:
-                size = st.selectbox("Größe", ["1024", "2048"], key="image_size")
-            with c5:
-                aspect = st.selectbox("Format", ASPECT_RATIOS, key="image_aspect")
+            st.markdown("**Bildgröße**")
+            st.markdown(
+                '<div class="img-size-hint">Ein Klick — Format und Auflösung sind schon kombiniert.</div>',
+                unsafe_allow_html=True,
+            )
+            preset_ids = [p["id"] for p in IMAGE_SIZE_PRESETS]
+            default_idx = preset_ids.index(
+                st.session_state.get("image_preset_id", "square_1k")
+            ) if st.session_state.get("image_preset_id") in preset_ids else 0
 
-            cost = get_image_cost(quality=quality, size=size)
-            st.caption(f"Geschätzte Kosten: **{cost} Tokens** · {quality.upper()} · {size}px · {aspect}")
+            picked_idx = st.radio(
+                "Preset",
+                options=list(range(len(IMAGE_SIZE_PRESETS))),
+                index=default_idx,
+                format_func=_format_preset_option,
+                key="image_preset_radio",
+                label_visibility="collapsed",
+            )
+            preset = IMAGE_SIZE_PRESETS[picked_idx]
+            st.session_state["image_preset_id"] = preset["id"]
+
+            q1, q2 = st.columns(2)
+            with q1:
+                quality = st.radio(
+                    "Qualität",
+                    options=["standard", "hd"],
+                    format_func=_quality_label,
+                    horizontal=True,
+                    key="image_quality",
+                )
+            with q2:
+                cost = get_image_cost(quality=quality, size=preset["size"])
+                st.metric("Kosten", f"{cost} Tokens")
+
+            st.markdown(
+                f"""
+<div class="img-preset-summary">
+    <strong>{html.escape(preset["label"])}</strong><br>
+    <span>{html.escape(preset["pixels"])} · {html.escape(preset["aspect"])} · {html.escape(preset["hint"])}</span>
+</div>
+                """,
+                unsafe_allow_html=True,
+            )
 
         st.markdown('<div class="mb-btn-gold">', unsafe_allow_html=True)
         if st.button(
@@ -369,8 +520,8 @@ def render_image_studio(
                     use_case=use_case,
                     style=style,
                     quality=quality,
-                    size=size,
-                    aspect=aspect,
+                    size=preset["size"],
+                    aspect=preset["aspect"],
                 )
                 on_generate(prompt.strip(), cost, full)
         st.markdown("</div>", unsafe_allow_html=True)
@@ -398,7 +549,7 @@ def render_image_studio(
         <li>Text-Safe-Zone für Thumbnails lassen</li>
         <li>Hoher Kontrast für Mobile-Feeds</li>
         <li>Markenfarben im Prompt nennen</li>
-        <li>HD + 2048 für Print & Hero</li>
+        <li>„Groß“ oder Mittel für Hero & Print</li>
     </ul>
 </div>
             """,
