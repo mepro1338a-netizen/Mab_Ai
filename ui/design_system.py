@@ -1,6 +1,7 @@
 """MaByte global premium design system — single injection point."""
 from __future__ import annotations
 
+from ui.button_system import inject_master_buttons
 from ui.styles import MB_THEME_VARS, inject_css, page_layout_css
 from ui.prompt_ui import inject_ma_prompt_css
 
@@ -48,32 +49,6 @@ html, body, .stApp {
     border-radius: 8px;
 }
 *::-webkit-scrollbar-track { background: rgba(8,10,22,.5); }
-
-/* ---- Buttons (main content — not sidebar nav) ---- */
-.main .stButton > button {
-    background: linear-gradient(135deg, rgba(49,18,62,.95), rgba(12,6,22,.98)) !important;
-    color: var(--mb-gold) !important;
-    border: 1px solid rgba(255,231,163,.18) !important;
-    border-radius: 14px !important;
-    font-weight: 900 !important;
-    min-height: 44px !important;
-    transition: all .18s ease !important;
-}
-.main .stButton > button:hover {
-    border-color: rgba(255,231,163,.38) !important;
-    color: #fff !important;
-    box-shadow: 0 0 22px rgba(168,85,247,.22) !important;
-    transform: translateY(-1px);
-}
-div[data-testid="stFormSubmitButton"] > button,
-.main .stButton > button[kind="primary"] {
-    background: linear-gradient(135deg, #7c3aed, #5b21b6) !important;
-    color: #f8fafc !important;
-    border-color: rgba(196,181,253,.35) !important;
-}
-div[data-testid="stDownloadButton"] > button {
-    background: linear-gradient(135deg, rgba(30,64,175,.5), rgba(12,18,42,.95)) !important;
-}
 
 /* ---- Forms ---- */
 .stTextInput input, .stTextArea textarea, .stNumberInput input {
@@ -206,3 +181,4 @@ def inject_design_system(max_width: int = 1480, padding_top: int = 88) -> None:
         + GLOBAL_DESIGN_CSS
     )
     inject_ma_prompt_css()
+    inject_master_buttons()

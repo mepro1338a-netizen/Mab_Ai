@@ -156,11 +156,6 @@ def admin_css():
     inject_css(page_layout_css(1400, 88, 48))
     inject_admin_ui_css()
     inject_css("""
-section.main .stButton > button {
-    min-height: 44px !important;
-    border-radius: 14px !important;
-    font-weight: 900 !important;
-}
 .stTextInput input, .stNumberInput input, .stSelectbox div[data-baseweb="select"] > div,
 .stTextArea textarea {
     background: rgba(10,12,26,.95) !important;

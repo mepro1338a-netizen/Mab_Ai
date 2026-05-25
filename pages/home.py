@@ -94,24 +94,6 @@ div[data-testid="stVerticalBlockBorderWrapper"] {
     box-shadow: 0 18px 45px rgba(0,0,0,.24) !important;
 }
 
-section.main .stButton > button {
-    min-height: 46px !important;
-    border-radius: 16px !important;
-    background:
-        radial-gradient(circle at top left, rgba(168,85,247,.22), transparent 34%),
-        linear-gradient(145deg, rgba(36,8,56,.98), rgba(12,3,25,.98)) !important;
-    border: 1px solid rgba(168,85,247,.34) !important;
-    color: #ffe7a3 !important;
-    font-size: 15px !important;
-    font-weight: 1000 !important;
-}
-
-section.main .stButton > button:hover {
-    transform: translateY(-2px) !important;
-    border-color: rgba(255,231,163,.36) !important;
-    box-shadow: 0 0 26px rgba(168,85,247,.26) !important;
-}
-
 [data-testid="metric-container"] {
     background: linear-gradient(145deg, rgba(18,14,34,.88), rgba(8,7,18,.98)) !important;
     border: 1px solid rgba(168,85,247,.18) !important;

@@ -10,6 +10,7 @@ from pathlib import Path
 
 import streamlit as st
 
+from ui.button_system import inject_master_buttons
 from ui.sidebar_nav import SIDEBAR_SECTIONS
 from ui.styles import inject_css
 
@@ -100,36 +101,10 @@ section[data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"] {
 .mb-nav-item [data-testid="stVerticalBlock"] {
     gap: 0 !important;
 }
-.mb-nav-item .stButton {
-    width: 100% !important;
-}
-section[data-testid="stSidebar"] .stButton > button,
-section[data-testid="stSidebar"] .stButton > button[kind="primary"],
-section[data-testid="stSidebar"] .stButton > button[kind="secondary"],
-section[data-testid="stSidebar"] [data-testid="stBaseButton-primary"],
-section[data-testid="stSidebar"] [data-testid="stBaseButton-secondary"],
-section[data-testid="stSidebar"] button {
-    font-family: inherit !important;
-}
-.mb-nav-item .stButton > button,
-.mb-nav-item .stButton > button[kind="primary"],
-.mb-nav-item .stButton > button[kind="secondary"] {
-    width: 100% !important;
-    min-height: 50px !important;
-    max-height: 50px !important;
-    border-radius: 16px !important;
-    border: 1px solid rgba(255,231,163,.14) !important;
-    background: linear-gradient(135deg, rgba(32,9,48,.92), rgba(12,6,22,.98)) !important;
-    color: #ffe7a3 !important;
-    font-weight: 1000 !important;
-    font-size: 14px !important;
-    text-align: left !important;
-    padding: 12px 14px 12px 54px !important;
-    position: relative !important;
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,.03), 0 8px 20px rgba(0,0,0,.14) !important;
-    transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease !important;
-}
-.mb-nav-item .stButton > button::before {
+.mb-nav-item .stButton > button::before,
+.mb-nav-item button::before,
+.mb-nav-item [data-testid="stBaseButton-secondary"]::before,
+.mb-nav-item [data-testid="stBaseButton-primary"]::before {
     content: "";
     position: absolute;
     left: 12px;
@@ -148,24 +123,9 @@ section[data-testid="stSidebar"] button {
     background-size: 20px 20px;
     box-shadow: 0 6px 14px rgba(0,0,0,.16);
 }
-.mb-nav-item .stButton > button:hover,
-.mb-nav-item .stButton > button[kind="primary"]:hover,
-.mb-nav-item .stButton > button[kind="secondary"]:hover {
-    transform: translateY(-1px) !important;
-    color: #ffffff !important;
-    border-color: rgba(255,231,163,.32) !important;
-    background: linear-gradient(135deg, rgba(91,33,182,.75), rgba(22,8,36,.98)) !important;
-    box-shadow: 0 0 22px rgba(168,85,247,.22) !important;
-}
-.mb-nav-active .stButton > button,
-.mb-nav-active .stButton > button[kind="primary"],
-.mb-nav-active .stButton > button[kind="secondary"] {
-    color: #ffffff !important;
-    border-color: rgba(255,231,163,.45) !important;
-    background: linear-gradient(135deg, rgba(126,34,206,.82), rgba(38,12,62,.98)) !important;
-    box-shadow: 0 0 28px rgba(168,85,247,.24), inset 0 0 0 1px rgba(255,255,255,.05) !important;
-}
-.mb-nav-active .stButton > button::before {
+.mb-nav-active button::before,
+.mb-nav-active [data-testid="stBaseButton-secondary"]::before,
+.mb-nav-active [data-testid="stBaseButton-primary"]::before {
     border-color: rgba(255,231,163,.42);
     box-shadow: 0 0 16px rgba(168,85,247,.28);
 }
@@ -216,20 +176,6 @@ section[data-testid="stSidebar"] button {
     font-size: 13px;
     margin-top: 6px;
 }
-section[data-testid="stSidebar"] .sidebar-logout-wrap .stButton > button {
-    width: 100% !important;
-    min-height: 40px !important;
-    border-radius: 12px !important;
-    background: rgba(15,23,42,.7) !important;
-    border: 1px solid rgba(148,163,184,.2) !important;
-    color: #94a3b8 !important;
-    font-size: 13px !important;
-    padding: 8px 14px !important;
-}
-section[data-testid="stSidebar"] .sidebar-logout-wrap .stButton > button:hover {
-    color: #f8fafc !important;
-    border-color: rgba(255,231,163,.25) !important;
-}
 @media (max-width: 768px) {
     section[data-testid="stSidebar"] {
         min-width: 100% !important;
@@ -241,6 +187,7 @@ section[data-testid="stSidebar"] .sidebar-logout-wrap .stButton > button:hover {
 
 def inject_sidebar_styles() -> None:
     inject_css(sidebar_master_css())
+    inject_master_buttons()
 
 
 def _img_base64(path: Path) -> str:

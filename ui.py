@@ -3,6 +3,7 @@
 from database import ensure_db_ready, get_user
 from payments import confirm_checkout_session
 from ui_core import load_css, sync_session_user
+from ui.button_system import inject_master_buttons
 from ui.sidebar import inject_sidebar_styles, render_sidebar
 from ui.error_boundary import safe_render
 from ui.seo import inject_seo_meta
@@ -221,6 +222,7 @@ elif page in PAGE_HANDLERS:
     label, handler = PAGE_HANDLERS[page]
     safe_render(label, handler)
     inject_sidebar_styles()
+    inject_master_buttons()
 else:
     st.session_state.page = "home"
     st.rerun()

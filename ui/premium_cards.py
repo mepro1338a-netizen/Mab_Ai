@@ -97,6 +97,7 @@ def render_plan_card(plan_key: str) -> None:
         if plan_key == "football_elite":
             st.caption("* Bald: Zugriff auf alle Sport-APIs (NBA, NFL, F1, …)")
 
+        st.markdown('<div class="mb-btn-gold">', unsafe_allow_html=True)
         if active:
             st.button("Aktiv", key=f"subscribe_{plan_key}", width="stretch", disabled=True)
         elif not ready:
@@ -104,6 +105,7 @@ def render_plan_card(plan_key: str) -> None:
             st.caption("Dieser Plan ist derzeit nicht buchbar.")
         elif st.button(btn_label, key=f"subscribe_{plan_key}", width="stretch", type="primary"):
             _on_subscribe(plan_key)
+        st.markdown("</div>", unsafe_allow_html=True)
 
 
 def render_ai_plans_section() -> None:
@@ -144,6 +146,8 @@ def render_enterprise_block() -> None:
         """,
         unsafe_allow_html=True,
     )
-    if st.button("Enterprise Anfrage starten", key="enterprise_request", width="stretch"):
+    st.markdown('<div class="mb-btn-gold">', unsafe_allow_html=True)
+    if st.button("Enterprise Anfrage starten", key="enterprise_request", width="stretch", type="primary"):
         st.session_state.page = "support"
         st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)

@@ -237,23 +237,6 @@ div[data-testid="stVerticalBlockBorderWrapper"] {
     padding-top: 14px !important;
 }
 
-section.main .stButton > button {
-    min-height: 52px !important;
-    border-radius: 18px !important;
-    background:
-        radial-gradient(circle at top left, rgba(168,85,247,.22), transparent 34%),
-        linear-gradient(145deg, rgba(36,8,56,.98), rgba(12,3,25,.98)) !important;
-    border: 1px solid rgba(168,85,247,.34) !important;
-    color: #ffe7a3 !important;
-    font-size: 15px !important;
-    font-weight: 1000 !important;
-}
-
-section.main .stButton > button:hover {
-    transform: translateY(-2px) !important;
-    box-shadow: 0 0 24px rgba(168,85,247,.25) !important;
-}
-
 [data-testid="metric-container"] {
     background:
         linear-gradient(145deg, rgba(18,14,34,.88), rgba(8,7,18,.98)) !important;
@@ -357,7 +340,7 @@ def render_reel_script():
 
             st.info("Script, Hook, Caption, Szenenplan und Hashtags.")
 
-    if st.button("Reel Script generieren", width="stretch", key="btn_reel_script"):
+    if st.button("Reel Script generieren", width="stretch", key="btn_reel_script", type="primary"):
         if not topic:
             st.warning("Bitte Idee eingeben.")
             return
@@ -455,7 +438,7 @@ def render_reel_video():
 
             st.info("Bereitet ein echtes Video-Paket vor. API-Anbindung kommt danach.")
 
-    if st.button("Reel Video vorbereiten", width="stretch", key="btn_reel_video"):
+    if st.button("Reel Video vorbereiten", width="stretch", key="btn_reel_video", type="primary"):
         if not topic:
             st.warning("Bitte Video Idee eingeben.")
             return
@@ -573,7 +556,7 @@ Einmalig freischalten. Danach kannst du Reel-Workflows vorbereiten:
             key="auto_frequency",
         )
 
-    if st.button("Automation Flow erstellen", width="stretch", key="btn_auto_flow"):
+    if st.button("Automation Flow erstellen", width="stretch", key="btn_auto_flow", type="primary"):
         if not idea:
             st.warning("Bitte Idee eingeben.")
             return
@@ -617,7 +600,7 @@ def render_image_ai():
         cost = get_image_cost(quality=quality, size=size)
         st.metric("Kosten", f"{cost} Tokens")
 
-    if st.button("Image Prompt vorbereiten", width="stretch", key="btn_image"):
+    if st.button("Image Prompt vorbereiten", width="stretch", key="btn_image", type="primary"):
         if not prompt:
             st.warning("Bitte Prompt eingeben.")
             return
@@ -634,7 +617,7 @@ def render_music_ai():
         cost = get_music_cost(length=length)
         st.metric("Kosten", f"{cost} Tokens")
 
-    if st.button("Song Package generieren", width="stretch", key="btn_music"):
+    if st.button("Song Package generieren", width="stretch", key="btn_music", type="primary"):
         if not topic:
             st.warning("Bitte Thema eingeben.")
             return
@@ -654,7 +637,7 @@ def render_coding_ai():
         cost = get_coding_cost(complexity=complexity)
         st.metric("Kosten", f"{cost} Tokens")
 
-    if st.button("Code Assistant starten", width="stretch", key="btn_coding"):
+    if st.button("Code Assistant starten", width="stretch", key="btn_coding", type="primary"):
         if not task:
             st.warning("Bitte Aufgabe eingeben.")
             return
@@ -697,7 +680,7 @@ def render_video_studio():
         )
         provider = st.selectbox("Provider (später)", ["Kling", "Runway", "Replicate"], key="vs_provider")
 
-    if st.button("Video-Paket erstellen", width="stretch", key="btn_video_studio"):
+    if st.button("Video-Paket erstellen", width="stretch", key="btn_video_studio", type="primary"):
         if not topic.strip():
             st.warning("Bitte ein Video-Konzept eingeben.")
             return

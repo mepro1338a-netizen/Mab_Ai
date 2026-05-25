@@ -296,12 +296,25 @@ div[data-testid="stTabs"] button[aria-selected="true"] {
     border: 1px solid rgba(134,239,172,.18) !important;
     color: #f8fafc !important;
 }
-.fb-page .stButton > button {
+.fb-page .stButton > button,
+.fb-page .stButton button,
+.fb-page button[data-testid="stBaseButton-secondary"],
+.fb-page button[data-testid="stBaseButton-primary"] {
     border-radius: 14px !important;
     background: linear-gradient(135deg, rgba(22,101,52,.85), rgba(76,29,149,.75)) !important;
+    background-color: rgba(22,80,50,.9) !important;
     border: 1px solid rgba(134,239,172,.28) !important;
     color: #f0fdf4 !important;
     font-weight: 1000 !important;
+}
+.fb-page button[data-testid="stBaseButton-primary"],
+.fb-page .stButton > button[kind="primary"] {
+    background: linear-gradient(135deg, #ffd36a 0%, #f59e0b 50%, #16a34a 100%) !important;
+    color: #111827 !important;
+}
+.fb-page button p,
+.fb-page .stButton > button p {
+    color: inherit !important;
 }
 .fb-page [data-testid="metric-container"] {
     background: linear-gradient(145deg, rgba(12,18,32,.9), rgba(6,14,10,.95)) !important;
