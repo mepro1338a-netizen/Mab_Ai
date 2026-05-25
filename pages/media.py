@@ -692,18 +692,9 @@ Liefere: Storyboard, Shots, Voiceover-Skizze, Caption, Thumbnail-Konzept, Export
 
 
 def render_reels_studio():
-    render_hero("Reels Studio", "Kurzform: Script, 3–7s Clips & Automation — getrennt vom Video Studio.")
+    from pages.reels import render_reels_studio_page
 
-    tab_script, tab_video, tab_auto = st.tabs(["Script · 90", "Video · 3–7s", "Automation · Unlock"])
-
-    with tab_script:
-        render_reel_script()
-
-    with tab_video:
-        render_reel_video()
-
-    with tab_auto:
-        render_automation()
+    render_reels_studio_page()
 
 
 def render_media(active_tool="reels"):
