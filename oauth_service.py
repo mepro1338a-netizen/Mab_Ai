@@ -15,6 +15,7 @@ from config import (
     APP_BASE_URL,
     GOOGLE_CLIENT_ID,
     GOOGLE_CLIENT_SECRET,
+    GOOGLE_OAUTH_REDIRECT_PATH,
     GOOGLE_OAUTH_REDIRECT_URI,
     META_APP_ID,
     META_APP_SECRET,
@@ -79,10 +80,58 @@ def verify_state(state: str, max_age: int = STATE_MAX_AGE) -> str:
         return ""
 
 
+def resolve_public_origin() -> str:
+    """
+    Öffentliche App-URL — bevorzugt Request-Host (mabyte.de),
+    falls APP_BASE_URL noch auf Railway zeigt.
+    """
+    try:
+        from streamlit.runtime.scriptrunner import get_script_run_ctx
+
+        ctx = get_script_run_ctx()
+        headers = getattr(ctx, "request_headers", None) or {}
+        host = (headers.get("X-Forwarded-Host") or headers.get("Host") or "").strip()
+        if isinstance(host, str) and "," in host:
+            host = host.split(",")[0].strip()
+        proto = (headers.get("X-Forwarded-Proto") or "https").strip().split(",")[0]
+        if host and "localhost" not in host.lower() and "127.0.0.1" not in host:
+            return f"{proto}://{host}".rstrip("/")
+    except Exception:
+        pass
+    return APP_BASE_URL.rstrip("/")
+
+
 def google_redirect_uri() -> str:
     if GOOGLE_OAUTH_REDIRECT_URI:
-        return GOOGLE_OAUTH_REDIRECT_URI.rstrip("/")
-    return f"{APP_BASE_URL}/oauth/google/callback"
+        return GOOGLE_OAUTH_REDIRECT_URI.strip()
+
+    origin = resolve_public_origin()
+    path = GOOGLE_OAUTH_REDIRECT_PATH.strip() or "/"
+    if not path.startswith("/"):
+        path = "/" + path
+    if path == "/":
+        return f"{origin}/"
+    return f"{origin}{path.rstrip('/')}"
+
+
+def google_oauth_diagnostics() -> dict[str, str]:
+    """Hilfe für Admin/Debug — keine Secrets."""
+    redirect = google_redirect_uri()
+    issues = []
+    if not GOOGLE_CLIENT_ID:
+        issues.append("GOOGLE_CLIENT_ID fehlt")
+    if not GOOGLE_CLIENT_SECRET:
+        issues.append("GOOGLE_CLIENT_SECRET fehlt")
+    if not oauth_state_ready():
+        issues.append("OAUTH_STATE_SECRET fehlt (Pflicht in Production)")
+    if GOOGLE_CLIENT_ID and ".apps.googleusercontent.com" not in GOOGLE_CLIENT_ID:
+        issues.append("Client-ID Format prüfen (Web-Application)")
+    return {
+        "public_origin": resolve_public_origin(),
+        "redirect_uri": redirect,
+        "app_base_url_env": APP_BASE_URL,
+        "issues": "; ".join(issues) if issues else "OK",
+    }
 
 
 def redirect_uri(provider: str = "") -> str:
@@ -114,6 +163,8 @@ def auth_url(provider: str, state: str) -> str:
     redirect = redirect_uri(provider)
 
     if provider == "google":
+        if not GOOGLE_CLIENT_ID or not redirect:
+            return ""
         params = {
             "client_id": GOOGLE_CLIENT_ID,
             "redirect_uri": redirect,

@@ -26,10 +26,12 @@ HEADER_PATH = BASE_DIR / "neuerheader.png"
 
 APP_BASE_URL = os.getenv("APP_BASE_URL", "http://localhost:8501").rstrip("/")
 
-GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
-GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
-# Optional override; default: {APP_BASE_URL}/oauth/google/callback
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "").strip()
+GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "").strip()
+# Volle Redirect-URL (Priorität) — muss 1:1 in Google Console stehen
 GOOGLE_OAUTH_REDIRECT_URI = os.getenv("GOOGLE_OAUTH_REDIRECT_URI", "").strip()
+# Pfad an öffentlicher Domain, Default "/" (Streamlit). Alternative: /oauth/google/callback
+GOOGLE_OAUTH_REDIRECT_PATH = os.getenv("GOOGLE_OAUTH_REDIRECT_PATH", "/").strip() or "/"
 META_APP_ID = os.getenv("META_APP_ID", "")
 META_APP_SECRET = os.getenv("META_APP_SECRET", "")
 TIKTOK_CLIENT_KEY = os.getenv("TIKTOK_CLIENT_KEY", "")

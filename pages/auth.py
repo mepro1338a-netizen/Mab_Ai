@@ -10,6 +10,7 @@ from oauth_service import (
     auth_url,
     complete_oauth,
     friendly_oauth_error,
+    google_oauth_diagnostics,
     google_redirect_uri,
     make_state,
     oauth_state_ready,
@@ -829,6 +830,28 @@ def render_social_row() -> None:
             hints.append("OAUTH_STATE_SECRET")
         hints.append("GOOGLE_CLIENT_ID/SECRET")
         st.caption("Google Login: " + ", ".join(hints) + " in Railway setzen.")
+
+    with st.expander("Google Login funktioniert nicht?", expanded=False):
+        diag = google_oauth_diagnostics()
+        st.markdown(
+            f"""
+**Redirect URI (exakt in Google Console eintragen):**  
+`{diag["redirect_uri"]}`
+
+**Öffentliche Domain:** `{diag["public_origin"]}`  
+**APP_BASE_URL (ENV):** `{diag["app_base_url_env"]}`  
+**Status:** {diag["issues"]}
+            """
+        )
+        st.markdown(
+            """
+1. [Google Cloud Console](https://console.cloud.google.com/apis/credentials) → OAuth Client **Web application**
+2. **Authorized redirect URIs** — exakt die URI oben (oft `https://mabyte.de/`)
+3. **Authorized JavaScript origins:** `https://mabyte.de`
+4. **OAuth consent screen** → Testing → Testnutzer: deine Gmail hinzufügen
+5. Railway: `APP_BASE_URL=https://mabyte.de`
+            """
+        )
 
 
 def render_login_form() -> None:
