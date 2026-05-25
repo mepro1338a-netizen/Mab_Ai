@@ -1,9 +1,8 @@
 ﻿import os
-from urllib.parse import quote
 
 import stripe
 
-from config import APP_BASE_URL, FOOTBALL_PLANS, PLANS
+from config import FOOTBALL_PLANS, PLANS
 from database import (
     payment_already_paid,
     record_purchase,
@@ -14,10 +13,13 @@ from database import (
 from logger import log_stripe, user_friendly_error
 from services.billing_plans import (
     USER_FRIENDLY_CHECKOUT_ERROR,
+    checkout_base_url,
     plan_catalog,
     plan_category,
     plan_checkout_ready,
     resolve_stripe_price_id,
+    stripe_checkout_cancel_url,
+    stripe_checkout_success_url,
     stripe_price_env_name,
 )
 
@@ -33,20 +35,30 @@ def is_football_plan(plan_key: str) -> bool:
     return plan_key in FOOTBALL_PLANS
 
 
-def stripe_checkout_success_url(plan_key: str, category: str) -> str:
-    """Plain HTTPS URL for Stripe — no markdown, no brackets."""
-    base = APP_BASE_URL
-    plan = quote(plan_key, safe="")
-    cat = quote(category, safe="")
-    return (
-        f"{base}/?payment_success=1"
-        f"&session_id={{CHECKOUT_SESSION_ID}}"
-        f"&plan={plan}&category={cat}"
+def _log_checkout_failure(
+    event: str,
+    *,
+    username: str,
+    plan_key: str,
+    price_id: str | None,
+    success_url: str,
+    cancel_url: str,
+    stripe_error: str = "",
+    **extra,
+) -> None:
+    log_stripe(
+        event,
+        username=username,
+        success=False,
+        plan_key=plan_key,
+        price_id_present=bool(price_id),
+        price_id=price_id or "",
+        success_url=success_url,
+        cancel_url=cancel_url,
+        stripe_error=stripe_error,
+        checkout_base=checkout_base_url(),
+        **extra,
     )
-
-
-def stripe_checkout_cancel_url() -> str:
-    return f"{APP_BASE_URL}/?payment_cancel=1"
 
 
 def _validate_stripe_price(price_id: str, plan_key: str) -> str | None:
@@ -65,28 +77,45 @@ def _validate_stripe_price(price_id: str, plan_key: str) -> str | None:
 
 
 def create_checkout_session(username: str, plan_key: str):
+    success_url = stripe_checkout_success_url()
+    cancel_url = stripe_checkout_cancel_url()
+
     if plan_key == "free" or not is_checkout_plan(plan_key):
+        _log_checkout_failure(
+            "checkout_invalid_plan",
+            username=username,
+            plan_key=plan_key,
+            price_id=None,
+            success_url=success_url,
+            cancel_url=cancel_url,
+            stripe_error="invalid plan_key",
+        )
         return None, USER_FRIENDLY_CHECKOUT_ERROR
 
     ready, reason = plan_checkout_ready(plan_key)
     if not ready:
-        log_stripe(
+        _log_checkout_failure(
             "checkout_not_ready",
             username=username,
-            success=False,
-            plan=plan_key,
-            reason=reason or "unknown",
+            plan_key=plan_key,
+            price_id=None,
+            success_url=success_url,
+            cancel_url=cancel_url,
+            stripe_error=reason or "unknown",
         )
         return None, USER_FRIENDLY_CHECKOUT_ERROR
 
     price_id, price_env = resolve_stripe_price_id(plan_key)
     if not price_id or not price_env:
-        log_stripe(
+        _log_checkout_failure(
             "checkout_missing_price",
             username=username,
-            success=False,
-            plan=plan_key,
-            price_env=stripe_price_env_name(plan_key),
+            plan_key=plan_key,
+            price_id=price_id,
+            success_url=success_url,
+            cancel_url=cancel_url,
+            stripe_error=f"missing {stripe_price_env_name(plan_key)}",
+            price_env=price_env or "",
         )
         return None, USER_FRIENDLY_CHECKOUT_ERROR
 
@@ -95,14 +124,15 @@ def create_checkout_session(username: str, plan_key: str):
 
     price_err = _validate_stripe_price(price_id, plan_key)
     if price_err:
-        log_stripe(
+        _log_checkout_failure(
             "checkout_invalid_price",
             username=username,
-            success=False,
-            plan=plan_key,
-            price_env=price_env,
+            plan_key=plan_key,
             price_id=price_id,
-            error=price_err,
+            success_url=success_url,
+            cancel_url=cancel_url,
+            stripe_error=price_err,
+            price_env=price_env,
         )
         return None, USER_FRIENDLY_CHECKOUT_ERROR
 
@@ -111,8 +141,8 @@ def create_checkout_session(username: str, plan_key: str):
             mode="subscription",
             payment_method_types=["card"],
             line_items=[{"price": price_id, "quantity": 1}],
-            success_url=stripe_checkout_success_url(plan_key, category),
-            cancel_url=stripe_checkout_cancel_url(),
+            success_url=success_url,
+            cancel_url=cancel_url,
             client_reference_id=username,
             metadata={
                 "username": username,
@@ -125,20 +155,25 @@ def create_checkout_session(username: str, plan_key: str):
             "checkout_created",
             username=username,
             success=True,
-            plan=plan_key,
+            plan_key=plan_key,
+            price_id_present=True,
+            price_id=price_id,
+            success_url=success_url,
+            cancel_url=cancel_url,
             price_env=price_env,
             session_id=session.id,
         )
         return session.url, None
     except Exception as e:
-        log_stripe(
+        _log_checkout_failure(
             "checkout_failed",
             username=username,
-            success=False,
-            plan=plan_key,
-            price_env=price_env,
+            plan_key=plan_key,
             price_id=price_id,
-            error=str(e),
+            success_url=success_url,
+            cancel_url=cancel_url,
+            stripe_error=str(e),
+            price_env=price_env,
             label=plan.get("label", plan_key),
         )
         return None, user_friendly_error("stripe", str(e))

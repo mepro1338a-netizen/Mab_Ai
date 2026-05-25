@@ -136,12 +136,12 @@ if not logged_in:
 
 def handle_payment_callback() -> None:
     params = st.query_params
-    if params.get("payment_cancel") == "1":
+    if params.get("checkout") == "cancel" or params.get("payment_cancel") == "1":
         st.query_params.clear()
         st.session_state.payment_notice = ("info", "Checkout abgebrochen.")
         return
 
-    if params.get("payment_success") != "1":
+    if params.get("checkout") != "success" and params.get("payment_success") != "1":
         return
 
     session_id = params.get("session_id") or ""

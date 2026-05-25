@@ -8,7 +8,9 @@ from __future__ import annotations
 import os
 from typing import Any
 
-from config import FOOTBALL_PLANS, PLANS
+import os
+
+from config import FOOTBALL_PLANS, PLANS, normalize_app_base_url
 
 # Display order on Premium page (matches screenshot layout)
 AI_CHECKOUT_KEYS = ("pro", "grand", "elite")
@@ -17,6 +19,58 @@ FOOTBALL_CHECKOUT_KEYS = ("football_starter", "football_pro", "football_elite")
 USER_FRIENDLY_CHECKOUT_ERROR = (
     "Zahlung konnte nicht gestartet werden. Bitte später erneut versuchen."
 )
+
+
+def _is_local_url(url: str) -> bool:
+    low = (url or "").lower()
+    return "localhost" in low or "127.0.0.1" in low
+
+
+def _is_production_deploy() -> bool:
+    return bool(
+        os.getenv("RAILWAY_ENVIRONMENT")
+        or os.getenv("RAILWAY_PROJECT_ID")
+        or os.getenv("RAILWAY_SERVICE_NAME")
+        or os.getenv("MABYTE_ENV", "").strip().lower() == "production"
+    )
+
+
+def checkout_base_url() -> str:
+    """
+    APP_BASE_URL first, then STRIPE_SUCCESS_URL fallback.
+    Never use localhost/127.0.0.1 on Railway/production.
+    """
+    app_raw = os.getenv("APP_BASE_URL", "").strip()
+    stripe_raw = os.getenv("STRIPE_SUCCESS_URL", "").strip()
+    in_prod = _is_production_deploy()
+
+    candidates: list[str] = []
+    if app_raw:
+        candidates.append(normalize_app_base_url(app_raw))
+    if stripe_raw:
+        candidates.append(normalize_app_base_url(stripe_raw))
+    if in_prod:
+        railway_host = os.getenv("RAILWAY_PUBLIC_DOMAIN", "").strip()
+        if railway_host:
+            host = railway_host if railway_host.startswith("http") else f"https://{railway_host}"
+            candidates.append(normalize_app_base_url(host))
+
+    for url in candidates:
+        if url and (not in_prod or not _is_local_url(url)):
+            return url.rstrip("/")
+
+    fallback = normalize_app_base_url(app_raw or stripe_raw or "http://localhost:8501")
+    return fallback.rstrip("/")
+
+
+def stripe_checkout_success_url() -> str:
+    base = checkout_base_url()
+    return f"{base}/?checkout=success&session_id={{CHECKOUT_SESSION_ID}}"
+
+
+def stripe_checkout_cancel_url() -> str:
+    base = checkout_base_url()
+    return f"{base}/?checkout=cancel"
 
 
 def plan_catalog(plan_key: str) -> dict[str, Any] | None:

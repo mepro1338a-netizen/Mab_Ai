@@ -16,14 +16,22 @@ load_dotenv(ROOT / ".env")
 from services.billing_plans import (
     AI_CHECKOUT_KEYS,
     FOOTBALL_CHECKOUT_KEYS,
+    checkout_base_url,
     checkout_plans_status,
     plan_checkout_ready,
     resolve_stripe_price_id,
+    stripe_checkout_cancel_url,
+    stripe_checkout_success_url,
 )
 
 
 def main() -> None:
     print("STRIPE_SECRET_KEY:", "set" if os.getenv("STRIPE_SECRET_KEY") else "MISSING")
+    print("APP_BASE_URL:", os.getenv("APP_BASE_URL", "(unset)"))
+    print("STRIPE_SUCCESS_URL:", os.getenv("STRIPE_SUCCESS_URL", "(unset)"))
+    print("checkout_base_url():", checkout_base_url())
+    print("success_url:", stripe_checkout_success_url())
+    print("cancel_url:", stripe_checkout_cancel_url())
     print()
     for key in (*AI_CHECKOUT_KEYS, *FOOTBALL_CHECKOUT_KEYS):
         ready, reason = plan_checkout_ready(key)
