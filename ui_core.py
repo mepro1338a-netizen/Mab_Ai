@@ -141,15 +141,20 @@ section[data-testid="stSidebar"] > div {{
 }}
 
 section[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {{
-    gap:.06rem!important;
+    gap:8px!important;
 }}
 
-.mb-sidebar-nav-block {{
-    border-radius:20px;
-    padding:10px 8px 12px 8px;
-    margin-bottom:10px;
-    background:rgba(8,6,18,.45);
-    border:1px solid rgba(255,255,255,.05);
+section[data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"] {{
+    background:rgba(6,4,14,.55)!important;
+    border:1px solid rgba(168,85,247,.12)!important;
+    border-radius:18px!important;
+    padding:8px 6px 10px 6px!important;
+    margin-bottom:6px!important;
+    box-shadow:none!important;
+}}
+
+section[data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"] > div {{
+    padding:4px 2px!important;
 }}
 
 .sidebar-logo-wrap {{
@@ -486,6 +491,13 @@ def nav(label: str, page: str) -> None:
     st.markdown("</div>", unsafe_allow_html=True)
 
 
+def _nav_section(title: str, items: list[tuple[str, str]]) -> None:
+    with st.container(border=True):
+        section_label(title)
+        for label, page in items:
+            nav(label, page)
+
+
 def render_sidebar() -> None:
     with st.sidebar:
         if WORDMARK.exists():
@@ -501,37 +513,28 @@ def render_sidebar() -> None:
         else:
             st.markdown("## MaByte")
 
-        st.markdown('<div class="mb-sidebar-nav-block">', unsafe_allow_html=True)
-        section_label("Workspace")
-        nav("Mission Control", "home")
-        nav("Dashboard", "dashboard")
-        nav("AI Assistant", "chat")
-        nav("Projects", "projects")
-        nav("Football AI", "football")
-        nav("Automations", "automation_lab")
-        st.markdown("</div>", unsafe_allow_html=True)
-
-        st.markdown('<div class="mb-sidebar-nav-block">', unsafe_allow_html=True)
-        section_label("Studios")
-        nav("Image", "image")
-        nav("Video", "video")
-        nav("Reels", "reels")
-        nav("Music", "music")
-        nav("Code", "coding")
-        st.markdown("</div>", unsafe_allow_html=True)
-
-        st.markdown('<div class="mb-sidebar-nav-block">', unsafe_allow_html=True)
-        section_label("Account")
-        nav("Premium", "premium")
-        nav("Redeem", "redeem")
-        nav("Support", "support")
-        st.markdown("</div>", unsafe_allow_html=True)
-
+        _nav_section("Workspace", [
+            ("Mission Control", "home"),
+            ("Dashboard", "dashboard"),
+            ("AI Assistant", "chat"),
+            ("Projects", "projects"),
+            ("Football AI", "football"),
+            ("Automations", "automation_lab"),
+        ])
+        _nav_section("Studios", [
+            ("Image", "image"),
+            ("Video", "video"),
+            ("Reels", "reels"),
+            ("Music", "music"),
+            ("Code", "coding"),
+        ])
+        _nav_section("Account", [
+            ("Premium", "premium"),
+            ("Redeem", "redeem"),
+            ("Support", "support"),
+        ])
         if is_admin_user():
-            st.markdown('<div class="mb-sidebar-nav-block">', unsafe_allow_html=True)
-            section_label("System")
-            nav("Admin Panel", "admin")
-            st.markdown("</div>", unsafe_allow_html=True)
+            _nav_section("System", [("Admin Panel", "admin")])
 
         user = html.escape(str(st.session_state.get("user", "User")))
         plan = html.escape(str(st.session_state.get("plan", "free")))

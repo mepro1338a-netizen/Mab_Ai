@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import streamlit as st
 
+from ui.prompt_ui import prompt_submit_button, prompt_text_input
 from services.os_guide import (
     QUICK_PROMPTS,
     build_guide_reply,
@@ -44,12 +45,11 @@ def render_os_guide_dashboard() -> None:
     c1, c2 = st.columns([1.2, 1])
     with c1:
         pending = st.session_state.pop("os_guide_pending_query", None)
-        user_q = st.text_input(
-            "Frage an den Guide",
-            placeholder="z.B. Wo ist Odds Lab? · Premium upgraden?",
+        user_q = prompt_text_input(
+            placeholder="Frag MaByte… z.B. Wo ist Odds Lab?",
             key="os_guide_dash_input",
         )
-        if st.button("Antworten", key="os_guide_dash_ask", type="primary", width="stretch"):
+        if prompt_submit_button("Senden", key="os_guide_dash_ask"):
             pending = user_q or pending
 
         if pending:

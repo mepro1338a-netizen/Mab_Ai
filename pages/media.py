@@ -7,6 +7,7 @@ from openai import OpenAI
 from config import OPENAI_API_KEY, OPENAI_TEXT_MODEL, DB_PATH
 from database import spend_tokens, save_usage, get_user, update_tokens
 from ui_core import sync_session_user
+from ui.prompt_ui import inject_ma_prompt_css, prompt_text_area, prompt_text_input
 from ui.styles import inject_css, page_layout_css, gradient_title_css
 
 try:
@@ -320,11 +321,10 @@ def render_reel_script():
 
     with left:
         with st.container(border=True):
-            topic = st.text_area(
-                "Reel Idee",
-                height=160,
-                placeholder="z.B. Warum Arsenal dieses Jahr gefährlich ist...",
+            topic = prompt_text_area(
+                placeholder="Frag MaByte… z.B. Warum Arsenal dieses Jahr gefährlich ist…",
                 key="script_topic",
+                height=160,
             )
 
             platform = st.selectbox(
@@ -423,11 +423,10 @@ def render_reel_video():
 
     with left:
         with st.container(border=True):
-            topic = st.text_area(
-                "Video Idee",
-                height=160,
-                placeholder="z.B. 7 Sekunden Football Edit mit Stadion, schnellen Cuts und Hook...",
+            topic = prompt_text_area(
+                placeholder="Frag MaByte… Video-Idee beschreiben…",
                 key="video_topic",
+                height=160,
             )
 
             platform = st.selectbox(
@@ -556,11 +555,10 @@ Einmalig freischalten. Danach kannst du Reel-Workflows vorbereiten:
     st.success("Automation System ist aktiv.")
 
     with st.container(border=True):
-        idea = st.text_area(
-            "Automation Idee",
-            height=150,
-            placeholder="z.B. Jeden Tag automatisch Football Reels vorbereiten...",
+        idea = prompt_text_area(
+            placeholder="Frag MaByte… Automation beschreiben…",
             key="auto_idea",
+            height=150,
         )
 
         platform = st.selectbox(
@@ -613,7 +611,7 @@ def render_image_ai():
     render_hero("Image AI", "Create thumbnails, covers and visuals.")
 
     with st.container(border=True):
-        prompt = st.text_area("Image Prompt", height=150, key="image_prompt")
+        prompt = prompt_text_area(placeholder="Frag MaByte… Bild beschreiben…", key="image_prompt", height=150)
         quality = st.selectbox("Qualität", ["standard", "hd"], key="image_quality")
         size = st.selectbox("Größe", ["1024", "2048"], key="image_size")
         cost = get_image_cost(quality=quality, size=size)
@@ -630,7 +628,7 @@ def render_music_ai():
     render_hero("Music AI", "Create music concepts and song packages.")
 
     with st.container(border=True):
-        topic = st.text_input("Song Thema", key="music_topic")
+        topic = prompt_text_input(placeholder="Frag MaByte… Song-Thema…", key="music_topic")
         genre = st.selectbox("Genre", ["Rap", "Trap", "Pop", "EDM", "Phonk", "Afro", "Rock"], key="music_genre")
         length = st.selectbox("Länge", ["short", "medium", "long"], key="music_length")
         cost = get_music_cost(length=length)
@@ -647,7 +645,11 @@ def render_coding_ai():
     render_hero("Coding Studio", "Build, debug and ship code faster.")
 
     with st.container(border=True):
-        task = st.text_area("Was soll MaByte bauen oder fixen?", height=160, key="coding_task")
+        task = prompt_text_area(
+            placeholder="Frag MaByte… Was soll gebaut oder gefixt werden?",
+            key="coding_task",
+            height=160,
+        )
         complexity = st.selectbox("Komplexität", ["normal", "advanced", "fullstack"], key="coding_complexity")
         cost = get_coding_cost(complexity=complexity)
         st.metric("Kosten", f"{cost} Tokens")
@@ -678,11 +680,10 @@ def render_video_studio():
         st.metric("Tokens", get_tokens())
 
     with st.container(border=True):
-        topic = st.text_area(
-            "Video-Konzept",
-            height=140,
-            placeholder="z.B. 30s Brand Story, Produkt-Launch, Dokumentar-Stil...",
+        topic = prompt_text_area(
+            placeholder="Frag MaByte… Video-Konzept…",
             key="vs_topic",
+            height=140,
         )
         platform = st.selectbox(
             "Plattform",
@@ -732,6 +733,7 @@ def render_reels_studio():
 def render_media(active_tool="reels"):
     ensure_logged_in()
     media_css()
+    inject_ma_prompt_css()
 
     if active_tool == "image":
         render_image_ai()

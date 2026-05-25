@@ -101,13 +101,11 @@ def render_create_automation():
             ],
         )
 
-        trigger = st.text_area(
-            "Trigger / Instruction",
+        from ui.prompt_ui import prompt_text_area
+        trigger = prompt_text_area(
+            placeholder="Frag MaByte… Trigger / Instruction beschreiben…",
+            key="auto_lab_trigger",
             height=140,
-            placeholder=(
-                "Wenn eine Match Analyse fertig ist, erstelle daraus TikTok Hook, "
-                "Reel Script, Caption und Posting Plan."
-            ),
         )
 
         if st.button("Automation erstellen", width="stretch"):

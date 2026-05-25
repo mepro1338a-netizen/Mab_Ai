@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from ui.styles import MB_THEME_VARS, inject_css, page_layout_css
+from ui.prompt_ui import inject_ma_prompt_css
 
 
 GLOBAL_DESIGN_CSS = """
@@ -204,3 +205,4 @@ def inject_design_system(max_width: int = 1480, padding_top: int = 88) -> None:
         + page_layout_css(max_width, padding_top, 42)
         + GLOBAL_DESIGN_CSS
     )
+    inject_ma_prompt_css()

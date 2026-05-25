@@ -24,6 +24,14 @@ from ui.premium_foundation import (
 from redeem_tracking import list_redeem_redemptions, redeem_code_tracked
 from ui.styles import inject_css, page_layout_css
 from ui.os_helper import render_os_guide_dashboard
+from ui.prompt_ui import (
+    inject_ma_prompt_css,
+    ma_chat_input,
+    prompt_text_area,
+    render_os_hero,
+    render_os_ready_hint,
+    render_quickstart_grid,
+)
 from ui_core import require_login, sync_session_user
 
 
@@ -225,10 +233,17 @@ def _nav(page: str) -> None:
     st.rerun()
 
 
+def _forward_prompt_to_chat(text: str) -> None:
+    st.session_state.chat_pending_prompt = text
+    st.session_state.page = "chat"
+    st.rerun()
+
+
 def render_dashboard():
     require_login()
     refresh_user()
     _dashboard_css()
+    inject_ma_prompt_css()
 
     plan_key = current_plan_key()
     plan = current_plan()
@@ -237,36 +252,48 @@ def render_dashboard():
     fb_label = fb_plan.replace("football_", "").title() if fb_plan != "none" else "Kein Plan"
     user = st.session_state.get("user", "User")
 
-    st.markdown(
-        f"""
-<div class="dash-hero">
-    <div class="dash-kicker">MaByte · Account Command</div>
-    <div class="dash-title">Dashboard</div>
-    <div class="dash-sub">
-        Willkommen, <strong>{html.escape(str(user))}</strong> — Plan, Tokens, Football Premium
-        und Workspace-Status in einem Überblick.
-    </div>
-</div>
-        """,
-        unsafe_allow_html=True,
-    )
+    render_os_hero()
+    render_os_ready_hint()
+    quick = render_quickstart_grid("dash")
+    if quick:
+        _forward_prompt_to_chat(quick)
 
-    stats = [
-        ("MaByte Plan", plan.get("label", plan_key)),
-        ("Tokens", f"{tokens:,}".replace(",", ".")),
-        ("Football", fb_label),
-        ("Tier", plan.get("badge", "Starter")),
-        ("Rolle", st.session_state.get("role", "user")),
-    ]
-    cards = "".join(
-        f'<div class="dash-stat"><div class="lbl">{html.escape(l)}</div>'
-        f'<div class="val">{html.escape(v)}</div></div>'
-        for l, v in stats
-    )
-    st.markdown(f'<div class="dash-stat-grid">{cards}</div>', unsafe_allow_html=True)
+    pending = st.session_state.pop("dash_pending_prompt", None)
+    prompt = ma_chat_input("Frag MaByte...")
+    if pending:
+        _forward_prompt_to_chat(pending)
+    if prompt:
+        _forward_prompt_to_chat(prompt)
 
-    with st.container(border=True):
+    with st.expander("Mab AI · OS Guide", expanded=False):
         render_os_guide_dashboard()
+
+    with st.expander("Account & Workspaces", expanded=True):
+        st.markdown(
+            f"""
+<div class="dash-hero" style="padding:22px;margin-bottom:16px;">
+    <div class="dash-kicker">Account</div>
+    <div class="dash-title" style="font-size:28px;">{html.escape(str(user))}</div>
+    <div class="dash-sub">Plan, Tokens, Football — Übersicht</div>
+</div>
+            """,
+            unsafe_allow_html=True,
+        )
+        stats = [
+            ("MaByte Plan", plan.get("label", plan_key)),
+            ("Tokens", f"{tokens:,}".replace(",", ".")),
+            ("Football", fb_label),
+            ("Tier", plan.get("badge", "Starter")),
+        ]
+        cards = "".join(
+            f'<div class="dash-stat"><div class="lbl">{html.escape(l)}</div>'
+            f'<div class="val">{html.escape(v)}</div></div>'
+            for l, v in stats
+        )
+        st.markdown(
+            f'<div class="dash-stat-grid" style="grid-template-columns:repeat(4,minmax(0,1fr));">{cards}</div>',
+            unsafe_allow_html=True,
+        )
 
     qa1, qa2, qa3, qa4 = st.columns(4)
     with qa1:
@@ -744,10 +771,10 @@ def render_support():
                 )
             with c3:
                 subject = st.text_input("Betreff", placeholder="Kurze Zusammenfassung")
-            message = st.text_area(
-                "Nachricht",
+            message = prompt_text_area(
+                placeholder="Frag MaByte… Support-Anliegen beschreiben…",
+                key="support_ticket_msg",
                 height=160,
-                placeholder="Beschreibe dein Anliegen so genau wie möglich…",
             )
             submitted = st.form_submit_button("Ticket erstellen", width="stretch", type="primary")
 

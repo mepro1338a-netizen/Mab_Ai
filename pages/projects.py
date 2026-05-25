@@ -173,10 +173,11 @@ def render_project_memory(project_id):
             ],
         )
 
-        content = st.text_area(
-            "Memory Content",
+        from ui.prompt_ui import prompt_text_area
+        content = prompt_text_area(
+            placeholder="Frag MaByte… Kontext, Ziele, Stil speichern…",
+            key="proj_memory_content",
             height=180,
-            placeholder="Speichere Kontext, Ziele, Stil, Strategie oder Agent-Anweisungen...",
         )
 
         if st.button("Memory speichern", width="stretch"):

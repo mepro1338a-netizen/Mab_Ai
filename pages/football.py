@@ -52,6 +52,7 @@ from ui.premium_foundation import (
     render_feature_grid,
     render_upgrade_card,
 )
+from ui.prompt_ui import prompt_text_input
 from services.football_odds import (
     calculate_tip_odds,
     fixture_options_from_list,
@@ -1391,9 +1392,8 @@ def render_football_odds_calculator(summary: dict) -> None:
                 step=0.5,
                 key="fb_odds_input_prob",
             )
-            match_note = st.text_input(
-                "Match-Notiz",
-                placeholder="z.B. Arsenal vs City — Analyse",
+            match_note = prompt_text_input(
+                placeholder="Frag MaByte… Match-Notiz",
                 key="fb_odds_input_note",
             )
             calc = st.form_submit_button("Analyse starten", width="stretch")
