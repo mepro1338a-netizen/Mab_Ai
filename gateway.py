@@ -27,7 +27,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from aiohttp import ClientSession, WSMsgType, web
-from aiohttp.web import Application, Request, Response, StreamResponse
+from aiohttp.web import Application, Request, Response
 
 from stripe_webhook_handler import WEBHOOK_PATH, process_stripe_webhook
 
@@ -51,7 +51,8 @@ def configure_production_env() -> None:
     os.environ.setdefault("STREAMLIT_BROWSER_GATHER_USAGE_STATS", "false")
     os.environ.setdefault("STREAMLIT_GLOBAL_DEVELOPMENT_MODE", "false")
     os.environ.setdefault("STREAMLIT_SERVER_ENABLECORS", "false")
-    os.environ.setdefault("STREAMLIT_SERVER_ENABLEXSRFPROTECTION", "true")
+    os.environ.setdefault("STREAMLIT_SERVER_ENABLEXSRFPROTECTION", "false")
+    os.environ.setdefault("STREAMLIT_SERVER_ENABLEWEBSOCKETCOMPRESSION", "false")
 
 
 def bootstrap() -> None:
@@ -88,6 +89,9 @@ def _streamlit_cmd() -> list[str]:
         "--server.address=127.0.0.1",
         "--server.headless=true",
         "--browser.gatherUsageStats=false",
+        "--server.enableCORS=false",
+        "--server.enableXsrfProtection=false",
+        "--server.enableWebsocketCompression=false",
     ]
 
 
@@ -145,11 +149,12 @@ PROXY_RESPONSE_SKIP = HOP_BY_HOP | frozenset({
     "content-encoding",
     "content-length",
     "transfer-encoding",
+    "vary",
 })
 
 
 def _decompress_body(body: bytes, content_encoding: str | None) -> bytes:
-    """Decode gzip/deflate/br if upstream still sent compressed bytes."""
+    """Always return plain bytes for the browser (never gzip/br as text)."""
     if not body:
         return body
 
@@ -164,18 +169,18 @@ def _decompress_body(body: bytes, content_encoding: str | None) -> bytes:
         for part in enc.split(","):
             part = part.strip()
             if part in ("gzip", "x-gzip"):
-                out = _try(lambda: gzip.decompress(body))
+                out = _try(lambda b=body: gzip.decompress(b))
                 if out is not None:
                     return out
             elif part == "deflate":
-                out = _try(lambda: zlib.decompress(body))
+                out = _try(lambda b=body: zlib.decompress(b))
                 if out is not None:
                     return out
             elif part == "br":
                 try:
                     import brotli  # type: ignore[import-untyped]
 
-                    out = _try(lambda: brotli.decompress(body))
+                    out = _try(lambda b=body: brotli.decompress(b))
                     if out is not None:
                         return out
                 except ImportError:
@@ -189,30 +194,27 @@ def _decompress_body(body: bytes, content_encoding: str | None) -> bytes:
 
 
 def _proxy_request_headers(request: Request) -> dict[str, str]:
+    """Headers for Streamlit upstream — force uncompressed responses."""
     headers: dict[str, str] = {}
     for key, value in request.headers.items():
         lk = key.lower()
-        if lk in HOP_BY_HOP or lk == "host" or lk == "accept-encoding":
+        if lk in HOP_BY_HOP or lk in ("host", "accept-encoding"):
             continue
         headers[key] = value
-    host = request.headers.get("Host", "")
-    if host:
-        headers["Host"] = host
+    headers["Host"] = f"127.0.0.1:{STREAMLIT_INTERNAL_PORT}"
     headers["Accept-Encoding"] = "identity"
     headers["X-Forwarded-Proto"] = request.headers.get("X-Forwarded-Proto", "https")
-    headers["X-Forwarded-Host"] = host or request.host
+    headers["X-Forwarded-Host"] = request.headers.get("Host", request.host)
     headers["X-Forwarded-For"] = request.remote or ""
     return headers
 
 
-def _apply_proxy_response_headers(response: StreamResponse, upstream_headers: Any, body: bytes) -> None:
+def _build_client_response_headers(upstream_headers: Any) -> dict[str, str]:
+    out: dict[str, str] = {}
     for key, value in upstream_headers.items():
         if key.lower() not in PROXY_RESPONSE_SKIP:
-            response.headers[key] = value
-    if body:
-        response.headers["Content-Length"] = str(len(body))
-    elif "Content-Length" in response.headers:
-        del response.headers["Content-Length"]
+            out[key] = value
+    return out
 
 
 def _is_health_path(path: str) -> bool:
@@ -237,12 +239,12 @@ async def handle_boot_health(request: Request) -> Response:
     return Response(status=200, text="ok", content_type="text/plain")
 
 
-async def proxy_http(request: Request) -> StreamResponse:
+async def proxy_http(request: Request) -> Response:
     target_url = f"{STREAMLIT_BASE}{request.rel_url}"
     req_headers = _proxy_request_headers(request)
     data = await request.read()
 
-    async with ClientSession(auto_decompress=True) as session:
+    async with ClientSession(auto_decompress=False) as session:
         async with session.request(
             method=request.method,
             url=target_url,
@@ -251,17 +253,15 @@ async def proxy_http(request: Request) -> StreamResponse:
             allow_redirects=False,
             timeout=120,
         ) as upstream:
-            raw_encoding = upstream.headers.get("Content-Encoding")
-            body = await upstream.read()
-            if raw_encoding or (len(body) >= 2 and body[:2] == b"\x1f\x8b"):
-                body = _decompress_body(body, raw_encoding)
+            content_encoding = upstream.headers.get("Content-Encoding")
+            raw_body = await upstream.read()
+            body = _decompress_body(raw_body, content_encoding)
 
-            response = StreamResponse(status=upstream.status)
-            _apply_proxy_response_headers(response, upstream.headers, body)
-            await response.prepare(request)
-            if body:
-                await response.write(body)
-            return response
+            return Response(
+                status=upstream.status,
+                body=body,
+                headers=_build_client_response_headers(upstream.headers),
+            )
 
 
 async def proxy_websocket(request: Request) -> web.WebSocketResponse:
@@ -297,7 +297,7 @@ async def proxy_websocket(request: Request) -> web.WebSocketResponse:
     return ws_client
 
 
-async def catch_all(request: Request) -> StreamResponse | web.WebSocketResponse | Response:
+async def catch_all(request: Request) -> Response | web.WebSocketResponse:
     app = request.app
 
     if _is_health_path(request.path):
