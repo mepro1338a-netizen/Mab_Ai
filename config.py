@@ -1,5 +1,8 @@
 ﻿from pathlib import Path
 import os
+import re
+from urllib.parse import urlparse
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -31,7 +34,56 @@ LOGO_PATH = BASE_DIR / "logo1.png"
 FAVICON_PATH = BASE_DIR / "Logo24mp.png"
 HEADER_PATH = BASE_DIR / "neuerheader.png"
 
-APP_BASE_URL = os.getenv("APP_BASE_URL", "http://localhost:8501").rstrip("/")
+_MARKDOWN_LINK_RE = re.compile(r"\[[^\]]*\]\(([^)]+)\)", re.IGNORECASE)
+_HTTP_URL_RE = re.compile(r"https?://[^\s\]\)\(<>\"']+", re.IGNORECASE)
+
+
+def normalize_app_base_url(raw: str | None, *, default: str = "http://localhost:8501") -> str:
+    """
+    Plain HTTPS/HTTP origin only — strips accidental markdown from Railway ENV.
+    e.g. https://app.railway.app](https://app.railway.app) -> https://app.railway.app
+    """
+    s = (raw or "").strip().strip("\"'")
+    if not s:
+        return default.rstrip("/")
+
+    md = _MARKDOWN_LINK_RE.search(s)
+    if md:
+        s = md.group(1).strip()
+    elif "](" in s:
+        _, tail = s.split("](", 1)
+        s = tail.split(")", 1)[0].strip()
+    elif s.startswith("[") and "]" in s:
+        s = s.split("]", 1)[-1].lstrip("(").strip()
+
+    found = _HTTP_URL_RE.search(s)
+    if found:
+        s = found.group(0)
+
+    s = s.strip("[]()\"'<> ")
+
+    while True:
+        low = s.lower()
+        if low.startswith("https://https://"):
+            s = "https://" + s[16:]
+        elif low.startswith("http://http://"):
+            s = "http://" + s[14:]
+        elif low.startswith("https://http://"):
+            s = "https://" + s[13:]
+        else:
+            break
+
+    if not re.match(r"^https?://", s, re.IGNORECASE):
+        s = f"https://{s.lstrip('/')}"
+
+    s = s.rstrip("/")
+    parsed = urlparse(s)
+    if parsed.scheme not in ("http", "https") or not parsed.netloc:
+        return default.rstrip("/")
+    return s
+
+
+APP_BASE_URL = normalize_app_base_url(os.getenv("APP_BASE_URL"))
 
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "").strip()
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "").strip()

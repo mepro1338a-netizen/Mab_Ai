@@ -1,6 +1,9 @@
 ﻿import os
+from urllib.parse import quote
+
 import stripe
-from config import PLANS, FOOTBALL_PLANS, APP_BASE_URL
+
+from config import APP_BASE_URL, FOOTBALL_PLANS, PLANS
 from database import payment_already_paid, record_purchase, set_plan, set_football_plan, update_tokens
 from logger import log_stripe, user_friendly_error
 
@@ -14,6 +17,22 @@ def is_checkout_plan(plan_key: str) -> bool:
 
 def is_football_plan(plan_key: str) -> bool:
     return plan_key in FOOTBALL_PLANS
+
+
+def stripe_checkout_success_url(plan_key: str, category: str) -> str:
+    """Plain HTTPS URL for Stripe — no markdown, no brackets."""
+    base = APP_BASE_URL
+    plan = quote(plan_key, safe="")
+    cat = quote(category, safe="")
+    return (
+        f"{base}/?payment_success=1"
+        f"&session_id={{CHECKOUT_SESSION_ID}}"
+        f"&plan={plan}&category={cat}"
+    )
+
+
+def stripe_checkout_cancel_url() -> str:
+    return f"{APP_BASE_URL}/?payment_cancel=1"
 
 
 def _plan_config(plan_key: str) -> dict | None:
@@ -44,12 +63,8 @@ def create_checkout_session(username, plan_key):
             mode="subscription",
             payment_method_types=["card"],
             line_items=[{"price": price_id, "quantity": 1}],
-            success_url=(
-                f"{APP_BASE_URL}?payment_success=1"
-                f"&session_id={{CHECKOUT_SESSION_ID}}&plan={plan_key}"
-                f"&category={category}"
-            ),
-            cancel_url=f"{APP_BASE_URL}?payment_cancel=1",
+            success_url=stripe_checkout_success_url(plan_key, category),
+            cancel_url=stripe_checkout_cancel_url(),
             client_reference_id=username,
             metadata={
                 "username": username,
