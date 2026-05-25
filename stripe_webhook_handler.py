@@ -1,4 +1,4 @@
-"""Stripe webhook HTTP handler — used by the production gateway."""
+"""Stripe webhook HTTP handler — used by webhook_service.py (Railway)."""
 from __future__ import annotations
 
 from payments import handle_stripe_webhook

@@ -1,4 +1,4 @@
-# MaByte main app — Streamlit on Railway $PORT
+# MaByte Stripe webhook — separate Railway service
 FROM python:3.11-slim-bookworm
 
 WORKDIR /app
@@ -13,4 +13,4 @@ COPY . .
 
 EXPOSE 8080
 
-CMD ["sh", "start.sh"]
+CMD ["sh", "start-webhook.sh"]

@@ -1,0 +1,14 @@
+# MaByte Stripe webhook — second Railway service (same repo)
+# Service Settings → Config file: railway.webhook.toml
+# Service Settings → Dockerfile: Dockerfile.webhook
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile.webhook"
+
+[deploy]
+startCommand = "sh start-webhook.sh"
+healthcheckPath = "/healthz"
+healthcheckTimeout = 120
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 5

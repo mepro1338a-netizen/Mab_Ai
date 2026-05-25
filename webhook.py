@@ -1,11 +1,8 @@
 ﻿"""
-Legacy standalone webhook server (port 9000).
+Local dev webhook server (stdlib). Production: use webhook_service.py on Railway.
 
-Production (Railway): use gateway.py — Stripe is served on the same PORT as the app:
-  POST https://www.mabyte.de/stripe-webhook
-
-Local test only:
-  python webhook.py
+  python webhook_service.py
+  # or: sh start-webhook.sh
 """
 from dotenv import load_dotenv
 
@@ -17,9 +14,19 @@ from stripe_webhook_handler import WEBHOOK_PATH, process_stripe_webhook
 
 
 class Handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        path = self.path.split("?", 1)[0].rstrip("/") or "/"
+        if path == WEBHOOK_PATH:
+            self.send_response(405)
+            self.end_headers()
+            self.wfile.write(b"Method not allowed. Use POST.")
+            return
+        self.send_response(404)
+        self.end_headers()
+
     def do_POST(self):
-        path = self.path.split("?", 1)[0]
-        if path.rstrip("/") != WEBHOOK_PATH:
+        path = self.path.split("?", 1)[0].rstrip("/") or "/"
+        if path != WEBHOOK_PATH:
             self.send_response(404)
             self.end_headers()
             return
@@ -38,6 +45,8 @@ class Handler(BaseHTTPRequestHandler):
 
 
 if __name__ == "__main__":
-    port = int(__import__("os").environ.get("WEBHOOK_PORT", "9000"))
-    print(f"[MaByte] Legacy webhook on :{port}{WEBHOOK_PATH} — production uses gateway.py")
+    import os
+
+    port = int(os.environ.get("WEBHOOK_PORT", "9000"))
+    print(f"[MaByte] Dev webhook http://0.0.0.0:{port}{WEBHOOK_PATH}")
     HTTPServer(("0.0.0.0", port), Handler).serve_forever()

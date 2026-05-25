@@ -1,4 +1,4 @@
-# Production entry: python gateway.py (NOT streamlit run main.py)
+# Main app: streamlit run main.py | Webhook service: python webhook_service.py
 aiohttp>=3.9.0
 streamlit-autorefresh
 streamlit==1.50.0

@@ -28,23 +28,27 @@ Vollständige Liste: `ENV_SETUP.md`
 ## Volume
 Mount `/data` für persistente SQLite (`mabai.db`) und Football-Cache.
 
-## Stripe Webhook
+## Stripe Webhook (separater Railway Service)
 
-Production entry: `python gateway.py` (via `start.sh`).
+Zweiter Service im gleichen Repo:
 
-**Endpoint URL in Stripe Dashboard:**
+| Setting | Wert |
+|---------|------|
+| Dockerfile | `Dockerfile.webhook` |
+| Config file | `railway.webhook.toml` (optional) |
+| Start | `sh start-webhook.sh` |
+| Healthcheck | `/healthz` |
+
+**Stripe Dashboard Endpoint URL:**
 
 ```
-https://www.mabyte.de/stripe-webhook
+https://<webhook-service>.up.railway.app/stripe-webhook
 ```
 
-(Alternativ ohne `www`, wenn deine Domain nur `mabyte.de` nutzt — muss exakt mit `APP_BASE_URL` übereinstimmen.)
+- `GET` → 405, `POST` → Stripe Events
+- Gleiche Env wie Haupt-App: `STRIPE_WEBHOOK_SECRET`, `STRIPE_SECRET_KEY`, `DATA_DIR=/data` (shared Volume empfohlen)
 
-- Nur **POST**
-- Signing secret: `STRIPE_WEBHOOK_SECRET` in Railway Variables
-- Events: mindestens `checkout.session.completed`
-
-Healthcheck bleibt: `/_stcore/health` (wird an Streamlit durchgereicht).
+Haupt-App: kein Gateway — nur Streamlit auf `/`.
 
 ## Deploy Steps
 1. Push zu Railway-connected Repo

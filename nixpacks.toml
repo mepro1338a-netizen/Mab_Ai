@@ -1,12 +1,2 @@
-# Only used if Railway build builder = nixpacks (not Dockerfile)
-# Prevents auto `streamlit run` detection
-
-[variables]
-NIXPACKS_PYTHON_VERSION = "3.11"
-
-# Disable default Python/Streamlit start detection
-[phases.setup]
-nixPkgs = ["python311"]
-
 [start]
-cmd = "python gateway.py"
+cmd = "sh start.sh"

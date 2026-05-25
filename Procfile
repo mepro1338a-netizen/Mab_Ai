@@ -1,1 +1,1 @@
-web: python gateway.py
+web: sh start.sh
