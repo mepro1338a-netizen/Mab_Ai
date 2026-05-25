@@ -26,6 +26,7 @@ from ui.admin_ui import (
     render_user_header,
 )
 from ui.premium_foundation import render_status_badge, render_empty_state
+from ui.stripe_admin_diagnostics import render_stripe_admin_diagnostics
 from ui.styles import inject_css, page_layout_css
 from database import (
     OWNER_USERNAME,
@@ -654,6 +655,9 @@ def render_admin():
     idx += 1
 
     if is_admin():
+        with tab_objs[idx]:
+            render_stripe_admin_diagnostics()
+        idx += 1
         with tab_objs[idx]:
             render_security()
         idx += 1

@@ -1,7 +1,7 @@
 """
-MaByte sidebar — single render_sidebar() for ALL pages (via ui.py).
+MaByte sidebar — single render_sidebar(active_page) for ALL pages (via ui.py only).
 
-Import: from ui.sidebar import render_sidebar
+Do not use st.sidebar in page modules.
 """
 from __future__ import annotations
 
@@ -103,9 +103,20 @@ section[data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"] {
 .mb-nav-item .stButton {
     width: 100% !important;
 }
-.mb-nav-item .stButton > button {
+section[data-testid="stSidebar"] .stButton > button,
+section[data-testid="stSidebar"] .stButton > button[kind="primary"],
+section[data-testid="stSidebar"] .stButton > button[kind="secondary"],
+section[data-testid="stSidebar"] [data-testid="stBaseButton-primary"],
+section[data-testid="stSidebar"] [data-testid="stBaseButton-secondary"],
+section[data-testid="stSidebar"] button {
+    font-family: inherit !important;
+}
+.mb-nav-item .stButton > button,
+.mb-nav-item .stButton > button[kind="primary"],
+.mb-nav-item .stButton > button[kind="secondary"] {
     width: 100% !important;
     min-height: 50px !important;
+    max-height: 50px !important;
     border-radius: 16px !important;
     border: 1px solid rgba(255,231,163,.14) !important;
     background: linear-gradient(135deg, rgba(32,9,48,.92), rgba(12,6,22,.98)) !important;
@@ -137,14 +148,18 @@ section[data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"] {
     background-size: 20px 20px;
     box-shadow: 0 6px 14px rgba(0,0,0,.16);
 }
-.mb-nav-item .stButton > button:hover {
+.mb-nav-item .stButton > button:hover,
+.mb-nav-item .stButton > button[kind="primary"]:hover,
+.mb-nav-item .stButton > button[kind="secondary"]:hover {
     transform: translateY(-1px) !important;
     color: #ffffff !important;
     border-color: rgba(255,231,163,.32) !important;
     background: linear-gradient(135deg, rgba(91,33,182,.75), rgba(22,8,36,.98)) !important;
     box-shadow: 0 0 22px rgba(168,85,247,.22) !important;
 }
-.mb-nav-active .stButton > button {
+.mb-nav-active .stButton > button,
+.mb-nav-active .stButton > button[kind="primary"],
+.mb-nav-active .stButton > button[kind="secondary"] {
     color: #ffffff !important;
     border-color: rgba(255,231,163,.45) !important;
     background: linear-gradient(135deg, rgba(126,34,206,.82), rgba(38,12,62,.98)) !important;
@@ -255,9 +270,9 @@ def _section_label(label: str) -> None:
     )
 
 
-def _nav_item(label: str, page: str) -> None:
+def _nav_item(label: str, page: str, active_page: str) -> None:
     src = _icon_src(page)
-    is_active = st.session_state.get("page") == page
+    is_active = active_page == page
     active_class = "mb-nav-active" if is_active else ""
     icon_var = f"url({src})" if src else "none"
 
@@ -265,22 +280,26 @@ def _nav_item(label: str, page: str) -> None:
         f'<div class="mb-nav-item {active_class}" style="--mb-nav-icon:{icon_var};">',
         unsafe_allow_html=True,
     )
-    if st.button(label, key=f"nav_{page}", width="stretch"):
+    if st.button(label, key=f"nav_{page}", width="stretch", type="secondary"):
         st.session_state.page = page
         st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
 
-def _nav_section(title: str, items: list[tuple[str, str]]) -> None:
+def _nav_section(title: str, items: list[tuple[str, str]], active_page: str) -> None:
     st.markdown('<div class="mb-nav-section">', unsafe_allow_html=True)
     _section_label(title)
     for label, page in items:
-        _nav_item(label, page)
+        _nav_item(label, page, active_page)
     st.markdown("</div>", unsafe_allow_html=True)
 
 
-def render_sidebar() -> None:
-    """Central sidebar — called once from ui.py for every authenticated page."""
+def render_sidebar(active_page: str | None = None) -> None:
+    """
+    Central sidebar — only entry point. Call from ui.py with current page key.
+    Example: render_sidebar(st.session_state.get("page", "home"))
+    """
+    active = (active_page or st.session_state.get("page") or "home").strip()
     inject_sidebar_styles()
     with st.sidebar:
         if WORDMARK.exists():
@@ -297,9 +316,9 @@ def render_sidebar() -> None:
             st.markdown("## MaByte")
 
         for section_title, items in SIDEBAR_SECTIONS:
-            _nav_section(section_title, items)
+            _nav_section(section_title, items, active)
         if _is_admin_user():
-            _nav_section("System", [("Admin Panel", "admin")])
+            _nav_section("System", [("Admin Panel", "admin")], active)
 
         user = html.escape(str(st.session_state.get("user", "User")))
         plan = html.escape(str(st.session_state.get("plan", "free")))

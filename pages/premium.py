@@ -4,8 +4,6 @@ from ui.premium_cards import (
     render_ai_plans_section,
     render_enterprise_block,
     render_football_plans_section,
-    render_stripe_diagnostics_admin,
-    render_stripe_status_banner,
 )
 from ui.premium_foundation import premium_foundation_css, render_page_hero
 from ui_core import sync_session_user
@@ -210,7 +208,7 @@ def render_premium():
     render_page_hero(
         "MaByte Premium",
         "AI-Pläne & Football Premium",
-        "Einheitlicher Stripe Checkout — Grand als Referenz für alle Pläne.",
+        "Wähle deinen Plan — sichere Zahlung über Stripe.",
     )
 
     st.session_state.setdefault("billing_interval", "monthly")
@@ -239,8 +237,6 @@ def render_premium():
         else:
             st.caption("Monatliche Abrechnung · Stripe Checkout")
 
-    render_stripe_status_banner()
-    render_stripe_diagnostics_admin()
     render_ai_plans_section()
     st.info("Token-System: 1€ = 100 Tokens. Tokens gelten für normale MaByte AI Actions.")
     render_football_plans_section()

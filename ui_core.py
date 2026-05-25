@@ -195,7 +195,7 @@ def is_admin_user() -> bool:
     return server_is_admin()
 
 
-def render_sidebar() -> None:
+def render_sidebar(active_page: str | None = None) -> None:
     """Re-export — implementation in ui.sidebar (single source for all pages)."""
     from ui.sidebar import render_sidebar as _render
-    _render()
+    _render(active_page)

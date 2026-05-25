@@ -169,12 +169,6 @@ load_css()
 inject_seo_meta()
 
 
-# =========================================================
-# SIDEBAR
-# =========================================================
-
-render_sidebar()
-
 notice = st.session_state.pop("payment_notice", None)
 if notice:
     level, text = notice
@@ -193,6 +187,13 @@ if notice:
 # =========================================================
 
 page = st.session_state.get("page", "home")
+
+# =========================================================
+# SIDEBAR (single component for all routes)
+# =========================================================
+
+render_sidebar(page)
+inject_sidebar_styles()
 
 PAGE_HANDLERS = {
     "home": ("Mission Control", render_home),
