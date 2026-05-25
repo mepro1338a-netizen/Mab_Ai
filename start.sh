@@ -1,10 +1,8 @@
 #!/bin/sh
 set -eu
 
-PORT="${PORT:-8501}"
+# Single Railway port: Streamlit (internal) + POST /stripe-webhook (public)
+export PORT="${PORT:-8501}"
+export STREAMLIT_INTERNAL_PORT="${STREAMLIT_INTERNAL_PORT:-8502}"
 
-exec streamlit run main.py \
-  --server.port="${PORT}" \
-  --server.address=0.0.0.0 \
-  --server.headless=true \
-  --browser.gatherUsageStats=false
+exec python gateway.py

@@ -98,22 +98,33 @@ def confirm_checkout_session(session_id):
 
 def handle_stripe_webhook(payload, sig):
     if not STRIPE_WEBHOOK_SECRET:
+        log_stripe("webhook_missing_secret", success=False)
         return False, "STRIPE_WEBHOOK_SECRET fehlt."
 
     if not stripe.api_key:
+        log_stripe("webhook_missing_api_key", success=False)
         return False, "STRIPE_SECRET_KEY fehlt."
 
     try:
         event = stripe.Webhook.construct_event(payload, sig, STRIPE_WEBHOOK_SECRET)
     except stripe.error.SignatureVerificationError:
+        log_stripe("webhook_invalid_signature", success=False)
         return False, "Ungueltige Stripe Signatur."
     except Exception as exc:
+        log_stripe("webhook_parse_error", success=False)
         return False, str(exc)
 
-    if event.type == "checkout.session.completed":
+    event_type = getattr(event, "type", "unknown")
+    log_stripe(f"webhook_received:{event_type}", success=True)
+
+    if event_type == "checkout.session.completed":
         session_id = event.data.object.get("id")
         if session_id:
             ok, msg = confirm_checkout_session(session_id)
+            log_stripe(
+                f"webhook_checkout_{'ok' if ok else 'fail'}",
+                success=ok,
+            )
             return ok, msg
 
-    return True, f"Event ignoriert: {event.type}"
+    return True, f"Event ignoriert: {event_type}"

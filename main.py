@@ -1,8 +1,11 @@
 ﻿"""
-MaByte — Railway / Production entrypoint.
+MaByte — Streamlit UI entry (loaded by gateway or direct `streamlit run main.py`).
 
-Start (Railway):
-  streamlit run main.py --server.port $PORT --server.address 0.0.0.0
+Production (Railway):
+  python gateway.py   # via start.sh — public PORT + /stripe-webhook
+
+Local dev:
+  streamlit run main.py --server.port 8501 --server.address 0.0.0.0
 """
 from __future__ import annotations
 
@@ -58,9 +61,11 @@ def bootstrap_database() -> None:
             pass
 
 
-configure_production_env()
-log_startup()
-bootstrap_database()
+# When started by gateway.py, env/DB are already initialized.
+if not os.environ.get("MABYTE_GATEWAY_CHILD"):
+    configure_production_env()
+    log_startup()
+    bootstrap_database()
 
 # Streamlit executes this file; load the UI layer (ui.py).
 import runpy
