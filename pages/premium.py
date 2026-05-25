@@ -257,7 +257,8 @@ def start_checkout(plan_key: str) -> None:
         st.warning("Bitte zuerst einloggen.")
         return
 
-    url, err = create_checkout_session(username, plan_key)
+    with st.spinner("Stripe Checkout wird vorbereitet…"):
+        url, err = create_checkout_session(username, plan_key)
     if err:
         st.error(err)
         return
@@ -390,6 +391,32 @@ def render_premium():
         "MaByte Tokens für Chat, Reels und Automation. Football separat: Starter, Pro, Elite — "
         "mit Stripe Checkout (STRIPE_PRICE_FOOTBALL_*).",
     )
+
+    st.session_state.setdefault("billing_interval", "monthly")
+    b1, b2, b3 = st.columns([1, 1, 2])
+    with b1:
+        if st.button(
+            "Monatlich",
+            width="stretch",
+            type="primary" if st.session_state.billing_interval == "monthly" else "secondary",
+            key="bill_monthly",
+        ):
+            st.session_state.billing_interval = "monthly"
+            st.rerun()
+    with b2:
+        if st.button(
+            "Jährlich",
+            width="stretch",
+            type="primary" if st.session_state.billing_interval == "yearly" else "secondary",
+            key="bill_yearly",
+        ):
+            st.session_state.billing_interval = "yearly"
+            st.rerun()
+    with b3:
+        if st.session_state.billing_interval == "yearly":
+            st.caption("Jährliche Stripe-Preise — Coming Soon. Checkout nutzt vorerst Monatspreise.")
+        else:
+            st.caption("Monatliche Abrechnung · Stripe Checkout")
 
     stripe_ok, stripe_missing = stripe_config_status()
     if not stripe_ok:

@@ -1352,6 +1352,8 @@ def render_odds_dashboard(result: dict[str, Any], note: str = "") -> None:
         if result.get("is_value_bet")
         else "Kein klarer Value Bet bei dieser Schätzung."
     )
+    conf = float(result.get("confidence_pct") or 0)
+    bankroll = float(result.get("bankroll_stake_pct") or 0)
     metrics = [
         ("Möglicher Gewinn", f"{result['profit']:.2f}", ""),
         ("Auszahlung", f"{result['payout']:.2f}", "bei Sieg"),
@@ -1359,7 +1361,8 @@ def render_odds_dashboard(result: dict[str, Any], note: str = "") -> None:
         ("Implizite Quote", f"{result['implied_probability_pct']:.1f}%", "vom Markt"),
         ("Edge", f"{result['edge_pct']:+.2f}%", "deine Schätzung vs. Markt"),
         ("Erwartungswert", f"{result['expected_value']:+.2f}", "EV pro Einsatz"),
-        ("Value Bet", "Ja" if result.get("is_value_bet") else "Nein", ""),
+        ("Confidence", f"{conf:.0f}%", "Modell-Signal"),
+        ("Value", str(result.get("value_label", "—")), ""),
         ("Risiko", str(result.get("risk_level", "—")), "Modell"),
     ]
     cards = []
@@ -1373,6 +1376,25 @@ def render_odds_dashboard(result: dict[str, Any], note: str = "") -> None:
             f'<div class="s">{html.escape(s)}</div></div>'
         )
     st.markdown(f'<div class="fb-odds-grid">{"".join(cards)}</div>', unsafe_allow_html=True)
+    bankroll_note = (
+        f"Konservative Bankroll-Orientierung: max. ~{bankroll:.2f}% des Bankrolls "
+        f"als Analyse-Referenz (Quarter-Kelly, kein Echtgeld-Rat)."
+        if bankroll > 0
+        else "Kein positiver Edge — Bankroll-Empfehlung: 0% (nur beobachten/analysieren)."
+    )
+    st.markdown(
+        f"""
+<div class="fb-panel" style="margin-top:12px;">
+    <div class="fb-panel-title">Bankroll & Confidence</div>
+    <p class="fb-panel-sub">{html.escape(bankroll_note)}</p>
+    <div style="margin-top:10px;height:8px;border-radius:999px;background:rgba(15,23,42,.8);overflow:hidden;">
+        <div style="width:{min(100, conf):.0f}%;height:100%;background:linear-gradient(90deg,#7c3aed,#22c55e);"></div>
+    </div>
+    <p class="fb-panel-sub" style="margin-top:8px;">Confidence-Indikator: {conf:.0f}% (keine Garantie)</p>
+</div>
+        """,
+        unsafe_allow_html=True,
+    )
     st.markdown(
         f'<div class="fb-odds-verdict {value_cls}">{html.escape(verdict)}</div>',
         unsafe_allow_html=True,

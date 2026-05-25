@@ -6,6 +6,8 @@ import streamlit as st
 
 from ui.styles import MB_THEME_VARS, inject_css
 from ui.premium_foundation import inject_beta_global_css
+from ui.design_system import inject_design_system
+from ui.os_helper import render_os_helper
 
 
 ASSET_DIR = Path("assets")
@@ -63,6 +65,7 @@ def load_css() -> None:
 """
 
     inject_beta_global_css()
+    inject_design_system(1480, 88)
     inject_css(f"""
 {MB_THEME_VARS}
 
@@ -511,6 +514,9 @@ def render_sidebar() -> None:
         if is_admin_user():
             section_label("System")
             nav("Admin Panel", "admin")
+
+        section_label("Mab AI")
+        render_os_helper()
 
         user = html.escape(str(st.session_state.get("user", "User")))
         plan = html.escape(str(st.session_state.get("plan", "free")))

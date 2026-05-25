@@ -37,6 +37,21 @@ def calculate_tip_odds(
     else:
         risk = "Niedrig"
 
+    # Confidence: model signal strength (educational, not predictive guarantee)
+    confidence = min(95.0, max(22.0, 48.0 + abs(edge_pct) * 2.4 + (8.0 if is_value else 0.0)))
+
+    # Quarter-Kelly style bankroll hint (capped, analysis only)
+    bankroll_pct = 0.0
+    if edge_pct > 0.5 and odds > 1.01:
+        kelly = (p_user * odds - 1.0) / (odds - 1.0)
+        bankroll_pct = max(0.0, min(5.0, kelly * 25.0))
+
+    value_label = "Value erkannt" if is_value else "Kein klarer Value"
+    if edge_pct > 6:
+        value_label = "Starker Value (modell)"
+    elif edge_pct < -4:
+        value_label = "Markt wirkt teurer"
+
     return {
         "implied_probability_pct": round(implied_pct, 2),
         "break_even_probability_pct": round(break_even_pct, 2),
@@ -46,6 +61,9 @@ def calculate_tip_odds(
         "edge_pct": round(edge_pct, 2),
         "is_value_bet": is_value,
         "risk_level": risk,
+        "confidence_pct": round(confidence, 1),
+        "bankroll_stake_pct": round(bankroll_pct, 2),
+        "value_label": value_label,
     }
 
 

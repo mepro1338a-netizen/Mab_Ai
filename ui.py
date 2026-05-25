@@ -3,6 +3,7 @@
 from database import ensure_db_ready, get_user
 from payments import confirm_checkout_session
 from ui_core import load_css, render_sidebar, sync_session_user
+from ui.error_boundary import safe_render
 
 from pages.auth import render_auth
 from pages.home import render_home
@@ -182,58 +183,31 @@ if notice:
 
 page = st.session_state.get("page", "home")
 
+PAGE_HANDLERS = {
+    "home": ("Mission Control", render_home),
+    "chat": ("AI Assistant", render_chat),
+    "projects": ("Projects", render_projects),
+    "football": ("Football AI", render_football),
+    "automation_lab": ("Automations", render_automation_lab),
+    "automations": ("Automations", render_automations),
+    "coding": ("Code Studio", lambda: render_media("coding")),
+    "image": ("Image Studio", lambda: render_media("image")),
+    "music": ("Music Studio", lambda: render_media("music")),
+    "reels": ("Reels Studio", lambda: render_media("reels")),
+    "video": ("Video Studio", lambda: render_media("video")),
+    "dashboard": ("Dashboard", render_dashboard),
+    "support": ("Support", render_support),
+    "premium": ("Premium", render_premium),
+    "redeem": ("Redeem", render_redeem),
+    "admin": ("Admin Panel", render_admin),
+}
+
 if page == "auth":
     st.session_state.page = "home"
     st.rerun()
-
-elif page == "home":
-    render_home()
-
-elif page == "chat":
-    render_chat()
-
-elif page == "projects":
-    render_projects()
-
-elif page == "football":
-    render_football()
-
-elif page == "automation_lab":
-    render_automation_lab()
-
-elif page == "automations":
-    render_automations()
-
-elif page == "coding":
-    render_media("coding")
-
-elif page == "image":
-    render_media("image")
-
-elif page == "music":
-    render_media("music")
-
-elif page == "reels":
-    render_media("reels")
-
-elif page == "video":
-    render_media("video")
-
-elif page == "dashboard":
-    render_dashboard()
-
-elif page == "support":
-    render_support()
-
-elif page == "premium":
-    render_premium()
-
-elif page == "redeem":
-    render_redeem()
-
-elif page == "admin":
-    render_admin()
-
+elif page in PAGE_HANDLERS:
+    label, handler = PAGE_HANDLERS[page]
+    safe_render(label, handler)
 else:
     st.session_state.page = "home"
     st.rerun()

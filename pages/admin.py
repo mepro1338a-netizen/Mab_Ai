@@ -44,7 +44,10 @@ from database import (
     list_usage,
     list_purchases,
     list_support_messages,
+    list_ticket_replies,
+    add_ticket_reply,
     set_support_status,
+    set_support_priority,
     delete_support_message,
     clear_login_logs,
     list_login_logs,
@@ -222,42 +225,97 @@ def render_analytics():
 
 
 def render_tickets():
-    render_section("Support Inbox", "Tickets bearbeiten, schließen, eskalieren")
+    render_section("Support Inbox", "Antworten, Priorität, Status-Timeline")
     tickets = list_support_messages()
     if not tickets:
         render_empty_state("Inbox leer", "Neue Support-Anfragen erscheinen hier.")
         return
 
-    f1, f2, f3 = st.columns(3)
+    f1, f2, f3, f4 = st.columns(4)
     with f1:
-        status_filter = st.selectbox("Status", ["all", "open", "closed"], key="adm_ticket_status")
+        status_filter = st.selectbox(
+            "Status", ["all", "open", "in_progress", "closed"], key="adm_ticket_status"
+        )
     with f2:
         categories = sorted({str(t.get("category") or "Sonstiges") for t in tickets})
         cat_filter = st.selectbox("Kategorie", ["all", *categories], key="adm_ticket_cat")
     with f3:
-        st.metric("Offen", sum(1 for t in tickets if t.get("status") == "open"))
+        prio_filter = st.selectbox(
+            "Priorität", ["all", "urgent", "high", "normal", "low"], key="adm_ticket_prio"
+        )
+    with f4:
+        st.metric(
+            "Offen",
+            sum(1 for t in tickets if str(t.get("status") or "") in ("open", "in_progress")),
+        )
 
     shown = 0
+    actor = current_username()
     for item in tickets:
         if status_filter != "all" and item.get("status") != status_filter:
             continue
         if cat_filter != "all" and str(item.get("category") or "") != cat_filter:
             continue
+        if prio_filter != "all" and str(item.get("priority") or "normal") != prio_filter:
+            continue
         shown += 1
+        tid = int(item.get("id") or 0)
         st.markdown(render_ticket_card(item), unsafe_allow_html=True)
-        c1, c2, c3, c4 = st.columns(4)
-        tid = item.get("id")
+        st.caption(
+            f"Priorität: **{item.get('priority', 'normal')}** · "
+            f"Aktualisiert: {str(item.get('updated_at', ''))[:16]}"
+        )
+
+        for rep in list_ticket_replies(tid):
+            who = "Team" if int(rep.get("is_staff") or 0) else rep.get("author", "User")
+            st.markdown(
+                f'<div class="adm-activity"><strong>{html.escape(str(who))}</strong> · '
+                f'{html.escape(str(rep.get("created_at", ""))[:16])}<br>'
+                f'{html.escape(str(rep.get("body") or "")[:500])}</div>',
+                unsafe_allow_html=True,
+            )
+
+        with st.form(f"adm_reply_{tid}"):
+            reply_body = st.text_area("Admin-Antwort", height=90, key=f"adm_reply_txt_{tid}")
+            if st.form_submit_button("Antwort senden", width="stretch"):
+                if reply_body.strip():
+                    ok, msg = add_ticket_reply(tid, actor, reply_body.strip(), is_staff=True)
+                    if ok:
+                        set_support_status(tid, "in_progress")
+                        st.success(msg)
+                        st.rerun()
+                    else:
+                        st.error(msg)
+
+        c1, c2, c3, c4, c5 = st.columns(5)
         with c1:
             if st.button("Öffnen", key=f"t_open_{tid}"):
                 set_support_status(tid, "open")
                 st.rerun()
         with c2:
+            if st.button("In Arbeit", key=f"t_prog_{tid}"):
+                set_support_status(tid, "in_progress")
+                st.rerun()
+        with c3:
             if st.button("Schließen", key=f"t_close_{tid}"):
                 set_support_status(tid, "closed")
                 st.rerun()
-        with c3:
-            render_status_badge(str(item.get("status") or "open"))
         with c4:
+            prio_opts = ["low", "normal", "high", "urgent"]
+            cur_prio = str(item.get("priority") or "normal")
+            prio_idx = prio_opts.index(cur_prio) if cur_prio in prio_opts else 1
+            new_prio = st.selectbox(
+                "Prio",
+                prio_opts,
+                index=prio_idx,
+                key=f"t_prio_{tid}",
+                label_visibility="collapsed",
+            )
+            if st.button("Prio setzen", key=f"t_prio_set_{tid}"):
+                set_support_priority(tid, new_prio)
+                st.rerun()
+        with c5:
+            render_status_badge(str(item.get("status") or "open"))
             if is_moderator() and st.button("Löschen", key=f"t_del_{tid}"):
                 delete_support_message(tid)
                 st.rerun()

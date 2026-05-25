@@ -9,6 +9,8 @@ from database import (
     redeem_code,
     create_support_message,
     list_support_messages,
+    list_ticket_replies,
+    add_ticket_reply,
     list_usage,
     list_purchases,
 )
@@ -592,28 +594,82 @@ def _support_css() -> None:
     premium_foundation_css(1100, 88)
 
 
+def _priority_badge(priority: str) -> str:
+    p = (priority or "normal").lower()
+    colors = {
+        "low": ("#64748b", "#cbd5e1"),
+        "normal": ("#4c1d95", "#e9d5ff"),
+        "high": ("#b45309", "#fde68a"),
+        "urgent": ("#991b1b", "#fecaca"),
+    }
+    bg, fg = colors.get(p, colors["normal"])
+    return (
+        f'<span style="display:inline-flex;padding:4px 10px;border-radius:999px;'
+        f'font-size:10px;font-weight:900;background:{bg};color:{fg}!important;">'
+        f'{html.escape(p.upper())}</span>'
+    )
+
+
+def _render_ticket_timeline(ticket: dict) -> None:
+    tid = int(ticket.get("id") or 0)
+    events = [
+        {
+            "when": str(ticket.get("created_at") or "")[:16],
+            "who": "Du",
+            "body": str(ticket.get("message") or ""),
+            "kind": "Erstellt",
+        }
+    ]
+    for rep in list_ticket_replies(tid):
+        events.append(
+            {
+                "when": str(rep.get("created_at") or "")[:16],
+                "who": "MaByte Team" if int(rep.get("is_staff") or 0) else "Du",
+                "body": str(rep.get("body") or ""),
+                "kind": "Antwort",
+            }
+        )
+    for ev in events:
+        border = "#22c55e" if ev["who"] == "MaByte Team" else "rgba(168,85,247,.45)"
+        st.markdown(
+            f"""
+<div class="dash-activity" style="border-left:3px solid {border};margin-bottom:8px;">
+    <div class="t">{html.escape(ev['kind'])} · {html.escape(ev['who'])}</div>
+    <div class="d">{html.escape(ev['when'])}</div>
+    <div style="color:#cbd5e1;font-size:13px;line-height:1.55;margin-top:8px;">{html.escape(ev['body'][:600])}</div>
+</div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+
 def render_support():
     require_login()
+    _dashboard_css()
     _support_css()
 
     render_page_hero(
-        "Support Center",
-        "Tickets & Hilfe",
-        "Account, Zahlung, Football Premium und technische Fragen — Antwort im Admin Panel.",
+        "MaByte · Support OS",
+        "Ticket Center",
+        "Prioritäten, Status-Timeline und Team-Antworten — Production Beta Support für Mab AI.",
     )
 
-    open_count = 0
     tickets = list_support_messages()
     own_tickets = [t for t in tickets if t.get("username") == st.session_state.get("user")]
-    open_count = sum(1 for t in own_tickets if str(t.get("status") or "open") == "open")
+    open_count = sum(
+        1 for t in own_tickets if str(t.get("status") or "open") in ("open", "in_progress")
+    )
 
-    c1, c2, c3 = st.columns(3)
+    c1, c2, c3, c4 = st.columns(4)
     with c1:
-        st.metric("Meine Tickets", len(own_tickets))
+        st.metric("Tickets", len(own_tickets))
     with c2:
         st.metric("Offen", open_count)
     with c3:
         st.metric("Geschlossen", len(own_tickets) - open_count)
+    with c4:
+        urgent = sum(1 for t in own_tickets if str(t.get("priority") or "") == "urgent")
+        st.metric("Dringend", urgent)
 
     with st.container(border=True):
         st.markdown(
@@ -621,7 +677,7 @@ def render_support():
             unsafe_allow_html=True,
         )
         with st.form("support_ticket_form"):
-            c1, c2 = st.columns(2)
+            c1, c2, c3 = st.columns(3)
             with c1:
                 category = st.selectbox(
                     "Kategorie",
@@ -632,10 +688,18 @@ def render_support():
                         "Tokens",
                         "Workspace",
                         "Bug",
+                        "Beta / Launch",
                         "Sonstiges",
                     ],
                 )
             with c2:
+                priority = st.selectbox(
+                    "Priorität",
+                    ["normal", "high", "urgent", "low"],
+                    index=0,
+                    help="Bei Launch-Blockern: urgent.",
+                )
+            with c3:
                 subject = st.text_input("Betreff", placeholder="Kurze Zusammenfassung")
             message = st.text_area(
                 "Nachricht",
@@ -654,6 +718,7 @@ def render_support():
                         category,
                         subject,
                         message,
+                        priority=priority,
                     )
                     if ok:
                         st.success(msg)
@@ -662,30 +727,41 @@ def render_support():
                         st.error(msg)
 
     st.markdown(
-        '<div class="dash-kicker" style="margin:16px 0 10px 0;">Meine Tickets</div>',
+        '<div class="dash-kicker" style="margin:16px 0 10px 0;">Meine Tickets · Timeline</div>',
         unsafe_allow_html=True,
     )
 
     if own_tickets:
         for ticket in own_tickets:
             status = str(ticket.get("status") or "open")
-            st.markdown(
-                f"""
-<div class="dash-activity" style="border-left:3px solid {"#22c55e" if status == "open" else "#64748b"};margin-bottom:10px;padding:14px 16px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
-        <div class="t">#{ticket.get('id')} · {html.escape(str(ticket.get('subject') or 'Ticket'))}</div>
-    </div>
-    <div class="d">{html.escape(str(ticket.get('category') or ''))} · {html.escape(str(ticket.get('created_at', ''))[:16])}</div>
-    <div style="color:#cbd5e1;font-size:13px;line-height:1.55;margin-top:10px;">{html.escape(str(ticket.get('message') or '')[:800])}</div>
-</div>
-                """,
-                unsafe_allow_html=True,
-            )
-            render_status_badge(status)
+            prio = str(ticket.get("priority") or "normal")
+            with st.expander(
+                f"#{ticket.get('id')} · {ticket.get('subject', 'Ticket')} · {status}",
+                expanded=status in ("open", "in_progress"),
+            ):
+                st.markdown(_priority_badge(prio), unsafe_allow_html=True)
+                render_status_badge(status)
+                _render_ticket_timeline(ticket)
+                if status != "closed":
+                    with st.form(f"ticket_reply_{ticket.get('id')}"):
+                        extra = st.text_area("Nachricht ergänzen", height=100)
+                        if st.form_submit_button("Senden", width="stretch"):
+                            if extra.strip():
+                                ok, rmsg = add_ticket_reply(
+                                    int(ticket.get("id")),
+                                    st.session_state.get("user"),
+                                    extra.strip(),
+                                    is_staff=False,
+                                )
+                                if ok:
+                                    st.success(rmsg)
+                                    st.rerun()
+                                else:
+                                    st.error(rmsg)
     else:
         render_empty_state(
             "Noch keine Tickets",
-            "Erstelle oben ein Ticket — unser Team sieht es im Admin Panel.",
+            "Erstelle oben ein Ticket — unser Team antwortet im Admin Panel.",
         )
 
 

@@ -184,8 +184,18 @@ def inject_beta_global_css() -> None:
 
 def render_status_badge(status: str) -> None:
     status = str(status or "open").strip().lower()
-    css_class = "mb-badge-open" if status == "open" else "mb-badge-closed"
-    label = "Offen" if status == "open" else "Geschlossen"
+    if status == "in_progress":
+        css_class = "mb-badge-open"
+        label = "In Arbeit"
+    elif status == "open":
+        css_class = "mb-badge-open"
+        label = "Offen"
+    elif status == "closed":
+        css_class = "mb-badge-closed"
+        label = "Geschlossen"
+    else:
+        css_class = "mb-badge-closed"
+        label = status.title()
     st.markdown(
         f'<span class="mb-status-badge {css_class}">{html.escape(label)}</span>',
         unsafe_allow_html=True,
