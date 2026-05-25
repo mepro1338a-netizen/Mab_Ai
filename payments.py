@@ -62,21 +62,6 @@ def _log_checkout_failure(
     )
 
 
-def _validate_stripe_price(price_id: str, plan_key: str) -> str | None:
-    """Return error message if price invalid; None if OK."""
-    try:
-        price = stripe.Price.retrieve(price_id)
-        if not price.get("active"):
-            return f"Stripe Price inaktiv ({price_id})"
-        if not price.get("recurring"):
-            return f"Stripe Price muss recurring/subscription sein ({price_id})"
-        return None
-    except stripe.error.InvalidRequestError as e:
-        return str(e)
-    except Exception as e:
-        return str(e)
-
-
 def create_checkout_session(username: str, plan_key: str):
     success_url = stripe_checkout_success_url()
     cancel_url = stripe_checkout_cancel_url()
@@ -123,20 +108,6 @@ def create_checkout_session(username: str, plan_key: str):
     plan = plan_catalog(plan_key) or {}
     category = plan_category(plan_key)
 
-    price_err = _validate_stripe_price(price_id, plan_key)
-    if price_err:
-        _log_checkout_failure(
-            "checkout_invalid_price",
-            username=username,
-            plan_key=plan_key,
-            price_id=price_id,
-            success_url=success_url,
-            cancel_url=cancel_url,
-            stripe_error=price_err,
-            price_env=price_env,
-        )
-        return None, USER_FRIENDLY_CHECKOUT_ERROR
-
     try:
         session = stripe.checkout.Session.create(
             mode="subscription",
@@ -151,9 +122,19 @@ def create_checkout_session(username: str, plan_key: str):
                 "category": category,
             },
         )
-        record_purchase(username, plan_key, 0, session.id, "created", "created")
+        try:
+            record_purchase(username, plan_key, 0, session.id, "created", "created")
+        except Exception as db_exc:
+            log_stripe(
+                "checkout_db_warn",
+                username=username,
+                success=True,
+                plan_key=plan_key,
+                stripe_error=str(db_exc),
+            )
+
         log_stripe(
-            "checkout_created",
+            f"checkout_created plan={plan_key} price={price_id}",
             username=username,
             success=True,
             plan_key=plan_key,

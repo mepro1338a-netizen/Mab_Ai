@@ -399,6 +399,9 @@ section[data-testid="stSidebar"] .sidebar-logout-wrap .stButton > button {{
 }}
 """)
 
+    from ui.sidebar import sidebar_master_css
+    inject_css(sidebar_master_css())
+
     st.markdown('<div class="custom-topbar"></div>', unsafe_allow_html=True)
 
 

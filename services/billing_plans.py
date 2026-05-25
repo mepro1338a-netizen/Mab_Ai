@@ -6,11 +6,12 @@ Grand (STRIPE_PRICE_GRAND) is the reference; all plans use the same checkout pat
 from __future__ import annotations
 
 import os
+import re
 from typing import Any
 
-import os
-
 from config import FOOTBALL_PLANS, PLANS, normalize_app_base_url
+
+_PRICE_ID_RE = re.compile(r"^price_[A-Za-z0-9]+$")
 
 # Display order on Premium page (matches screenshot layout)
 AI_CHECKOUT_KEYS = ("pro", "grand", "elite")
@@ -98,7 +99,12 @@ def resolve_stripe_price_id(plan_key: str) -> tuple[str | None, str | None]:
     env_name = stripe_price_env_name(plan_key)
     if not env_name:
         return None, None
-    price_id = os.getenv(env_name, "").strip()
+    raw = os.getenv(env_name, "").strip().strip('"').strip("'")
+    # Railway copy-paste sometimes adds newlines or label prefixes
+    if raw and not raw.startswith("price_"):
+        match = _PRICE_ID_RE.search(raw)
+        raw = match.group(0) if match else raw.split()[0] if raw.split() else raw
+    price_id = raw.strip() if raw else ""
     return (price_id or None), env_name
 
 

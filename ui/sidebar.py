@@ -145,8 +145,6 @@ def _nav_section(title: str, items: list[tuple[str, str]]) -> None:
 
 def render_sidebar() -> None:
     """Central sidebar — called once from ui.py for every authenticated page."""
-    inject_sidebar_styles()
-
     with st.sidebar:
         if WORDMARK.exists():
             wordmark_src = _img_base64(WORDMARK)

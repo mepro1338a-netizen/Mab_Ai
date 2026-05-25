@@ -37,6 +37,14 @@ def _redact(text: str) -> str:
     return s
 
 
+_LOG_RECORD_SKIP = frozenset({
+    "name", "msg", "args", "created", "filename", "funcName", "levelname", "levelno",
+    "lineno", "module", "msecs", "message", "pathname", "process", "processName",
+    "relativeCreated", "stack_info", "exc_info", "exc_text", "thread", "threadName",
+    "taskName",
+})
+
+
 class JsonFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
         payload: dict[str, Any] = {
@@ -47,10 +55,12 @@ class JsonFormatter(logging.Formatter):
         }
         if record.exc_info:
             payload["trace"] = _redact("".join(traceback.format_exception(*record.exc_info)))
-        for key in ("user", "page", "provider", "status_code", "event"):
-            val = getattr(record, key, None)
-            if val is not None:
-                payload[key] = _redact(str(val))
+        for key, val in record.__dict__.items():
+            if key in _LOG_RECORD_SKIP or val is None:
+                continue
+            if key == "category":
+                continue
+            payload[key] = _redact(str(val))
         return json.dumps(payload, ensure_ascii=False)
 
 
@@ -62,7 +72,19 @@ if not logger.handlers:
     fh = RotatingFileHandler(LOG_FILE, maxBytes=5 * 1024 * 1024, backupCount=8, encoding="utf-8")
     fh.setFormatter(JsonFormatter())
     ch = logging.StreamHandler()
-    ch.setFormatter(logging.Formatter("%(asctime)s | %(levelname)s | %(message)s"))
+
+    class _ConsoleFormatter(logging.Formatter):
+        def format(self, record: logging.LogRecord) -> str:
+            base = super().format(record)
+            bits = [
+                getattr(record, "plan_key", None),
+                getattr(record, "stripe_error", None),
+                getattr(record, "success_url", None),
+            ]
+            extra = " | ".join(_redact(str(b)) for b in bits if b)
+            return f"{base} | {extra}" if extra else base
+
+    ch.setFormatter(_ConsoleFormatter("%(asctime)s | %(levelname)s | %(message)s"))
     logger.addHandler(fh)
     logger.addHandler(ch)
 
