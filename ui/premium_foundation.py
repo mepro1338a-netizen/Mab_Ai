@@ -213,20 +213,14 @@ def render_empty_state(title: str, message: str) -> None:
 
 
 def stripe_config_status() -> tuple[bool, list[str]]:
-    """Checkout needs STRIPE_SECRET_KEY + price IDs (webhook secret is separate service)."""
-    import os
+    """Legacy helper — prefer services.billing_plans.checkout_plans_status()."""
+    from services.billing_plans import checkout_plans_status
 
-    from config import FOOTBALL_PLANS, PLANS
-
+    status = checkout_plans_status()
     missing: list[str] = []
-    if not os.getenv("STRIPE_SECRET_KEY", "").strip():
+    if not status["stripe_secret_ok"]:
         missing.append("STRIPE_SECRET_KEY")
-    for _key, plan in {**PLANS, **FOOTBALL_PLANS}.items():
-        if _key == "free":
-            continue
-        env_name = plan.get("stripe_price_env")
-        if env_name and not os.getenv(env_name, "").strip():
-            missing.append(env_name)
+    missing.extend(status["missing_envs"])
     return len(missing) == 0, missing
 
 

@@ -15,7 +15,7 @@ SLOGAN_HEADER = ASSET_DIR / "sloganheader.png"
 
 
 ICON_MAP = {
-    "home": "missioncontrol",
+    "home": "home",
     "chat": "chat",
     "projects": "projects",
     "automation_lab": "automations",
@@ -450,6 +450,8 @@ def _nav_section(title: str, items: list[tuple[str, str]]) -> None:
 
 
 def render_sidebar() -> None:
+    from ui.sidebar_nav import SIDEBAR_SECTIONS
+
     with st.sidebar:
         if WORDMARK.exists():
             wordmark_src = img_base64(WORDMARK)
@@ -464,26 +466,8 @@ def render_sidebar() -> None:
         else:
             st.markdown("## MaByte")
 
-        _nav_section("Workspace", [
-            ("Mission Control", "home"),
-            ("Dashboard", "dashboard"),
-            ("AI Assistant", "chat"),
-            ("Projects", "projects"),
-            ("Football AI", "football"),
-            ("Automations", "automation_lab"),
-        ])
-        _nav_section("Studios", [
-            ("Image", "image"),
-            ("Video", "video"),
-            ("Reels", "reels"),
-            ("Music", "music"),
-            ("Code", "coding"),
-        ])
-        _nav_section("Account", [
-            ("Premium", "premium"),
-            ("Redeem", "redeem"),
-            ("Support", "support"),
-        ])
+        for section_title, items in SIDEBAR_SECTIONS:
+            _nav_section(section_title, items)
         if is_admin_user():
             _nav_section("System", [("Admin Panel", "admin")])
 
