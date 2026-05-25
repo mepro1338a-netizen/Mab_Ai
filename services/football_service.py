@@ -277,6 +277,44 @@ class FootballService:
           username=username,
       )
 
+  def get_league_upcoming_fixtures(
+      self,
+      league_id: int,
+      *,
+      next_count: int = 10,
+      season: int | None = None,
+      username: str = "",
+  ) -> list[dict[str, Any]]:
+      return self._request(
+          "fixtures",
+          {
+              "league": int(league_id),
+              "season": int(season or FOOTBALL_DEFAULT_SEASON),
+              "next": max(1, min(int(next_count), 20)),
+          },
+          feature="api_fixtures",
+          username=username,
+      )
+
+  def get_league_recent_fixtures(
+      self,
+      league_id: int,
+      *,
+      last_count: int = 10,
+      season: int | None = None,
+      username: str = "",
+  ) -> list[dict[str, Any]]:
+      return self._request(
+          "fixtures",
+          {
+              "league": int(league_id),
+              "season": int(season or FOOTBALL_DEFAULT_SEASON),
+              "last": max(1, min(int(last_count), 20)),
+          },
+          feature="api_results",
+          username=username,
+      )
+
   def get_live_fixtures(self, *, username: str = "") -> list[dict[str, Any]]:
       return self._request(
           "fixtures",

@@ -1,4 +1,5 @@
-﻿import io
+﻿import html
+import io
 import re
 import streamlit as st
 from openai import OpenAI
@@ -17,10 +18,27 @@ from services.football_access import (
     feature_label,
     usage_summary,
 )
+from ui.football_ui import (
+    inject_football_ui_css,
+    render_ai_module_preview,
+    render_command_hero,
+    render_content_package,
+    render_export_bar,
+    render_fixture_cards,
+    render_league_results,
+    render_match_banner,
+    render_section_header,
+    render_popular_leagues,
+    render_standings_table,
+    render_stat_row,
+    render_summary_output,
+    render_team_results,
+    render_thumbnail_package,
+    render_viral_intelligence,
+    POPULAR_LEAGUES,
+)
 from ui.premium_foundation import (
-    premium_foundation_css,
     render_feature_grid,
-    render_page_hero,
     render_upgrade_card,
 )
 from services.football_odds import calculate_tip_odds
@@ -246,7 +264,9 @@ def football_css() -> None:
     from ui.premium_foundation import BETA_GLOBAL_CSS
     from ui.styles import MB_THEME_VARS, inject_css, page_layout_css
 
+    inject_football_ui_css()
     inject_css(MB_THEME_VARS + page_layout_css(1280, 88, 48) + BETA_GLOBAL_CSS + """
+.fb-page-marker { display: none; }
 .fb-title {
     font-size: 38px;
     font-weight: 1000;
@@ -317,25 +337,22 @@ def render_plan_status() -> dict:
     summary = usage_summary(current_username(), session_football_plan())
     ai_lim = summary["ai_limit"]
     ai_lim_txt = str(ai_lim) if isinstance(ai_lim, int) else ai_lim
-    c1, c2, c3, c4 = st.columns(4)
-    with c1:
-        st.metric("Football Plan", summary["plan_label"])
-    with c2:
-        st.metric(
-            "AI Analysen heute",
-            f"{summary['ai_used']}/{ai_lim_txt}",
-        )
-    with c3:
-        if summary["live_api"]:
-            st.metric(
-                "API Requests heute",
-                f"{summary['api_used']:,}".replace(",", "."),
-                help=f"Tageslimit: {summary['api_limit']:,}".replace(",", "."),
-            )
-        else:
-            st.metric("API", "—", help="Football Plan erforderlich")
-    with c4:
-        st.metric("Stufe", summary["tier"] or "—")
+    api_val = (
+        f"{summary['api_used']:,}".replace(",", ".")
+        if summary["live_api"]
+        else "—"
+    )
+    api_hint = (
+        f"Limit {summary['api_limit']:,}".replace(",", ".")
+        if summary["live_api"]
+        else "Football Plan aktivieren"
+    )
+    render_stat_row([
+        ("Football Plan", summary["plan_label"], "Aktive Stufe"),
+        ("AI Analysen", f"{summary['ai_used']}/{ai_lim_txt}", "Heute verbraucht"),
+        ("API Mesh", api_val, api_hint),
+        ("Tier Level", str(summary["tier"] or "—"), "Feature-Stufe 0–3"),
+    ])
     return summary
 
 
@@ -562,51 +579,121 @@ def safe_filename(title):
 # PACKAGE TABS
 # =========================================================
 
-def render_package_tabs(result):
-    sections = split_sections(result)
-
-    tabs = st.tabs(list(sections.keys()))
-
-    for i, title in enumerate(sections.keys()):
-        with tabs[i]:
-            content = sections[title].strip()
-
-            if not content:
-                content = "Kein Inhalt generiert."
-
-            st.markdown(content)
-
-            st.divider()
-
-            st.code(content)
-
-            st.download_button(
-                f"Download {title}",
-                data=content.encode("utf-8"),
-                file_name=f"mabyte_{safe_filename(title)}.txt",
-                mime="text/plain",
-                width="stretch",
-            )
-
-
-# =========================================================
-# FULL EXPORT
-# =========================================================
-
 def render_full_export(result, filename="mabyte_matchday_package.txt"):
-    st.subheader("Full Package Export")
-
-    export_data = io.BytesIO()
-    export_data.write(result.encode("utf-8"))
-    export_data.seek(0)
-
+    render_export_bar("Full Package Export")
     st.download_button(
-        "Download Full Package",
-        data=export_data,
+        "↓ Komplettes Matchday Package",
+        data=result.encode("utf-8"),
         file_name=filename,
         mime="text/plain",
+        key=f"dl_{safe_filename(filename)}",
         width="stretch",
     )
+
+
+def render_ai_package_results(
+    result: str,
+    club: str,
+    opponent: str,
+    platform: str,
+    tone: str,
+    project,
+    *,
+    key_prefix: str = "fb_pkg",
+    badge: str = "Matchday Content Package",
+    show_thumbnails: bool = True,
+    show_viral: bool = True,
+    show_improve: bool = True,
+    export_name: str = "mabyte_matchday_package.txt",
+) -> None:
+    """Professional AI output — cards, viral ring, thumbnails."""
+    render_section_header(badge, f"{club} vs {opponent} · {platform} · {tone}")
+    render_match_banner(club, opponent, platform, tone, badge=badge)
+
+    sections = split_sections(result)
+    render_content_package(sections, key_prefix=key_prefix)
+    render_full_export(result, filename=export_name)
+
+    if show_thumbnails:
+        with st.spinner("Thumbnail Intelligence…"):
+            thumbnails = generate_thumbnail_system(club, opponent)
+        render_thumbnail_package(thumbnails)
+        st.download_button(
+            "↓ Thumbnail System",
+            data=thumbnails.encode("utf-8"),
+            file_name="mabyte_thumbnail_system.txt",
+            mime="text/plain",
+            key=f"{key_prefix}_thumb_dl",
+            width="stretch",
+        )
+        if project:
+            save_project_memory(
+                project_id=project.get("id"),
+                username=st.session_state.get("user"),
+                workspace="football",
+                memory_type="thumbnail_system",
+                content=thumbnails[:5000],
+            )
+
+    if show_viral:
+        with st.spinner("Viral Intelligence…"):
+            analysis = analyze_viral_score(result)
+        render_viral_intelligence(
+            analysis.get("score", 0),
+            analysis.get("feedback", ""),
+        )
+
+    if show_improve:
+        improve = st.button(
+            "Package optimieren (Viral Boost)",
+            width="stretch",
+            key=f"{key_prefix}_improve",
+        )
+        if improve:
+            ok, gate_msg = can_run_action(
+                current_username(),
+                "optimized_package",
+                session_football_plan(),
+            )
+            if not ok:
+                st.error(gate_msg)
+                return
+            try:
+                consume_action(
+                    current_username(),
+                    "optimized_package",
+                    session_football_plan(),
+                )
+            except FootballGateError as exc:
+                st.error(str(exc))
+                return
+            with st.spinner("Optimiere Viralität…"):
+                improved = improve_package(result)
+            st.session_state.fb_ai_package = improved
+            st.session_state.fb_ai_badge = "Optimized Package · Viral Boost"
+            st.rerun()
+            if project:
+                save_project_memory(
+                    project_id=project.get("id"),
+                    username=st.session_state.get("user"),
+                    workspace="football",
+                    memory_type="optimized_package",
+                    content=improved[:5000],
+                )
+                st.success("Optimized Package in Projekt-Memory gespeichert.")
+
+    with st.expander("Raw Output (Debug)", expanded=False):
+        st.markdown(result)
+
+    if project:
+        save_project_memory(
+            project_id=project.get("id"),
+            username=st.session_state.get("user"),
+            workspace="football",
+            memory_type="multi_platform_package",
+            content=result[:5000],
+        )
+        st.success("Package in Projekt-Memory gespeichert.")
 
 
 # =========================================================
@@ -633,6 +720,20 @@ def _pick_team_id() -> int | None:
     return team_options.get(selected_name)
 
 
+def _league_options() -> dict[str, int]:
+    opts: dict[str, int] = {}
+    for lg in POPULAR_LEAGUES:
+        opts[f"{lg['name']} ({lg['country']}) · {lg['id']}"] = int(lg["id"])
+    for row in st.session_state.get("football_leagues") or []:
+        league = row.get("league") or {}
+        lid = league.get("id")
+        name = league.get("name")
+        if lid and name:
+            country = league.get("country") or ""
+            opts[f"{name} ({country}) · {lid}"] = int(lid)
+    return opts
+
+
 def render_football_live_data(summary: dict) -> None:
     if summary.get("plan") == "none":
         render_upgrade_card(
@@ -648,153 +749,248 @@ def render_football_live_data(summary: dict) -> None:
     username = current_username()
 
     if not service.is_configured():
-        st.info(
-            "API-Football Key fehlt auf dem Server (FOOTBALL_API_KEY). "
-            "Dein Plan ist aktiv — Daten erscheinen nach Konfiguration in Railway/.env."
+        st.markdown(
+            """
+<div class="fb-empty">
+    API-Football Key fehlt (FOOTBALL_API_KEY). Plan ist aktiv — Daten nach Railway/.env Konfiguration.
+</div>
+            """,
+            unsafe_allow_html=True,
         )
-        st.caption("Provider: api-sports.io · Requests werden gecacht")
         return
 
-    st.subheader("Daten & API")
-    st.caption(
-        f"Gecachte Requests · heute {summary['api_used']:,} / {summary['api_limit']:,}".replace(",", ".")
+    api_line = (
+        f"API Mesh · {summary['api_used']:,} / {summary['api_limit']:,} heute".replace(",", ".")
+    )
+    render_section_header("Discovery Hub", api_line + " · Provider api-sports.io · gecacht")
+
+    tab_teams, tab_leagues, tab_matches, tab_live = st.tabs(
+        ["Teams", "Ligen", "Spiele", "Live"]
     )
 
-    search_col, search_btn_col = st.columns([3, 1])
-    with search_col:
-        st.text_input(
-            "Team suchen",
-            placeholder="z.B. Arsenal, Bayern, Real Madrid",
-            key="football_team_search_query",
-        )
-    with search_btn_col:
-        st.write("")
-        if st.button("Teams suchen", width="stretch", key="football_search_teams_btn"):
-            q = st.session_state.get("football_team_search_query", "").strip()
-            if q:
-                try:
-                    with st.spinner("Suche Teams..."):
-                        st.session_state.football_team_results = service.search_teams(
+    with tab_teams:
+        st.markdown('<div class="fb-page">', unsafe_allow_html=True)
+        c1, c2 = st.columns([4, 1])
+        with c1:
+            st.text_input(
+                "Team Discovery",
+                placeholder="Arsenal, Bayern, Real Madrid, Barca…",
+                key="football_team_search_query",
+                label_visibility="collapsed",
+            )
+        with c2:
+            if st.button("Scan", key="football_search_teams_btn", width="stretch"):
+                q = st.session_state.get("football_team_search_query", "").strip()
+                if len(q) < 2:
+                    st.warning("Mindestens 2 Zeichen.")
+                else:
+                    try:
+                        with st.spinner("Teams werden geladen…"):
+                            st.session_state.football_team_results = service.search_teams(
+                                q, username=username,
+                            )
+                    except FootballAPIError as exc:
+                        st.error(str(exc))
+
+        teams = st.session_state.get("football_team_results") or []
+        if teams:
+            render_team_results(teams)
+        team_id = _pick_team_id()
+
+        if team_id:
+            a1, a2, a3 = st.columns(3)
+            with a1:
+                n = st.slider("Nächste", 1, 12, 6, key="football_next_n")
+            with a2:
+                if st.button("Anstehend laden", key="football_load_fixtures", width="stretch"):
+                    try:
+                        st.session_state.football_upcoming_fixtures = service.get_upcoming_fixtures(
+                            team_id, next_count=n, username=username,
+                        )
+                    except FootballAPIError as exc:
+                        st.error(str(exc))
+            with a3:
+                if st.button("Ergebnisse laden", key="football_load_results", width="stretch"):
+                    try:
+                        st.session_state.football_recent_fixtures = service.get_recent_fixtures(
+                            team_id, last_count=6, username=username,
+                        )
+                    except FootballAPIError as exc:
+                        st.error(str(exc))
+
+            st.markdown("**Anstehende Spiele**")
+            render_fixture_cards(
+                st.session_state.get("football_upcoming_fixtures") or [],
+                empty_msg="Team wählen und «Anstehend laden».",
+            )
+            st.markdown("**Letzte Ergebnisse**")
+            render_fixture_cards(
+                st.session_state.get("football_recent_fixtures") or [],
+                empty_msg="«Ergebnisse laden» für Historie.",
+            )
+
+            def _h2h_block():
+                st.text_input(
+                    "Gegner Team-ID",
+                    key="fb_opp_team_id",
+                    placeholder="z.B. 50",
+                )
+                if st.button("Head-to-Head", key="football_load_h2h", width="stretch"):
+                    opp = st.session_state.get("fb_opp_team_id")
+                    if not opp:
+                        st.warning("Gegner-ID eingeben.")
+                        return
+                    try:
+                        st.session_state.football_h2h = service.get_head_to_head(
+                            team_id, int(opp), username=username,
+                        )
+                    except (FootballAPIError, ValueError) as exc:
+                        st.error(str(exc))
+                render_fixture_cards(
+                    st.session_state.get("football_h2h") or [],
+                    empty_msg="H2H nach Gegner-ID laden.",
+                )
+
+            gated_api_block(
+                "api_head_to_head",
+                "Head-to-Head Matrix",
+                "Direktvergleich zweier Teams",
+                _h2h_block,
+            )
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    with tab_leagues:
+        render_popular_leagues()
+        st.caption("Beliebte Ligen — ID wird für Spiele & Tabelle genutzt.")
+
+        lc1, lc2 = st.columns([3, 1])
+        with lc1:
+            st.text_input(
+                "Liga Discovery",
+                placeholder="Premier, Bundesliga, Champions…",
+                key="fb_league_search",
+                label_visibility="collapsed",
+            )
+        with lc2:
+            if st.button("Scan", key="fb_search_leagues", width="stretch"):
+                q = st.session_state.get("fb_league_search", "").strip()
+                if len(q) < 2:
+                    st.warning("Mindestens 2 Zeichen.")
+                else:
+                    try:
+                        st.session_state.football_leagues = service.search_leagues(
                             q, username=username,
                         )
-                except FootballAPIError as exc:
-                    st.error(str(exc))
-            else:
-                st.warning("Bitte Teamname eingeben.")
+                    except FootballAPIError as exc:
+                        st.error(str(exc))
 
-    team_id = _pick_team_id()
+        if st.session_state.get("football_leagues"):
+            render_league_results(st.session_state.get("football_leagues") or [])
 
-    st.markdown("#### Starter — Fixtures, Results, Standings")
-    fc1, fc2 = st.columns(2)
-    with fc1:
-        if team_id and st.button("Fixtures laden", key="football_load_fixtures", width="stretch"):
-            try:
-                n = st.session_state.get("football_next_n", 5)
-                st.session_state.football_upcoming_fixtures = service.get_upcoming_fixtures(
-                    team_id, next_count=n, username=username,
-                )
-            except FootballAPIError as exc:
-                st.error(str(exc))
-        if team_id:
-            st.slider("Nächste Spiele", 1, 10, 5, key="football_next_n")
-    with fc2:
-        if team_id and st.button("Results laden", key="football_load_results", width="stretch"):
-            try:
-                st.session_state.football_recent_fixtures = service.get_recent_fixtures(
-                    team_id, last_count=5, username=username,
-                )
-            except FootballAPIError as exc:
-                st.error(str(exc))
-
-    for label, key in (
-        ("Anstehend", "football_upcoming_fixtures"),
-        ("Ergebnisse", "football_recent_fixtures"),
-    ):
-        rows = st.session_state.get(key) or []
-        if rows:
-            st.caption(label)
-            for item in rows[:8]:
-                st.write(fixture_label(item))
-
-    league_id = st.number_input("Liga-ID (Standings)", min_value=1, value=39, key="fb_league_id")
-    if st.button("Standings laden", key="football_load_standings"):
-        try:
-            st.session_state.football_standings = service.get_standings(
-                int(league_id), username=username,
+        league_opts = _league_options()
+        if league_opts:
+            pick = st.selectbox(
+                "Aktive Liga",
+                list(league_opts.keys()),
+                key="fb_league_pick",
             )
-        except FootballAPIError as exc:
-            st.error(str(exc))
-    if st.session_state.get("football_standings"):
-        with st.expander("Tabelle", expanded=False):
-            st.json(st.session_state.football_standings)
+            st.session_state.fb_active_league_id = league_opts.get(pick, 39)
+        else:
+            st.session_state.fb_active_league_id = st.number_input(
+                "Liga-ID",
+                min_value=1,
+                value=int(st.session_state.get("fb_active_league_id") or 39),
+                key="fb_league_id_manual",
+            )
 
-    st.divider()
-    st.markdown("#### Pro — Live, H2H, Stats, Predictions")
-
-    def _live_block():
-        if st.button("Live Scores", key="football_refresh_live", width="stretch"):
-            try:
-                st.session_state.football_live_fixtures = service.get_live_fixtures(
-                    username=username,
-                )
-            except FootballAPIError as exc:
-                st.error(str(exc))
-        for item in (st.session_state.get("football_live_fixtures") or [])[:10]:
-            h, a = fixture_team_names(item)
-            g = item.get("goals") or {}
-            st.write(f"**{h}** {g.get('home','-')} : {g.get('away','-')} **{a}**")
-
-    gated_api_block(
-        "api_live_scores",
-        feature_label("api_live_scores"),
-        "Live-Spiele weltweit",
-        _live_block,
-    )
-
-    if team_id:
-        def _h2h_block():
-            opp = st.text_input("Gegner Team-ID", key="fb_opp_team_id")
-            if st.button("H2H laden", key="football_load_h2h"):
+        league_id = int(st.session_state.get("fb_active_league_id") or 39)
+        b1, b2, b3 = st.columns(3)
+        with b1:
+            if st.button("Tabelle", key="football_load_standings", width="stretch"):
                 try:
-                    st.session_state.football_h2h = service.get_head_to_head(
-                        team_id, int(opp), username=username,
+                    st.session_state.football_standings = service.get_standings(
+                        league_id, username=username,
                     )
                 except FootballAPIError as exc:
                     st.error(str(exc))
-            for row in st.session_state.get("football_h2h") or []:
-                st.write(fixture_label(row))
+        with b2:
+            if st.button("Kommende Spiele", key="fb_league_upcoming", width="stretch"):
+                try:
+                    st.session_state.football_league_upcoming = (
+                        service.get_league_upcoming_fixtures(
+                            league_id, next_count=12, username=username,
+                        )
+                    )
+                except FootballAPIError as exc:
+                    st.error(str(exc))
+        with b3:
+            if st.button("Letzte Spiele", key="fb_league_recent", width="stretch"):
+                try:
+                    st.session_state.football_league_recent = (
+                        service.get_league_recent_fixtures(
+                            league_id, last_count=12, username=username,
+                        )
+                    )
+                except FootballAPIError as exc:
+                    st.error(str(exc))
 
-        gated_api_block(
-            "api_head_to_head",
-            "Head-to-Head",
-            "Direktvergleich zweier Teams",
-            _h2h_block,
+        if st.session_state.get("football_standings"):
+            st.markdown("**Tabelle**")
+            render_standings_table(st.session_state.get("football_standings") or [])
+        st.markdown("**Kommende Liga-Spiele**")
+        render_fixture_cards(
+            st.session_state.get("football_league_upcoming") or [],
+            empty_msg="Liga wählen → «Kommende Spiele».",
+        )
+        st.markdown("**Letzte Liga-Spiele**")
+        render_fixture_cards(
+            st.session_state.get("football_league_recent") or [],
+            empty_msg="«Letzte Spiele» für Ergebnisse.",
         )
 
-    st.divider()
-    st.markdown("#### Elite — Multi-League & erweitert")
+        def _multi_league_block():
+            st.caption("Erweiterte Ligasuche für Multi-League Monitoring.")
+            render_league_results(st.session_state.get("football_leagues") or [])
 
-    def _multi_league_block():
-        q = st.text_input("Liga suchen", key="fb_league_search")
-        if st.button("Ligen suchen", key="fb_search_leagues"):
-            try:
-                st.session_state.football_leagues = service.search_leagues(
-                    q, username=username,
-                )
-            except FootballAPIError as exc:
-                st.error(str(exc))
-        for row in (st.session_state.get("football_leagues") or [])[:8]:
-            league = row.get("league") or {}
-            st.write(f"{league.get('name')} ({league.get('country')})")
+        gated_api_block(
+            "api_multi_league",
+            "Multi-League Monitoring",
+            "Parallele Liga-Überwachung (Elite)",
+            _multi_league_block,
+        )
 
-    gated_api_block(
-        "api_multi_league",
-        "Multi-League Monitoring",
-        "Mehrere Ligen parallel durchsuchen",
-        _multi_league_block,
-    )
+    with tab_matches:
+        st.info(
+            "Wähle unter **Teams** ein Team oder unter **Ligen** eine Liga — "
+            "Spiele erscheinen als Karten mit Live-Status."
+        )
+        render_fixture_cards(
+            (st.session_state.get("football_upcoming_fixtures") or [])
+            + (st.session_state.get("football_league_upcoming") or []),
+            empty_msg="Noch keine Spiele geladen.",
+        )
 
-    st.caption("Player Stats, Injuries & Predictions — ab Football Pro.")
+    with tab_live:
+        def _live_block():
+            if st.button("Live Mesh aktualisieren", key="football_refresh_live", width="stretch"):
+                try:
+                    with st.spinner("Live-Spiele…"):
+                        st.session_state.football_live_fixtures = service.get_live_fixtures(
+                            username=username,
+                        )
+                except FootballAPIError as exc:
+                    st.error(str(exc))
+            render_fixture_cards(
+                st.session_state.get("football_live_fixtures") or [],
+                empty_msg="Live Mesh — Button zum Aktualisieren.",
+            )
+
+        gated_api_block(
+            "api_live_scores",
+            feature_label("api_live_scores"),
+            "Live-Spiele weltweit in Echtzeit (gecacht)",
+            _live_block,
+        )
 
 
 # =========================================================
@@ -805,6 +1001,11 @@ def render_football_ai_engine(summary: dict) -> None:
     project = active_project()
     plan = summary.get("plan", "none")
 
+    render_section_header(
+        "AI Content Engine",
+        "Matchday Packages, Viral Scores & Reel-Export — professionelle Creator-Ausgabe.",
+    )
+
     if plan == "none":
         st.warning(
             "Kein Football Premium Plan aktiv. "
@@ -814,60 +1015,52 @@ def render_football_ai_engine(summary: dict) -> None:
             open_premium()
         st.divider()
 
-    top1, top2, top3, top4 = st.columns(4)
-
-    with top1:
-        st.metric("Platforms", "4")
-
-    with top2:
-        st.metric("Content Types", "10+")
-
-    with top3:
-        min_plan = "Pro" if summary["tier"] >= 2 else ("Starter" if summary["tier"] >= 1 else "—")
-        st.metric("Matchday Engine", min_plan)
-
-    with top4:
-        st.metric("AI heute", summary.get("ai_used", 0))
+    min_plan = "Pro" if summary["tier"] >= 2 else ("Starter" if summary["tier"] >= 1 else "—")
+    render_stat_row([
+        ("Plattformen", "4", "TikTok · IG · X · YT"),
+        ("Content Types", "10+", "Hooks · Captions · Threads"),
+        ("Matchday Engine", min_plan, "Ab Pro"),
+        ("AI heute", str(summary.get("ai_used", 0)), "Verbrauch"),
+    ])
 
     render_feature_matrix(summary)
     st.divider()
 
-    left, right = st.columns([1, 1], gap="large")
+    st.markdown('<div class="fb-ai-studio">', unsafe_allow_html=True)
+    left, right = st.columns([1.05, 1], gap="large")
 
     with left:
-        club = st.text_input(
-            "Club",
-            placeholder="Arsenal",
-            key="football_ai_club_input",
+        st.markdown(
+            '<div class="fb-scanline" style="margin-bottom:14px;">Match Setup</div>',
+            unsafe_allow_html=True,
         )
+        c1, c2 = st.columns(2)
+        with c1:
+            club = st.text_input(
+                "Club",
+                placeholder="Arsenal",
+                key="football_ai_club_input",
+            )
+        with c2:
+            opponent = st.text_input(
+                "Gegner",
+                placeholder="Manchester City",
+                key="football_ai_opponent_input",
+            )
 
-        opponent = st.text_input(
-            "Opponent",
-            placeholder="Manchester City",
-            key="football_ai_opponent_input",
-        )
-
-        platform = st.selectbox(
-            "Primary Platform",
-            [
-                "TikTok",
-                "Instagram",
-                "X/Twitter",
-                "YouTube Shorts",
-            ],
-        )
-
-        tone = st.selectbox(
-            "Content Tone",
-            [
-                "Viral",
-                "Aggressive",
-                "Emotional",
-                "Funny",
-                "Professional",
-                "Tactical",
-            ],
-        )
+        p1, p2 = st.columns(2)
+        with p1:
+            platform = st.selectbox(
+                "Hauptplattform",
+                ["TikTok", "Instagram", "X/Twitter", "YouTube Shorts"],
+                key="football_ai_platform",
+            )
+        with p2:
+            tone = st.selectbox(
+                "Content Tone",
+                ["Viral", "Aggressive", "Emotional", "Funny", "Professional", "Tactical"],
+                key="football_ai_tone",
+            )
 
         can_preview, _, _ = can_access_feature(
             current_username(), "ai_match_preview", session_football_plan(),
@@ -876,37 +1069,27 @@ def render_football_ai_engine(summary: dict) -> None:
             current_username(), "ai_match_summary", session_football_plan(),
         )
 
-        generate_summary = st.button(
-            "Simple AI Match Summary (Starter)",
-            width="stretch",
-            disabled=not can_summary,
-        )
-        generate = st.button(
-            "Multi Platform Matchday Package (Pro+)",
-            width="stretch",
-            disabled=not can_preview,
-        )
+        b1, b2 = st.columns(2)
+        with b1:
+            generate_summary = st.button(
+                "Match Summary",
+                width="stretch",
+                disabled=not can_summary,
+                key="fb_btn_summary",
+            )
+        with b2:
+            generate = st.button(
+                "Matchday Package",
+                width="stretch",
+                disabled=not can_preview,
+                key="fb_btn_package",
+            )
         if not can_preview and plan != "none":
-            st.caption("Matchday Package ab Football Pro.")
+            st.caption("Volles Package ab Football Pro.")
 
     with right:
-        with st.container(border=True):
-            st.markdown("### Generated Content")
-            st.write("- TikTok Hook")
-            st.write("- TikTok Caption")
-            st.write("- Instagram Caption")
-            st.write("- Twitter Thread")
-            st.write("- YouTube Title")
-            st.write("- YouTube Description")
-            st.write("- Thumbnail Intelligence")
-            st.write("- Hashtags")
-            st.write("- CTA")
-            st.write("- Posting Strategy")
-            st.write("- Viral Intelligence")
-            st.write("- AI Optimization")
-            st.write("- Export System")
-
-    st.divider()
+        render_ai_module_preview()
+    st.markdown("</div>", unsafe_allow_html=True)
 
     if generate_summary:
         if not club or not opponent:
@@ -917,10 +1100,17 @@ def render_football_ai_engine(summary: dict) -> None:
         except FootballGateError as exc:
             st.error(str(exc))
             return
-        with st.spinner("Erstelle Match Summary..."):
+        with st.spinner("AI Match Summary wird erstellt…"):
             summary_text = generate_matchday_package(club, opponent, platform, tone)[:2500]
-        st.subheader("AI Match Summary")
-        st.markdown(summary_text)
+        render_summary_output(summary_text, club, opponent)
+        st.download_button(
+            "↓ Summary herunterladen",
+            data=summary_text.encode("utf-8"),
+            file_name=f"mabyte_summary_{safe_filename(club)}_vs_{safe_filename(opponent)}.txt",
+            mime="text/plain",
+            key="fb_summary_dl",
+            width="stretch",
+        )
         return
 
     if generate:
@@ -949,150 +1139,47 @@ def render_football_ai_engine(summary: dict) -> None:
             st.error(str(exc))
             return
 
-        with st.spinner("MaByte generiert Multi Platform Matchday Package..."):
-            result = generate_matchday_package(
-                club,
-                opponent,
-                platform,
-                tone,
-            )
+        with st.spinner("MaByte generiert Multi-Platform Matchday Package…"):
+            result = generate_matchday_package(club, opponent, platform, tone)
 
-        st.subheader("Matchday Content Package")
+        st.session_state.fb_ai_package = result
+        st.session_state.fb_ai_meta = {
+            "club": club,
+            "opponent": opponent,
+            "platform": platform,
+            "tone": tone,
+        }
+        st.session_state.fb_ai_badge = "Matchday Content Package"
 
-        render_package_tabs(result)
-
-        st.divider()
-
-        render_full_export(
-            result,
-            filename="mabyte_matchday_package.txt",
+    pkg = st.session_state.get("fb_ai_package")
+    meta = st.session_state.get("fb_ai_meta") or {}
+    if pkg and meta:
+        _, clear = st.columns([5, 1])
+        with clear:
+            if st.button("Neu", key="fb_clear_pkg", width="stretch"):
+                for k in ("fb_ai_package", "fb_ai_meta", "fb_ai_badge"):
+                    st.session_state.pop(k, None)
+                st.rerun()
+        render_ai_package_results(
+            pkg,
+            meta.get("club", club),
+            meta.get("opponent", opponent),
+            meta.get("platform", platform),
+            meta.get("tone", tone),
+            project,
+            key_prefix="fb_pkg_main",
+            badge=st.session_state.get("fb_ai_badge", "Matchday Content Package"),
         )
-
-        st.divider()
-
-        with st.spinner("Generiere Thumbnail System..."):
-            thumbnails = generate_thumbnail_system(
-                club,
-                opponent,
-            )
-
-        st.subheader("Thumbnail Intelligence")
-
-        st.markdown(thumbnails)
-
-        st.download_button(
-            "Download Thumbnail System",
-            data=thumbnails.encode("utf-8"),
-            file_name="mabyte_thumbnail_system.txt",
-            mime="text/plain",
-            width="stretch",
-        )
-
-        if project:
-            save_project_memory(
-                project_id=project.get("id"),
-                username=st.session_state.get("user"),
-                workspace="football",
-                memory_type="thumbnail_system",
-                content=thumbnails[:5000],
-            )
-
-        st.divider()
-
-        with st.spinner("Analysiere Viral Potential..."):
-            analysis = analyze_viral_score(result)
-
-        score = analysis.get("score", 0)
-        feedback = analysis.get("feedback", "")
-
-        st.subheader("Viral Intelligence")
-
-        c1, c2 = st.columns([1, 2])
-
-        with c1:
-            st.metric("Viral Score", f"{score}/100")
-            st.progress(min(score, 100) / 100)
-
-        with c2:
-            st.markdown(feedback)
-
-        st.divider()
-
-        improve = st.button(
-            "Improve Package",
-            width="stretch",
-        )
-
-        if improve:
-            ok, gate_msg = can_run_action(
-                current_username(),
-                "optimized_package",
-                session_football_plan(),
-            )
-            if not ok:
-                st.error(gate_msg)
-                return
-            try:
-                consume_action(
-                    current_username(),
-                    "optimized_package",
-                    session_football_plan(),
-                )
-            except FootballGateError as exc:
-                st.error(str(exc))
-                return
-
-            with st.spinner("MaByte optimiert Viralität..."):
-                improved = improve_package(result)
-
-            st.subheader("Optimized Package")
-
-            render_package_tabs(improved)
-
-            st.divider()
-
-            render_full_export(
-                improved,
-                filename="mabyte_optimized_matchday_package.txt",
-            )
-
-            if project:
-                save_project_memory(
-                    project_id=project.get("id"),
-                    username=st.session_state.get("user"),
-                    workspace="football",
-                    memory_type="optimized_package",
-                    content=improved[:5000],
-                )
-
-                st.success("Optimized Package gespeichert.")
-
-        st.divider()
-
-        with st.expander("Raw Output anzeigen"):
-            st.markdown(result)
-
-        if project:
-            save_project_memory(
-                project_id=project.get("id"),
-                username=st.session_state.get("user"),
-                workspace="football",
-                memory_type="multi_platform_package",
-                content=result[:5000],
-            )
-
-            st.success("Package in Projekt-Memory gespeichert.")
 
 
 def render_football_odds_calculator(summary: dict) -> None:
+    render_section_header(
+        "Odds Lab",
+        "Mathematische Kennzahlen — keine Wettberatung.",
+    )
     user = current_username()
     plan = session_football_plan()
     ok, _, need = can_access_feature(user, "elite_odds_calculator", plan)
-
-    st.subheader("Odds / Quote Calculator")
-    st.caption(
-        "Nur mathematische Einschätzung — keine Wettberatung, keine echten Wetten, kein Echtgeld."
-    )
 
     if not ok:
         render_upgrade_card(
@@ -1104,6 +1191,7 @@ def render_football_odds_calculator(summary: dict) -> None:
         )
         return
 
+    st.markdown("#### Berechnung")
     st.info(
         "Hinweis: Keine Wettberatung. MaByte berechnet nur mathematische Kennzahlen "
         "(Gewinn, Auszahlung, Break-even, Value Bet, Risiko). Es werden keine Wetten platziert."
@@ -1171,28 +1259,40 @@ def render_football() -> None:
         return
 
     football_css()
+    st.markdown('<div class="fb-page">', unsafe_allow_html=True)
 
     summary = usage_summary(current_username(), session_football_plan())
-
-    render_page_hero(
-        "Football Intelligence",
-        "Starter · Pro · Elite",
-        "Stufenweise API & AI: Starter (Basis-Daten + Summary), Pro (Predictions, H2H, Reels-Export), "
-        "Elite (Multi-League, Automation, hohe Limits). Gecacht — keine Dauer-Polls.",
+    api_line = (
+        f"{summary['api_used']:,} / {summary['api_limit']:,} API".replace(",", ".")
+        if summary.get("live_api")
+        else "API nach Plan-Freischaltung"
     )
-    st.caption(f"Aktiver Plan: **{summary['plan_label']}**")
+
+    render_command_hero(
+        "Football Command",
+        "Live-Daten, Ligen, Spiele und AI-Content in einem futuristischen Workspace — "
+        "ohne Streamlit-Standardlook.",
+        summary["plan_label"],
+        api_line,
+    )
 
     project = active_project()
     if project:
-        st.success(f"Aktives Projekt: {project.get('title')}")
+        st.markdown(
+            f'<span class="fb-league-chip">Projekt <strong>{html.escape(str(project.get("title")))}</strong></span>',
+            unsafe_allow_html=True,
+        )
     else:
-        st.info("Kein aktives Projekt. AI-Ergebnisse werden ohne Projekt-Memory erzeugt.")
+        st.markdown(
+            '<span class="fb-league-chip">Kein Projekt-Memory aktiv</span>',
+            unsafe_allow_html=True,
+        )
 
     render_plan_status()
     st.divider()
 
     tab_live, tab_ai, tab_odds, tab_plans = st.tabs(
-        ["Daten & API", "AI Content Engine", "Odds Calculator", "Dein Plan"]
+        ["Data Mesh", "AI Engine", "Odds Lab", "Dein Plan"]
     )
 
     with tab_live:
@@ -1207,7 +1307,7 @@ def render_football() -> None:
     with tab_plans:
         render_feature_matrix(summary)
         st.divider()
-        st.subheader("Football Premium Stufen")
+        render_section_header("Football Premium Stufen", "Starter · Pro · Elite")
         for key in ("football_starter", "football_pro", "football_elite"):
             plan = FOOTBALL_PLANS[key]
             with st.container(border=True):
@@ -1227,3 +1327,5 @@ def render_football() -> None:
                     st.success("Dein aktueller Plan")
                 elif st.button(f"{plan.get('label')} wählen", key=f"fb_pick_{key}"):
                     open_premium()
+
+    st.markdown("</div>", unsafe_allow_html=True)
