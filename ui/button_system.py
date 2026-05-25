@@ -14,13 +14,13 @@ _BTN_P = (
     "[data-testid='stBaseButton-secondary'] p, [data-testid='stBaseButton-tertiary'] p"
 )
 
-# Grau + weiße Schrift (alle Buttons)
-_GRAY_BG = "linear-gradient(135deg, rgba(75,75,82,.98) 0%, rgba(48,48,54,.99) 52%, rgba(38,38,44,.99) 100%)"
-_GRAY_BG_HOVER = "linear-gradient(135deg, rgba(95,95,102,.98) 0%, rgba(62,62,68,.99) 52%, rgba(48,48,54,.99) 100%)"
-_GRAY_BG_ACTIVE = "linear-gradient(135deg, rgba(110,110,118,.98) 0%, rgba(72,72,78,.99) 52%, rgba(55,55,62,.99) 100%)"
+# Dunkleres Grau + weiße Schrift (alle Buttons)
+_GRAY_BG = "linear-gradient(135deg, rgba(52,52,56,.98) 0%, rgba(36,36,40,.99) 52%, rgba(26,26,30,.99) 100%)"
+_GRAY_BG_HOVER = "linear-gradient(135deg, rgba(68,68,72,.98) 0%, rgba(48,48,52,.99) 52%, rgba(34,34,38,.99) 100%)"
+_GRAY_BG_ACTIVE = "linear-gradient(135deg, rgba(82,82,88,.98) 0%, rgba(58,58,62,.99) 52%, rgba(42,42,46,.99) 100%)"
 _GRAY_COLOR = "#ffffff"
-_GRAY_BORDER = "rgba(255,255,255,.14)"
-_GRAY_BORDER_HOVER = "rgba(255,255,255,.28)"
+_GRAY_BORDER = "rgba(255,255,255,.1)"
+_GRAY_BORDER_HOVER = "rgba(255,255,255,.2)"
 _GRAY_GLOW = "0 8px 20px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.06)"
 _GRAY_GLOW_HOVER = "0 0 18px rgba(255,255,255,.08), 0 10px 24px rgba(0,0,0,.22)"
 
@@ -36,7 +36,7 @@ section[data-testid="stSidebar"] .mb-nav-item {_BTN} {{
     border-radius: 16px !important;
     border: 1px solid {_GRAY_BORDER} !important;
     background: {_GRAY_BG} !important;
-    background-color: rgba(48,48,54,.99) !important;
+    background-color: rgba(32,32,36,.99) !important;
     color: {_GRAY_COLOR} !important;
     font-weight: 700 !important;
     font-size: 14px !important;
@@ -56,7 +56,7 @@ section[data-testid="stSidebar"] .mb-nav-item button[kind="secondary"],
 section[data-testid="stSidebar"] .mb-nav-item [data-testid="stBaseButton-primary"],
 section[data-testid="stSidebar"] .mb-nav-item [data-testid="stBaseButton-secondary"] {{
     background: {_GRAY_BG} !important;
-    background-color: rgba(48,48,54,.99) !important;
+    background-color: rgba(32,32,36,.99) !important;
     color: {_GRAY_COLOR} !important;
 }}
 section[data-testid="stSidebar"] .mb-nav-item {_BTN}:hover {{
@@ -64,7 +64,7 @@ section[data-testid="stSidebar"] .mb-nav-item {_BTN}:hover {{
     color: {_GRAY_COLOR} !important;
     border-color: {_GRAY_BORDER_HOVER} !important;
     background: {_GRAY_BG_HOVER} !important;
-    background-color: rgba(62,62,68,.99) !important;
+    background-color: rgba(44,44,48,.99) !important;
     box-shadow: {_GRAY_GLOW_HOVER} !important;
 }}
 section[data-testid="stSidebar"] .mb-nav-item {_BTN}:hover p {{
@@ -74,7 +74,7 @@ section[data-testid="stSidebar"] .mb-nav-active {_BTN} {{
     color: {_GRAY_COLOR} !important;
     border-color: {_GRAY_BORDER_HOVER} !important;
     background: {_GRAY_BG_ACTIVE} !important;
-    background-color: rgba(72,72,78,.99) !important;
+    background-color: rgba(52,52,56,.99) !important;
     box-shadow: {_GRAY_GLOW_HOVER} !important;
 }}
 section[data-testid="stSidebar"] .mb-nav-active {_BTN_P} {{
@@ -86,8 +86,8 @@ section[data-testid="stSidebar"] .sidebar-logout-wrap {_BTN} {{
     padding: 8px 14px !important;
     text-align: center !important;
     border-radius: 12px !important;
-    background: linear-gradient(135deg, rgba(55,55,60,.95), rgba(38,38,42,.98)) !important;
-    background-color: rgba(42,42,46,.98) !important;
+    background: linear-gradient(135deg, rgba(40,40,44,.95), rgba(28,28,32,.98)) !important;
+    background-color: rgba(30,30,34,.98) !important;
     border: 1px solid {_GRAY_BORDER} !important;
     color: {_GRAY_COLOR} !important;
     box-shadow: none !important;
@@ -113,7 +113,7 @@ section.main {_BTN} {{
     min-height: 46px !important;
     border: 1px solid {_GRAY_BORDER} !important;
     background: {_GRAY_BG} !important;
-    background-color: rgba(48,48,54,.99) !important;
+    background-color: rgba(32,32,36,.99) !important;
     color: {_GRAY_COLOR} !important;
     box-shadow: {_GRAY_GLOW} !important;
     transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease !important;
@@ -133,7 +133,7 @@ section.main [data-testid="stBaseButton-primary"],
 section.main .mb-btn-gold .stButton > button,
 section.main .mb-btn-gold {_BTN} {{
     background: {_GRAY_BG} !important;
-    background-color: rgba(48,48,54,.99) !important;
+    background-color: rgba(32,32,36,.99) !important;
     color: {_GRAY_COLOR} !important;
     border: 1px solid {_GRAY_BORDER} !important;
     box-shadow: {_GRAY_GLOW} !important;
@@ -154,7 +154,7 @@ section.main .mb-btn-gold {_BTN}:hover {{
     color: {_GRAY_COLOR} !important;
     border-color: {_GRAY_BORDER_HOVER} !important;
     background: {_GRAY_BG_HOVER} !important;
-    background-color: rgba(62,62,68,.99) !important;
+    background-color: rgba(44,44,48,.99) !important;
     box-shadow: {_GRAY_GLOW_HOVER} !important;
 }}
 section.main .stButton > button:hover p,
@@ -166,8 +166,8 @@ section.main button[disabled],
 section.main [data-testid="stBaseButton-secondary"][disabled],
 section.main [data-testid="stBaseButton-primary"][disabled] {{
     opacity: .45 !important;
-    background: linear-gradient(135deg, rgba(55,55,58,.9), rgba(40,40,44,.95)) !important;
-    background-color: rgba(45,45,48,.95) !important;
+    background: linear-gradient(135deg, rgba(38,38,42,.9), rgba(28,28,32,.95)) !important;
+    background-color: rgba(32,32,36,.95) !important;
     color: rgba(255,255,255,.55) !important;
     border-color: rgba(255,255,255,.08) !important;
     box-shadow: none !important;
@@ -186,7 +186,7 @@ section.main [data-testid="stFormSubmitButton"] button,
 section.main form button[kind="primaryFormSubmit"],
 section.main form button[data-testid="stBaseButton-primaryFormSubmit"] {{
     background: {_GRAY_BG} !important;
-    background-color: rgba(48,48,54,.99) !important;
+    background-color: rgba(32,32,36,.99) !important;
     color: {_GRAY_COLOR} !important;
     border: 1px solid {_GRAY_BORDER} !important;
     font-weight: 700 !important;
@@ -241,7 +241,7 @@ div[data-testid="stTabs"] button[data-baseweb="tab"] {{
 div[data-testid="stTabs"] button[aria-selected="true"] {{
     color: {_GRAY_COLOR} !important;
     border-color: {_GRAY_BORDER_HOVER} !important;
-    background: rgba(75,75,82,.4) !important;
+    background: rgba(52,52,56,.45) !important;
 }}
 """
 
