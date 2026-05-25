@@ -1,6 +1,6 @@
 ﻿import streamlit as st
 
-from database import init_db, get_user
+from database import ensure_db_ready, get_user
 from payments import confirm_checkout_session
 from ui_core import load_css, render_sidebar, sync_session_user
 
@@ -56,7 +56,12 @@ st.set_page_config(
 # INIT
 # =========================================================
 
-init_db()
+if not ensure_db_ready():
+    st.error(
+        "Datenbank konnte nicht gestartet werden. "
+        "Bitte kurz warten und neu laden — oder Support kontaktieren."
+    )
+    st.stop()
 
 
 def _oauth_callback_pending() -> bool:

@@ -4,9 +4,13 @@ from logging.handlers import RotatingFileHandler
 
 from config import DATA_DIR
 
-LOG_DIR = os.path.join(DATA_DIR, "logs")
+LOG_DIR = os.path.join(str(DATA_DIR), "logs")
 
-os.makedirs(LOG_DIR, exist_ok=True)
+try:
+    os.makedirs(LOG_DIR, exist_ok=True)
+except OSError:
+    LOG_DIR = os.path.join("/tmp", "mabyte_logs")
+    os.makedirs(LOG_DIR, exist_ok=True)
 
 LOG_FILE = os.path.join(LOG_DIR, "Mabyte.log")
 

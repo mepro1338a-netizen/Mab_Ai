@@ -1,11 +1,14 @@
 # Mabyte V13 API Ready
 
-## Start
+## Start (lokal)
 ```bash
 pip install -r requirements.txt
 copy .env.example .env
-python main.py
+streamlit run main.py --server.port 8501 --server.address 0.0.0.0
 ```
+
+## Railway Production
+Siehe [docs/RAILWAY_DEPLOY.md](docs/RAILWAY_DEPLOY.md) — Start via `start.sh`, Healthcheck `/_stcore/health`.
 
 ## Admin Login
 Username: `admin`

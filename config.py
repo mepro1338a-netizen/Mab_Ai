@@ -17,7 +17,14 @@ DATA_DIR = Path(
     )
 )
 
-DATA_DIR.mkdir(parents=True, exist_ok=True)
+try:
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+except OSError as _data_dir_err:
+    import sys
+    print(
+        f"[MaByte] WARN: DATA_DIR not writable ({DATA_DIR}): {_data_dir_err}",
+        file=sys.stderr,
+    )
 DB_PATH = DATA_DIR / "mabai.db"
 
 LOGO_PATH = BASE_DIR / "logo1.png"
