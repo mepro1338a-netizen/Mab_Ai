@@ -13,13 +13,22 @@ from ui.styles import inject_css, page_layout_css
 
 
 IMAGE_STUDIO_CSS = """
+/* Weniger Leerraum unter der Topbar (nur Image Studio) */
+section.main .block-container {
+    padding-top: 8px !important;
+    padding-bottom: 36px !important;
+}
+section.main .block-container > div {
+    gap: 0.4rem !important;
+}
 .img-studio {
-    margin-bottom: 24px;
+    margin-bottom: 16px;
+    margin-top: 0 !important;
 }
 .img-hero {
-    border-radius: 28px;
-    padding: 28px 32px 26px 32px;
-    margin-bottom: 20px;
+    border-radius: 20px;
+    padding: 18px 22px 16px 22px;
+    margin-bottom: 14px;
     background:
         radial-gradient(circle at 92% 8%, rgba(96,165,250,.18), transparent 38%),
         radial-gradient(circle at 6% 0%, rgba(168,85,247,.16), transparent 36%),
@@ -36,24 +45,24 @@ IMAGE_STUDIO_CSS = """
 }
 .img-title {
     color: #ffffff !important;
-    font-size: 32px;
+    font-size: 26px;
     font-weight: 800;
-    letter-spacing: -.8px;
-    margin-top: 8px;
-    line-height: 1.1;
+    letter-spacing: -.6px;
+    margin-top: 6px;
+    line-height: 1.15;
 }
 .img-sub {
     color: #94a3b8 !important;
-    font-size: 15px;
-    line-height: 1.55;
-    max-width: 720px;
-    margin-top: 10px;
+    font-size: 14px;
+    line-height: 1.5;
+    max-width: 680px;
+    margin-top: 8px;
 }
 .img-chip-row {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 18px;
+    gap: 6px;
+    margin-top: 12px;
 }
 .img-chip {
     display: inline-flex;
@@ -175,25 +184,84 @@ IMAGE_STUDIO_CSS = """
     border-radius: 22px !important;
     box-shadow: none !important;
 }
-.img-size-hint {
+.img-size-section-title {
+    color: #ffffff !important;
+    font-size: 14px;
+    font-weight: 800;
+    margin: 16px 0 4px 0;
+}
+.img-size-section-sub {
     color: #64748b !important;
     font-size: 12px;
-    margin: 8px 0 12px 0;
+    margin: 0 0 12px 0;
     line-height: 1.45;
+}
+.img-size-group-title {
+    color: #cbd5e1 !important;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    margin: 14px 0 8px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.img-size-group-icon {
+    color: #94a3b8 !important;
+    font-size: 14px;
+}
+.img-preset-card {
+    border-radius: 14px;
+    padding: 12px 12px 10px 12px;
+    margin-bottom: 6px;
+    background: rgba(255,255,255,.03);
+    border: 1px solid rgba(255,255,255,.08);
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+.img-preset-card.is-active {
+    border-color: rgba(255,255,255,.35) !important;
+    background: rgba(255,255,255,.07);
+    box-shadow: 0 0 0 1px rgba(255,255,255,.12), 0 8px 24px rgba(0,0,0,.2);
+}
+.img-preset-tier {
+    color: #ffffff !important;
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1.2;
+}
+.img-preset-px {
+    color: #e2e8f0 !important;
+    font-size: 13px;
+    font-weight: 700;
+    margin-top: 4px;
+}
+.img-preset-hint {
+    color: #64748b !important;
+    font-size: 11px;
+    margin-top: 4px;
+    line-height: 1.35;
 }
 .img-preset-summary {
     border-radius: 14px;
     padding: 14px 16px;
-    margin-top: 8px;
-    background: rgba(255,255,255,.04);
-    border: 1px solid rgba(255,255,255,.1);
+    margin-top: 12px;
+    background: rgba(255,255,255,.05);
+    border: 1px solid rgba(255,255,255,.12);
 }
 .img-preset-summary strong {
     color: #ffffff !important;
+    font-size: 14px;
 }
 .img-preset-summary span {
     color: #94a3b8 !important;
     font-size: 13px;
+    line-height: 1.45;
+}
+.img-quality-label {
+    color: #94a3b8 !important;
+    font-size: 12px;
+    margin-bottom: 6px;
 }
 """
 
@@ -215,91 +283,30 @@ STYLE_PRESETS = [
     "Luxury Brand",
 ]
 
-# Ein Preset = Format + Auflösung (vereinfachte Auswahl)
+# Format + Auflösung als Presets (gruppiert in der UI)
 IMAGE_SIZE_PRESETS: list[dict[str, str]] = [
-    {
-        "id": "square_1k",
-        "label": "Quadrat · Standard",
-        "hint": "Instagram, Avatar, Icons",
-        "pixels": "1024 × 1024",
-        "aspect": "1:1",
-        "size": "1024",
-    },
-    {
-        "id": "square_2k",
-        "label": "Quadrat · Groß",
-        "hint": "Scharfe Posts & Print",
-        "pixels": "2048 × 2048",
-        "aspect": "1:1",
-        "size": "2048",
-    },
-    {
-        "id": "story_1k",
-        "label": "Story · Standard",
-        "hint": "TikTok, Reels, Stories",
-        "pixels": "1024 × 1820",
-        "aspect": "9:16",
-        "size": "1024",
-    },
-    {
-        "id": "story_2k",
-        "label": "Story · Groß",
-        "hint": "Full-HD Stories",
-        "pixels": "2048 × 3640",
-        "aspect": "9:16",
-        "size": "2048",
-    },
-    {
-        "id": "wide_1k",
-        "label": "Breit · Standard",
-        "hint": "YouTube, Banner, Header",
-        "pixels": "1024 × 576",
-        "aspect": "16:9",
-        "size": "1024",
-    },
-    {
-        "id": "wide_2k",
-        "label": "Breit · Groß",
-        "hint": "Hero & Web-Banner",
-        "pixels": "2048 × 1152",
-        "aspect": "16:9",
-        "size": "2048",
-    },
-    {
-        "id": "portrait_1k",
-        "label": "Hoch · Standard",
-        "hint": "Pinterest, Feed, Ads",
-        "pixels": "1024 × 1280",
-        "aspect": "4:5",
-        "size": "1024",
-    },
-    {
-        "id": "portrait_2k",
-        "label": "Hoch · Groß",
-        "hint": "Große Feed-Visuals",
-        "pixels": "2048 × 2560",
-        "aspect": "4:5",
-        "size": "2048",
-    },
-    {
-        "id": "compact",
-        "label": "Kompakt",
-        "hint": "Schnelle Previews",
-        "pixels": "512 × 512",
-        "aspect": "1:1",
-        "size": "512",
-    },
-    {
-        "id": "balanced",
-        "label": "Mittel",
-        "hint": "Balance Qualität/Speed",
-        "pixels": "1536 × 1536",
-        "aspect": "1:1",
-        "size": "1536",
-    },
+    {"id": "square_1k", "tier": "Standard", "format_name": "Quadrat", "hint": "Instagram & Avatar", "pixels": "1024 × 1024", "aspect": "1:1", "size": "1024"},
+    {"id": "square_2k", "tier": "Groß", "format_name": "Quadrat", "hint": "Print & scharfe Posts", "pixels": "2048 × 2048", "aspect": "1:1", "size": "2048"},
+    {"id": "compact", "tier": "Kompakt", "format_name": "Quadrat", "hint": "Schnelle Entwürfe", "pixels": "512 × 512", "aspect": "1:1", "size": "512"},
+    {"id": "balanced", "tier": "Mittel", "format_name": "Quadrat", "hint": "Beste Balance", "pixels": "1536 × 1536", "aspect": "1:1", "size": "1536"},
+    {"id": "story_1k", "tier": "Standard", "format_name": "Story", "hint": "TikTok & Reels", "pixels": "1024 × 1820", "aspect": "9:16", "size": "1024"},
+    {"id": "story_2k", "tier": "Groß", "format_name": "Story", "hint": "Full-HD Stories", "pixels": "2048 × 3640", "aspect": "9:16", "size": "2048"},
+    {"id": "wide_1k", "tier": "Standard", "format_name": "Breit", "hint": "YouTube & Banner", "pixels": "1024 × 576", "aspect": "16:9", "size": "1024"},
+    {"id": "wide_2k", "tier": "Groß", "format_name": "Breit", "hint": "Hero & Web-Header", "pixels": "2048 × 1152", "aspect": "16:9", "size": "2048"},
+    {"id": "portrait_1k", "tier": "Standard", "format_name": "Hochformat", "hint": "Pinterest & Ads", "pixels": "1024 × 1280", "aspect": "4:5", "size": "1024"},
+    {"id": "portrait_2k", "tier": "Groß", "format_name": "Hochformat", "hint": "Große Feed-Bilder", "pixels": "2048 × 2560", "aspect": "4:5", "size": "2048"},
+]
+
+PRESET_GROUPS: list[tuple[str, str, list[str]]] = [
+    ("Quadrat · 1:1", "□", ["square_1k", "square_2k", "compact", "balanced"]),
+    ("Story · 9:16", "▯", ["story_1k", "story_2k"]),
+    ("Breit · 16:9", "▬", ["wide_1k", "wide_2k"]),
+    ("Hochformat · 4:5", "▮", ["portrait_1k", "portrait_2k"]),
 ]
 
 _PRESET_BY_ID = {p["id"]: p for p in IMAGE_SIZE_PRESETS}
+for _p in IMAGE_SIZE_PRESETS:
+    _p["label"] = f"{_p['format_name']} · {_p['tier']}"
 
 
 def _preset_from_session() -> dict[str, str]:
@@ -307,17 +314,43 @@ def _preset_from_session() -> dict[str, str]:
     return _PRESET_BY_ID.get(pid) or IMAGE_SIZE_PRESETS[0]
 
 
-def _format_preset_option(idx: int) -> str:
-    p = IMAGE_SIZE_PRESETS[idx]
-    return f"{p['label']}  ·  {p['pixels']}"
-
-
 def _quality_label(q: str) -> str:
-    return "HD" if q == "hd" else "Standard"
+    return "HD · mehr Details" if q == "hd" else "Standard · schnell"
+
+
+def _render_size_preset_grid() -> None:
+    st.session_state.setdefault("image_preset_id", "square_1k")
+    active_id = str(st.session_state.image_preset_id)
+
+    for group_title, icon, preset_ids in PRESET_GROUPS:
+        st.markdown(
+            f'<div class="img-size-group-title">'
+            f'<span class="img-size-group-icon">{html.escape(icon)}</span>'
+            f'{html.escape(group_title)}</div>',
+            unsafe_allow_html=True,
+        )
+        cols = st.columns(len(preset_ids), gap="small")
+        for col, pid in zip(cols, preset_ids):
+            p = _PRESET_BY_ID[pid]
+            is_active = active_id == pid
+            active_cls = " is-active" if is_active else ""
+            with col:
+                st.markdown(
+                    f'<div class="img-preset-card{active_cls}">'
+                    f'<div class="img-preset-tier">{html.escape(p["tier"])}</div>'
+                    f'<div class="img-preset-px">{html.escape(p["pixels"])}</div>'
+                    f'<div class="img-preset-hint">{html.escape(p["hint"])}</div>'
+                    f"</div>",
+                    unsafe_allow_html=True,
+                )
+                btn_label = "✓ Aktiv" if is_active else "Wählen"
+                if st.button(btn_label, key=f"preset_pick_{pid}", width="stretch"):
+                    st.session_state.image_preset_id = pid
+                    st.rerun()
 
 
 def inject_image_studio_css() -> None:
-    inject_css(page_layout_css(1200, 24, 80) + IMAGE_STUDIO_CSS)
+    inject_css(page_layout_css(1200, 8, 40) + IMAGE_STUDIO_CSS)
 
 
 def _build_image_prompt(
@@ -390,15 +423,14 @@ def render_image_studio(
     <div class="img-kicker">MaByte Studios · Image</div>
     <div class="img-title">Image Studio</div>
     <div class="img-sub">
-        Thumbnails, Covers und Visuals in Minuten — strukturierte Prompts,
-        klare Export-Specs, bereit für deine Pipeline.
+        Thumbnails, Cover und Visuals in Minuten — mit fertigen KI-Prompts,
+        Farbpalette und Export-Vorgaben für deine Pipeline.
     </div>
     <div class="img-chip-row">
-        <span class="img-chip">Thumbnails</span>
-        <span class="img-chip">Cover Art</span>
+        <span class="img-chip">Thumbnail</span>
         <span class="img-chip">Social</span>
-        <span class="img-chip">Product</span>
-        <span class="img-chip">SaaS UI</span>
+        <span class="img-chip">Story</span>
+        <span class="img-chip">Banner</span>
     </div>
 </div>
         """,
@@ -437,8 +469,8 @@ def render_image_studio(
 
     with left:
         st.markdown(
-            '<div class="img-card-title">Creative Brief</div>'
-            '<div class="img-card-desc">Beschreibe dein Bild — MaByte liefert Prompt, Palette und Export.</div>',
+            '<div class="img-card-title">Dein Bild</div>'
+            '<div class="img-card-desc">Kurz beschreiben — wir liefern Prompt, Stil und Export in einem Paket.</div>',
             unsafe_allow_html=True,
         )
         with st.container(border=True):
@@ -459,28 +491,16 @@ def render_image_studio(
             with c2:
                 style = st.selectbox("Stil", STYLE_PRESETS, key="image_style")
 
-            st.markdown("**Bildgröße**")
             st.markdown(
-                '<div class="img-size-hint">Ein Klick — Format und Auflösung sind schon kombiniert.</div>',
+                '<div class="img-size-section-title">Format & Auflösung</div>'
+                '<div class="img-size-section-sub">Wähle Zielformat und Pixelgröße — alles in einem Schritt.</div>',
                 unsafe_allow_html=True,
             )
-            preset_ids = [p["id"] for p in IMAGE_SIZE_PRESETS]
-            default_idx = preset_ids.index(
-                st.session_state.get("image_preset_id", "square_1k")
-            ) if st.session_state.get("image_preset_id") in preset_ids else 0
+            _render_size_preset_grid()
+            preset = _preset_from_session()
 
-            picked_idx = st.radio(
-                "Preset",
-                options=list(range(len(IMAGE_SIZE_PRESETS))),
-                index=default_idx,
-                format_func=_format_preset_option,
-                key="image_preset_radio",
-                label_visibility="collapsed",
-            )
-            preset = IMAGE_SIZE_PRESETS[picked_idx]
-            st.session_state["image_preset_id"] = preset["id"]
-
-            q1, q2 = st.columns(2)
+            st.markdown('<div class="img-quality-label">Render-Qualität</div>', unsafe_allow_html=True)
+            q1, q2 = st.columns([1.2, 0.8])
             with q1:
                 quality = st.radio(
                     "Qualität",
@@ -488,16 +508,17 @@ def render_image_studio(
                     format_func=_quality_label,
                     horizontal=True,
                     key="image_quality",
+                    label_visibility="collapsed",
                 )
             with q2:
                 cost = get_image_cost(quality=quality, size=preset["size"])
-                st.metric("Kosten", f"{cost} Tokens")
+                st.metric("Diese Generierung", f"{cost} Tokens")
 
             st.markdown(
                 f"""
 <div class="img-preset-summary">
-    <strong>{html.escape(preset["label"])}</strong><br>
-    <span>{html.escape(preset["pixels"])} · {html.escape(preset["aspect"])} · {html.escape(preset["hint"])}</span>
+    <strong>{html.escape(preset["format_name"])} · {html.escape(preset["tier"])}</strong><br>
+    <span>{html.escape(preset["pixels"])} · Format {html.escape(preset["aspect"])} · {html.escape(preset["hint"])}</span>
 </div>
                 """,
                 unsafe_allow_html=True,
@@ -505,7 +526,7 @@ def render_image_studio(
 
         st.markdown('<div class="mb-btn-gold">', unsafe_allow_html=True)
         if st.button(
-            "Image-Paket generieren",
+            "Bild-Paket erstellen",
             width="stretch",
             key="btn_image",
             type="primary",
@@ -530,12 +551,12 @@ def render_image_studio(
         st.markdown(
             """
 <div class="img-side-panel">
-    <div class="img-side-title">Was du erhältst</div>
+    <div class="img-side-title">Dein Paket enthält</div>
     <ul class="img-checklist">
-        <li>Optimierter EN-Prompt (copy-paste)</li>
-        <li>Negative Prompt & Komposition</li>
-        <li>Farbpalette & Export-Spec</li>
-        <li>3 Varianten-Ideen</li>
+        <li>Fertiger EN-Prompt zum Kopieren</li>
+        <li>Negative Prompts & Layout</li>
+        <li>Farbpalette & Export-Hinweise</li>
+        <li>3 Varianten zum Testen</li>
     </ul>
 </div>
             """,
@@ -544,12 +565,12 @@ def render_image_studio(
         st.markdown(
             """
 <div class="img-side-panel">
-    <div class="img-side-title">SaaS Best Practices</div>
+    <div class="img-side-title">Tipps für starke Visuals</div>
     <ul class="img-checklist">
-        <li>Text-Safe-Zone für Thumbnails lassen</li>
-        <li>Hoher Kontrast für Mobile-Feeds</li>
+        <li>Thumbnail: Textfreier Bereich oben</li>
+        <li>Story: Kontrast für Mobile</li>
         <li>Markenfarben im Prompt nennen</li>
-        <li>„Groß“ oder Mittel für Hero & Print</li>
+        <li>Groß = Print & Hero geeignet</li>
     </ul>
 </div>
             """,
@@ -558,10 +579,10 @@ def render_image_studio(
         st.markdown(
             f"""
 <div class="img-empty">
-    <div class="img-empty-title">Noch kein Export</div>
+    <div class="img-empty-title">Bereit zum Erstellen</div>
     <div class="img-empty-sub">
-        Nach der Generierung erscheint dein Paket hier unten —
-        inkl. Download als Markdown.
+        Nach „Bild-Paket erstellen“ erscheint dein Ergebnis
+        unten — inklusive Download.
     </div>
 </div>
             """,
