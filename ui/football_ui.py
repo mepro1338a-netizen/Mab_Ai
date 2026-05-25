@@ -533,6 +533,310 @@ div[data-testid="stTabs"] button[aria-selected="true"] {
     text-transform: uppercase;
     margin-bottom: 4px;
 }
+.fb-mesh-intro {
+    border-radius: 22px;
+    padding: 20px 24px;
+    margin-bottom: 18px;
+    background: linear-gradient(135deg, rgba(12,18,38,.92), rgba(8,14,28,.96));
+    border: 1px solid rgba(168,85,247,.14);
+}
+.fb-usage-bar {
+    height: 8px;
+    border-radius: 999px;
+    background: rgba(255,255,255,.08);
+    overflow: hidden;
+    margin-top: 10px;
+}
+.fb-usage-bar > span {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #22c55e, #a855f7);
+}
+.fb-workflow {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 14px 0 20px 0;
+}
+.fb-workflow-step {
+    flex: 1;
+    min-width: 120px;
+    border-radius: 14px;
+    padding: 12px 14px;
+    background: rgba(12,16,32,.65);
+    border: 1px solid rgba(255,255,255,.06);
+    text-align: center;
+}
+.fb-workflow-step.done {
+    border-color: rgba(34,197,94,.35);
+    background: rgba(6,78,59,.2);
+}
+.fb-workflow-step.active {
+    border-color: rgba(168,85,247,.4);
+    box-shadow: 0 0 20px rgba(168,85,247,.15);
+}
+.fb-workflow-step .num {
+    color: #64748b !important;
+    font-size: 10px;
+    font-weight: 1000;
+}
+.fb-workflow-step .lbl {
+    color: #e2e8f0 !important;
+    font-size: 12px;
+    font-weight: 900;
+    margin-top: 4px;
+}
+.fb-output-zone {
+    border-radius: 26px;
+    padding: 8px 4px 24px 4px;
+    margin-top: 8px;
+    border: 1px solid rgba(134,239,172,.1);
+    background: rgba(6,10,20,.35);
+}
+.fb-odds-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+    margin: 18px 0;
+}
+@media (max-width: 1000px) {
+    .fb-odds-grid { grid-template-columns: repeat(2, 1fr); }
+}
+.fb-odds-metric {
+    border-radius: 18px;
+    padding: 16px 18px;
+    background: linear-gradient(145deg, rgba(14,18,36,.95), rgba(8,12,24,.98));
+    border: 1px solid rgba(255,255,255,.07);
+}
+.fb-odds-metric.highlight {
+    border-color: rgba(34,197,94,.4);
+    box-shadow: 0 0 28px rgba(34,197,94,.12);
+}
+.fb-odds-metric.warn {
+    border-color: rgba(234,179,8,.35);
+}
+.fb-odds-metric .k {
+    color: #86efac !important;
+    font-size: 10px;
+    font-weight: 1000;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+}
+.fb-odds-metric .v {
+    color: #f0fdf4 !important;
+    font-size: 22px;
+    font-weight: 1000;
+    margin-top: 8px;
+}
+.fb-odds-metric .s {
+    color: #64748b !important;
+    font-size: 11px;
+    margin-top: 4px;
+}
+.fb-odds-verdict {
+    border-radius: 20px;
+    padding: 18px 22px;
+    margin: 12px 0;
+    font-size: 14px;
+    font-weight: 800;
+    line-height: 1.5;
+}
+.fb-odds-verdict.positive {
+    background: rgba(6,78,59,.35);
+    border: 1px solid rgba(34,197,94,.35);
+    color: #86efac !important;
+}
+.fb-odds-verdict.neutral {
+    background: rgba(30,27,75,.4);
+    border: 1px solid rgba(168,85,247,.25);
+    color: #c4b5fd !important;
+}
+.fb-odds-market-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin-top: 10px;
+}
+.fb-odds-market-table th {
+    color: #c084fc !important;
+    text-align: left;
+    padding: 8px;
+    border-bottom: 1px solid rgba(168,85,247,.2);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+}
+.fb-odds-market-table td {
+    color: #e2e8f0 !important;
+    padding: 10px 8px;
+    border-bottom: 1px solid rgba(255,255,255,.04);
+}
+.fb-odds-market-table tr:hover td {
+    background: rgba(168,85,247,.08);
+}
+.fb-prediction-card {
+    border-radius: 20px;
+    padding: 20px 22px;
+    margin-bottom: 16px;
+    background: linear-gradient(135deg, rgba(22,16,48,.9), rgba(10,20,16,.92));
+    border: 1px solid rgba(255,231,163,.14);
+}
+.fb-pred-bars {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+}
+.fb-pred-bar {
+    flex: 1;
+    text-align: center;
+}
+.fb-pred-bar .bar {
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(255,255,255,.1);
+    margin-top: 8px;
+    overflow: hidden;
+}
+.fb-pred-bar .fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #6366f1, #22c55e);
+}
+.fb-pred-bar .pct {
+    color: #ffe7a3 !important;
+    font-size: 18px;
+    font-weight: 1000;
+}
+.fb-pred-bar .nm {
+    color: #94a3b8 !important;
+    font-size: 11px;
+    font-weight: 800;
+    margin-top: 4px;
+}
+.fb-legal {
+    border-radius: 14px;
+    padding: 12px 16px;
+    margin: 12px 0;
+    background: rgba(15,23,42,.5);
+    border: 1px solid rgba(148,163,184,.15);
+    color: #94a3b8 !important;
+    font-size: 12px;
+    line-height: 1.5;
+}
+.fb-plan-current-banner {
+    border-radius: 24px;
+    padding: 22px 26px;
+    margin-bottom: 20px;
+    background: linear-gradient(135deg, rgba(22,101,52,.35), rgba(76,29,149,.25));
+    border: 1px solid rgba(134,239,172,.28);
+    box-shadow: 0 20px 50px rgba(0,0,0,.25);
+}
+.fb-plan-current-banner .plan-name {
+    color: #f0fdf4 !important;
+    font-size: 28px;
+    font-weight: 1000;
+}
+.fb-plan-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+    margin: 18px 0;
+}
+@media (max-width: 1000px) {
+    .fb-plan-grid { grid-template-columns: 1fr; }
+}
+.fb-plan-card {
+    border-radius: 24px;
+    padding: 22px 22px 18px 22px;
+    min-height: 340px;
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(160deg, rgba(14,16,36,.95), rgba(8,10,24,.98));
+    border: 1px solid rgba(255,255,255,.08);
+    position: relative;
+}
+.fb-plan-card.current {
+    border-color: rgba(34,197,94,.45);
+    box-shadow: 0 0 40px rgba(34,197,94,.12);
+}
+.fb-plan-card.recommended {
+    border-color: rgba(168,85,247,.45);
+    box-shadow: 0 0 36px rgba(168,85,247,.18);
+}
+.fb-plan-card .tier-badge {
+    display: inline-flex;
+    padding: 5px 11px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 1000;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+}
+.fb-plan-card.starter .tier-badge {
+    background: rgba(59,130,246,.25);
+    color: #93c5fd !important;
+}
+.fb-plan-card.pro .tier-badge {
+    background: rgba(168,85,247,.3);
+    color: #e9d5ff !important;
+}
+.fb-plan-card.elite .tier-badge {
+    background: rgba(255,231,163,.15);
+    color: #ffe7a3 !important;
+}
+.fb-plan-card .price {
+    color: #f0fdf4 !important;
+    font-size: 26px;
+    font-weight: 1000;
+    letter-spacing: -.5px;
+}
+.fb-plan-card .desc {
+    color: #94a3b8 !important;
+    font-size: 13px;
+    line-height: 1.55;
+    margin: 10px 0 14px 0;
+    flex: 1;
+}
+.fb-plan-limits {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+}
+.fb-plan-limits span {
+    font-size: 11px;
+    font-weight: 800;
+}
+.fb-plan-highlights {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 8px 0;
+}
+.fb-plan-highlights li {
+    color: #cbd5e1 !important;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255,255,255,.04);
+}
+.fb-plan-highlights li::before {
+    content: "✓ ";
+    color: #86efac !important;
+    font-weight: 1000;
+}
+.fb-plan-ribbon {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    padding: 4px 10px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #7c3aed, #2563eb);
+    color: #fff !important;
+    font-size: 10px;
+    font-weight: 1000;
+}
 """
 
 
@@ -699,7 +1003,7 @@ def render_league_results(leagues: list[dict[str, Any]]) -> None:
         country = league.get("country") or ""
         chips.append(
             f'<span class="fb-league-chip"><strong>{html.escape(name)}</strong>'
-            f' <small>{html.escape(str(country))} · ID {html.escape(str(lid))}</small></span>'
+            f' <small>{html.escape(str(country))}</small></span>'
         )
     st.markdown(f'<div class="fb-chip-row">{"".join(chips)}</div>', unsafe_allow_html=True)
 
@@ -709,12 +1013,9 @@ def render_popular_leagues() -> None:
     for lg in POPULAR_LEAGUES:
         chips.append(
             f'<span class="fb-league-chip"><strong>{html.escape(lg["name"])}</strong>'
-            f' <small>{html.escape(lg["country"])} · {lg["id"]}</small></span>'
+            f' <small>{html.escape(lg["country"])}</small></span>'
         )
-    st.markdown(
-        f'<div class="fb-chip-row" title="IDs fuer Standings & Liga-Spiele">{"".join(chips)}</div>',
-        unsafe_allow_html=True,
-    )
+    st.markdown(f'<div class="fb-chip-row">{"".join(chips)}</div>', unsafe_allow_html=True)
 
 
 def render_standings_table(standings_payload: list[dict[str, Any]], *, limit: int = 15) -> None:
@@ -995,6 +1296,249 @@ def render_export_bar(title: str = "Full Package Export") -> None:
 <div class="fb-export-bar">
     <div class="t">{html.escape(title)}</div>
     <div style="color:#64748b;font-size:12px;">Komplettes Paket als .txt</div>
+</div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_mesh_usage_bar(used: int, limit: int) -> None:
+    pct = min(100, int((used / limit) * 100)) if limit > 0 else 0
+    st.markdown(
+        f"""
+<div class="fb-mesh-intro">
+    <div class="fb-scanline">MaByte Data Layer</div>
+    <div class="fb-panel-title" style="margin-top:8px;">Live Intelligence</div>
+    <p class="fb-panel-sub">Datenabfragen heute · {used:,} / {limit:,} · intelligent gecacht</p>
+    <div class="fb-usage-bar"><span style="width:{pct}%"></span></div>
+</div>
+        """.replace(",", "."),
+        unsafe_allow_html=True,
+    )
+
+
+def render_workflow_pipeline(steps: list[tuple[str, str]]) -> None:
+    """steps: (label, status) status in done|active|pending"""
+    blocks = []
+    for i, (label, status) in enumerate(steps, 1):
+        cls = status if status in ("done", "active") else ""
+        blocks.append(
+            f'<div class="fb-workflow-step {cls}">'
+            f'<div class="num">Schritt {i}</div>'
+            f'<div class="lbl">{html.escape(label)}</div></div>'
+        )
+    st.markdown(f'<div class="fb-workflow">{"".join(blocks)}</div>', unsafe_allow_html=True)
+
+
+def render_saas_legal(text: str) -> None:
+    st.markdown(
+        f'<div class="fb-legal">{html.escape(text)}</div>',
+        unsafe_allow_html=True,
+    )
+
+
+def render_output_zone_start() -> None:
+    st.markdown('<div class="fb-output-zone">', unsafe_allow_html=True)
+
+
+def render_output_zone_end() -> None:
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+def render_odds_dashboard(result: dict[str, Any], note: str = "") -> None:
+    value_cls = "positive" if result.get("is_value_bet") else "neutral"
+    verdict = (
+        "Positiver mathematischer Edge erkannt — keine Wettempfehlung."
+        if result.get("is_value_bet")
+        else "Kein klarer Value Bet bei dieser Schätzung."
+    )
+    metrics = [
+        ("Möglicher Gewinn", f"{result['profit']:.2f}", ""),
+        ("Auszahlung", f"{result['payout']:.2f}", "bei Sieg"),
+        ("Break-even", f"{result['break_even_probability_pct']:.1f}%", "Mindest-Wahrscheinlichkeit"),
+        ("Implizite Quote", f"{result['implied_probability_pct']:.1f}%", "vom Markt"),
+        ("Edge", f"{result['edge_pct']:+.2f}%", "deine Schätzung vs. Markt"),
+        ("Erwartungswert", f"{result['expected_value']:+.2f}", "EV pro Einsatz"),
+        ("Value Bet", "Ja" if result.get("is_value_bet") else "Nein", ""),
+        ("Risiko", str(result.get("risk_level", "—")), "Modell"),
+    ]
+    cards = []
+    for i, (k, v, s) in enumerate(metrics):
+        extra = " highlight" if k == "Value Bet" and result.get("is_value_bet") else ""
+        extra = extra or (" warn" if k == "Risiko" and result.get("risk_level") == "Hoch" else "")
+        cards.append(
+            f'<div class="fb-odds-metric{extra}">'
+            f'<div class="k">{html.escape(k)}</div>'
+            f'<div class="v">{html.escape(v)}</div>'
+            f'<div class="s">{html.escape(s)}</div></div>'
+        )
+    st.markdown(f'<div class="fb-odds-grid">{"".join(cards)}</div>', unsafe_allow_html=True)
+    st.markdown(
+        f'<div class="fb-odds-verdict {value_cls}">{html.escape(verdict)}</div>',
+        unsafe_allow_html=True,
+    )
+    if note.strip():
+        st.markdown(
+            f'<span class="fb-league-chip">Match · <strong>{html.escape(note.strip())}</strong></span>',
+            unsafe_allow_html=True,
+        )
+
+
+def render_odds_market_table(markets: list[dict[str, Any]], *, max_rows: int = 16) -> None:
+    if not markets:
+        st.markdown(
+            '<div class="fb-empty">Keine Live-Marktdaten für dieses Spiel verfügbar.</div>',
+            unsafe_allow_html=True,
+        )
+        return
+    rows = []
+    for m in markets[:max_rows]:
+        rows.append(
+            f"<tr><td>{html.escape(m.get('bookmaker', ''))}</td>"
+            f"<td>{html.escape(m.get('market', ''))}</td>"
+            f"<td>{html.escape(m.get('selection', ''))}</td>"
+            f"<td><strong>{m.get('odd', 0):.2f}</strong></td></tr>"
+        )
+    st.markdown(
+        f"""
+<div class="fb-panel" style="margin-top:12px;">
+    <div class="fb-panel-title">Live Marktquoten</div>
+    <p class="fb-panel-sub">Elite Data Feed · zur Analyse</p>
+    <table class="fb-odds-market-table">
+    <thead><tr><th>Anbieter</th><th>Markt</th><th>Auswahl</th><th>Quote</th></tr></thead>
+    <tbody>{"".join(rows)}</tbody>
+    </table>
+</div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_prediction_card(insights: dict[str, Any]) -> None:
+    home = insights.get("home") or "Home"
+    away = insights.get("away") or "Away"
+    h = insights.get("home_pct")
+    d = insights.get("draw_pct")
+    a = insights.get("away_pct")
+
+    def _bar(label: str, pct: float | None) -> str:
+        w = int(pct or 0)
+        return f"""
+<div class="fb-pred-bar">
+    <div class="nm">{html.escape(label)}</div>
+    <div class="pct">{html.escape(str(pct) if pct is not None else "—")}{"%" if pct is not None else ""}</div>
+    <div class="bar"><div class="fill" style="width:{w}%"></div></div>
+</div>
+        """
+
+    advice = insights.get("advice") or ""
+    comment = insights.get("winner_comment") or ""
+    st.markdown(
+        f"""
+<div class="fb-prediction-card">
+    <div class="fb-scanline">Elite Match Intelligence</div>
+    <div class="fb-panel-title" style="margin-top:8px;">{html.escape(home)} vs {html.escape(away)}</div>
+    <div class="fb-pred-bars">{_bar("Heim", h)}{_bar("Unentschieden", d)}{_bar("Auswärts", a)}</div>
+    {"<p class='fb-panel-sub' style='margin-top:14px'>" + html.escape(advice) + "</p>" if advice else ""}
+    {"<p class='fb-panel-sub'>" + html.escape(comment) + "</p>" if comment else ""}
+</div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_ai_pipeline_header() -> None:
+    render_workflow_pipeline([
+        ("Match Setup", "done"),
+        ("AI Generierung", "done"),
+        ("Viral Score", "active"),
+        ("Export", "pending"),
+    ])
+
+
+def _plan_tier_class(plan_key: str) -> str:
+    if "elite" in plan_key:
+        return "elite"
+    if "pro" in plan_key:
+        return "pro"
+    return "starter"
+
+
+def render_current_plan_banner(
+    plan_label: str,
+    plan_key: str,
+    *,
+    ai_used: int,
+    ai_limit: str | int,
+    api_used: int,
+    api_limit: int,
+    live_api: bool,
+) -> None:
+    ai_txt = f"{ai_used} / {ai_limit}"
+    api_txt = (
+        f"{api_used:,} / {api_limit:,} Datenabfragen heute".replace(",", ".")
+        if live_api
+        else "Live-Daten nach Upgrade"
+    )
+    st.markdown(
+        f"""
+<div class="fb-plan-current-banner">
+    <div class="fb-scanline">Dein Abonnement</div>
+    <div class="plan-name" style="margin-top:10px;">{html.escape(plan_label)}</div>
+    <div class="meta" style="margin-top:12px;">
+        <span class="fb-league-chip">AI · <strong>{html.escape(ai_txt)}</strong></span>
+        <span class="fb-league-chip">{html.escape(api_txt)}</span>
+    </div>
+</div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_plan_card_html(
+    plan_key: str,
+    label: str,
+    price: str,
+    badge: str,
+    description: str,
+    highlights: list[str],
+    *,
+    daily_ai: int,
+    daily_api: int,
+    is_current: bool = False,
+    recommended: bool = False,
+) -> None:
+    tier = _plan_tier_class(plan_key)
+    classes = f"fb-plan-card {tier}"
+    if is_current:
+        classes += " current"
+    if recommended and not is_current:
+        classes += " recommended"
+    ribbon = '<div class="fb-plan-ribbon">Empfohlen</div>' if recommended and not is_current else ""
+    if is_current:
+        ribbon = '<div class="fb-plan-ribbon" style="background:linear-gradient(135deg,#166534,#15803d)">Aktiv</div>'
+
+    ai_show = f"{daily_ai:,}".replace(",", ".") if daily_ai < 9999 else "Unbegrenzt"
+    api_show = f"{daily_api:,}".replace(",", ".")
+    lim_chips = (
+        f'<div class="fb-plan-limits">'
+        f'<span class="fb-league-chip">{ai_show} AI / Tag</span>'
+        f'<span class="fb-league-chip">{api_show} Daten / Tag</span>'
+        f'</div>'
+    )
+    items = "".join(
+        f"<li>{html.escape(str(h))}</li>" for h in (highlights or [])[:6]
+    )
+    st.markdown(
+        f"""
+<div class="{classes}">
+    {ribbon}
+    <span class="tier-badge">{html.escape(badge)}</span>
+    <div class="price">{html.escape(label)}</div>
+    <div style="color:#c084fc;font-size:14px;font-weight:1000;margin-top:4px;">{html.escape(price)}</div>
+    <p class="desc">{html.escape(description)}</p>
+    {lim_chips}
+    <ul class="fb-plan-highlights">{items}</ul>
 </div>
         """,
         unsafe_allow_html=True,

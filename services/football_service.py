@@ -394,6 +394,21 @@ class FootballService:
           username=username,
       )
 
+  def get_fixture_odds(
+      self,
+      fixture_id: int,
+      *,
+      username: str = "",
+  ) -> list[dict[str, Any]]:
+      """Live bookmaker odds — Football Elite (Odds Lab)."""
+      return self._request(
+          "odds",
+          {"fixture": int(fixture_id)},
+          feature="elite_odds_calculator",
+          live=True,
+          username=username,
+      )
+
   def get_team_injuries(
       self,
       team_id: int,
