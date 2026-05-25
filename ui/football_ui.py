@@ -312,7 +312,7 @@ div[data-testid="stTabs"] button[aria-selected="true"] {
 .fb-page .stButton > button[kind="primary"],
 .fb-page button[data-testid="stBaseButton-secondary"],
 .fb-page .stButton > button[kind="secondary"] {
-    background: linear-gradient(135deg, rgba(75,75,82,.98), rgba(38,38,44,.99)) !important;
+    background: linear-gradient(135deg, rgba(52,52,56,.98), rgba(26,26,30,.99)) !important;
     color: #ffffff !important;
 }
 .fb-page button p,
