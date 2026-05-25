@@ -10,6 +10,7 @@ from database import (
     list_usage,
     list_purchases,
 )
+from ui.premium_foundation import premium_foundation_css, render_page_hero, render_status_badge, render_empty_state
 from ui_core import require_login, sync_session_user
 
 
@@ -40,25 +41,34 @@ def render_dashboard():
     require_login()
     refresh_user()
 
+    premium_foundation_css(1100, 88)
+
     plan_key = current_plan_key()
     plan = current_plan()
     tokens = int(st.session_state.get("tokens", 0) or 0)
+    fb_plan = str(st.session_state.get("football_plan") or "none")
 
-    st.title("ðŸ“Š Account Command Center")
-    st.caption("Plan, Tokens, Nutzung, Limits und Workspace Access.")
+    render_page_hero(
+        "Account Command Center",
+        "Dashboard",
+        "Plan, Tokens, Football Premium, Nutzung und Workspace-Zugriff auf einen Blick.",
+    )
 
-    c1, c2, c3, c4 = st.columns(4)
+    c1, c2, c3, c4, c5 = st.columns(5)
 
     with c1:
-        st.metric("Plan", plan.get("label", plan_key))
+        st.metric("MaByte Plan", plan.get("label", plan_key))
 
     with c2:
         st.metric("Tokens", tokens)
 
     with c3:
-        st.metric("Tier", plan.get("badge", "Starter"))
+        st.metric("Football", fb_plan.replace("football_", "").title() if fb_plan != "none" else "—")
 
     with c4:
+        st.metric("Tier", plan.get("badge", "Starter"))
+
+    with c5:
         st.metric("Role", st.session_state.get("role", "user"))
 
     st.divider()
@@ -67,7 +77,7 @@ def render_dashboard():
 
     with left:
         with st.container(border=True):
-            st.subheader("ðŸ§© Workspace Access")
+            st.subheader("Workspace Access")
 
             features = plan.get("features", [])
 
@@ -84,11 +94,11 @@ def render_dashboard():
 
             for label, feature in rows:
                 allowed = "all" in features or feature in features
-                st.write(("âœ… " if allowed else "ðŸ”’ ") + label)
+                st.write(("OK " if allowed else "Gesperrt ") + label)
 
     with right:
         with st.container(border=True):
-            st.subheader("âš¡ Current Limits")
+            st.subheader("Current Limits")
 
             limits = DAILY_LIMITS.get(plan_key, DAILY_LIMITS["free"])
 
@@ -102,7 +112,7 @@ def render_dashboard():
 
     st.divider()
 
-    st.subheader("ðŸ’° Token Costs")
+    st.subheader("Token Costs")
 
     token_rows = [
         {"Workspace": "AI Assistant", "Action": "Prompt", "Cost": TOKEN_COSTS.get("chat", 1)},
@@ -127,7 +137,7 @@ def render_dashboard():
     col_a, col_b = st.columns(2)
 
     with col_a:
-        st.subheader("ðŸ§¾ Latest Usage")
+        st.subheader("Latest Usage")
         usage = list_usage(st.session_state.get("user"))
 
         if usage:
@@ -140,7 +150,7 @@ def render_dashboard():
             st.info("Noch keine Nutzung vorhanden.")
 
     with col_b:
-        st.subheader("ðŸ’³ Payments")
+        st.subheader("Payments")
         payments = list_purchases(st.session_state.get("user"))
 
         if payments:
@@ -156,7 +166,7 @@ def render_dashboard():
 def render_redeem():
     require_login()
 
-    st.title("ðŸŽ Redeem Center")
+    st.title("Redeem Center")
     st.caption("Codes einlösen und Tokens oder Plan-Upgrades freischalten.")
 
     with st.container(border=True):
@@ -180,8 +190,6 @@ def render_redeem():
 def render_support():
     require_login()
 
-    from ui.premium_foundation import premium_foundation_css, render_page_hero
-
     premium_foundation_css(1100, 88)
     render_page_hero(
         "Support Center",
@@ -190,7 +198,6 @@ def render_support():
     )
 
     with st.container(border=True):
-        st.markdown('<div class="mb-ticket-card">', unsafe_allow_html=True)
         with st.form("support_ticket_form"):
             category = st.selectbox(
                 "Kategorie",
@@ -229,7 +236,6 @@ def render_support():
                         st.rerun()
                     else:
                         st.error(msg)
-        st.markdown("</div>", unsafe_allow_html=True)
 
     st.divider()
 
@@ -246,14 +252,20 @@ def render_support():
         for ticket in own_tickets:
             status = str(ticket.get("status") or "open")
             with st.container(border=True):
-                st.markdown(f"**{ticket.get('subject', 'Ticket')}**")
+                h1, h2 = st.columns([3, 1])
+                with h1:
+                    st.markdown(f"**#{ticket.get('id')} · {ticket.get('subject', 'Ticket')}**")
+                with h2:
+                    render_status_badge(status)
                 st.caption(
-                    f"{ticket.get('category', '')} · {status.upper()} · "
-                    f"{ticket.get('created_at', '')}"
+                    f"{ticket.get('category', '')} · {str(ticket.get('created_at', ''))[:16]}"
                 )
                 st.write(ticket.get("message", ""))
     else:
-        st.info("Du hast noch keine Tickets.")
+        render_empty_state(
+            "Noch keine Tickets",
+            "Erstelle oben ein Ticket — wir melden uns im Admin Panel.",
+        )
 
 
 def plan_card(plan_key):
@@ -274,7 +286,7 @@ def plan_card(plan_key):
         st.divider()
 
         for item in plan.get("highlights", []):
-            st.write(f"âœ… {item}")
+            st.write(f"- {item}")
 
         st.divider()
 
@@ -296,7 +308,7 @@ def render_premium():
     require_login()
     refresh_user()
 
-    st.title("ðŸ’Ž MaByte Premium")
+    st.title("MaByte Premium")
     st.caption("Upgrade dein AI Operating System mit Workspaces, Limits und Agent Capacity.")
 
     st.info("Pro = Creator OS. Grand = Content Engine & Automation. Elite = Full AI Operating System.")
@@ -320,6 +332,6 @@ def render_premium():
     st.divider()
 
     with st.container(border=True):
-        st.subheader("ðŸš€ Premium Roadmap")
+        st.subheader("Premium Roadmap")
         st.write("Stripe Checkout, automatische Plan-Upgrades und Webhooks werden als nächster Schritt verbunden.")
         st.write("Bis dahin können Pläne über Admin oder Redeem Codes freigeschaltet werden.")

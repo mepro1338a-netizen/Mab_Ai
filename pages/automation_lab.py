@@ -19,7 +19,7 @@ def project_options():
     options = {"Kein Projekt": 0}
 
     for p in projects:
-        options[f"{p.get('title')} Â· {p.get('workspace')}"] = p.get("id")
+        options[f"{p.get('title')} · {p.get('workspace')}"] = p.get("id")
 
     return options
 
@@ -39,7 +39,7 @@ def render_agent_card(icon, title, desc, agent_type):
 
 
 def render_create_automation():
-    st.subheader("âš™ï¸ Workflow erstellen")
+    st.subheader("Workflow erstellen")
 
     options = project_options()
 
@@ -110,7 +110,7 @@ def render_create_automation():
             ),
         )
 
-        if st.button("ðŸš€ Automation erstellen", width="stretch"):
+        if st.button("Automation erstellen", width="stretch"):
             if not name or not trigger:
                 st.warning("Bitte Name und Trigger ausfüllen.")
                 return
@@ -134,7 +134,7 @@ def render_create_automation():
 
 
 def render_automations():
-    st.subheader("ðŸ§© Aktive Automations")
+    st.subheader("Aktive Automations")
 
     automations = list_automations(current_user())
 
@@ -144,9 +144,9 @@ def render_automations():
 
     for item in automations:
         with st.container(border=True):
-            st.markdown(f"### âš¡ {item.get('name')}")
+            st.markdown(f"### {item.get('name')}")
             st.caption(
-                f"{item.get('source_workspace')} â†’ {item.get('target_workspace')}"
+                f"{item.get('source_workspace')} -> {item.get('target_workspace')}"
             )
             st.write(item.get("trigger_text", ""))
 
@@ -160,7 +160,7 @@ def render_automations():
 
             with c3:
                 if st.button(
-                    "â–¶ï¸ Agent starten",
+                    "Agent starten",
                     key=f"run_{item.get('id')}",
                     width="stretch",
                 ):
@@ -178,7 +178,7 @@ def render_automations():
 
 
 def render_runs():
-    st.subheader("ðŸ“¡ Automation Runs")
+    st.subheader("Automation Runs")
 
     runs = list_automation_runs(current_user(), limit=50)
 
@@ -201,7 +201,7 @@ def render_automation_lab():
         st.rerun()
         return
 
-    st.title("ðŸ§ª Automation Lab")
+    st.title("Automation Lab")
     st.caption("AI Agents, Workflow Chains und Cross-Workspace Intelligence.")
 
     k1, k2, k3 = st.columns(3)
@@ -217,21 +217,21 @@ def render_automation_lab():
 
     st.divider()
 
-    st.subheader("ðŸ¤– AI Agents")
+    st.subheader("AI Agents")
 
     a, b, c = st.columns(3)
 
     with a:
         render_agent_card(
-            "âš½",
+            "FB",
             "Football Content Agent",
-            "Match Analysis â†’ Reels, Shorts, Threads und Commentary.",
+            "Match Analysis -> Reels, Shorts, Threads und Commentary.",
             "football_content_agent",
         )
 
     with b:
         render_agent_card(
-            "ðŸ“£",
+            "CE",
             "Content Repurpose Agent",
             "Aus einem Output mehrere Social Formate erstellen.",
             "content_repurpose_agent",
@@ -239,7 +239,7 @@ def render_automation_lab():
 
     with c:
         render_agent_card(
-            "ðŸ’»",
+            "DEV",
             "Developer Report Agent",
             "Code-Änderungen analysieren und Reports erstellen.",
             "developer_report_agent",

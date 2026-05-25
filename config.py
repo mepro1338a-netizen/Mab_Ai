@@ -524,6 +524,12 @@ FOOTBALL_FEATURES = {
         "label": "Automation Triggers",
         "category": "automation",
     },
+    "elite_odds_calculator": {
+        "min_plan": "football_elite",
+        "label": "Odds / Quote Calculator",
+        "category": "analysis",
+        "description": "Mathematische Value-Bet-Analyse (keine Wettberatung)",
+    },
 }
 
 FOOTBALL_PLANS = {
@@ -616,7 +622,7 @@ FOOTBALL_PLANS = {
         "highlights": [
             "Alles aus Pro",
             "Multi-League & Matchday Reports",
-            "Viral Reel Generator & Content Calendar",
+            "Odds / Quote Calculator für Tipps",
             "Bald: Zugriff auf alle Sport-APIs",
             "Hohe/unbegrenzte Tageslimits",
         ],

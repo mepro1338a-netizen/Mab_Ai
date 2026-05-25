@@ -25,20 +25,20 @@ def open_project(project_id):
 
 def workspace_label(workspace):
     labels = {
-        "general": "ðŸ›°ï¸ General",
-        "football": "âš½ Football Intelligence",
-        "content_engine": "ðŸ“£ Content Engine",
-        "developer_os": "ðŸ’» Developer OS",
-        "creative_workspace": "ðŸŽ¨ Creative Workspace",
-        "media_studio": "ðŸŽ¬ Media Studio",
-        "automation_lab": "ðŸ§ª Automation Lab",
+        "general": "General",
+        "football": "Football Intelligence",
+        "content_engine": "Content Engine",
+        "developer_os": "Developer OS",
+        "creative_workspace": "Creative Workspace",
+        "media_studio": "Media Studio",
+        "automation_lab": "Automation Lab",
     }
 
     return labels.get(workspace, workspace)
 
 
 def render_create_project():
-    st.subheader("ðŸš€ Neues Projekt")
+    st.subheader("Neues Projekt")
 
     with st.container(border=True):
         title = st.text_input(
@@ -66,7 +66,7 @@ def render_create_project():
             format_func=workspace_label,
         )
 
-        if st.button("âœ¨ Projekt erstellen", width="stretch"):
+        if st.button("Projekt erstellen", width="stretch"):
             if not title:
                 st.warning("Bitte Projektnamen eingeben.")
                 return
@@ -89,7 +89,7 @@ def render_project_card(project):
     workspace = project.get("workspace", "general")
 
     with st.container(border=True):
-        st.markdown(f"### ðŸš€ {title}")
+        st.markdown(f"### {title}")
         st.caption(workspace_label(workspace))
         st.write(project.get("description", ""))
 
@@ -119,7 +119,7 @@ def render_project_card(project):
 
 
 def render_project_list():
-    st.subheader("ðŸ“‚ Deine Projekte")
+    st.subheader("Deine Projekte")
 
     projects = list_projects(current_user())
 
@@ -138,24 +138,24 @@ def render_project_memory(project_id):
         st.error("Projekt nicht gefunden.")
         return
 
-    st.subheader(f"ðŸ§  Workspace Memory â€” {project.get('title')}")
+    st.subheader(f"Workspace Memory — {project.get('title')}")
 
     c1, c2, c3 = st.columns(3)
 
     with c1:
-        if st.button("ðŸ§  Mit AI öffnen", width="stretch"):
+        if st.button("Mit AI öffnen", width="stretch"):
             open_page("chat")
 
     with c2:
-        if st.button("ðŸ§ª Automation bauen", width="stretch"):
+        if st.button("Automation bauen", width="stretch"):
             open_page("automation_lab")
 
     with c3:
         if project.get("workspace") == "football":
-            if st.button("âš½ Football öffnen", width="stretch"):
+            if st.button("Football öffnen", width="stretch"):
                 open_page("football")
         else:
-            st.button("âš¡ Workspace aktiv", width="stretch", disabled=True)
+            st.button("Workspace aktiv", width="stretch", disabled=True)
 
     with st.container(border=True):
         memory_type = st.selectbox(
@@ -179,7 +179,7 @@ def render_project_memory(project_id):
             placeholder="Speichere Kontext, Ziele, Stil, Strategie oder Agent-Anweisungen...",
         )
 
-        if st.button("ðŸ’¾ Memory speichern", width="stretch"):
+        if st.button("Memory speichern", width="stretch"):
             if not content:
                 st.warning("Bitte Inhalt eingeben.")
                 return
@@ -205,7 +205,7 @@ def render_project_memory(project_id):
 
     for memory in memories:
         with st.container(border=True):
-            st.markdown(f"### ðŸ§  {memory.get('memory_type', 'memory').title()}")
+            st.markdown(f"### {memory.get('memory_type', 'memory').title()}")
             st.caption(memory.get("created_at", "")[:16])
             st.write(memory.get("content", ""))
 
@@ -216,7 +216,7 @@ def render_projects():
         st.rerun()
         return
 
-    st.title("ðŸ›°ï¸ Projects")
+    st.title("Projects")
     st.caption("Persistent AI workflows, Workspace Memory und Project Intelligence.")
 
     left, right = st.columns([1, 1.2], gap="large")

@@ -358,6 +358,25 @@ def record_purchase(username, plan, amount, session_id, payment_status, status):
     conn.close()
 
 
+def payment_already_paid(session_id: str) -> bool:
+    session_id = str(session_id or "").strip()
+    if not session_id:
+        return False
+
+    conn = get_connection()
+    cur = conn.cursor()
+    row = cur.execute(
+        """
+        SELECT id FROM payments
+        WHERE stripe_session_id = ? AND payment_status = 'paid'
+        LIMIT 1
+        """,
+        (session_id,),
+    ).fetchone()
+    conn.close()
+    return bool(row)
+
+
 def list_purchases(username=None):
     conn = get_connection()
     cur = conn.cursor()

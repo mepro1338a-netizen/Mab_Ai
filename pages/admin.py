@@ -3,6 +3,7 @@ import pandas as pd
 import streamlit as st
 
 from config import DB_PATH, PLANS, FOOTBALL_PLANS
+from ui.premium_foundation import render_status_badge, render_empty_state
 from ui.styles import inject_css, page_layout_css, gradient_title_css
 from database import (
     OWNER_USERNAME,
@@ -277,7 +278,7 @@ def render_tickets():
     tickets = list_support_messages()
 
     if not tickets:
-        st.info("Keine Tickets vorhanden.")
+        render_empty_state("Keine Tickets", "Sobald Nutzer Support anfragen, erscheinen sie hier.")
         return
 
     status_filter = st.selectbox("Status", ["all", "open", "closed"])
@@ -287,8 +288,15 @@ def render_tickets():
             continue
 
         with st.container(border=True):
-            st.markdown(f"### #{item.get('id')} · {item.get('subject', 'Ticket')}")
-            st.caption(f"{item.get('username', '')} · {item.get('email', '')} · {item.get('created_at', '')}")
+            t1, t2 = st.columns([3, 1])
+            with t1:
+                st.markdown(f"### #{item.get('id')} · {item.get('subject', 'Ticket')}")
+            with t2:
+                render_status_badge(str(item.get("status") or "open"))
+            st.caption(
+                f"{item.get('category', 'Sonstiges')} · {item.get('username', '')} · "
+                f"{item.get('email', '')} · {str(item.get('created_at', ''))[:16]}"
+            )
             st.write(item.get("message", ""))
 
             c1, c2, c3 = st.columns(3)

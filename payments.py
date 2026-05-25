@@ -1,7 +1,7 @@
 ﻿import os
 import stripe
 from config import PLANS, FOOTBALL_PLANS, APP_BASE_URL
-from database import record_purchase, set_plan, set_football_plan, update_tokens
+from database import payment_already_paid, record_purchase, set_plan, set_football_plan, update_tokens
 
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY", "")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
@@ -28,13 +28,13 @@ def create_checkout_session(username, plan_key):
         return None, "Ungültiger Plan."
 
     if not stripe.api_key:
-        return None, "STRIPE_SECRET_KEY fehlt in Railway Variables."
+        return None, "Stripe ist noch nicht konfiguriert. Setze STRIPE_SECRET_KEY in Railway Variables."
 
     plan = _plan_config(plan_key) or {}
     price_env = plan.get("stripe_price_env")
     price_id = os.getenv(price_env or "")
     if not price_id:
-        return None, f"{price_env} fehlt in Railway Variables."
+        return None, f"Stripe Price-ID fehlt. Setze {price_env} in Railway Variables."
 
     category = "football" if is_football_plan(plan_key) else "normal"
 
@@ -73,6 +73,10 @@ def confirm_checkout_session(session_id):
         status = session.get("payment_status", "unknown")
 
         if status == "paid" and username and is_checkout_plan(plan):
+            if payment_already_paid(session.id):
+                label = FOOTBALL_PLANS.get(plan, {}).get("label") or PLANS.get(plan, {}).get("label", plan)
+                return True, f"{label} war bereits aktiv (keine Doppelbuchung)."
+
             if is_football_plan(plan):
                 set_football_plan(username, plan)
                 label = FOOTBALL_PLANS[plan].get("label", plan)

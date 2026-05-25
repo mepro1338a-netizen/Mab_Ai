@@ -9,6 +9,35 @@ from config import FOOTBALL_PLANS, get_football_plan
 from ui.styles import MB_THEME_VARS, inject_css, page_layout_css
 
 
+BETA_GLOBAL_CSS = """
+div[data-testid="stAppViewContainer"] > section > div {
+    background: transparent !important;
+}
+div[data-testid="stVerticalBlockBorderWrapper"] > div {
+    background: transparent !important;
+}
+.stDataFrame, [data-testid="stDataFrame"] {
+    border-radius: 16px !important;
+}
+section[data-testid="stSidebar"] .stButton > button {
+    min-height: 44px !important;
+}
+@media (max-width: 768px) {
+    .mb-page-hero, .mb-hero {
+        padding: 22px 20px !important;
+    }
+    .mb-hero-title, .mb-title {
+        font-size: 32px !important;
+    }
+    .mb-feature-grid {
+        grid-template-columns: 1fr !important;
+    }
+    section[data-testid="stSidebar"] {
+        min-width: 100% !important;
+    }
+}
+"""
+
 PREMIUM_COMPONENT_CSS = """
 .mb-page-hero {
     border-radius: 28px;
@@ -112,6 +141,25 @@ PREMIUM_COMPONENT_CSS = """
     background: linear-gradient(180deg, rgba(18,10,32,.96), rgba(10,8,20,.98));
     border: 1px solid rgba(255,255,255,.09);
 }
+.mb-status-badge {
+    display: inline-flex;
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 1000;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+.mb-badge-open {
+    background: rgba(34,197,94,.22);
+    color: #86efac !important;
+    border: 1px solid rgba(34,197,94,.35);
+}
+.mb-badge-closed {
+    background: rgba(100,116,139,.22);
+    color: #cbd5e1 !important;
+    border: 1px solid rgba(148,163,184,.28);
+}
 """
 
 
@@ -124,8 +172,47 @@ def premium_foundation_css(
         MB_THEME_VARS
         + page_layout_css(max_width, padding_top, 42)
         + PREMIUM_COMPONENT_CSS
+        + BETA_GLOBAL_CSS
         + (extra_css or "")
     )
+
+
+def inject_beta_global_css() -> None:
+    """Shared dark surfaces — call from ui_core.load_css once."""
+    inject_css(MB_THEME_VARS + BETA_GLOBAL_CSS)
+
+
+def render_status_badge(status: str) -> None:
+    status = str(status or "open").strip().lower()
+    css_class = "mb-badge-open" if status == "open" else "mb-badge-closed"
+    label = "Offen" if status == "open" else "Geschlossen"
+    st.markdown(
+        f'<span class="mb-status-badge {css_class}">{html.escape(label)}</span>',
+        unsafe_allow_html=True,
+    )
+
+
+def render_empty_state(title: str, message: str) -> None:
+    st.markdown(
+        f"""
+<div class="mb-upgrade-card">
+    <h4>{html.escape(title)}</h4>
+    <p>{html.escape(message)}</p>
+</div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def stripe_config_status() -> tuple[bool, list[str]]:
+    import os
+
+    missing = []
+    if not os.getenv("STRIPE_SECRET_KEY", "").strip():
+        missing.append("STRIPE_SECRET_KEY")
+    if not os.getenv("STRIPE_WEBHOOK_SECRET", "").strip():
+        missing.append("STRIPE_WEBHOOK_SECRET (Webhook-Service)")
+    return len(missing) == 0, missing
 
 
 def plan_display_name(plan_key: str) -> str:

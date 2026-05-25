@@ -9,6 +9,7 @@ from database import (
 )
 
 from config import PLANS
+from ui.premium_foundation import inject_beta_global_css
 from ui.styles import inject_css, page_layout_css
 
 
@@ -32,7 +33,9 @@ def asset_path(name: str) -> Path:
 
 
 def home_css() -> None:
+    inject_beta_global_css()
     inject_css(page_layout_css(1360, 90, 90) + """
+.mb-hero {
     background:
         radial-gradient(circle at top right, rgba(168,85,247,.24), transparent 34%),
         radial-gradient(circle at top left, rgba(96,165,250,.16), transparent 34%),

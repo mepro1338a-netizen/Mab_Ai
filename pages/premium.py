@@ -2,7 +2,7 @@
 from config import PLANS, FOOTBALL_PLANS
 from database import get_user
 from payments import create_checkout_session
-from ui.premium_foundation import premium_foundation_css, render_page_hero
+from ui.premium_foundation import premium_foundation_css, render_page_hero, stripe_config_status
 from ui.styles import inject_css, page_layout_css
 from ui_core import sync_session_user
 
@@ -353,7 +353,7 @@ def normal_card(plan_key):
             "Aktiv" if current else f"{plan.get('label')} abonnieren",
             key=f"normal_{plan_key}",
             width="stretch",
-            disabled=current,
+            disabled=current or not stripe_ok,
         ):
             start_checkout(plan_key)
         render_checkout_link(plan_key)
@@ -395,7 +395,7 @@ def football_card(plan_key):
             "Aktiv" if current_fb else f"{plan.get('label')} abonnieren",
             key=f"football_{plan_key}",
             width="stretch",
-            disabled=current_fb,
+            disabled=current_fb or not stripe_ok,
         ):
             start_checkout(plan_key)
         render_checkout_link(plan_key)
@@ -414,6 +414,14 @@ def render_premium():
         "MaByte Tokens für Chat, Reels und Automation. Football separat: Starter, Pro, Elite — "
         "mit Stripe Checkout (STRIPE_PRICE_FOOTBALL_*).",
     )
+
+    stripe_ok, stripe_missing = stripe_config_status()
+    if not stripe_ok:
+        st.warning(
+            "Stripe ist unvollständig konfiguriert: "
+            + ", ".join(stripe_missing)
+            + ". Checkout-Buttons bleiben deaktiviert bis die Variablen gesetzt sind."
+        )
 
     section_header(
         ICON_AI,

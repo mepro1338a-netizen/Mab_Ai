@@ -23,6 +23,7 @@ from ui.premium_foundation import (
     render_page_hero,
     render_upgrade_card,
 )
+from services.football_odds import calculate_tip_odds
 from services.football_service import (
     FootballAPIError,
     fixture_label,
@@ -347,6 +348,7 @@ def render_feature_matrix(summary: dict) -> None:
         "ai": "AI Content",
         "export": "Export",
         "automation": "Automation",
+        "analysis": "Analyse",
     }
     for cat, items in by_cat.items():
         st.markdown(f"**{labels.get(cat, cat)}**")
@@ -491,31 +493,20 @@ Denke wie:
 
 def split_sections(result):
     section_map = {
-        "tiktok hook": "ðŸŽ£ TikTok Hook",
-        "tiktok caption": "ðŸ“± TikTok Caption",
-        "instagram reel caption": "ðŸ“¸ Instagram Caption",
-        "twitter thread": "ðŸ§µ Twitter Thread",
-        "x/twitter thread": "ðŸ§µ Twitter Thread",
-        "youtube shorts title": "â–¶ï¸ YouTube Title",
-        "youtube shorts description": "ðŸ“º YouTube Description",
-        "thumbnail prompt": "ðŸ–¼ï¸ Thumbnail Prompt",
-        "hashtags": "#ï¸âƒ£ Hashtags",
-        "cta": "ðŸ“¢ CTA",
-        "posting strategy": "ðŸ“ˆ Posting Strategy",
+        "tiktok hook": "TikTok Hook",
+        "tiktok caption": "TikTok Caption",
+        "instagram reel caption": "Instagram Caption",
+        "twitter thread": "Twitter Thread",
+        "x/twitter thread": "Twitter Thread",
+        "youtube shorts title": "YouTube Title",
+        "youtube shorts description": "YouTube Description",
+        "thumbnail prompt": "Thumbnail Prompt",
+        "hashtags": "Hashtags",
+        "cta": "CTA",
+        "posting strategy": "Posting Strategy",
     }
 
-    sections = {
-        "ðŸŽ£ TikTok Hook": "",
-        "ðŸ“± TikTok Caption": "",
-        "ðŸ“¸ Instagram Caption": "",
-        "ðŸ§µ Twitter Thread": "",
-        "â–¶ï¸ YouTube Title": "",
-        "ðŸ“º YouTube Description": "",
-        "ðŸ–¼ï¸ Thumbnail Prompt": "",
-        "#ï¸âƒ£ Hashtags": "",
-        "ðŸ“¢ CTA": "",
-        "ðŸ“ˆ Posting Strategy": "",
-    }
+    sections = {title: "" for title in section_map.values()}
 
     current = None
 
@@ -544,7 +535,7 @@ def split_sections(result):
     )
 
     if fallback_empty:
-        sections["ðŸŽ£ TikTok Hook"] = result
+        sections["TikTok Hook"] = result
 
     return sections
 
@@ -586,7 +577,7 @@ def render_package_tabs(result):
             st.code(content)
 
             st.download_button(
-                f"â¬‡ï¸ Download {title}",
+                f"Download {title}",
                 data=content.encode("utf-8"),
                 file_name=f"mabyte_{safe_filename(title)}.txt",
                 mime="text/plain",
@@ -599,14 +590,14 @@ def render_package_tabs(result):
 # =========================================================
 
 def render_full_export(result, filename="mabyte_matchday_package.txt"):
-    st.subheader("ðŸ“¦ Full Package Export")
+    st.subheader("Full Package Export")
 
     export_data = io.BytesIO()
     export_data.write(result.encode("utf-8"))
     export_data.seek(0)
 
     st.download_button(
-        "â¬‡ï¸ Download Full Package",
+        "Download Full Package",
         data=export_data,
         file_name=filename,
         mime="text/plain",
@@ -896,20 +887,20 @@ def render_football_ai_engine(summary: dict) -> None:
 
     with right:
         with st.container(border=True):
-            st.markdown("### âš¡ Generated Content")
-            st.write("âœ… TikTok Hook")
-            st.write("âœ… TikTok Caption")
-            st.write("âœ… Instagram Caption")
-            st.write("âœ… Twitter Thread")
-            st.write("âœ… YouTube Title")
-            st.write("âœ… YouTube Description")
-            st.write("âœ… Thumbnail Intelligence")
-            st.write("âœ… Hashtags")
-            st.write("âœ… CTA")
-            st.write("âœ… Posting Strategy")
-            st.write("âœ… Viral Intelligence")
-            st.write("âœ… AI Optimization")
-            st.write("âœ… Export System")
+            st.markdown("### Generated Content")
+            st.write("- TikTok Hook")
+            st.write("- TikTok Caption")
+            st.write("- Instagram Caption")
+            st.write("- Twitter Thread")
+            st.write("- YouTube Title")
+            st.write("- YouTube Description")
+            st.write("- Thumbnail Intelligence")
+            st.write("- Hashtags")
+            st.write("- CTA")
+            st.write("- Posting Strategy")
+            st.write("- Viral Intelligence")
+            st.write("- AI Optimization")
+            st.write("- Export System")
 
     st.divider()
 
@@ -962,7 +953,7 @@ def render_football_ai_engine(summary: dict) -> None:
                 tone,
             )
 
-        st.subheader("ðŸš€ Matchday Content Package")
+        st.subheader("Matchday Content Package")
 
         render_package_tabs(result)
 
@@ -981,12 +972,12 @@ def render_football_ai_engine(summary: dict) -> None:
                 opponent,
             )
 
-        st.subheader("ðŸ–¼ï¸ Thumbnail Intelligence")
+        st.subheader("Thumbnail Intelligence")
 
         st.markdown(thumbnails)
 
         st.download_button(
-            "â¬‡ï¸ Download Thumbnail System",
+            "Download Thumbnail System",
             data=thumbnails.encode("utf-8"),
             file_name="mabyte_thumbnail_system.txt",
             mime="text/plain",
@@ -1010,7 +1001,7 @@ def render_football_ai_engine(summary: dict) -> None:
         score = analysis.get("score", 0)
         feedback = analysis.get("feedback", "")
 
-        st.subheader("ðŸ”¥ Viral Intelligence")
+        st.subheader("Viral Intelligence")
 
         c1, c2 = st.columns([1, 2])
 
@@ -1024,7 +1015,7 @@ def render_football_ai_engine(summary: dict) -> None:
         st.divider()
 
         improve = st.button(
-            "âš¡ Improve Package",
+            "Improve Package",
             width="stretch",
         )
 
@@ -1050,7 +1041,7 @@ def render_football_ai_engine(summary: dict) -> None:
             with st.spinner("MaByte optimiert Viralität..."):
                 improved = improve_package(result)
 
-            st.subheader("ðŸš€ Optimized Package")
+            st.subheader("Optimized Package")
 
             render_package_tabs(improved)
 
@@ -1089,6 +1080,86 @@ def render_football_ai_engine(summary: dict) -> None:
             st.success("Package in Projekt-Memory gespeichert.")
 
 
+def render_football_odds_calculator(summary: dict) -> None:
+    user = current_username()
+    plan = session_football_plan()
+    ok, _, need = can_access_feature(user, "elite_odds_calculator", plan)
+
+    st.subheader("Odds / Quote Calculator")
+    st.caption(
+        "Nur mathematische Einschätzung — keine Wettberatung, keine echten Wetten, kein Echtgeld."
+    )
+
+    if not ok:
+        render_upgrade_card(
+            "Odds Calculator — Football Elite",
+            "Value-Bet-Analyse mit Quote, Einsatz und geschätzter Wahrscheinlichkeit.",
+            need,
+            button_key="fb_odds_upgrade",
+            on_upgrade=open_premium,
+        )
+        return
+
+    st.info(
+        "Hinweis: Keine Wettberatung. MaByte berechnet nur mathematische Kennzahlen "
+        "(Gewinn, Auszahlung, Break-even, Value Bet, Risiko). Es werden keine Wetten platziert."
+    )
+
+    with st.form("fb_odds_form", border=True):
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            odds = st.number_input("Quote (Dezimal)", min_value=1.01, value=2.10, step=0.01)
+        with c2:
+            stake = st.number_input("Einsatz", min_value=0.0, value=10.0, step=1.0)
+        with c3:
+            prob = st.number_input(
+                "Geschätzte Wahrscheinlichkeit %",
+                min_value=0.0,
+                max_value=100.0,
+                value=52.0,
+                step=0.5,
+            )
+        match_note = st.text_input("Match / Team / Notiz (optional)", placeholder="z.B. Arsenal vs City")
+        calc = st.form_submit_button("Berechnen", width="stretch")
+
+    if calc:
+        try:
+            result = calculate_tip_odds(odds, stake, prob)
+            st.session_state.fb_odds_result = result
+            st.session_state.fb_odds_note = match_note
+        except ValueError as exc:
+            st.error(str(exc))
+
+    result = st.session_state.get("fb_odds_result")
+    if result:
+        m1, m2, m3, m4 = st.columns(4)
+        with m1:
+            st.metric("Möglicher Gewinn", f"{result['profit']:.2f}")
+        with m2:
+            st.metric("Auszahlung", f"{result['payout']:.2f}")
+        with m3:
+            st.metric("Break-even %", f"{result['break_even_probability_pct']:.2f}%")
+        with m4:
+            st.metric("Implizite Quote-%", f"{result['implied_probability_pct']:.2f}%")
+
+        m5, m6, m7 = st.columns(3)
+        with m5:
+            value_label = "Ja" if result["is_value_bet"] else "Nein"
+            st.metric("Value Bet", value_label)
+        with m6:
+            st.metric("Edge", f"{result['edge_pct']:+.2f}%")
+        with m7:
+            st.metric("Risiko", result["risk_level"])
+
+        st.metric("Erwartungswert (EV)", f"{result['expected_value']:+.2f}")
+        if result["is_value_bet"]:
+            st.success("Mathematisch positiver Edge — trotzdem keine Wettempfehlung.")
+        else:
+            st.warning("Kein klarer Value Bet nach dieser Schätzung.")
+        if st.session_state.get("fb_odds_note"):
+            st.caption(f"Notiz: {st.session_state.get('fb_odds_note')}")
+
+
 def render_football() -> None:
     if not st.session_state.get("logged_in"):
         st.session_state.page = "auth"
@@ -1116,8 +1187,8 @@ def render_football() -> None:
     render_plan_status()
     st.divider()
 
-    tab_live, tab_ai, tab_plans = st.tabs(
-        ["Daten & API", "AI Content Engine", "Dein Plan"]
+    tab_live, tab_ai, tab_odds, tab_plans = st.tabs(
+        ["Daten & API", "AI Content Engine", "Odds Calculator", "Dein Plan"]
     )
 
     with tab_live:
@@ -1125,6 +1196,9 @@ def render_football() -> None:
 
     with tab_ai:
         render_football_ai_engine(summary)
+
+    with tab_odds:
+        render_football_odds_calculator(summary)
 
     with tab_plans:
         render_feature_matrix(summary)

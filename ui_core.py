@@ -5,6 +5,7 @@ from pathlib import Path
 import streamlit as st
 
 from ui.styles import MB_THEME_VARS, inject_css
+from ui.premium_foundation import inject_beta_global_css
 
 
 ASSET_DIR = Path("assets")
@@ -61,6 +62,7 @@ def load_css() -> None:
 }}
 """
 
+    inject_beta_global_css()
     inject_css(f"""
 {MB_THEME_VARS}
 
@@ -371,7 +373,7 @@ div[data-testid="stAlert"] {{
 }}
 """)
 
-    st.markdown('<motion class="custom-topbar"></div>', unsafe_allow_html=True)
+    st.markdown('<div class="custom-topbar"></div>', unsafe_allow_html=True)
 
 
 def require_login() -> None:
@@ -489,7 +491,11 @@ def render_sidebar() -> None:
 
         user = html.escape(str(st.session_state.get("user", "User")))
         plan = html.escape(str(st.session_state.get("plan", "free")))
+        fb_plan = html.escape(str(st.session_state.get("football_plan", "none")))
         tokens = int(st.session_state.get("tokens", 0) or 0)
+        fb_line = ""
+        if fb_plan and fb_plan != "none":
+            fb_line = f'<div class="sidebar-user-caption">Football: {fb_plan}</div>'
 
         st.markdown(
             f"""
@@ -500,6 +506,7 @@ def render_sidebar() -> None:
     </div>
     <div class="sidebar-user-tokens">{tokens:,}</div>
     <div class="sidebar-user-caption">Tokens verfügbar</div>
+    {fb_line}
 </div>
 """,
             unsafe_allow_html=True,
