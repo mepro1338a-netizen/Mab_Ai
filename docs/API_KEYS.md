@@ -15,8 +15,16 @@
 | `META_APP_ID` / `META_APP_SECRET` | Meta for Developers → App | https://developers.facebook.com/apps/ |
 | `TIKTOK_CLIENT_KEY` / `TIKTOK_CLIENT_SECRET` | TikTok for Developers → Login Kit | https://developers.tiktok.com/ |
 | `OAUTH_STATE_SECRET` | Selbst generieren (32+ Zeichen) | `python -c "import secrets; print(secrets.token_hex(32))"` |
+| `GOOGLE_OAUTH_REDIRECT_URI` | Optional, sonst automatisch | `https://mabyte.de/oauth/google/callback` |
 
-Redirect URI in allen Portalen: `{APP_BASE_URL}/`
+**Google Cloud Console → Authorized redirect URIs:**
+
+- Produktion: `https://mabyte.de/oauth/google/callback`
+- Lokal: `http://localhost:8501/oauth/google/callback`
+
+`APP_BASE_URL` muss zur öffentlichen Domain passen (z.B. `https://mabyte.de`).
+
+Instagram/TikTok Redirect (falls genutzt): `{APP_BASE_URL}/`
 
 ## Football Live Data
 

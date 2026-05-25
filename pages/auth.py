@@ -6,7 +6,16 @@ import streamlit as st
 from config import APP_NAME, APP_TAGLINE
 from database import create_user, record_login_event, verify_login
 from security import check_login_rate, is_valid_email, is_valid_username
-from oauth_service import auth_url, complete_oauth, make_state, provider_configured, verify_state
+from oauth_service import (
+    auth_url,
+    complete_oauth,
+    friendly_oauth_error,
+    google_redirect_uri,
+    make_state,
+    oauth_state_ready,
+    provider_configured,
+    verify_state,
+)
 from ui_core import WORDMARK, img_base64, sync_session_user
 from ui.styles import MB_THEME_VARS, inject_css
 
@@ -113,30 +122,99 @@ def do_register(username: str, email: str, password: str, captcha: int) -> None:
         st.error(msg)
 
 
+def _set_oauth_notice(level: str, message: str) -> None:
+    st.session_state.oauth_notice = (level, message)
+
+
+def _show_oauth_notice() -> None:
+    notice = st.session_state.pop("oauth_notice", None)
+    if not notice:
+        return
+    level, text = notice
+    if level == "success":
+        st.success(text)
+    elif level == "info":
+        st.info(text)
+    else:
+        st.error(text)
+
+
+def finish_oauth_login(user: dict, *, provider: str) -> None:
+    username = str(user.get("username") or "")
+    ip_address, user_agent = client_meta()
+    try:
+        record_login_event(
+            username=username,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            success=True,
+        )
+    except Exception:
+        pass
+    sync_session_user(user)
+    _set_oauth_notice("success", f"Willkommen zurück — eingeloggt via {provider.title()}.")
+    st.session_state.page = "home"
+    st.rerun()
+
+
 def handle_oauth_callback() -> bool:
     params = st.query_params
-    code = params.get("code")
-    state = params.get("state")
 
-    if not code or not state:
+    oauth_error = params.get("error")
+    if oauth_error:
+        desc = params.get("error_description") or ""
+        if isinstance(desc, list):
+            desc = desc[0] if desc else ""
+        if isinstance(oauth_error, list):
+            oauth_error = oauth_error[0] if oauth_error else ""
+        _set_oauth_notice("error", friendly_oauth_error(str(oauth_error), str(desc)))
+        st.query_params.clear()
         return False
 
-    provider = verify_state(state)
-    if not provider:
-        st.error("OAuth-Sitzung abgelaufen oder ungültig. Bitte erneut versuchen.")
-        st.query_params.clear()
-        return True
+    code = params.get("code")
+    state = params.get("state")
+    if isinstance(code, list):
+        code = code[0] if code else None
+    if isinstance(state, list):
+        state = state[0] if state else None
 
-    ok, msg, user = complete_oauth(provider, code)
+    if not code and not state:
+        return False
+
+    if not code or not state:
+        _set_oauth_notice("error", "OAuth-Antwort unvollständig. Bitte erneut anmelden.")
+        st.query_params.clear()
+        return False
+
+    provider = verify_state(str(state))
+    if not provider:
+        _set_oauth_notice(
+            "error",
+            "Anmelde-Sitzung abgelaufen oder ungültig. Bitte «Mit Google anmelden» erneut klicken.",
+        )
+        st.query_params.clear()
+        return False
+
+    ok, msg, user = complete_oauth(provider, str(code))
     st.query_params.clear()
 
     if ok and user:
-        sync_session_user(user)
-        st.session_state.page = "home"
-        st.rerun()
+        finish_oauth_login(user, provider=provider)
+        return True
 
-    st.error(msg)
-    return True
+    ip_address, user_agent = client_meta()
+    try:
+        record_login_event(
+            username=str(user.get("username") if user else "oauth"),
+            ip_address=ip_address,
+            user_agent=user_agent,
+            success=False,
+        )
+    except Exception:
+        pass
+
+    _set_oauth_notice("error", msg)
+    return False
 
 
 def auth_css() -> None:
@@ -512,6 +590,26 @@ section.main [data-testid="stForm"] [data-testid="stVerticalBlock"] {
     box-shadow: 0 4px 14px rgba(0, 0, 0, .20);
 }
 
+.mb-oauth-google .g-icon {
+    width: 18px;
+    height: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mb-oauth-primary {
+    margin-bottom: 4px;
+}
+
+.mb-oauth-hint {
+    color: #64748b !important;
+    font-size: 11px;
+    line-height: 1.45;
+    margin-top: 6px;
+    text-align: center;
+}
+
 .mb-oauth-instagram {
     background: linear-gradient(135deg, #f58529, #dd2a7b, #8134af) !important;
     color: #fff !important;
@@ -672,25 +770,52 @@ def render_mode_switch() -> str:
     return mode
 
 
-def oauth_button(provider: str, label: str, icon: str, css_class: str) -> str:
+GOOGLE_ICON_SVG = """
+<svg class="g-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/>
+  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
+  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+</svg>
+"""
+
+
+def oauth_button(provider: str, label: str, icon: str, css_class: str, *, primary: bool = False) -> str:
     if provider_configured(provider):
-        url = html.escape(auth_url(provider, make_state(provider)), quote=True)
+        state = make_state(provider)
+        url = html.escape(auth_url(provider, state), quote=True)
+        icon_html = GOOGLE_ICON_SVG if provider == "google" else f'<span class="mb-oauth-icon">{icon}</span>'
+        extra = " mb-oauth-primary" if primary else ""
         return (
-            f'<a class="mb-oauth-btn {css_class}" href="{url}">'
-            f'<span class="mb-oauth-icon">{icon}</span>{html.escape(label)}</a>'
+            f'<a class="mb-oauth-btn {css_class}{extra}" href="{url}" rel="noopener noreferrer">'
+            f'{icon_html}{html.escape(label)}</a>'
         )
+    title = "OAuth nicht konfiguriert"
+    if provider == "google" and not oauth_state_ready():
+        title = "OAUTH_STATE_SECRET fehlt"
+    icon_html = GOOGLE_ICON_SVG if provider == "google" else f'<span class="mb-oauth-icon">{icon}</span>'
     return (
-        f'<span class="mb-oauth-btn {css_class} disabled" title="API Key fehlt">'
-        f'<span class="mb-oauth-icon">{icon}</span>{html.escape(label)}</span>'
+        f'<span class="mb-oauth-btn {css_class} disabled" title="{html.escape(title)}">'
+        f'{icon_html}{html.escape(label)}</span>'
     )
 
 
 def render_social_row() -> None:
+    google_block = oauth_button(
+        "google",
+        "Mit Google anmelden",
+        "",
+        "mb-oauth-google",
+        primary=True,
+    )
     st.markdown(
         f"""
+<div class="mb-oauth-grid">
+    {google_block}
+</div>
+<div class="mb-oauth-hint">Sicherer Login · Kein Passwort nötig · Bestehende E-Mail bleibt geschützt</div>
 <div class="mb-auth-divider">oder fortfahren mit</div>
 <div class="mb-oauth-grid">
-    {oauth_button("google", "Weiter mit Google", "G", "mb-oauth-google")}
     {oauth_button("instagram", "Weiter mit Instagram", "◎", "mb-oauth-instagram")}
     {oauth_button("tiktok", "Weiter mit TikTok", "♪", "mb-oauth-tiktok")}
 </div>
@@ -698,8 +823,12 @@ def render_social_row() -> None:
         unsafe_allow_html=True,
     )
 
-    if not any(provider_configured(p) for p in ("google", "instagram", "tiktok")):
-        st.caption("OAuth: Trage GOOGLE_CLIENT_ID/SECRET (und optional Meta/TikTok Keys) in Railway ein.")
+    if not provider_configured("google"):
+        hints = []
+        if not oauth_state_ready():
+            hints.append("OAUTH_STATE_SECRET")
+        hints.append("GOOGLE_CLIENT_ID/SECRET")
+        st.caption("Google Login: " + ", ".join(hints) + " in Railway setzen.")
 
 
 def render_login_form() -> None:
@@ -744,9 +873,8 @@ def render_register_form() -> None:
 def render_auth() -> None:
     ensure_captcha()
     auth_css()
-
-    if handle_oauth_callback():
-        return
+    handle_oauth_callback()
+    _show_oauth_notice()
 
     if "auth_mode" not in st.session_state:
         st.session_state.auth_mode = "login"

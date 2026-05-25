@@ -59,6 +59,18 @@ st.set_page_config(
 init_db()
 
 
+def _oauth_callback_pending() -> bool:
+    """Google redirects with ?code=&state= (path /oauth/google/callback via proxy)."""
+    params = st.query_params
+    code = params.get("code")
+    state = params.get("state")
+    if isinstance(code, list):
+        code = code[0] if code else None
+    if isinstance(state, list):
+        state = state[0] if state else None
+    return bool(code and state) or bool(params.get("error"))
+
+
 # =========================================================
 # SESSION DEFAULTS
 # =========================================================
@@ -103,7 +115,7 @@ logged_in = bool(
     and st.session_state.get("user")
 )
 
-if not logged_in:
+if not logged_in or _oauth_callback_pending():
     st.session_state.page = "auth"
     render_auth()
     st.stop()

@@ -1,3 +1,6 @@
+"""OAuth 2.0 — Google (primary), Instagram/Meta, TikTok."""
+from __future__ import annotations
+
 import base64
 import hashlib
 import hmac
@@ -12,6 +15,7 @@ from config import (
     APP_BASE_URL,
     GOOGLE_CLIENT_ID,
     GOOGLE_CLIENT_SECRET,
+    GOOGLE_OAUTH_REDIRECT_URI,
     META_APP_ID,
     META_APP_SECRET,
     OAUTH_STATE_SECRET,
@@ -22,62 +26,92 @@ from database import oauth_login_or_register
 
 
 PROVIDERS = ("google", "instagram", "tiktok")
+STATE_MAX_AGE = 900
+
+
+def _is_local_base() -> bool:
+    base = APP_BASE_URL.lower()
+    return "localhost" in base or "127.0.0.1" in base
 
 
 def _state_key() -> bytes:
-    secret = OAUTH_STATE_SECRET or GOOGLE_CLIENT_SECRET or ""
-    if not secret:
-        if "localhost" in APP_BASE_URL or "127.0.0.1" in APP_BASE_URL:
-            secret = "mabyte-oauth-dev-local-only"
-    if not secret:
-        return b""
-    return secret.encode("utf-8")
+    secret = (OAUTH_STATE_SECRET or "").strip()
+    if secret:
+        return secret.encode("utf-8")
+    if _is_local_base():
+        return b"mabyte-oauth-dev-local-only"
+    return b""
+
+
+def oauth_state_ready() -> bool:
+    return bool(_state_key())
 
 
 def make_state(provider: str) -> str:
+    if not oauth_state_ready():
+        return ""
     payload = {
         "p": provider.lower(),
         "t": int(time.time()),
-        "n": secrets.token_urlsafe(8),
+        "n": secrets.token_urlsafe(12),
     }
     raw = json.dumps(payload, separators=(",", ":"))
-    sig = hmac.new(_state_key(), raw.encode(), hashlib.sha256).hexdigest()[:20]
+    sig = hmac.new(_state_key(), raw.encode(), hashlib.sha256).hexdigest()[:24]
     return base64.urlsafe_b64encode(f"{raw}|{sig}".encode()).decode()
 
 
-def verify_state(state: str, max_age: int = 900) -> str:
+def verify_state(state: str, max_age: int = STATE_MAX_AGE) -> str:
+    if not state or not oauth_state_ready():
+        return ""
     try:
         decoded = base64.urlsafe_b64decode(state.encode()).decode()
         raw, sig = decoded.rsplit("|", 1)
-        expected = hmac.new(_state_key(), raw.encode(), hashlib.sha256).hexdigest()[:20]
-        if not expected or not sig or not hmac.compare_digest(sig, expected):
+        expected = hmac.new(_state_key(), raw.encode(), hashlib.sha256).hexdigest()[:24]
+        if not sig or not hmac.compare_digest(sig, expected):
             return ""
         payload = json.loads(raw)
+        if payload.get("p") not in PROVIDERS:
+            return ""
         if int(time.time()) - int(payload["t"]) > max_age:
             return ""
-        return str(payload.get("p") or "")
+        return str(payload["p"])
     except Exception:
         return ""
 
 
-def redirect_uri() -> str:
-    return APP_BASE_URL.rstrip("/") + "/"
+def google_redirect_uri() -> str:
+    if GOOGLE_OAUTH_REDIRECT_URI:
+        return GOOGLE_OAUTH_REDIRECT_URI.rstrip("/")
+    return f"{APP_BASE_URL}/oauth/google/callback"
+
+
+def redirect_uri(provider: str = "") -> str:
+    """Provider-specific OAuth redirect URI (must match Google Console)."""
+    if provider.lower() == "google":
+        return google_redirect_uri()
+    return f"{APP_BASE_URL}/"
 
 
 def provider_configured(provider: str) -> bool:
     provider = provider.lower()
     if provider == "google":
-        return bool(GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET)
+        return bool(
+            GOOGLE_CLIENT_ID
+            and GOOGLE_CLIENT_SECRET
+            and oauth_state_ready()
+        )
     if provider == "instagram":
-        return bool(META_APP_ID and META_APP_SECRET)
+        return bool(META_APP_ID and META_APP_SECRET and oauth_state_ready())
     if provider == "tiktok":
-        return bool(TIKTOK_CLIENT_KEY and TIKTOK_CLIENT_SECRET)
+        return bool(TIKTOK_CLIENT_KEY and TIKTOK_CLIENT_SECRET and oauth_state_ready())
     return False
 
 
 def auth_url(provider: str, state: str) -> str:
+    if not state:
+        return ""
     provider = provider.lower()
-    redirect = redirect_uri()
+    redirect = redirect_uri(provider)
 
     if provider == "google":
         params = {
@@ -121,7 +155,7 @@ def _exchange_google(code: str) -> dict:
             "code": code,
             "client_id": GOOGLE_CLIENT_ID,
             "client_secret": GOOGLE_CLIENT_SECRET,
-            "redirect_uri": redirect_uri(),
+            "redirect_uri": google_redirect_uri(),
             "grant_type": "authorization_code",
         },
         timeout=20,
@@ -146,7 +180,7 @@ def _exchange_meta(code: str) -> dict:
         params={
             "client_id": META_APP_ID,
             "client_secret": META_APP_SECRET,
-            "redirect_uri": redirect_uri(),
+            "redirect_uri": redirect_uri("instagram"),
             "code": code,
         },
         timeout=20,
@@ -174,7 +208,7 @@ def _exchange_tiktok(code: str) -> dict:
             "client_secret": TIKTOK_CLIENT_SECRET,
             "code": code,
             "grant_type": "authorization_code",
-            "redirect_uri": redirect_uri(),
+            "redirect_uri": redirect_uri("tiktok"),
         },
         timeout=20,
     )
@@ -199,16 +233,35 @@ def _profile_tiktok(access_token: str) -> dict:
     }
 
 
+def _google_profile_ok(profile: dict) -> tuple[bool, str]:
+    email = (profile.get("email") or "").strip().lower()
+    if not email:
+        return False, "Google hat keine E-Mail-Adresse freigegeben. Bitte Konto-Berechtigungen prüfen."
+    verified = profile.get("email_verified")
+    if verified is False:
+        return False, "Bitte nutze ein bei Google verifiziertes E-Mail-Konto."
+    sub = profile.get("sub") or profile.get("id") or ""
+    if not sub:
+        return False, "Google-Profil unvollständig. Bitte erneut versuchen."
+    return True, ""
+
+
 def complete_oauth(provider: str, code: str) -> tuple[bool, str, dict | None]:
     provider = provider.lower()
+    code = (code or "").strip()
+    if not code:
+        return False, "OAuth-Code fehlt.", None
 
     try:
         if provider == "google":
             token_data = _exchange_google(code)
             profile = _profile_google(token_data["access_token"])
-            email = profile.get("email", "")
+            ok, err = _google_profile_ok(profile)
+            if not ok:
+                return False, err, None
+            email = profile["email"].strip().lower()
             name = profile.get("name") or email.split("@")[0]
-            sub = profile.get("sub") or profile.get("id") or ""
+            sub = str(profile.get("sub") or "")
 
         elif provider == "instagram":
             token_data = _exchange_meta(code)
@@ -225,10 +278,10 @@ def complete_oauth(provider: str, code: str) -> tuple[bool, str, dict | None]:
             sub = str(profile.get("sub") or "")
 
         else:
-            return False, "Unbekannter OAuth Provider.", None
+            return False, "Unbekannter OAuth-Anbieter.", None
 
         if not sub:
-            return False, "OAuth Profil unvollständig.", None
+            return False, "OAuth-Profil unvollständig.", None
 
         return oauth_login_or_register(
             email=email,
@@ -243,7 +296,29 @@ def complete_oauth(provider: str, code: str) -> tuple[bool, str, dict | None]:
             detail = exc.response.json()
         except Exception:
             detail = exc.response.text if exc.response is not None else str(exc)
-        return False, f"OAuth Fehler ({provider}): {detail}", None
+        if provider == "google" and "redirect_uri" in str(detail).lower():
+            return (
+                False,
+                "Redirect-URI stimmt nicht mit Google Console überein. "
+                f"Erwartet: {google_redirect_uri()}",
+                None,
+            )
+        return False, f"Anmeldung fehlgeschlagen ({provider}). Bitte erneut versuchen.", None
 
-    except Exception as exc:
-        return False, f"OAuth Fehler ({provider}): {exc}", None
+    except Exception:
+        return False, "Anmeldung fehlgeschlagen. Bitte später erneut versuchen.", None
+
+
+def friendly_oauth_error(error_code: str, description: str = "") -> str:
+    code = (error_code or "").strip().lower()
+    desc = (description or "").strip()
+    messages = {
+        "access_denied": "Google-Anmeldung abgebrochen.",
+        "invalid_scope": "OAuth-Berechtigung ungültig. Bitte Admin kontaktieren.",
+        "server_error": "Google ist vorübergehend nicht erreichbar.",
+        "temporarily_unavailable": "Google ist vorübergehend nicht erreichbar.",
+    }
+    msg = messages.get(code, "OAuth-Anmeldung fehlgeschlagen.")
+    if desc and code not in messages:
+        return f"{msg} ({desc[:120]})"
+    return msg

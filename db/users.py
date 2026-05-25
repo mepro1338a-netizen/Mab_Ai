@@ -190,9 +190,18 @@ def oauth_login_or_register(email, display_name, provider, provider_sub):
 
         if existing:
             conn.close()
+            oauth_on_existing = (existing["oauth_provider"] or "").strip()
+            if oauth_on_existing and oauth_on_existing != provider:
+                return (
+                    False,
+                    "Diese E-Mail ist mit einem anderen Login verknüpft. "
+                    "Bitte die ursprüngliche Anmeldemethode nutzen.",
+                    None,
+                )
             return (
                 False,
-                "Diese Email ist bereits registriert. Bitte mit Passwort anmelden.",
+                "Diese E-Mail ist bereits registriert. "
+                "Bitte mit Username und Passwort anmelden — kein automatisches Verknüpfen.",
                 None,
             )
 

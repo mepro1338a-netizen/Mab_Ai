@@ -24,10 +24,12 @@ LOGO_PATH = BASE_DIR / "logo1.png"
 FAVICON_PATH = BASE_DIR / "Logo24mp.png"
 HEADER_PATH = BASE_DIR / "neuerheader.png"
 
-APP_BASE_URL = os.getenv("APP_BASE_URL", "http://localhost:8501")
+APP_BASE_URL = os.getenv("APP_BASE_URL", "http://localhost:8501").rstrip("/")
 
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "")
+# Optional override; default: {APP_BASE_URL}/oauth/google/callback
+GOOGLE_OAUTH_REDIRECT_URI = os.getenv("GOOGLE_OAUTH_REDIRECT_URI", "").strip()
 META_APP_ID = os.getenv("META_APP_ID", "")
 META_APP_SECRET = os.getenv("META_APP_SECRET", "")
 TIKTOK_CLIENT_KEY = os.getenv("TIKTOK_CLIENT_KEY", "")
