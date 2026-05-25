@@ -438,17 +438,8 @@ def render_home() -> None:
     st.markdown(
         """
 <div class="mb-footer">
-    MaByte · Mab AI · Production Beta<br>
-    <span style="opacity:.8;">Impressum · Datenschutz · AGB über Legal Center</span>
+    MaByte · Mab AI · Production Beta
 </div>
         """,
         unsafe_allow_html=True,
     )
-    lc1, lc2, lc3, lc4 = st.columns(4)
-    for col, (label, page) in zip(
-        (lc1, lc2, lc3, lc4),
-        [("Impressum", "impressum"), ("Datenschutz", "privacy"), ("AGB", "terms"), ("Legal Center", "legal")],
-    ):
-        with col:
-            if st.button(label, key=f"home_legal_{page}", width="stretch"):
-                open_page(page)

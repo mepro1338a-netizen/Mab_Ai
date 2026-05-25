@@ -7,7 +7,6 @@ import streamlit as st
 from ui.styles import MB_THEME_VARS, inject_css
 from ui.premium_foundation import inject_beta_global_css
 from ui.design_system import inject_design_system
-from ui.os_helper import render_os_helper
 
 
 ASSET_DIR = Path("assets")
@@ -130,19 +129,27 @@ label,
 
 section[data-testid="stSidebar"] {{
     background:
-        radial-gradient(circle at top left, rgba(168,85,247,.24), transparent 25%),
-        radial-gradient(circle at bottom right, rgba(96,165,250,.10), transparent 34%),
-        linear-gradient(180deg,#16041f 0%,#230836 46%,#0d0315 100%)!important;
-    border-right:1px solid rgba(255,255,255,.09);
+        radial-gradient(ellipse 120% 80% at 0% 0%, rgba(124,58,237,.22), transparent 50%),
+        radial-gradient(ellipse 80% 60% at 100% 100%, rgba(37,99,235,.12), transparent 45%),
+        linear-gradient(185deg, #0c0614 0%, #1a0a28 42%, #08040f 100%)!important;
+    border-right:1px solid rgba(255,231,163,.08)!important;
+    box-shadow:4px 0 32px rgba(0,0,0,.25)!important;
 }}
 
 section[data-testid="stSidebar"] > div {{
-    padding-left:14px!important;
-    padding-right:14px!important;
+    padding:12px 12px 20px 12px!important;
 }}
 
 section[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {{
-    gap:.12rem!important;
+    gap:.06rem!important;
+}}
+
+.mb-sidebar-nav-block {{
+    border-radius:20px;
+    padding:10px 8px 12px 8px;
+    margin-bottom:10px;
+    background:rgba(8,6,18,.45);
+    border:1px solid rgba(255,255,255,.05);
 }}
 
 .sidebar-logo-wrap {{
@@ -156,28 +163,30 @@ section[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {{
 }}
 
 .mb-section-label {{
-    margin-top:14px;
-    margin-bottom:8px;
-    color:rgba(255,231,163,.68)!important;
-    font-size:11px;
+    margin:16px 0 6px 4px;
+    color:rgba(192,132,252,.85)!important;
+    font-size:10px;
     font-weight:1000;
-    letter-spacing:.18em;
+    letter-spacing:.22em;
     text-transform:uppercase;
+}}
+.mb-section-label:first-of-type {{
+    margin-top:6px;
 }}
 
 .mb-nav-row {{
     display:flex;
     align-items:center;
-    gap:10px;
+    gap:8px;
     width:100%;
-    margin-bottom:9px;
+    margin-bottom:6px;
 }}
 
 .mb-nav-icon {{
-    width:48px;
-    height:48px;
-    min-width:48px;
-    border-radius:17px;
+    width:42px;
+    height:42px;
+    min-width:42px;
+    border-radius:14px;
     display:flex;
     align-items:center;
     justify-content:center;
@@ -299,14 +308,26 @@ div[data-testid="stAlert"] {{
 
 .sidebar-user-card {{
     background:
-        radial-gradient(circle at top right, rgba(168,85,247,.18), transparent 36%),
-        linear-gradient(180deg, rgba(24,8,42,.98), rgba(10,6,18,.98));
-    border:1px solid rgba(255,255,255,.09);
-    border-radius:26px;
-    padding:18px;
-    margin-top:18px;
-    margin-bottom:10px;
-    box-shadow:0 0 34px rgba(168,85,247,.14);
+        radial-gradient(circle at top right, rgba(168,85,247,.2), transparent 40%),
+        linear-gradient(165deg, rgba(22,10,38,.98), rgba(8,5,14,.99));
+    border:1px solid rgba(255,231,163,.1);
+    border-radius:22px;
+    padding:16px 18px;
+    margin-top:14px;
+    margin-bottom:8px;
+    box-shadow:0 12px 40px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.04);
+}}
+.sidebar-logout-wrap .stButton > button {{
+    min-height:40px!important;
+    border-radius:12px!important;
+    background:rgba(15,23,42,.7)!important;
+    border:1px solid rgba(148,163,184,.2)!important;
+    color:#94a3b8!important;
+    font-size:13px!important;
+}}
+.sidebar-logout-wrap .stButton > button:hover {{
+    color:#f8fafc!important;
+    border-color:rgba(255,231,163,.25)!important;
 }}
 
 .sidebar-user-row {{
@@ -480,33 +501,37 @@ def render_sidebar() -> None:
         else:
             st.markdown("## MaByte")
 
-        section_label("Core")
+        st.markdown('<div class="mb-sidebar-nav-block">', unsafe_allow_html=True)
+        section_label("Workspace")
         nav("Mission Control", "home")
+        nav("Dashboard", "dashboard")
         nav("AI Assistant", "chat")
         nav("Projects", "projects")
-        nav("Automations", "automation_lab")
         nav("Football AI", "football")
+        nav("Automations", "automation_lab")
+        st.markdown("</div>", unsafe_allow_html=True)
 
-        section_label("Media")
-        nav("Image Studio", "image")
-        nav("Video Studio", "video")
-        nav("Reels Studio", "reels")
-        nav("Music Studio", "music")
-        nav("Code Studio", "coding")
+        st.markdown('<div class="mb-sidebar-nav-block">', unsafe_allow_html=True)
+        section_label("Studios")
+        nav("Image", "image")
+        nav("Video", "video")
+        nav("Reels", "reels")
+        nav("Music", "music")
+        nav("Code", "coding")
+        st.markdown("</div>", unsafe_allow_html=True)
 
+        st.markdown('<div class="mb-sidebar-nav-block">', unsafe_allow_html=True)
         section_label("Account")
-        nav("Dashboard", "dashboard")
         nav("Premium", "premium")
         nav("Redeem", "redeem")
         nav("Support", "support")
-        nav("Legal", "legal")
+        st.markdown("</div>", unsafe_allow_html=True)
 
         if is_admin_user():
+            st.markdown('<div class="mb-sidebar-nav-block">', unsafe_allow_html=True)
             section_label("System")
             nav("Admin Panel", "admin")
-
-        section_label("Mab AI")
-        render_os_helper()
+            st.markdown("</div>", unsafe_allow_html=True)
 
         user = html.escape(str(st.session_state.get("user", "User")))
         plan = html.escape(str(st.session_state.get("plan", "free")))
@@ -531,7 +556,9 @@ def render_sidebar() -> None:
             unsafe_allow_html=True,
         )
 
+        st.markdown('<div class="sidebar-logout-wrap">', unsafe_allow_html=True)
         if st.button("Abmelden", key="nav_logout", width="stretch"):
             from services.session_auth import logout_session
             logout_session()
             st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)

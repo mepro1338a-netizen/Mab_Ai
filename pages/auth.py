@@ -925,21 +925,6 @@ def render_auth() -> None:
             else:
                 render_login_form()
 
-    st.caption("MaByte Production Beta · Mab AI")
-    l1, l2, l3 = st.columns(3)
-    with l1:
-        if st.button("Datenschutz", key="auth_privacy"):
-            st.session_state.page = "privacy"
-            st.rerun()
-    with l2:
-        if st.button("AGB", key="auth_terms"):
-            st.session_state.page = "terms"
-            st.rerun()
-    with l3:
-        if st.button("Impressum", key="auth_impressum"):
-            st.session_state.page = "impressum"
-            st.rerun()
-
             render_social_row()
 
             st.markdown(
@@ -947,7 +932,9 @@ def render_auth() -> None:
 <div class="mb-auth-foot">
     <strong>MaByte</strong> · Dein Creator OS · Token-System · Support Inbox
 </div>
-""",
+                """,
                 unsafe_allow_html=True,
             )
+
+    st.caption("MaByte Production Beta · Mab AI")
 

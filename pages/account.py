@@ -23,6 +23,7 @@ from ui.premium_foundation import (
 )
 from redeem_tracking import list_redeem_redemptions, redeem_code_tracked
 from ui.styles import inject_css, page_layout_css
+from ui.os_helper import render_os_guide_dashboard
 from ui_core import require_login, sync_session_user
 
 
@@ -172,6 +173,45 @@ def _dashboard_css() -> None:
     font-size: 11px;
     margin-top: 4px;
 }
+.os-guide-panel {
+    border-radius: 22px;
+    padding: 18px 20px;
+    margin-bottom: 14px;
+    background:
+        radial-gradient(circle at 100% 0%, rgba(168,85,247,.2), transparent 42%),
+        linear-gradient(135deg, rgba(18,12,36,.96), rgba(8,8,18,.98));
+    border: 1px solid rgba(168,85,247,.22);
+}
+.os-guide-kicker {
+    color: #c084fc !important;
+    font-size: 10px;
+    font-weight: 1000;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+}
+.os-guide-title {
+    color: #ffe7a3 !important;
+    font-size: 20px;
+    font-weight: 1000;
+    margin-top: 6px;
+}
+.os-guide-sub {
+    color: #94a3b8 !important;
+    font-size: 13px;
+    margin-top: 6px;
+    line-height: 1.45;
+}
+.os-guide-reply {
+    border-radius: 16px;
+    padding: 14px 16px;
+    min-height: 120px;
+    background: rgba(15,23,42,.55);
+    border: 1px solid rgba(255,255,255,.07);
+    color: #cbd5e1 !important;
+    font-size: 13px;
+    line-height: 1.55;
+}
+.os-guide-empty { color: #64748b !important; font-style: italic; }
 div[data-testid="stVerticalBlockBorderWrapper"] {
     background: linear-gradient(160deg, rgba(14,16,36,.94), rgba(8,10,22,.98)) !important;
     border: 1px solid rgba(168,85,247,.14) !important;
@@ -224,6 +264,9 @@ def render_dashboard():
         for l, v in stats
     )
     st.markdown(f'<div class="dash-stat-grid">{cards}</div>', unsafe_allow_html=True)
+
+    with st.container(border=True):
+        render_os_guide_dashboard()
 
     qa1, qa2, qa3, qa4 = st.columns(4)
     with qa1:
