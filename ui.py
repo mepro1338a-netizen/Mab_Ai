@@ -3,7 +3,7 @@
 from database import ensure_db_ready, get_user
 from payments import confirm_checkout_session
 from ui_core import load_css, sync_session_user
-from ui.sidebar import render_sidebar
+from ui.sidebar import inject_sidebar_styles, render_sidebar
 from ui.error_boundary import safe_render
 from ui.seo import inject_seo_meta
 from services.session_auth import enforce_active_session
@@ -219,6 +219,7 @@ if page == "auth":
 elif page in PAGE_HANDLERS:
     label, handler = PAGE_HANDLERS[page]
     safe_render(label, handler)
+    inject_sidebar_styles()
 else:
     st.session_state.page = "home"
     st.rerun()

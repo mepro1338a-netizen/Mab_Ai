@@ -30,9 +30,7 @@ div[data-testid="stVerticalBlockBorderWrapper"] > div {
     .mb-feature-grid {
         grid-template-columns: 1fr !important;
     }
-    section[data-testid="stSidebar"] {
-        min-width: 100% !important;
-    }
+    /* Sidebar width: ui/sidebar.py */
 }
 """
 

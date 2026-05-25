@@ -37,12 +37,18 @@ ICON_MAP = {
 
 
 def sidebar_master_css() -> str:
-    """Overrides Streamlit default white sidebar buttons on every page."""
+    """Single sidebar stylesheet — injected last so every page looks identical."""
     return """
-/* MaByte Sidebar Master — identical on all routes */
+/* MaByte Sidebar — do not duplicate in page CSS */
 section[data-testid="stSidebar"] {
     min-width: 17.5rem !important;
     width: 17.5rem !important;
+    background:
+        radial-gradient(ellipse 120% 80% at 0% 0%, rgba(124,58,237,.22), transparent 50%),
+        radial-gradient(ellipse 80% 60% at 100% 100%, rgba(37,99,235,.12), transparent 45%),
+        linear-gradient(185deg, #0c0614 0%, #1a0a28 42%, #08040f 100%) !important;
+    border-right: 1px solid rgba(255,231,163,.08) !important;
+    box-shadow: 4px 0 32px rgba(0,0,0,.25) !important;
 }
 section[data-testid="stSidebar"] > div {
     padding: 12px 12px 20px 12px !important;
@@ -50,34 +56,164 @@ section[data-testid="stSidebar"] > div {
 section[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
     gap: 8px !important;
 }
-section[data-testid="stSidebar"] .stButton {
+section[data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"] {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    box-shadow: none !important;
+}
+.sidebar-logo-wrap {
+    padding: 4px 0 18px 0;
+}
+.sidebar-logo-wrap img {
+    width: 100%;
+    border-radius: 22px;
+    box-shadow: 0 18px 45px rgba(0,0,0,.22);
+}
+.mb-section-label {
+    margin: 16px 0 6px 4px;
+    color: rgba(192,132,252,.85) !important;
+    font-size: 10px;
+    font-weight: 1000;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+}
+.mb-section-label:first-of-type {
+    margin-top: 6px;
+}
+.mb-nav-section {
+    margin-bottom: 14px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid rgba(168,85,247,.08);
+}
+.mb-nav-section:last-of-type {
+    border-bottom: none;
+}
+.mb-nav-item {
+    margin: 0 0 8px 0 !important;
+    padding: 0 !important;
+}
+.mb-nav-item [data-testid="column"] {
+    display: none !important;
+}
+.mb-nav-item [data-testid="stVerticalBlock"] {
+    gap: 0 !important;
+}
+.mb-nav-item .stButton {
     width: 100% !important;
 }
-section[data-testid="stSidebar"] .stButton > button,
-section[data-testid="stSidebar"] .stButton > button[kind="primary"],
-section[data-testid="stSidebar"] .stButton > button[kind="secondary"] {
+.mb-nav-item .stButton > button {
     width: 100% !important;
     min-height: 50px !important;
-    max-height: 50px !important;
     border-radius: 16px !important;
     border: 1px solid rgba(255,231,163,.14) !important;
     background: linear-gradient(135deg, rgba(32,9,48,.92), rgba(12,6,22,.98)) !important;
     color: #ffe7a3 !important;
     font-weight: 1000 !important;
     font-size: 14px !important;
-    font-family: inherit !important;
+    text-align: left !important;
+    padding: 12px 14px 12px 54px !important;
+    position: relative !important;
     box-shadow: inset 0 0 0 1px rgba(255,255,255,.03), 0 8px 20px rgba(0,0,0,.14) !important;
+    transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease !important;
 }
-section[data-testid="stSidebar"] .stButton > button:hover {
+.mb-nav-item .stButton > button::before {
+    content: "";
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 30px;
+    height: 30px;
+    border-radius: 11px;
+    background:
+        radial-gradient(circle at 30% 20%, rgba(255,231,163,.18), transparent 45%),
+        linear-gradient(135deg, rgba(49,18,62,.95), rgba(20,9,32,.98));
+    border: 1px solid rgba(255,231,163,.14);
+    background-image: var(--mb-nav-icon);
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 20px 20px;
+    box-shadow: 0 6px 14px rgba(0,0,0,.16);
+}
+.mb-nav-item .stButton > button:hover {
+    transform: translateY(-1px) !important;
     color: #ffffff !important;
     border-color: rgba(255,231,163,.32) !important;
     background: linear-gradient(135deg, rgba(91,33,182,.75), rgba(22,8,36,.98)) !important;
     box-shadow: 0 0 22px rgba(168,85,247,.22) !important;
-    transform: translateY(-1px);
 }
-section[data-testid="stSidebar"] .stButton > button:disabled {
-    opacity: 0.45 !important;
-    transform: none !important;
+.mb-nav-active .stButton > button {
+    color: #ffffff !important;
+    border-color: rgba(255,231,163,.45) !important;
+    background: linear-gradient(135deg, rgba(126,34,206,.82), rgba(38,12,62,.98)) !important;
+    box-shadow: 0 0 28px rgba(168,85,247,.24), inset 0 0 0 1px rgba(255,255,255,.05) !important;
+}
+.mb-nav-active .stButton > button::before {
+    border-color: rgba(255,231,163,.42);
+    box-shadow: 0 0 16px rgba(168,85,247,.28);
+}
+.sidebar-user-card {
+    background:
+        radial-gradient(circle at top right, rgba(168,85,247,.2), transparent 40%),
+        linear-gradient(165deg, rgba(22,10,38,.98), rgba(8,5,14,.99));
+    border: 1px solid rgba(255,231,163,.1);
+    border-radius: 22px;
+    padding: 16px 18px;
+    margin-top: 14px;
+    margin-bottom: 8px;
+    box-shadow: 0 12px 40px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.04);
+}
+.sidebar-user-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+.sidebar-user-name {
+    font-size: 18px;
+    font-weight: 1000;
+    color: #ffffff !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.sidebar-user-plan {
+    display: inline-flex;
+    padding: 6px 11px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #7c3aed, #a855f7);
+    color: #ffffff !important;
+    font-size: 11px;
+    font-weight: 1000;
+    white-space: nowrap;
+}
+.sidebar-user-tokens {
+    color: #ffe7a3 !important;
+    font-size: 30px;
+    font-weight: 1000;
+    line-height: 1;
+    margin-top: 14px;
+}
+.sidebar-user-caption {
+    color: #94a3b8 !important;
+    font-size: 13px;
+    margin-top: 6px;
+}
+section[data-testid="stSidebar"] .sidebar-logout-wrap .stButton > button {
+    width: 100% !important;
+    min-height: 40px !important;
+    border-radius: 12px !important;
+    background: rgba(15,23,42,.7) !important;
+    border: 1px solid rgba(148,163,184,.2) !important;
+    color: #94a3b8 !important;
+    font-size: 13px !important;
+    padding: 8px 14px !important;
+}
+section[data-testid="stSidebar"] .sidebar-logout-wrap .stButton > button:hover {
+    color: #f8fafc !important;
+    border-color: rgba(255,231,163,.25) !important;
 }
 @media (max-width: 768px) {
     section[data-testid="stSidebar"] {
@@ -145,6 +281,7 @@ def _nav_section(title: str, items: list[tuple[str, str]]) -> None:
 
 def render_sidebar() -> None:
     """Central sidebar — called once from ui.py for every authenticated page."""
+    inject_sidebar_styles()
     with st.sidebar:
         if WORDMARK.exists():
             wordmark_src = _img_base64(WORDMARK)

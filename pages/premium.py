@@ -92,7 +92,7 @@ h3{
     margin-top:5px;
 }
 
-.stButton > button{
+section.main .stButton > button{
     border:none!important;
     border-radius:15px!important;
     min-height:44px!important;
@@ -104,7 +104,7 @@ h3{
     box-shadow:0 12px 24px rgba(245,158,11,.24)!important;
 }
 
-.stButton > button:disabled{
+section.main .stButton > button:disabled{
     opacity:.55!important;
     background:linear-gradient(135deg,#6b7280,#4b5563)!important;
     color:#e5e7eb!important;

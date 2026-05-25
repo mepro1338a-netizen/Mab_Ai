@@ -237,7 +237,7 @@ div[data-testid="stVerticalBlockBorderWrapper"] {
     padding-top: 14px !important;
 }
 
-.stButton > button {
+section.main .stButton > button {
     min-height: 52px !important;
     border-radius: 18px !important;
     background:
@@ -249,7 +249,7 @@ div[data-testid="stVerticalBlockBorderWrapper"] {
     font-weight: 1000 !important;
 }
 
-.stButton > button:hover {
+section.main .stButton > button:hover {
     transform: translateY(-2px) !important;
     box-shadow: 0 0 24px rgba(168,85,247,.25) !important;
 }

@@ -3,6 +3,9 @@ from __future__ import annotations
 
 import streamlit as st
 
+# Scope page-specific button CSS here so the sidebar stays identical on every route.
+MAIN_CONTENT_SCOPE = "section.main"
+
 MB_THEME_VARS = """
 :root {
     --mb-gold: #ffe7a3;
