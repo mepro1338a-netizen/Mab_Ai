@@ -301,20 +301,29 @@ div[data-testid="stTabs"] button[aria-selected="true"] {
 .fb-page button[data-testid="stBaseButton-secondary"],
 .fb-page button[data-testid="stBaseButton-primary"] {
     border-radius: 14px !important;
-    background: linear-gradient(135deg, rgba(22,101,52,.85), rgba(76,29,149,.75)) !important;
-    background-color: rgba(22,80,50,.9) !important;
-    border: 1px solid rgba(134,239,172,.28) !important;
-    color: #f0fdf4 !important;
+    background: linear-gradient(135deg, rgba(78,56,14,.98), rgba(28,18,4,.99)) !important;
+    background-color: rgba(42,28,6,.99) !important;
+    border: 1px solid rgba(255,211,106,.28) !important;
+    color: #ffe7a3 !important;
     font-weight: 1000 !important;
+    box-shadow: 0 8px 22px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,231,163,.08) !important;
 }
 .fb-page button[data-testid="stBaseButton-primary"],
-.fb-page .stButton > button[kind="primary"] {
-    background: linear-gradient(135deg, #ffd36a 0%, #f59e0b 50%, #16a34a 100%) !important;
-    color: #111827 !important;
+.fb-page .stButton > button[kind="primary"],
+.fb-page button[data-testid="stBaseButton-secondary"],
+.fb-page .stButton > button[kind="secondary"] {
+    background: linear-gradient(135deg, rgba(78,56,14,.98), rgba(28,18,4,.99)) !important;
+    color: #ffe7a3 !important;
 }
 .fb-page button p,
 .fb-page .stButton > button p {
-    color: inherit !important;
+    color: #ffe7a3 !important;
+}
+.fb-page .stButton > button:hover,
+.fb-page button:hover {
+    background: linear-gradient(135deg, rgba(118,84,22,.98), rgba(38,24,6,.99)) !important;
+    color: #fff8e7 !important;
+    box-shadow: 0 0 24px rgba(245,158,11,.25) !important;
 }
 .fb-page [data-testid="metric-container"] {
     background: linear-gradient(145deg, rgba(12,18,32,.9), rgba(6,14,10,.95)) !important;
