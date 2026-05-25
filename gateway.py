@@ -9,10 +9,12 @@ Railway: binds PORT immediately so healthchecks pass while Streamlit boots.
 from __future__ import annotations
 
 import asyncio
+import gzip
 import os
 import subprocess
 import sys
 import time
+import zlib
 from pathlib import Path
 from typing import Any
 
@@ -127,7 +129,7 @@ async def wait_for_streamlit(timeout: float = 180.0) -> bool:
     return False
 
 
-HOP_BY_HOP = {
+HOP_BY_HOP = frozenset({
     "connection",
     "keep-alive",
     "proxy-authenticate",
@@ -136,23 +138,81 @@ HOP_BY_HOP = {
     "trailers",
     "transfer-encoding",
     "upgrade",
-}
+})
+
+# Never forward compression framing — body is always plain bytes to the browser.
+PROXY_RESPONSE_SKIP = HOP_BY_HOP | frozenset({
+    "content-encoding",
+    "content-length",
+    "transfer-encoding",
+})
+
+
+def _decompress_body(body: bytes, content_encoding: str | None) -> bytes:
+    """Decode gzip/deflate/br if upstream still sent compressed bytes."""
+    if not body:
+        return body
+
+    def _try(fn) -> bytes | None:
+        try:
+            return fn()
+        except Exception:
+            return None
+
+    enc = (content_encoding or "").lower().replace(" ", "")
+    if enc:
+        for part in enc.split(","):
+            part = part.strip()
+            if part in ("gzip", "x-gzip"):
+                out = _try(lambda: gzip.decompress(body))
+                if out is not None:
+                    return out
+            elif part == "deflate":
+                out = _try(lambda: zlib.decompress(body))
+                if out is not None:
+                    return out
+            elif part == "br":
+                try:
+                    import brotli  # type: ignore[import-untyped]
+
+                    out = _try(lambda: brotli.decompress(body))
+                    if out is not None:
+                        return out
+                except ImportError:
+                    pass
+
+    if len(body) >= 2 and body[:2] == b"\x1f\x8b":
+        out = _try(lambda: gzip.decompress(body))
+        if out is not None:
+            return out
+    return body
 
 
 def _proxy_request_headers(request: Request) -> dict[str, str]:
     headers: dict[str, str] = {}
     for key, value in request.headers.items():
         lk = key.lower()
-        if lk in HOP_BY_HOP or lk == "host":
+        if lk in HOP_BY_HOP or lk == "host" or lk == "accept-encoding":
             continue
         headers[key] = value
     host = request.headers.get("Host", "")
     if host:
         headers["Host"] = host
+    headers["Accept-Encoding"] = "identity"
     headers["X-Forwarded-Proto"] = request.headers.get("X-Forwarded-Proto", "https")
     headers["X-Forwarded-Host"] = host or request.host
     headers["X-Forwarded-For"] = request.remote or ""
     return headers
+
+
+def _apply_proxy_response_headers(response: StreamResponse, upstream_headers: Any, body: bytes) -> None:
+    for key, value in upstream_headers.items():
+        if key.lower() not in PROXY_RESPONSE_SKIP:
+            response.headers[key] = value
+    if body:
+        response.headers["Content-Length"] = str(len(body))
+    elif "Content-Length" in response.headers:
+        del response.headers["Content-Length"]
 
 
 def _is_health_path(path: str) -> bool:
@@ -179,24 +239,28 @@ async def handle_boot_health(request: Request) -> Response:
 
 async def proxy_http(request: Request) -> StreamResponse:
     target_url = f"{STREAMLIT_BASE}{request.rel_url}"
-    async with ClientSession(auto_decompress=False) as session:
-        data = await request.read()
+    req_headers = _proxy_request_headers(request)
+    data = await request.read()
+
+    async with ClientSession(auto_decompress=True) as session:
         async with session.request(
             method=request.method,
             url=target_url,
-            headers=_proxy_request_headers(request),
+            headers=req_headers,
             data=data if data else None,
             allow_redirects=False,
             timeout=120,
         ) as upstream:
+            raw_encoding = upstream.headers.get("Content-Encoding")
             body = await upstream.read()
+            if raw_encoding or (len(body) >= 2 and body[:2] == b"\x1f\x8b"):
+                body = _decompress_body(body, raw_encoding)
+
             response = StreamResponse(status=upstream.status)
-            skip = HOP_BY_HOP | {"content-encoding", "content-length"}
-            for key, value in upstream.headers.items():
-                if key.lower() not in skip:
-                    response.headers[key] = value
+            _apply_proxy_response_headers(response, upstream.headers, body)
             await response.prepare(request)
-            await response.write(body)
+            if body:
+                await response.write(body)
             return response
 
 
