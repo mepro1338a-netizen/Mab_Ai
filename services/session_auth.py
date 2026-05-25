@@ -22,8 +22,6 @@ VOLATILE_SESSION_KEYS = (
     "admin_level",
     "session_token",
     "session_issued_at",
-    "checkout_url",
-    "checkout_plan",
     "oauth_notice",
     "payment_notice",
     "os_guide_history",

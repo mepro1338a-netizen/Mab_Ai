@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import streamlit as st
 
-from payments import create_checkout_session
 from services.billing_plans import (
     AI_CHECKOUT_KEYS,
     FOOTBALL_CHECKOUT_KEYS,
@@ -16,6 +15,7 @@ from services.billing_plans import (
     plan_checkout_ready,
 )
 from ui.premium_foundation import render_page_hero
+from ui.stripe_checkout import checkout_and_redirect
 
 
 ICON_AI = """<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2L14.5 8.5L21 9L16 13.4L17.6 20L12 16.5L6.4 20L8 13.4L3 9L9.5 8.5L12 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>"""
@@ -49,40 +49,16 @@ def _section_header(icon: str, title: str, sub: str) -> None:
     )
 
 
-def _start_checkout(plan_key: str) -> None:
+def _on_subscribe(plan_key: str) -> None:
     username = st.session_state.get("user")
     if not username:
         st.warning("Bitte zuerst einloggen.")
         return
-
-    ready, _ = plan_checkout_ready(plan_key)
-    if not ready:
-        st.error(USER_FRIENDLY_CHECKOUT_ERROR)
-        return
-
-    st.session_state.pop("checkout_url", None)
-    st.session_state.pop("checkout_plan", None)
-
-    with st.spinner("Stripe Checkout wird vorbereitet…"):
-        url, err = create_checkout_session(username, plan_key)
-    if err:
-        st.error(err)
-        return
-
-    st.session_state.checkout_url = url
-    st.session_state.checkout_plan = plan_key
-
-
-def _render_checkout_link(plan_key: str) -> None:
-    if st.session_state.get("checkout_plan") != plan_key:
-        return
-    url = st.session_state.get("checkout_url")
-    if url:
-        st.link_button("Jetzt zur Kasse (Stripe)", url, type="primary", width="stretch")
+    checkout_and_redirect(plan_key, username=username)
 
 
 def render_plan_card(plan_key: str) -> None:
-    """Single card — same layout for pro/grand/elite and football plans."""
+    """Single card — subscribe goes directly to Stripe (no extra checkout button)."""
     plan = plan_catalog(plan_key)
     if not plan:
         return
@@ -97,6 +73,7 @@ def render_plan_card(plan_key: str) -> None:
     highlights = plan.get("highlights", [])[:3]
     label = plan.get("label", plan_key)
     is_football = plan_category(plan_key) == "football"
+    btn_label = f"{label} abonnieren"
 
     with st.container(border=True):
         st.caption(plan.get("badge", "Football" if is_football else "Plan"))
@@ -127,37 +104,23 @@ def render_plan_card(plan_key: str) -> None:
         if active:
             st.button("Aktiv", key=f"checkout_{plan_key}", width="stretch", disabled=True)
         elif not ready:
-            st.button(
-                f"{label} abonnieren",
-                key=f"checkout_{plan_key}",
-                width="stretch",
-                disabled=True,
-            )
+            st.button(btn_label, key=f"checkout_{plan_key}", width="stretch", disabled=True)
             if missing_reason and missing_reason != "no_checkout":
                 st.caption(f"Checkout: `{missing_reason}` in Railway setzen.")
-        else:
-            if st.button(
-                f"{label} abonnieren",
-                key=f"checkout_{plan_key}",
-                width="stretch",
-            ):
-                _start_checkout(plan_key)
-            _render_checkout_link(plan_key)
+        elif st.button(btn_label, key=f"checkout_{plan_key}", width="stretch"):
+            _on_subscribe(plan_key)
 
 
 def render_stripe_status_banner() -> None:
     status = checkout_plans_status()
     if not status["stripe_secret_ok"]:
-        st.warning(
-            "Stripe: `STRIPE_SECRET_KEY` fehlt — keine Checkouts möglich."
-        )
+        st.warning("Stripe: `STRIPE_SECRET_KEY` fehlt — keine Checkouts möglich.")
         return
     missing = status["missing_envs"]
     if missing:
         st.info(
             "Einige Pläne sind noch nicht konfiguriert (Buttons deaktiviert): "
             + ", ".join(missing)
-            + ". Grand & konfigurierte Pläne funktionieren normal."
         )
 
 
