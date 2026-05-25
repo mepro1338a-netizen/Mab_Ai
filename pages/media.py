@@ -7,6 +7,7 @@ from openai import OpenAI
 from config import OPENAI_API_KEY, OPENAI_TEXT_MODEL, DB_PATH
 from database import spend_tokens, save_usage, get_user, update_tokens
 from ui_core import sync_session_user
+from ui.image_studio import render_image_studio
 from ui.prompt_ui import inject_ma_prompt_css, prompt_text_area, prompt_text_input
 from ui.styles import inject_css, page_layout_css, gradient_title_css
 
@@ -20,7 +21,6 @@ from pricing import (
     get_reel_script_cost,
     get_reel_video_cost,
     get_automation_unlock_cost,
-    get_image_cost,
     get_music_cost,
     get_coding_cost,
 )
@@ -591,20 +591,13 @@ Erstelle exakt:
 
 
 def render_image_ai():
-    render_hero("Image AI", "Create thumbnails, covers and visuals.")
+    def _generate(user_prompt: str, cost: int, full_prompt: str) -> None:
+        run_paid_ai("image_prompt", full_prompt, cost, "mabyte_image")
 
-    with st.container(border=True):
-        prompt = prompt_text_area(placeholder="Frag MaByte… Bild beschreiben…", key="image_prompt", height=150)
-        quality = st.selectbox("Qualität", ["standard", "hd"], key="image_quality")
-        size = st.selectbox("Größe", ["1024", "2048"], key="image_size")
-        cost = get_image_cost(quality=quality, size=size)
-        st.metric("Kosten", f"{cost} Tokens")
-
-    if st.button("Image Prompt vorbereiten", width="stretch", key="btn_image", type="primary"):
-        if not prompt:
-            st.warning("Bitte Prompt eingeben.")
-            return
-        run_paid_ai("image_prompt", prompt, cost, "mabyte_image")
+    render_image_studio(
+        tokens_available=get_tokens(),
+        on_generate=_generate,
+    )
 
 
 def render_music_ai():
@@ -720,6 +713,7 @@ def render_media(active_tool="reels"):
 
     if active_tool == "image":
         render_image_ai()
+        return
     elif active_tool == "music":
         render_music_ai()
     elif active_tool == "coding":
