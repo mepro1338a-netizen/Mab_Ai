@@ -4,7 +4,7 @@ import sqlite3
 import streamlit as st
 from openai import OpenAI
 
-from config import OPENAI_API_KEY, OPENAI_TEXT_MODEL, DB_PATH
+from config import OPENAI_API_KEY, OPENAI_IMAGE_MODEL, OPENAI_TEXT_MODEL, DB_PATH
 from database import spend_tokens, save_usage, get_user, update_tokens
 from ui_core import sync_session_user
 from ui.image_studio import render_image_studio
@@ -590,9 +590,77 @@ Erstelle exakt:
         run_paid_ai("automation_flow", prompt, 40, "mabyte_automation")
 
 
+def run_image_generation(
+    user_prompt: str,
+    cost: int,
+    *,
+    preset: dict,
+    quality: str,
+    style: str,
+    use_case: str,
+) -> None:
+    from services.image_generate import generate_from_studio_options
+
+    charge_tokens("image", user_prompt, cost)
+
+    try:
+        with st.spinner("MaByte generiert dein Bild…"):
+            image_bytes, err, visual_prompt = generate_from_studio_options(
+                user_prompt,
+                preset=preset,
+                quality=quality,
+                style=style,
+                use_case=use_case,
+            )
+
+        if err or not image_bytes:
+            refund_tokens(cost, "image", user_prompt)
+            st.error(err or "Bild konnte nicht erstellt werden.")
+            return
+
+        save_usage(
+            username=username(),
+            tool="image",
+            prompt=str(user_prompt)[:1000],
+            tokens_used=0,
+            cost_tokens=0,
+            api_provider=OPENAI_IMAGE_MODEL if OPENAI_API_KEY else "image",
+            status="success",
+        )
+
+        st.session_state.image_last_bytes = image_bytes
+        st.session_state.image_last_meta = {
+            "prompt": user_prompt,
+            "visual_prompt": visual_prompt,
+            "preset": preset,
+            "quality": quality,
+        }
+        st.success("Bild fertig generiert.")
+        st.rerun()
+
+    except Exception as exc:
+        refund_tokens(cost, "image", user_prompt)
+        st.error(f"Fehler: {exc}")
+
+
 def render_image_ai():
-    def _generate(user_prompt: str, cost: int, full_prompt: str) -> None:
-        run_paid_ai("image_prompt", full_prompt, cost, "mabyte_image")
+    from config import OPENAI_API_KEY
+
+    if not OPENAI_API_KEY:
+        st.warning(
+            "Bildgenerierung: OPENAI_API_KEY fehlt auf dem Server. "
+            "Bitte in Railway/.env setzen."
+        )
+
+    def _generate(user_prompt: str, cost: int, **opts) -> None:
+        run_image_generation(
+            user_prompt,
+            cost,
+            preset=opts.get("preset") or {},
+            quality=opts.get("quality") or "standard",
+            style=opts.get("style") or "",
+            use_case=opts.get("use_case") or "",
+        )
 
     render_image_studio(
         tokens_available=get_tokens(),

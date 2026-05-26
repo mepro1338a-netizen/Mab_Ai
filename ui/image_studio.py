@@ -188,6 +188,24 @@ section.main .block-container > div {
 .img-quality-row {
     margin-top: 8px;
 }
+.img-result-wrap {
+    border-radius: 20px;
+    padding: 16px;
+    margin-top: 14px;
+    background: linear-gradient(160deg, rgba(18,20,28,.95), rgba(8,10,16,.98));
+    border: 1px solid rgba(134,239,172,.2);
+}
+.img-result-title {
+    color: #f0fdf4 !important;
+    font-size: 15px;
+    font-weight: 800;
+    margin-bottom: 10px;
+}
+.img-result-prompt {
+    color: #94a3b8 !important;
+    font-size: 12px;
+    margin-bottom: 12px;
+}
 """
 
 
@@ -367,7 +385,7 @@ def render_image_studio(
     with left:
         st.markdown(
             '<div class="img-card-title">Dein Bild</div>'
-            '<div class="img-card-desc">Kurz beschreiben — wir liefern Prompt, Stil und Export in einem Paket.</div>',
+            '<div class="img-card-desc">Beschreiben — MaByte generiert ein echtes KI-Bild in deiner Groesse.</div>',
             unsafe_allow_html=True,
         )
         with st.container(border=True):
@@ -445,10 +463,10 @@ def render_image_studio(
 <div class="img-side-panel">
     <div class="img-side-title">Dein Paket enthält</div>
     <ul class="img-checklist">
-        <li>Fertiger EN-Prompt zum Kopieren</li>
-        <li>Negative Prompts & Layout</li>
-        <li>Farbpalette & Export-Hinweise</li>
-        <li>3 Varianten zum Testen</li>
+        <li>Echtes KI-Bild (PNG Download)</li>
+        <li>Format & Aufloesung wie gewaehlt</li>
+        <li>Stil & Use-Case im Prompt</li>
+        <li>HD fuer mehr Details</li>
     </ul>
 </div>
             """,
@@ -468,19 +486,66 @@ def render_image_studio(
             """,
             unsafe_allow_html=True,
         )
-        st.markdown(
-            f"""
+        if st.session_state.get("image_last_bytes"):
+            st.markdown(
+                """
+<div class="img-empty">
+    <div class="img-empty-title">Bild erstellt</div>
+    <div class="img-empty-sub">Vorschau und Download unten.</div>
+</div>
+                """,
+                unsafe_allow_html=True,
+            )
+        else:
+            st.markdown(
+                """
 <div class="img-empty">
     <div class="img-empty-title">Bereit zum Erstellen</div>
-    <div class="img-empty-sub">
-        Nach „Bild-Paket erstellen“ erscheint dein Ergebnis
-        unten — inklusive Download.
-    </div>
+    <div class="img-empty-sub">Nach „Bild generieren“ erscheint dein Bild unten.</div>
 </div>
-            """,
-            unsafe_allow_html=True,
-        )
+                """,
+                unsafe_allow_html=True,
+            )
         plan = html.escape(str(st.session_state.get("plan", "free")))
         st.caption(f"Aktueller Plan: **{plan}** · Image Studio inkl. Token-Abrechnung")
 
+    _render_image_result_block()
+
     st.markdown("</div>", unsafe_allow_html=True)
+
+
+def _render_image_result_block() -> None:
+    import uuid
+
+    image_bytes = st.session_state.get("image_last_bytes")
+    if not image_bytes:
+        return
+
+    meta = st.session_state.get("image_last_meta") or {}
+    user_prompt = html.escape(str(meta.get("prompt", "")))
+
+    st.markdown(
+        f"""
+<div class="img-result-wrap">
+    <div class="img-result-title">Dein generiertes Bild</div>
+    <div class="img-result-prompt">{user_prompt}</div>
+</div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.image(image_bytes, use_container_width=True)
+    c1, c2 = st.columns(2)
+    with c1:
+        st.download_button(
+            "PNG herunterladen",
+            data=image_bytes,
+            file_name=f"mabyte_image_{uuid.uuid4().hex[:8]}.png",
+            mime="image/png",
+            width="stretch",
+            key="img_dl_png",
+        )
+    with c2:
+        if st.button("Neues Bild", key="img_clear_result", width="stretch"):
+            st.session_state.pop("image_last_bytes", None)
+            st.session_state.pop("image_last_meta", None)
+            st.rerun()
