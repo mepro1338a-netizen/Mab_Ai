@@ -597,7 +597,12 @@ def _tab_schedule(username: str, user: dict, plan: str) -> None:
 def _tab_accounts(username: str) -> None:
     st.markdown("**Connected Accounts**")
     st.caption("Auto-Post nur mit OAuth + ausdrücklicher Zustimmung im Schedule-Tab.")
-    render_connected_accounts(username)
+    try:
+        render_connected_accounts(username)
+    except Exception as exc:
+        st.error("Accounts konnten nicht geladen werden.")
+        with st.expander("Technische Details"):
+            st.code(str(exc)[:500])
 
 
 def _tab_history(username: str, studio_type: str) -> None:
