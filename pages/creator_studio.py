@@ -6,6 +6,7 @@ from __future__ import annotations
 import streamlit as st
 
 from database import get_user
+from ui.reels_studio_ui import render_reels_studio_premium
 from ui.video_engine_ui import render_video_engine_studio
 
 
@@ -36,10 +37,16 @@ def render_creator_studio_page() -> None:
         label_visibility="collapsed",
         help="Shorts: 3–7s für TikTok, Reels, YouTube Shorts · Video: längere Clips",
     )
-    mode = "reel" if fmt == "Shorts" else "video"
+    if fmt == "Shorts":
+        render_reels_studio_premium(
+            username=_username(),
+            tokens=_tokens(),
+            user=user,
+        )
+        return
 
     render_video_engine_studio(
-        mode=mode,
+        mode="video",
         username=_username(),
         tokens=_tokens(),
         user=user,
