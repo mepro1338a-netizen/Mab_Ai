@@ -86,17 +86,20 @@ class SocialPublishService:
         info, err = fetch_channel_info(token)
         if err or not info:
             return None, err or "Kanalstatus konnte nicht geladen werden."
-        if info.get("id") and info["id"] != conn.get("channel_id"):
-            save_social_connection(
-                self.username,
-                platform_id,
-                access_token_enc=conn.get("access_token_enc", ""),
-                refresh_token_enc=conn.get("refresh_token_enc", ""),
-                token_expires_at=conn.get("token_expires_at", ""),
-                scopes=conn.get("scopes", ""),
-                account_label=info.get("title") or conn.get("account_label", ""),
-                channel_id=info.get("id", ""),
-            )
+        if info.get("id"):
+            try:
+                save_social_connection(
+                    self.username,
+                    platform_id,
+                    access_token_enc=conn.get("access_token_enc", ""),
+                    refresh_token_enc=conn.get("refresh_token_enc", ""),
+                    token_expires_at=conn.get("token_expires_at", ""),
+                    scopes=conn.get("scopes", ""),
+                    account_label=info.get("title") or conn.get("account_label", ""),
+                    channel_id=info.get("id", ""),
+                )
+            except Exception:
+                pass
         return info, ""
 
     def is_connected(self, platform_id: str) -> bool:

@@ -68,7 +68,8 @@ def process_reel_queue(
         if not job or job.get("status") != "queued":
             continue
         mode = job.get("generation_mode") or GEN_AI
-        bundle, err = run_video_job(
+        try:
+            bundle, err = run_video_job(
             username,
             studio_type="reel",
             prompt=job.get("prompt") or "",
@@ -79,7 +80,17 @@ def process_reel_queue(
             quality="standard",
             auto_metadata=bool(job.get("auto_metadata")),
             existing_job_id=job_id,
-        )
+            )
+        except Exception as exc:
+            err = "Rendering fehlgeschlagen. Bitte erneut versuchen."
+            bundle = None
+            update_reel_job(
+                job_id,
+                status="failed",
+                error_message=str(exc)[:400],
+            )
+            processed.append({"id": job_id, "ok": False, "error": err})
+            continue
         if err:
             retries = int(job.get("retry_count") or 0) + 1
             max_r = int(job.get("max_retries") or 2)

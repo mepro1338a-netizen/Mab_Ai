@@ -126,6 +126,17 @@ def _sync_user(username: str) -> None:
         sync_session_user(user)
 
 
+def _safe_tab(label: str, fn, *args, **kwargs) -> None:
+    """Isolate tab failures so Create/Preview keep working."""
+    try:
+        fn(*args, **kwargs)
+    except Exception as exc:
+        st.error(f"{label}: Dieser Bereich konnte nicht geladen werden.")
+        st.caption("Bitte Seite neu laden oder Support kontaktieren.")
+        with st.expander("Technische Details"):
+            st.code(str(exc)[:500])
+
+
 def _refund(username: str, cost: int, tool: str, prompt: str) -> None:
     user = get_user(username)
     if not user:
@@ -358,7 +369,10 @@ def _tab_create(
 
         if studio_type == "reel" and job:
             st.session_state.ve_active_job_id = job.get("id")
-            st.success("Job in Queue — Rendering startet…")
+            st.success(
+                "Reel in Queue gespeichert. "
+                "Tab „Queue“ → „Queue jetzt abarbeiten“ startet das Rendering."
+            )
             st.rerun()
         else:
             from services.video_engine import run_video_job
@@ -430,7 +444,7 @@ def _tab_preview(username: str) -> None:
             key=f"ve_pub_consent_{job_id}",
         )
         plat = bundle.get("platform") or "youtube_shorts"
-        if st.button("Auf Plattform posten", key="ve_pub_now", type="primary"):
+        if st.button("Auf Plattform posten", key=f"ve_pub_now_{job_id}", type="primary"):
             if not st.session_state.get(f"ve_pub_consent_{job_id}"):
                 st.warning("Bitte Zustimmung bestätigen.")
             else:
@@ -455,8 +469,23 @@ def _tab_queue(username: str, user: dict) -> None:
     jobs = svc.list_queue_jobs()
     st.markdown("**Reel Queue**")
     if st.button("Queue jetzt abarbeiten", key="ve_proc_queue"):
-        with st.spinner("Verarbeite…"):
-            process_reel_queue(username, plan=str(user.get("plan") or "free"), max_jobs=2)
+        with st.spinner("Rendering läuft — bitte warten (1–3 Min.)…"):
+            try:
+                results = process_reel_queue(
+                    username, plan=str(user.get("plan") or "free"), max_jobs=1
+                )
+                try:
+                    process_due_schedules(username, plan=str(user.get("plan") or "free"), limit=1)
+                except Exception:
+                    pass
+                ok_n = sum(1 for r in results if r.get("ok"))
+                fail_n = len(results) - ok_n
+                if ok_n:
+                    st.success(f"{ok_n} Reel(s) fertig — Preview öffnen.")
+                if fail_n:
+                    st.warning(f"{fail_n} Job(s) fehlgeschlagen — Details in der Liste.")
+            except Exception:
+                st.error("Queue-Abarbeitung fehlgeschlagen. Bitte erneut versuchen.")
         st.rerun()
     if not jobs:
         st.caption("Keine Jobs.")

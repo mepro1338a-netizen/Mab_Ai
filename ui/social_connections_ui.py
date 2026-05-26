@@ -73,10 +73,13 @@ def render_connected_accounts(username: str) -> None:
             cache_key = f"yt_ch_{username}"
             if st.button("Kanalstatus aktualisieren", key=f"soc_ch_{pid}", width="stretch"):
                 with st.spinner("Lade Kanal…"):
-                    info, err = svc.youtube_channel_status(pid)
+                    try:
+                        info, err = svc.youtube_channel_status(pid)
+                    except Exception:
+                        info, err = None, "Kanalstatus konnte nicht geladen werden."
                 if err:
                     st.error(err)
-                else:
+                elif info:
                     st.session_state[cache_key] = info
 
             info = st.session_state.get(cache_key)

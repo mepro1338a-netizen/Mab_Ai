@@ -59,7 +59,10 @@ def process_due_schedules(username: str, *, plan: str, limit: int = 3) -> list[s
         consent = int(post.get("user_consent") or 0) == 1
 
         if auto_post and consent and svc.is_connected(platform):
-            ok, msg = svc.publish_job(job_id, dry_run=False, user_consent=True)
+            try:
+                ok, msg = svc.publish_job(job_id, dry_run=False, user_consent=True)
+            except Exception:
+                ok, msg = False, "Auto-Post fehlgeschlagen."
             update_scheduled_post(
                 post_id,
                 status="posted" if ok else "failed",

@@ -447,33 +447,74 @@ def save_social_connection(
     token_expires_at: str = "",
     scopes: str = "",
     account_label: str = "",
+    channel_id: str = "",
 ) -> None:
+    existing = get_social_connection(username, platform)
+    keep_enc_a = access_token_enc or (existing or {}).get("access_token_enc") or ""
+    keep_enc_r = refresh_token_enc or (existing or {}).get("refresh_token_enc") or ""
+    keep_exp = token_expires_at or (existing or {}).get("token_expires_at") or ""
+    keep_scopes = scopes or (existing or {}).get("scopes") or ""
+    keep_label = account_label or (existing or {}).get("account_label") or ""
+    keep_cid = channel_id or (existing or {}).get("channel_id") or ""
+
     conn = get_connection()
-    conn.execute(
-        """
-        INSERT INTO social_connections (
-            username, platform, access_token_enc, refresh_token_enc,
-            token_expires_at, scopes, account_label, connected_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(username, platform) DO UPDATE SET
-            access_token_enc = excluded.access_token_enc,
-            refresh_token_enc = excluded.refresh_token_enc,
-            token_expires_at = excluded.token_expires_at,
-            scopes = excluded.scopes,
-            account_label = excluded.account_label,
-            connected_at = excluded.connected_at
-        """,
-        (
-            normalize_username(username),
-            platform,
-            access_token_enc,
-            refresh_token_enc,
-            token_expires_at,
-            scopes,
-            account_label,
-            now(),
-        ),
-    )
+    try:
+        conn.execute(
+            """
+            INSERT INTO social_connections (
+                username, platform, access_token_enc, refresh_token_enc,
+                token_expires_at, scopes, account_label, channel_id, connected_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(username, platform) DO UPDATE SET
+                access_token_enc = excluded.access_token_enc,
+                refresh_token_enc = excluded.refresh_token_enc,
+                token_expires_at = excluded.token_expires_at,
+                scopes = excluded.scopes,
+                account_label = excluded.account_label,
+                channel_id = CASE
+                    WHEN excluded.channel_id != '' THEN excluded.channel_id
+                    ELSE social_connections.channel_id
+                END,
+                connected_at = excluded.connected_at
+            """,
+            (
+                normalize_username(username),
+                platform,
+                keep_enc_a,
+                keep_enc_r,
+                keep_exp,
+                keep_scopes,
+                keep_label,
+                keep_cid,
+                now(),
+            ),
+        )
+    except Exception:
+        conn.execute(
+            """
+            INSERT INTO social_connections (
+                username, platform, access_token_enc, refresh_token_enc,
+                token_expires_at, scopes, account_label, connected_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(username, platform) DO UPDATE SET
+                access_token_enc = excluded.access_token_enc,
+                refresh_token_enc = excluded.refresh_token_enc,
+                token_expires_at = excluded.token_expires_at,
+                scopes = excluded.scopes,
+                account_label = excluded.account_label,
+                connected_at = excluded.connected_at
+            """,
+            (
+                normalize_username(username),
+                platform,
+                keep_enc_a,
+                keep_enc_r,
+                keep_exp,
+                keep_scopes,
+                keep_label,
+                now(),
+            ),
+        )
     conn.commit()
     conn.close()
 
