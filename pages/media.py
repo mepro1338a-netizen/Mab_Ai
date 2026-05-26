@@ -787,20 +787,14 @@ def run_video_generation(
 
 
 def render_video_ai():
-    def _generate(user_prompt: str, cost: int, **opts) -> None:
-        run_video_generation(
-            user_prompt,
-            cost,
-            seconds=int(opts.get("seconds") or 15),
-            platform=str(opts.get("platform") or "YouTube"),
-            style=str(opts.get("style") or "Cinematic"),
-            quality=str(opts.get("quality") or "standard"),
-            generate_clip=bool(opts.get("generate_clip")),
-        )
+    from ui.video_engine_ui import render_video_engine_studio
 
-    render_video_studio(
-        tokens_available=get_tokens(),
-        on_generate=_generate,
+    user = get_user(username()) or {}
+    render_video_engine_studio(
+        mode="video",
+        username=username(),
+        tokens=get_tokens(),
+        user=user,
     )
 
 

@@ -197,5 +197,12 @@ def init_db():
     )
     """)
 
+    try:
+        from db.video_engine import init_video_engine_tables
+
+        init_video_engine_tables()
+    except Exception:
+        pass
+
     conn.commit()
     conn.close()

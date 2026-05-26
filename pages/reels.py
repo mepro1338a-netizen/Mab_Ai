@@ -316,7 +316,9 @@ def _tab_publish(user: dict) -> None:
     cols = st.columns(len(PLATFORMS))
     for col, plat in zip(cols, svc.list_platforms()):
         with col:
-            status = "✓ Key" if plat["connected"] else "○ Demo"
+            status = "✓ Verbunden" if plat.get("connected") else (
+                "○ API bereit" if plat.get("api_configured") else "○ Nicht konfiguriert"
+            )
             st.markdown(f"**{plat['label']}** · {status}")
             if st.button(f"Connect {plat['id']}", key=f"oauth_{plat['id']}", width="stretch"):
                 st.info(f"OAuth-URL (Vorbereitung): {plat['connect_url']}")
@@ -385,41 +387,56 @@ def render_reels_studio_page() -> None:
 
     col_t, col_p = st.columns([4, 1])
     with col_t:
-        render_topbar(tokens=_tokens(), cost_hint=f"Script ab {get_reel_script_cost()} Tokens")
+        render_topbar(
+            tokens=_tokens(),
+            cost_hint=f"Reel ab {get_reel_video_cost(5)} Tokens · Script {get_reel_script_cost()}",
+        )
     with col_p:
         render_plan_badge()
 
-    render_workspace_header()
+    tab_studio, tab_tools = st.tabs(["Video Engine", "Creator Tools"])
 
-    tab_script, tab_hook, tab_voice, tab_clip, tab_cap, tab_pub = st.tabs(
-        [
-            "Script AI",
-            "Hook Generator",
-            "Voiceover",
-            "Clip Builder",
-            "Auto Captions",
-            "Publish Center",
-        ]
-    )
+    with tab_studio:
+        from ui.video_engine_ui import render_video_engine_studio
 
-    with tab_script:
-        _tab_script_ai(engine, user)
+        render_video_engine_studio(
+            mode="reel",
+            username=_username(),
+            tokens=_tokens(),
+            user=user,
+        )
 
-    with tab_hook:
-        _tab_hooks(engine, user)
+    with tab_tools:
+        render_workspace_header()
+        tab_script, tab_hook, tab_voice, tab_clip, tab_cap, tab_pub = st.tabs(
+            [
+                "Script AI",
+                "Hook Generator",
+                "Voiceover",
+                "Clip Builder",
+                "Auto Captions",
+                "Publish Center",
+            ]
+        )
 
-    with tab_voice:
-        _tab_voiceover(engine, user)
+        with tab_script:
+            _tab_script_ai(engine, user)
 
-    with tab_clip:
-        _tab_clip_builder(user)
-        with st.expander("Content Assets"):
-            _tab_assets()
+        with tab_hook:
+            _tab_hooks(engine, user)
 
-    with tab_cap:
-        _tab_captions(engine, user)
+        with tab_voice:
+            _tab_voiceover(engine, user)
 
-    with tab_pub:
-        _tab_publish(user)
+        with tab_clip:
+            _tab_clip_builder(user)
+            with st.expander("Content Assets"):
+                _tab_assets()
+
+        with tab_cap:
+            _tab_captions(engine, user)
+
+        with tab_pub:
+            _tab_publish(user)
 
     st.markdown("</div>", unsafe_allow_html=True)

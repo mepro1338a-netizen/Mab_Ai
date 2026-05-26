@@ -16,6 +16,8 @@ from ui.styles import inject_css, page_layout_css
 # User-facing tiers → MaByte plans
 REEL_GATES: dict[str, dict] = {
     "script_basic": {"min_plan": "free", "label": "Script AI (Basis)"},
+    "video_generate": {"min_plan": "pro", "label": "Echte Video-Generierung"},
+    "video_queue": {"min_plan": "pro", "label": "Queue & Download"},
     "hooks": {"min_plan": "pro", "label": "Hook Generator"},
     "voiceover": {"min_plan": "pro", "label": "Voiceover"},
     "captions": {"min_plan": "pro", "label": "Auto Captions"},

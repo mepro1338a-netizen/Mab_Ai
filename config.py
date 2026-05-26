@@ -87,6 +87,10 @@ APP_BASE_URL = normalize_app_base_url(os.getenv("APP_BASE_URL"))
 
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "").strip()
 GOOGLE_CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET", "").strip()
+YOUTUBE_OAUTH_CLIENT_ID = os.getenv("YOUTUBE_OAUTH_CLIENT_ID", GOOGLE_CLIENT_ID).strip()
+YOUTUBE_OAUTH_CLIENT_SECRET = os.getenv(
+    "YOUTUBE_OAUTH_CLIENT_SECRET", GOOGLE_CLIENT_SECRET
+).strip()
 # Volle Redirect-URL (Priorität) — muss 1:1 in Google Console stehen
 GOOGLE_OAUTH_REDIRECT_URI = os.getenv("GOOGLE_OAUTH_REDIRECT_URI", "").strip()
 # Pfad an öffentlicher Domain, Default "/" (Streamlit). Alternative: /oauth/google/callback
@@ -110,7 +114,7 @@ OPENAI_CODING_MODEL = os.getenv("OPENAI_CODING_MODEL", "gpt-4.1")
 OPENAI_IMAGE_MODEL = os.getenv("OPENAI_IMAGE_MODEL", "gpt-image-1")
 
 IMAGE_PROVIDER = os.getenv("IMAGE_PROVIDER", "openai")
-VIDEO_PROVIDER = os.getenv("VIDEO_PROVIDER", "replicate")
+VIDEO_PROVIDER = os.getenv("VIDEO_PROVIDER", "auto").strip().lower()
 MUSIC_PROVIDER = os.getenv("MUSIC_PROVIDER", "openai")
 
 REPLICATE_VIDEO_MODEL = os.getenv("REPLICATE_VIDEO_MODEL", "")
@@ -181,8 +185,18 @@ TOKEN_COSTS = {
     "automation_job": 150,
     "video_base": 50,
     "video_second": 10,
-    "video_quality_high": 1.35,
+    "video_quality_high": 135,
     "video_quality_business": 1.75,
+    "video_studio_base": 28,
+    "video_studio_per_sec": 2,
+    "video_ai_base": 120,
+    "video_ai_per_sec": 18,
+    "video_ai_hd_multiplier": 145,
+    "reel_studio_base": 22,
+    "reel_studio_per_sec": 3,
+    "reel_ai_5s": 90,
+    "reel_ai_7s": 110,
+    "reel_ai_hd_7s": 130,
     "auto_posting_unlock": 1000,
 }
 

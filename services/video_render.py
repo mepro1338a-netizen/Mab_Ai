@@ -135,17 +135,31 @@ def _try_ffmpeg_slideshow(spec: RenderSpec, out_path: Path, progress: ProgressCa
     if progress:
         progress(0.1, "FFmpeg wird vorbereitet…")
 
-    # Placeholder: color bars vertical video (no crash if no input clips)
     duration = max(3.0, sum(s.duration_sec for s in spec.scenes))
+    from services.mabyte_video_brand import render_mabyte_studio_mp4
+
+    ok, msg = render_mabyte_studio_mp4(
+        out_path,
+        duration_sec=duration,
+        width=spec.width,
+        height=spec.height,
+    )
+    if ok:
+        if progress:
+            progress(1.0, "MaByte Export fertig")
+        return RenderResult(ok=True, output_path=str(out_path), message=msg, used_ffmpeg=True)
+
+    # Fallback: einfaches Branding
+    wm = (spec.watermark or "MaByte").replace("'", "\\'")
     cmd = [
         "ffmpeg",
         "-y",
         "-f",
         "lavfi",
         "-i",
-        f"color=c=0x1a1a2e:s={spec.width}x{spec.height}:d={duration}",
+        f"color=c=0x581c87:s={spec.width}x{spec.height}:d={duration}",
         "-vf",
-        f"drawtext=text='{spec.watermark}':fontsize=42:fontcolor=white:x=(w-text_w)/2:y=h-120",
+        f"drawtext=text='{wm}':fontsize=52:fontcolor=white:x=(w-text_w)/2:y=(h-text_h)/2",
         "-c:v",
         "libx264",
         "-pix_fmt",

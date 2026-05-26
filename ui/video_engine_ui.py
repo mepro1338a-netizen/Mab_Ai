@@ -1,0 +1,524 @@
+"""
+Unified Video / Reels Studio UI — Create, Preview, Queue, Schedule, Accounts, History.
+"""
+from __future__ import annotations
+
+import html
+import uuid
+from pathlib import Path
+
+import streamlit as st
+
+from database import get_user, save_usage, spend_tokens, update_tokens
+from db.video_engine import list_video_jobs
+from pricing import GEN_AI, GEN_AI_HD, GEN_STUDIO, cost_label, get_video_generation_cost
+from services.access_control import can_access_plan_feature, plan_rank
+from services.video_automation import create_automation_rule
+from services.video_engine import (
+    can_generate_video,
+    can_use_ai_video,
+    can_use_automation,
+    engine_status,
+    get_job_bundle,
+    max_duration_for_plan,
+    run_video_job,
+)
+from services.video_providers import ai_provider_available
+from services.social_publish import PLATFORMS, SocialPublishService
+from ui.styles import inject_css, page_layout_css
+
+PLATFORM_LABELS = {
+    "tiktok": "TikTok",
+    "instagram_reels": "Instagram Reels",
+    "youtube_shorts": "YouTube Shorts",
+}
+
+STUDIO_CSS = """
+section.main .block-container {
+    padding-top: 4px !important;
+    max-width: 900px !important;
+}
+.ve-head {
+    display: flex; flex-wrap: wrap; justify-content: space-between;
+    align-items: flex-start; gap: 10px; margin-bottom: 12px;
+}
+.ve-title { color: #fff !important; font-size: 20px; font-weight: 800; }
+.ve-sub { color: #94a3b8 !important; font-size: 12px; }
+.ve-pill {
+    padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 700;
+    background: rgba(168,85,247,.12); border: 1px solid rgba(168,85,247,.28);
+    color: #e9d5ff !important;
+}
+.ve-pill strong { color: #fff !important; }
+.ve-badge {
+    display: inline-block; padding: 4px 10px; border-radius: 999px;
+    font-size: 10px; font-weight: 800; text-transform: uppercase;
+    letter-spacing: .08em; margin-right: 6px;
+}
+.ve-badge.ready { background: rgba(34,197,94,.15); color: #86efac !important; }
+.ve-badge.rendering { background: rgba(59,130,246,.15); color: #93c5fd !important; }
+.ve-badge.failed { background: rgba(239,68,68,.15); color: #fca5a5 !important; }
+.ve-badge.draft { background: rgba(148,163,184,.12); color: #cbd5e1 !important; }
+.ve-badge.scheduled { background: rgba(168,85,247,.15); color: #e9d5ff !important; }
+.ve-prompt-label {
+    color: #c4b5fd !important; font-size: 11px; font-weight: 800;
+    letter-spacing: .14em; text-transform: uppercase; margin: 0 0 8px 2px;
+}
+.st-key-ve_prompt [data-testid="stTextArea"] > label { display: none !important; }
+.st-key-ve_prompt [data-testid="stTextArea"] > div,
+.st-key-ve_prompt [data-testid="stTextArea"] div[data-baseweb="textarea"] {
+    background: linear-gradient(145deg, rgba(88,28,135,.98), rgba(49,16,78,.99)) !important;
+    border: 1px solid rgba(192,132,252,.55) !important;
+    border-radius: 20px !important;
+    box-shadow: 0 0 40px rgba(168,85,247,.25) !important;
+}
+.st-key-ve_prompt textarea {
+    background: transparent !important;
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    font-size: 16px !important;
+    padding: 16px 18px !important;
+    border: none !important;
+}
+.st-key-ve_prompt textarea::placeholder {
+    color: rgba(255,255,255,.45) !important;
+    -webkit-text-fill-color: rgba(255,255,255,.45) !important;
+}
+.st-key-ve_generate .stButton > button {
+    min-height: 50px !important; border-radius: 16px !important; font-weight: 800 !important;
+    background: linear-gradient(135deg, #7c3aed, #a855f7) !important;
+    color: #fff !important;
+    border: 1px solid rgba(255,255,255,.12) !important;
+}
+.ve-upgrade {
+    padding: 16px; border-radius: 16px; margin: 12px 0;
+    background: linear-gradient(135deg, rgba(88,28,135,.25), rgba(30,20,50,.9));
+    border: 1px solid rgba(168,85,247,.35);
+}
+.ve-upgrade-title { color: #fff !important; font-weight: 800; font-size: 15px; }
+.ve-upgrade-sub { color: #94a3b8 !important; font-size: 12px; margin-top: 6px; }
+"""
+
+
+def inject_studio_css() -> None:
+    inject_css(page_layout_css(900, 4, 24) + STUDIO_CSS)
+
+
+def _status_badge(status: str) -> str:
+    s = (status or "draft").lower()
+    cls = s if s in ("ready", "rendering", "failed", "scheduled", "posted") else "draft"
+    return f'<span class="ve-badge {cls}">{html.escape(s)}</span>'
+
+
+def _sync_user(username: str) -> None:
+    from ui_core import sync_session_user
+
+    user = get_user(username)
+    if user:
+        sync_session_user(user)
+
+
+def _refund(username: str, cost: int, tool: str, prompt: str) -> None:
+    user = get_user(username)
+    if not user:
+        return
+    update_tokens(username, int(user.get("tokens") or 0) + int(cost))
+    save_usage(
+        username=username,
+        tool=tool,
+        prompt=str(prompt)[:1000],
+        tokens_used=0,
+        cost_tokens=-int(cost),
+        api_provider="refund",
+        status="refunded",
+    )
+    _sync_user(username)
+
+
+def render_video_engine_studio(
+    *,
+    mode: str,
+    username: str,
+    tokens: int,
+    user: dict,
+) -> None:
+    """mode: 'reel' | 'video'"""
+    inject_studio_css()
+    plan = str(user.get("plan") or "free")
+    studio_type = "reel" if mode == "reel" else "video"
+    title = "Reels Studio" if mode == "reel" else "Video Studio"
+    subtitle = (
+        "3–7s Kurzvideos · echte MP4-Datei"
+        if mode == "reel"
+        else "Kurzvideos & Shorts · echte MP4-Datei"
+    )
+    max_dur = max_duration_for_plan(plan, studio_type)
+    min_dur = 3 if mode == "reel" else 8
+    default_dur = 5 if mode == "reel" else 15
+
+    st.markdown(
+        f"""
+<div class="ve-head">
+    <div>
+        <div class="ve-title">{html.escape(title)}</div>
+        <div class="ve-sub">{html.escape(subtitle)}</div>
+    </div>
+    <div class="ve-pill">Guthaben <strong>{tokens:,}</strong> Tokens</div>
+</div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    status = engine_status()
+    prov = status.get("providers", {})
+    ai_ok = status.get("ai_ready", False)
+    st.caption(
+        "MaByte Engine · KI-Video "
+        + ("bereit ✓" if ai_ok else "— API-Key in Railway setzen")
+        + " · "
+        + ", ".join(f"{k} {'✓' if v else '○'}" for k, v in prov.items())
+    )
+
+    tabs = st.tabs(
+        ["Create", "Preview", "Queue", "Schedule", "Accounts", "History"]
+    )
+
+    with tabs[0]:
+        _tab_create(
+            mode=mode,
+            studio_type=studio_type,
+            username=username,
+            tokens=tokens,
+            user=user,
+            plan=plan,
+            min_dur=min_dur,
+            max_dur=max_dur,
+            default_dur=default_dur,
+        )
+    with tabs[1]:
+        _tab_preview(username)
+    with tabs[2]:
+        _tab_queue(username, user)
+    with tabs[3]:
+        _tab_schedule(username, user, plan)
+    with tabs[4]:
+        _tab_accounts(username)
+    with tabs[5]:
+        _tab_history(username, studio_type)
+
+
+def _tab_create(
+    *,
+    mode: str,
+    studio_type: str,
+    username: str,
+    tokens: int,
+    user: dict,
+    plan: str,
+    min_dur: int,
+    max_dur: int,
+    default_dur: int,
+) -> None:
+    ai_ready = ai_provider_available()
+    can_ai = can_use_ai_video(plan)
+
+    if studio_type == "video" and not can_generate_video(plan) and not can_ai:
+        st.markdown(
+            """
+<div class="ve-upgrade">
+    <div class="ve-upgrade-title">Pro erforderlich</div>
+    <div class="ve-upgrade-sub">KI-Videos ab Pro. Free: kurzer MaByte Studio Export.</div>
+</div>
+            """,
+            unsafe_allow_html=True,
+        )
+        if st.button("Zu Premium", key="ve_up_pro", type="primary"):
+            st.session_state.page = "premium"
+            st.rerun()
+
+    st.markdown('<div class="ve-prompt-label">Dein Video-Konzept</div>', unsafe_allow_html=True)
+    prompt = st.text_area(
+        "Prompt",
+        placeholder="Beschreibe Szene, Stimmung, Stil…",
+        key="ve_prompt",
+        height=100,
+        label_visibility="collapsed",
+    )
+
+    c1, c2 = st.columns(2)
+    with c1:
+        platform = st.selectbox(
+            "Plattform",
+            list(PLATFORM_LABELS.keys()),
+            format_func=lambda k: PLATFORM_LABELS[k],
+            key="ve_platform",
+        )
+    with c2:
+        duration = st.slider(
+            "Länge (Sek.)",
+            min_dur,
+            max_dur,
+            default_dur,
+            key="ve_duration",
+        )
+
+    auto_meta = st.checkbox(
+        "Titel, Caption & Hashtags automatisch",
+        value=True,
+        key="ve_auto_meta",
+    )
+
+    mode_options = [GEN_STUDIO, GEN_AI]
+    if can_ai and ai_ready:
+        mode_options.append(GEN_AI_HD)
+    default_mode = GEN_AI if (can_ai and ai_ready) else GEN_STUDIO
+    gen_mode = st.radio(
+        "Qualität",
+        mode_options,
+        format_func=cost_label,
+        index=mode_options.index(default_mode) if default_mode in mode_options else 0,
+        key="ve_gen_mode",
+        horizontal=True,
+    )
+    if gen_mode != GEN_STUDIO and not can_ai:
+        st.info("KI-Video ab **Pro**. MaByte Studio ist günstiger und sofort verfügbar.")
+    elif gen_mode != GEN_STUDIO and not ai_ready:
+        st.warning(
+            "KI-Video: Administrator muss `REPLICATE_API_TOKEN` in Railway setzen. "
+            "Bis dahin: MaByte Studio wählen."
+        )
+
+    max_dur = max_duration_for_plan(plan, studio_type, mode=gen_mode) or max_dur
+    cost = get_video_generation_cost(studio_type, duration, mode=gen_mode)
+
+    st.caption(
+        f"**{cost} Tokens** (~{cost / 100:.2f} €) · max. {max_dur}s · "
+        f"{'echte KI-Szene' if gen_mode != GEN_STUDIO else 'MaByte Studio Export'}"
+    )
+
+    if st.button("Video generieren", type="primary", key="ve_generate", width="stretch"):
+        if not (prompt or "").strip():
+            st.warning("Bitte Konzept eingeben.")
+            return
+        if tokens < cost:
+            st.error(f"Nicht genug Tokens ({tokens} / {cost}). Premium oder Gutschein nutzen.")
+            return
+
+        charge_id = f"chg_{uuid.uuid4().hex}"
+        ok, msg = spend_tokens(username, cost)
+        if not ok:
+            st.error(msg)
+            return
+        save_usage(
+            username=username,
+            tool="reel_video" if studio_type == "reel" else "video",
+            prompt=prompt[:1000],
+            tokens_used=cost,
+            cost_tokens=cost,
+            api_provider="video_engine",
+            status="charged",
+        )
+        _sync_user(username)
+
+        if gen_mode != GEN_STUDIO and not can_ai:
+            st.error("KI-Video ab Pro-Plan.")
+            return
+        if gen_mode != GEN_STUDIO and not ai_ready:
+            st.error("KI-API nicht konfiguriert — wähle MaByte Studio oder Premium-Support.")
+            return
+
+        try:
+            with st.spinner(
+                "MaByte KI rendert dein Video…"
+                if gen_mode != GEN_STUDIO
+                else "MaByte Studio exportiert…"
+            ):
+                bundle, err = run_video_job(
+                    username,
+                    studio_type=studio_type,
+                    prompt=prompt.strip(),
+                    platform=platform,
+                    duration_sec=duration,
+                    plan=plan,
+                    mode=gen_mode,
+                    quality="hd" if gen_mode == GEN_AI_HD else "standard",
+                    auto_metadata=auto_meta,
+                )
+            if err or not bundle:
+                _refund(username, cost, studio_type, prompt)
+                st.error(err or "Generierung fehlgeschlagen.")
+                return
+            st.session_state.ve_active_job_id = bundle.get("id")
+            st.success("Dein MaByte-Video ist fertig.")
+            st.rerun()
+        except Exception as exc:
+            _refund(username, cost, studio_type, prompt)
+            st.error(str(exc))
+
+
+def _tab_preview(username: str) -> None:
+    job_id = st.session_state.get("ve_active_job_id")
+    if not job_id:
+        jobs = list_video_jobs(username, limit=1)
+        if jobs:
+            job_id = jobs[0]["id"]
+    if not job_id:
+        st.info("Noch kein Video. Erstelle eines unter Create.")
+        return
+
+    bundle = get_job_bundle(job_id)
+    if not bundle:
+        st.warning("Job nicht gefunden.")
+        return
+
+    st.markdown(_status_badge(bundle.get("status", "")), unsafe_allow_html=True)
+    if bundle.get("title"):
+        st.markdown(f"**{html.escape(bundle['title'])}**")
+    if bundle.get("caption"):
+        st.caption(bundle["caption"])
+    if bundle.get("hashtags"):
+        st.caption(bundle["hashtags"])
+
+    out = bundle.get("output") or {}
+    path = out.get("file_path") or ""
+    if path and Path(path).exists() and path.endswith(".mp4"):
+        st.video(path)
+        with open(path, "rb") as f:
+            st.download_button(
+                "MP4 herunterladen",
+                data=f.read(),
+                file_name=f"mabyte_{job_id[:8]}.mp4",
+                mime="video/mp4",
+                key="ve_dl_mp4",
+                width="stretch",
+            )
+    else:
+        st.warning(
+            "Keine abspielbare MP4. Prüfe FFmpeg auf dem Server oder setze "
+            "REPLICATE_API_TOKEN für KI-generierte Clips."
+        )
+
+    if can_access_plan_feature(get_user(username), "grand"):
+        svc = SocialPublishService(username)
+        if st.button("Zur Queue hinzufügen", key="ve_add_queue"):
+            svc.add_draft(
+                platform=bundle.get("platform", "tiktok"),
+                title=bundle.get("title", ""),
+                caption=bundle.get("caption", ""),
+                hashtags=bundle.get("hashtags", ""),
+                video_path=path,
+                job_id=job_id,
+            )
+            st.success("In Queue gelegt.")
+
+
+def _tab_queue(username: str, user: dict) -> None:
+    if not can_access_plan_feature(user, "pro"):
+        st.markdown(
+            '<div class="ve-upgrade"><div class="ve-upgrade-title">Pro: Queue</div>'
+            '<div class="ve-upgrade-sub">Downloads & Queue ab Pro.</div></div>',
+            unsafe_allow_html=True,
+        )
+        return
+    svc = SocialPublishService(username)
+    st.markdown("**Posting Queue**")
+    items = svc.list_drafts() + [
+        {**p, "source": "db"} for p in svc.list_db_queue()
+    ]
+    if not items:
+        st.caption("Queue leer.")
+        return
+    for item in items[:15]:
+        st.markdown(
+            f"{_status_badge(item.get('status', ''))} "
+            f"**{html.escape(str(item.get('platform', '')))}** · "
+            f"{html.escape(str(item.get('title', item.get('prompt_template', '')))[:50])}"
+        )
+
+
+def _tab_schedule(username: str, user: dict, plan: str) -> None:
+    unlocked = int(user.get("automation_unlocked") or 0) == 1
+    if not can_use_automation(plan, bool(unlocked)):
+        st.markdown(
+            '<div class="ve-upgrade"><div class="ve-upgrade-title">Grand + Automation Unlock</div>'
+            '<div class="ve-upgrade-sub">Scheduling & Auto-Publishing für Grand/Elite mit Unlock.</div></div>',
+            unsafe_allow_html=True,
+        )
+        return
+
+    platform = st.selectbox(
+        "Plattform",
+        [p["id"] for p in PLATFORMS],
+        format_func=lambda i: next(p["label"] for p in PLATFORMS if p["id"] == i),
+        key="ve_sched_plat",
+    )
+    sched_at = st.text_input("Uhrzeit (ISO UTC)", placeholder="2026-05-25T18:00:00+00:00", key="ve_sched_at")
+    freq = st.selectbox("Frequenz", ["once", "daily", "weekly"], key="ve_sched_freq")
+    template = st.text_area("Prompt-Vorlage", key="ve_sched_tpl", height=80)
+    tags = st.text_input("Hashtag-Set", key="ve_sched_tags")
+    auto_cap = st.checkbox("Auto Caption", value=True, key="ve_sched_cap")
+    auto_post = st.checkbox("Auto Post", value=False, key="ve_sched_post")
+    consent = st.checkbox(
+        "Ich erlaube Auto-Posts nur mit verbundenem Account",
+        value=False,
+        key="ve_sched_consent",
+    )
+
+    if st.button("Automation speichern", key="ve_sched_save"):
+        post, err = create_automation_rule(
+            username,
+            plan=plan,
+            automation_unlocked=bool(unlocked),
+            platform=platform,
+            scheduled_at=sched_at,
+            frequency=freq,
+            prompt_template=template,
+            hashtag_set=tags,
+            auto_caption=auto_cap,
+            auto_post=auto_post,
+            user_consent=consent,
+        )
+        if err:
+            st.error(err)
+        else:
+            st.success(f"Geplant: {post.get('id', '')[:8]}")
+
+
+def _tab_accounts(username: str) -> None:
+    svc = SocialPublishService(username)
+    for plat in svc.list_platforms():
+        st.markdown(f"**{plat['label']}**")
+        if not plat.get("api_configured"):
+            st.caption("API-Keys fehlen in Railway (OAuth ENV).")
+        elif plat.get("connected"):
+            st.success("Verbunden")
+            if st.button(f"Trennen", key=f"ve_disc_{plat['id']}"):
+                svc.disconnect(plat["id"])
+                st.rerun()
+        else:
+            st.link_button(
+                f"{plat['label']} verbinden",
+                plat["connect_url"],
+                key=f"ve_conn_{plat['id']}",
+            )
+        st.divider()
+
+
+def _tab_history(username: str, studio_type: str) -> None:
+    jobs = list_video_jobs(username, studio_type=studio_type, limit=20)
+    if not jobs:
+        st.caption("Noch keine Jobs.")
+        return
+    for job in jobs:
+        cols = st.columns([3, 1, 1])
+        with cols[0]:
+            st.markdown(
+                f"{_status_badge(job.get('status', ''))} "
+                f"{html.escape((job.get('prompt') or '')[:60])}"
+            )
+        with cols[1]:
+            st.caption(f"{job.get('duration_sec')}s")
+        with cols[2]:
+            if st.button("Öffnen", key=f"ve_open_{job['id']}"):
+                st.session_state.ve_active_job_id = job["id"]
+                st.rerun()
