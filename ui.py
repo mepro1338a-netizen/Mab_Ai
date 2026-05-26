@@ -130,6 +130,14 @@ if _oauth_callback_pending():
     render_auth()
     st.stop()
 
+# Social platform OAuth (YouTube / Instagram / TikTok) — requires login
+_qp = st.query_params
+if (_qp.get("page") == "social_oauth" or st.session_state.get("page") == "social_oauth") and st.session_state.get("logged_in"):
+    from pages.social_oauth import render_social_oauth_callback
+
+    render_social_oauth_callback()
+    st.stop()
+
 if not logged_in:
     st.session_state.page = "auth"
     render_auth()
@@ -197,6 +205,7 @@ render_sidebar(page)
 inject_sidebar_styles()
 
 PAGE_HANDLERS = {
+    "social_oauth": ("Social Connect", lambda: None),
     "home": ("Mission Control", render_home),
     "chat": ("AI Assistant", render_chat),
     "projects": ("Projects", render_projects),

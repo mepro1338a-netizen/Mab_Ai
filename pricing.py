@@ -42,9 +42,9 @@ def get_reel_video_cost(seconds: int = 7, *, mode: str = GEN_AI) -> int:
     if mode == GEN_AI_HD:
         base = _tc("reel_ai_hd_7s", 130) if sec >= 7 else _tc("reel_ai_5s", 95)
         return base
-    # GEN_AI
+    # GEN_AI — 3–6s = 90, 7s = 100
     if sec >= 7:
-        return _tc("reel_ai_7s", 110)
+        return _tc("reel_ai_7s", 100)
     return _tc("reel_ai_5s", 90)
 
 

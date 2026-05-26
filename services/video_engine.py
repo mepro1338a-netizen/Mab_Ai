@@ -114,6 +114,7 @@ def run_video_job(
     mode: str = GEN_AI,
     quality: str = "standard",
     auto_metadata: bool = True,
+    existing_job_id: str | None = None,
 ) -> tuple[dict | None, str | None]:
     if mode != GEN_STUDIO and not can_use_ai_video(plan):
         return None, "KI-Video ab Pro-Plan. Studio-Export ist günstiger verfügbar."
@@ -135,23 +136,30 @@ def run_video_job(
     if not provider:
         return None, perr or "Kein Video-Provider."
 
-    charge_id = f"chg_{uuid.uuid4().hex}"
     provider_key = getattr(provider, "name", VIDEO_PROVIDER)
 
-    job = create_video_job(
-        username,
-        studio_type=studio_type,
-        prompt=prompt,
-        platform=normalize_platform(platform),
-        duration_sec=duration_sec,
-        provider=provider_key,
-        cost_tokens=0,
-        charge_id=charge_id,
-        auto_metadata=auto_metadata,
-        status="draft",
-    )
-    job_id = job["id"]
-    update_video_job(job_id, status="rendering")
+    if existing_job_id:
+        job_id = existing_job_id
+        job = get_video_job(job_id)
+        if not job or job.get("username") != username:
+            return None, "Job nicht gefunden."
+        update_video_job(job_id, status="rendering", provider=provider_key)
+    else:
+        charge_id = f"chg_{uuid.uuid4().hex}"
+        job = create_video_job(
+            username,
+            studio_type=studio_type,
+            prompt=prompt,
+            platform=normalize_platform(platform),
+            duration_sec=duration_sec,
+            provider=provider_key,
+            cost_tokens=0,
+            charge_id=charge_id,
+            auto_metadata=auto_metadata,
+            status="draft",
+        )
+        job_id = job["id"]
+        update_video_job(job_id, status="rendering")
 
     if auto_metadata:
         title, caption, hashtags, _ = generate_post_metadata(
@@ -198,9 +206,10 @@ def run_video_job(
         file_url=result.file_url or "",
         file_size=size,
     )
+    final_status = "ready_to_publish" if studio_type == "reel" else "ready"
     update_video_job(
         job_id,
-        status="ready",
+        status=final_status,
         provider=result.provider or provider_key,
         error_message="",
     )

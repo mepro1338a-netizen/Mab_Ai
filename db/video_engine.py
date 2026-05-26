@@ -110,8 +110,46 @@ def init_video_engine_tables() -> None:
         UNIQUE(username, platform)
     )
     """)
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS reel_jobs (
+        id TEXT PRIMARY KEY,
+        video_job_id TEXT NOT NULL,
+        username TEXT NOT NULL,
+        platform TEXT,
+        duration_sec INTEGER,
+        generation_mode TEXT,
+        status TEXT,
+        retry_count INTEGER DEFAULT 0,
+        max_retries INTEGER DEFAULT 2,
+        created_at TEXT,
+        updated_at TEXT
+    )
+    """)
+    for col, typedef in (
+        ("retry_count", "INTEGER DEFAULT 0"),
+        ("max_retries", "INTEGER DEFAULT 2"),
+        ("generation_mode", "TEXT DEFAULT 'ai'"),
+        ("user_consent", "INTEGER DEFAULT 0"),
+        ("auto_post", "INTEGER DEFAULT 0"),
+        ("scheduled_at", "TEXT"),
+    ):
+        try:
+            cur.execute(f"ALTER TABLE video_jobs ADD COLUMN {col} {typedef}")
+        except Exception:
+            pass
+    for col, typedef in (
+        ("retry_count", "INTEGER DEFAULT 0"),
+        ("job_id", "TEXT"),
+    ):
+        try:
+            cur.execute(f"ALTER TABLE scheduled_posts ADD COLUMN {col} {typedef}")
+        except Exception:
+            pass
     cur.execute(
         "CREATE INDEX IF NOT EXISTS idx_video_jobs_user ON video_jobs(username, created_at DESC)"
+    )
+    cur.execute(
+        "CREATE INDEX IF NOT EXISTS idx_video_jobs_status ON video_jobs(username, status)"
     )
     conn.commit()
     conn.close()
@@ -171,6 +209,18 @@ def create_video_job(
             """,
             (job_id, job_id, normalize_username(username), platform, int(duration_sec), status, ts, ts),
         )
+        try:
+            cur.execute(
+                """
+                INSERT OR REPLACE INTO reel_jobs (
+                    id, video_job_id, username, platform, duration_sec,
+                    generation_mode, status, retry_count, max_retries, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, 'ai', ?, 0, 2, ?, ?)
+                """,
+                (job_id, job_id, normalize_username(username), platform, int(duration_sec), status, ts, ts),
+            )
+        except Exception:
+            pass
     conn.commit()
     conn.close()
     return get_video_job(job_id) or {}
@@ -189,6 +239,7 @@ def update_video_job(job_id: str, **fields: Any) -> None:
     allowed = {
         "status", "provider", "cost_tokens", "title", "caption", "hashtags",
         "error_message", "duration_sec", "prompt", "platform",
+        "retry_count", "generation_mode", "user_consent", "auto_post", "scheduled_at",
     }
     updates = {k: v for k, v in fields.items() if k in allowed}
     if not updates:

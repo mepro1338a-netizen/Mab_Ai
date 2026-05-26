@@ -13,7 +13,9 @@ from database import get_user, save_usage, spend_tokens, update_tokens
 from db.video_engine import list_video_jobs
 from pricing import GEN_AI, GEN_AI_HD, GEN_STUDIO, cost_label, get_video_generation_cost
 from services.access_control import can_access_plan_feature, plan_rank
-from services.video_automation import create_automation_rule
+from db.reel_jobs import list_queued_reel_jobs
+from services.reel_queue import enqueue_reel, process_reel_queue
+from services.reel_scheduler import process_due_schedules
 from services.video_engine import (
     can_generate_video,
     can_use_ai_video,
@@ -21,10 +23,12 @@ from services.video_engine import (
     engine_status,
     get_job_bundle,
     max_duration_for_plan,
-    run_video_job,
 )
 from services.video_providers import ai_provider_available
-from services.social_publish import PLATFORMS, SocialPublishService
+from services.social_oauth import SOCIAL_PLATFORMS
+from services.social_publish import SocialPublishService
+from services.video_automation import create_automation_rule
+from ui.social_connections_ui import render_connected_accounts
 from ui.styles import inject_css, page_layout_css
 
 PLATFORM_LABELS = {
@@ -60,6 +64,8 @@ section.main .block-container {
 .ve-badge.failed { background: rgba(239,68,68,.15); color: #fca5a5 !important; }
 .ve-badge.draft { background: rgba(148,163,184,.12); color: #cbd5e1 !important; }
 .ve-badge.scheduled { background: rgba(168,85,247,.15); color: #e9d5ff !important; }
+.ve-badge.queued { background: rgba(251,191,36,.12); color: #fcd34d !important; }
+.ve-badge.ready_to_publish { background: rgba(34,211,238,.12); color: #67e8f9 !important; }
 .ve-prompt-label {
     color: #c4b5fd !important; font-size: 11px; font-weight: 800;
     letter-spacing: .14em; text-transform: uppercase; margin: 0 0 8px 2px;
@@ -106,7 +112,9 @@ def inject_studio_css() -> None:
 
 def _status_badge(status: str) -> str:
     s = (status or "draft").lower()
-    cls = s if s in ("ready", "rendering", "failed", "scheduled", "posted") else "draft"
+    cls = s if s in (
+        "ready", "rendering", "failed", "scheduled", "posted", "queued", "ready_to_publish"
+    ) else "draft"
     return f'<span class="ve-badge {cls}">{html.escape(s)}</span>'
 
 
@@ -178,6 +186,17 @@ def render_video_engine_studio(
         + " · "
         + ", ".join(f"{k} {'✓' if v else '○'}" for k, v in prov.items())
     )
+
+    notice = st.session_state.pop("social_oauth_notice", None)
+    if notice:
+        level, text = notice
+        getattr(st, level)(text)
+
+    pending = list_queued_reel_jobs(username, limit=3) if studio_type == "reel" else []
+    if pending:
+            with st.spinner("MaByte verarbeitet Queue…"):
+                process_reel_queue(username, plan=plan, max_jobs=1)
+            process_due_schedules(username, plan=plan, limit=1)
 
     tabs = st.tabs(
         ["Create", "Preview", "Queue", "Schedule", "Accounts", "History"]
@@ -296,12 +315,18 @@ def _tab_create(
         f"{'echte KI-Szene' if gen_mode != GEN_STUDIO else 'MaByte Studio Export'}"
     )
 
-    if st.button("Video generieren", type="primary", key="ve_generate", width="stretch"):
+    if st.button("In Queue stellen", type="primary", key="ve_generate", width="stretch"):
         if not (prompt or "").strip():
             st.warning("Bitte Konzept eingeben.")
             return
         if tokens < cost:
-            st.error(f"Nicht genug Tokens ({tokens} / {cost}). Premium oder Gutschein nutzen.")
+            st.error(f"Nicht genug Tokens ({tokens} / {cost}).")
+            return
+        if gen_mode != GEN_STUDIO and not can_ai:
+            st.error("KI-Video ab Pro-Plan.")
+            return
+        if gen_mode != GEN_STUDIO and not ai_ready:
+            st.error("KI-API nicht konfiguriert (REPLICATE_API_TOKEN).")
             return
 
         charge_id = f"chg_{uuid.uuid4().hex}"
@@ -320,40 +345,41 @@ def _tab_create(
         )
         _sync_user(username)
 
-        if gen_mode != GEN_STUDIO and not can_ai:
-            st.error("KI-Video ab Pro-Plan.")
-            return
-        if gen_mode != GEN_STUDIO and not ai_ready:
-            st.error("KI-API nicht konfiguriert — wähle MaByte Studio oder Premium-Support.")
-            return
+        job = enqueue_reel(
+            username,
+            prompt=prompt.strip(),
+            platform=platform,
+            duration_sec=int(st.session_state.get("ve_duration", duration)),
+            mode=gen_mode,
+            cost_tokens=cost,
+            charge_id=charge_id,
+            auto_metadata=auto_meta,
+        ) if studio_type == "reel" else None
 
-        try:
-            with st.spinner(
-                "MaByte KI rendert dein Video…"
-                if gen_mode != GEN_STUDIO
-                else "MaByte Studio exportiert…"
-            ):
-                bundle, err = run_video_job(
-                    username,
-                    studio_type=studio_type,
-                    prompt=prompt.strip(),
-                    platform=platform,
-                    duration_sec=duration,
-                    plan=plan,
-                    mode=gen_mode,
-                    quality="hd" if gen_mode == GEN_AI_HD else "standard",
-                    auto_metadata=auto_meta,
-                )
-            if err or not bundle:
-                _refund(username, cost, studio_type, prompt)
-                st.error(err or "Generierung fehlgeschlagen.")
-                return
-            st.session_state.ve_active_job_id = bundle.get("id")
-            st.success("Dein MaByte-Video ist fertig.")
+        if studio_type == "reel" and job:
+            st.session_state.ve_active_job_id = job.get("id")
+            st.success("Job in Queue — Rendering startet…")
             st.rerun()
-        except Exception as exc:
-            _refund(username, cost, studio_type, prompt)
-            st.error(str(exc))
+        else:
+            from services.video_engine import run_video_job
+
+            bundle, err = run_video_job(
+                username,
+                studio_type=studio_type,
+                prompt=prompt.strip(),
+                platform=platform,
+                duration_sec=duration,
+                plan=plan,
+                mode=gen_mode,
+                auto_metadata=auto_meta,
+            )
+            if err:
+                _refund(username, cost, studio_type, prompt)
+                st.error(err)
+            else:
+                st.session_state.ve_active_job_id = (bundle or {}).get("id")
+                st.success("Video fertig.")
+                st.rerun()
 
 
 def _tab_preview(username: str) -> None:
@@ -416,24 +442,31 @@ def _tab_queue(username: str, user: dict) -> None:
     if not can_access_plan_feature(user, "pro"):
         st.markdown(
             '<div class="ve-upgrade"><div class="ve-upgrade-title">Pro: Queue</div>'
-            '<div class="ve-upgrade-sub">Downloads & Queue ab Pro.</div></div>',
+            '<div class="ve-upgrade-sub">Queue & Download ab Pro.</div></div>',
             unsafe_allow_html=True,
         )
         return
     svc = SocialPublishService(username)
-    st.markdown("**Posting Queue**")
-    items = svc.list_drafts() + [
-        {**p, "source": "db"} for p in svc.list_db_queue()
-    ]
-    if not items:
-        st.caption("Queue leer.")
+    jobs = svc.list_queue_jobs()
+    st.markdown("**Reel Queue**")
+    if st.button("Queue jetzt abarbeiten", key="ve_proc_queue"):
+        with st.spinner("Verarbeite…"):
+            process_reel_queue(username, plan=str(user.get("plan") or "free"), max_jobs=2)
+        st.rerun()
+    if not jobs:
+        st.caption("Keine Jobs.")
         return
-    for item in items[:15]:
+    for job in jobs[:20]:
         st.markdown(
-            f"{_status_badge(item.get('status', ''))} "
-            f"**{html.escape(str(item.get('platform', '')))}** · "
-            f"{html.escape(str(item.get('title', item.get('prompt_template', '')))[:50])}"
+            f"{_status_badge(job.get('status', ''))} "
+            f"**{html.escape(str(job.get('platform', '')))}** · "
+            f"{html.escape(str(job.get('prompt', ''))[:55])}"
         )
+        if job.get("status") == "failed" and st.button("Retry", key=f"retry_{job['id']}"):
+            from db.reel_jobs import update_reel_job
+
+            update_reel_job(job["id"], status="queued", error_message="")
+            st.rerun()
 
 
 def _tab_schedule(username: str, user: dict, plan: str) -> None:
@@ -448,8 +481,8 @@ def _tab_schedule(username: str, user: dict, plan: str) -> None:
 
     platform = st.selectbox(
         "Plattform",
-        [p["id"] for p in PLATFORMS],
-        format_func=lambda i: next(p["label"] for p in PLATFORMS if p["id"] == i),
+        list(SOCIAL_PLATFORMS.keys()),
+        format_func=lambda i: SOCIAL_PLATFORMS[i]["label"],
         key="ve_sched_plat",
     )
     sched_at = st.text_input("Uhrzeit (ISO UTC)", placeholder="2026-05-25T18:00:00+00:00", key="ve_sched_at")
@@ -485,23 +518,9 @@ def _tab_schedule(username: str, user: dict, plan: str) -> None:
 
 
 def _tab_accounts(username: str) -> None:
-    svc = SocialPublishService(username)
-    for plat in svc.list_platforms():
-        st.markdown(f"**{plat['label']}**")
-        if not plat.get("api_configured"):
-            st.caption("API-Keys fehlen in Railway (OAuth ENV).")
-        elif plat.get("connected"):
-            st.success("Verbunden")
-            if st.button(f"Trennen", key=f"ve_disc_{plat['id']}"):
-                svc.disconnect(plat["id"])
-                st.rerun()
-        else:
-            st.link_button(
-                f"{plat['label']} verbinden",
-                plat["connect_url"],
-                key=f"ve_conn_{plat['id']}",
-            )
-        st.divider()
+    st.markdown("**Connected Accounts**")
+    st.caption("Auto-Post nur mit OAuth + ausdrücklicher Zustimmung im Schedule-Tab.")
+    render_connected_accounts(username)
 
 
 def _tab_history(username: str, studio_type: str) -> None:

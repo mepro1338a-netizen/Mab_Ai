@@ -13,7 +13,7 @@ from config import normalize_app_base_url
 from database import get_user, save_usage, spend_tokens, update_tokens
 from pricing import get_reel_script_cost, get_reel_video_cost
 from services.reel_engine import REEL_MODES, REEL_PLATFORMS, ReelEngine, ReelScriptRequest
-from services.social_publish import PLATFORMS, SocialPublishService
+from ui.social_connections_ui import render_connected_accounts
 from services.video_render import (
     RenderScene,
     build_render_spec,
@@ -310,55 +310,9 @@ def _tab_publish(user: dict) -> None:
         render_locked_feature("publish")
         return
 
-    svc = SocialPublishService(_username(), normalize_app_base_url())
-    st.markdown("**Publish Center** — OAuth, Queue, Drafts, Schedule")
-
-    cols = st.columns(len(PLATFORMS))
-    for col, plat in zip(cols, svc.list_platforms()):
-        with col:
-            status = "✓ Verbunden" if plat.get("connected") else (
-                "○ API bereit" if plat.get("api_configured") else "○ Nicht konfiguriert"
-            )
-            st.markdown(f"**{plat['label']}** · {status}")
-            if st.button(f"Connect {plat['id']}", key=f"oauth_{plat['id']}", width="stretch"):
-                st.info(f"OAuth-URL (Vorbereitung): {plat['connect_url']}")
-
-    st.divider()
-    title = st.text_input("Titel", key="pub_title")
-    caption = st.text_area("Caption", key="pub_caption", height=80)
-    hashtags = st.text_input("Hashtags", key="pub_tags")
-    platform = st.selectbox("Ziel", [p["id"] for p in PLATFORMS], format_func=lambda i: next(p["label"] for p in PLATFORMS if p["id"] == i))
-    scheduled = st.text_input("Schedule (ISO, optional)", placeholder="2026-05-25T18:00:00Z")
-
-    c1, c2 = st.columns(2)
-    with c1:
-        if st.button("Als Draft speichern", key="pub_draft"):
-            svc.add_draft(platform=platform, title=title, caption=caption, hashtags=hashtags, scheduled_at=scheduled)
-            st.success("Draft gespeichert.")
-    with c2:
-        if st.button("In Queue", key="pub_queue"):
-            d = svc.add_draft(platform=platform, title=title, caption=caption, hashtags=hashtags)
-            ok, msg = svc.queue_for_posting(d.id)
-            st.success(msg) if ok else st.warning(msg)
-
-    if reel_feature_allowed("auto_posting", user):
-        st.markdown("**Elite:** Auto-Posting & Multi-Platform")
-        if st.button("Simuliert posten (Dry-Run)", key="pub_sim"):
-            drafts = svc.list_drafts(status="queued") or svc.list_drafts()
-            if not drafts:
-                st.warning("Keine Drafts in Queue.")
-            else:
-                ok, msg = svc.simulate_post(drafts[0]["id"])
-                st.success(msg) if ok else st.error(msg)
-    else:
-        st.caption("Auto-Posting ab Elite-Plan.")
-
-    st.subheader("Queue & Drafts")
-    for item in svc.list_drafts()[:8]:
-        st.markdown(
-            f"- **{item.get('platform')}** · {item.get('status')} · "
-            f"{item.get('title', '')[:40]} · {item.get('created_at', '')[:16]}"
-        )
+    st.markdown("**Publish Center** — nutze Tab „Accounts“ im Video Engine für OAuth.")
+    render_connected_accounts(_username())
+    st.caption("Queue & Schedule: Tab „Video Engine“ → Queue / Schedule.")
 
 
 def _tab_assets() -> None:
