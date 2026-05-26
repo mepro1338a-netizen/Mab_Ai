@@ -69,8 +69,26 @@ if not ensure_db_ready():
     st.stop()
 
 
+def _qp_first(value) -> str:
+    if isinstance(value, list):
+        return str(value[0] if value else "").strip()
+    return str(value or "").strip()
+
+
+def _is_social_oauth_callback() -> bool:
+    """YouTube/IG/TikTok connect — must not be handled as login OAuth."""
+    page = _qp_first(st.query_params.get("page"))
+    if page == "social_oauth":
+        return True
+    if st.session_state.get("page") == "social_oauth":
+        return bool(_qp_first(st.query_params.get("code")))
+    return False
+
+
 def _oauth_callback_pending() -> bool:
-    """Google redirects with ?code=&state= (path /oauth/google/callback via proxy)."""
+    """Google login redirects with ?code=&state= (not social connect)."""
+    if _is_social_oauth_callback():
+        return False
     params = st.query_params
     code = params.get("code")
     state = params.get("state")
@@ -125,17 +143,16 @@ logged_in = bool(
     and st.session_state.get("user")
 )
 
-if _oauth_callback_pending():
-    st.session_state.page = "auth"
-    render_auth()
-    st.stop()
-
-# Social platform OAuth (YouTube / Instagram / TikTok) — requires login
-_qp = st.query_params
-if (_qp.get("page") == "social_oauth" or st.session_state.get("page") == "social_oauth") and st.session_state.get("logged_in"):
+# Social platform OAuth before login OAuth (same ?code=&state= query shape)
+if _is_social_oauth_callback():
     from pages.social_oauth import render_social_oauth_callback
 
     render_social_oauth_callback()
+    st.stop()
+
+if _oauth_callback_pending():
+    st.session_state.page = "auth"
+    render_auth()
     st.stop()
 
 if not logged_in:

@@ -11,7 +11,9 @@ import json
 import secrets
 import time
 from datetime import datetime, timezone
-from urllib.parse import urlencode
+from urllib.parse import unquote, urlencode
+
+from db.core import normalize_username
 
 import requests
 
@@ -90,24 +92,53 @@ def make_social_state(username: str, platform: str) -> str:
     return base64.urlsafe_b64encode(f"{raw}|{sig}".encode()).decode()
 
 
-def verify_social_state(state: str) -> tuple[str, str]:
-    """Returns (username, platform) or ('','')."""
-    if not state or not social_oauth_ready():
-        return "", ""
+def _normalize_state_param(state: str) -> str:
+    """Repair state after URL/query decoding (padding, spaces)."""
+    s = unquote((state or "").strip())
+    if not s:
+        return ""
+    s = s.replace(" ", "+")
+    pad = "=" * (-len(s) % 4)
+    return s + pad
+
+
+def verify_social_state(state: str) -> tuple[str, str, str]:
+    """
+    Returns (username, platform, error_code).
+    error_code: '' | 'missing' | 'config' | 'invalid' | 'expired'
+    """
+    if not state:
+        return "", "", "missing"
+    if not social_oauth_ready():
+        return "", "", "config"
     try:
-        decoded = base64.urlsafe_b64decode(state.encode()).decode()
+        decoded = base64.urlsafe_b64decode(_normalize_state_param(state).encode()).decode()
         raw, sig = decoded.rsplit("|", 1)
         expected = hmac.new(_state_key(), raw.encode(), hashlib.sha256).hexdigest()[:24]
         if not sig or not hmac.compare_digest(sig, expected):
-            return "", ""
+            return "", "", "invalid"
         payload = json.loads(raw)
         if payload.get("k") != "social":
-            return "", ""
+            return "", "", "invalid"
         if int(time.time()) - int(payload["t"]) > STATE_MAX_AGE:
-            return "", ""
-        return str(payload.get("u") or ""), str(payload.get("pl") or "")
+            return "", "", "expired"
+        user = normalize_username(str(payload.get("u") or ""))
+        platform = str(payload.get("pl") or "").strip()
+        if not user or not platform:
+            return "", "", "invalid"
+        return user, platform, ""
     except Exception:
-        return "", ""
+        return "", "", "invalid"
+
+
+def social_state_error_message(code: str) -> str:
+    messages = {
+        "missing": "OAuth-Antwort unvollständig. Bitte erneut auf «Verbinden» klicken.",
+        "config": "OAUTH_STATE_SECRET fehlt auf dem Server. Administrator muss Railway prüfen.",
+        "invalid": "OAuth-Sitzung ungültig. Bitte erneut verbinden.",
+        "expired": "OAuth-Sitzung abgelaufen (15 Min.). Bitte erneut verbinden.",
+    }
+    return messages.get(code, messages["invalid"])
 
 
 def social_redirect_uri() -> str:

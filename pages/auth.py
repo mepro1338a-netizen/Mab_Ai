@@ -87,6 +87,10 @@ def do_login(username: str, password: str) -> None:
     if ok and user:
         rotate_session_on_login(user)
         log_auth("login_success", username=username, success=True)
+        from pages.social_oauth import resume_pending_social_connect
+
+        if resume_pending_social_connect():
+            return
         st.session_state.page = "home"
         st.rerun()
 
@@ -159,6 +163,10 @@ def finish_oauth_login(user: dict, *, provider: str) -> None:
         pass
     rotate_session_on_login(user)
     log_oauth("oauth_success", provider=provider, success=True, user=username)
+    from pages.social_oauth import resume_pending_social_connect
+
+    if resume_pending_social_connect():
+        return
     _set_oauth_notice("success", f"Willkommen zurück — eingeloggt via {provider.title()}.")
     st.session_state.page = "home"
     st.rerun()
