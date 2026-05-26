@@ -5,6 +5,7 @@ from payments import confirm_checkout_session
 from ui_core import load_css, sync_session_user
 from ui.button_system import inject_master_buttons
 from ui.sidebar import inject_sidebar_styles, render_sidebar
+from ui.sidebar_nav import LEGACY_PAGE_ALIASES
 from ui.error_boundary import safe_render
 from ui.seo import inject_seo_meta
 from services.session_auth import enforce_active_session
@@ -213,6 +214,9 @@ if notice:
 # =========================================================
 
 page = st.session_state.get("page", "home")
+if page in LEGACY_PAGE_ALIASES:
+    page = LEGACY_PAGE_ALIASES[page]
+    st.session_state.page = page
 
 # =========================================================
 # SIDEBAR (single component for all routes)
@@ -232,8 +236,9 @@ PAGE_HANDLERS = {
     "coding": ("Code Studio", lambda: render_media("coding")),
     "image": ("Image Studio", lambda: render_media("image")),
     "music": ("Music Studio", lambda: render_media("music")),
-    "reels": ("Reels Studio", lambda: render_media("reels")),
-    "video": ("Video Studio", lambda: render_media("video")),
+    "creator": ("Creator Studio", lambda: render_media("creator")),
+    "reels": ("Creator Studio", lambda: render_media("reels")),
+    "video": ("Creator Studio", lambda: render_media("video")),
     "dashboard": ("Dashboard", render_dashboard),
     "support": ("Support", render_support),
     "premium": ("Premium", render_premium),

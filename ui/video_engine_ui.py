@@ -165,11 +165,11 @@ def render_video_engine_studio(
     inject_studio_css()
     plan = str(user.get("plan") or "free")
     studio_type = "reel" if mode == "reel" else "video"
-    title = "Reels Studio" if mode == "reel" else "Video Studio"
+    title = "Creator Studio"
     subtitle = (
-        "3–7s Kurzvideos · echte MP4-Datei"
+        "Shorts · 3–7s für TikTok, Reels & YouTube"
         if mode == "reel"
-        else "Kurzvideos & Shorts · echte MP4-Datei"
+        else "Video · längere Clips & Shorts"
     )
     max_dur = max_duration_for_plan(plan, studio_type)
     min_dur = 3 if mode == "reel" else 8
@@ -221,9 +221,7 @@ def render_video_engine_studio(
                 "„Queue jetzt abarbeiten“ (ca. 1–3 Min.)."
             )
 
-    tabs = st.tabs(
-        ["Create", "Preview", "Queue", "Schedule", "Accounts", "History"]
-    )
+    tabs = st.tabs(["Erstellen", "Bibliothek", "Veröffentlichen"])
 
     with tabs[0]:
         _tab_create(
@@ -238,15 +236,9 @@ def render_video_engine_studio(
             default_dur=default_dur,
         )
     with tabs[1]:
-        _safe_tab("Preview", _tab_preview, username)
+        _safe_tab("Bibliothek", _tab_library, username, studio_type)
     with tabs[2]:
-        _safe_tab("Queue", _tab_queue, username, user)
-    with tabs[3]:
-        _safe_tab("Schedule", _tab_schedule, username, user, plan)
-    with tabs[4]:
-        _safe_tab("Accounts", _tab_accounts, username)
-    with tabs[5]:
-        _safe_tab("History", _tab_history, username, studio_type)
+        _safe_tab("Veröffentlichen", _tab_publish_hub, username, user, plan)
 
 
 def _tab_create(
@@ -406,6 +398,26 @@ def _tab_create(
                 st.session_state.ve_active_job_id = (bundle or {}).get("id")
                 st.success("Video fertig.")
                 st.rerun()
+
+
+def _tab_library(username: str, studio_type: str) -> None:
+    """Preview + Verlauf in einem Tab."""
+    sub = st.tabs(["Vorschau", "Verlauf"])
+    with sub[0]:
+        _tab_preview(username)
+    with sub[1]:
+        _tab_history(username, studio_type)
+
+
+def _tab_publish_hub(username: str, user: dict, plan: str) -> None:
+    """Queue, Planung, verbundene Accounts."""
+    sub = st.tabs(["Queue", "Planen", "Accounts"])
+    with sub[0]:
+        _tab_queue(username, user)
+    with sub[1]:
+        _tab_schedule(username, user, plan)
+    with sub[2]:
+        _tab_accounts(username)
 
 
 def _tab_preview(username: str) -> None:

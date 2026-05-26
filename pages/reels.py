@@ -378,42 +378,12 @@ def _render_creator_tools(engine: ReelEngine, user: dict) -> None:
 
 
 def render_reels_studio_page() -> None:
-    """Entry from pages/media.py when active_tool=reels."""
-    inject_reel_studio_css()
-    inject_ma_prompt_css()
+    """Legacy entry — Creator Studio + optionale Script-Tools."""
+    st.session_state.creator_format = "Shorts"
+    from pages.creator_studio import render_creator_studio_page
+
+    render_creator_studio_page()
 
     user = get_user(_username()) or {}
-    engine = ReelEngine()
-
-    st.markdown('<div class="reel-studio">', unsafe_allow_html=True)
-
-    col_t, col_p = st.columns([4, 1])
-    with col_t:
-        render_topbar(
-            tokens=_tokens(),
-            cost_hint=f"Reel ab {get_reel_video_cost(5)} Tokens · Script {get_reel_script_cost()}",
-        )
-    with col_p:
-        render_plan_badge()
-
-    studio_mode = st.radio(
-        "Bereich",
-        ["Video Engine", "Creator Tools"],
-        horizontal=True,
-        key="reel_studio_mode",
-        label_visibility="collapsed",
-    )
-
-    if studio_mode == "Video Engine":
-        from ui.video_engine_ui import render_video_engine_studio
-
-        render_video_engine_studio(
-            mode="reel",
-            username=_username(),
-            tokens=_tokens(),
-            user=user,
-        )
-    else:
-        _render_creator_tools(engine, user)
-
-    st.markdown("</div>", unsafe_allow_html=True)
+    with st.expander("Script AI, Hooks & Clip Builder"):
+        _render_creator_tools(ReelEngine(), user)

@@ -798,10 +798,15 @@ def render_video_ai():
     )
 
 
-def render_reels_studio():
-    from pages.reels import render_reels_studio_page
+def render_creator_studio():
+    from pages.creator_studio import render_creator_studio_page
 
-    render_reels_studio_page()
+    render_creator_studio_page()
+
+
+def render_reels_studio():
+    st.session_state.creator_format = "Shorts"
+    render_creator_studio()
 
 
 def render_media(active_tool="reels"):
@@ -817,7 +822,12 @@ def render_media(active_tool="reels"):
     elif active_tool == "coding":
         render_coding_ai()
     elif active_tool == "video":
-        render_video_ai()
+        st.session_state.creator_format = "Video"
+        render_creator_studio()
+        return
+    elif active_tool == "creator":
+        render_creator_studio()
         return
     else:
-        render_reels_studio()
+        st.session_state.creator_format = "Shorts"
+        render_creator_studio()

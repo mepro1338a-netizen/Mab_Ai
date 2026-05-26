@@ -1,37 +1,52 @@
 """
-Central sidebar navigation — same on every page (via ui.py → render_sidebar).
+MaByte SaaS OS — zentrale Sidebar-Navigation (via ui.py → render_sidebar).
 """
 from __future__ import annotations
 
-# (section title, [(label, page_key), ...])
+# (Sektion, [(Label, page_key), ...])
 SIDEBAR_SECTIONS: list[tuple[str, list[tuple[str, str]]]] = [
     (
-        "Workspace",
+        "MaByte OS",
         [
             ("Home", "home"),
-            ("Chat", "chat"),
-            ("Football", "football"),
-            ("Dashboard", "dashboard"),
-            ("Projects", "projects"),
-            ("Automations", "automation_lab"),
+            ("AI Chat", "chat"),
         ],
     ),
     (
-        "Studios",
+        "Creator",
         [
             ("Image", "image"),
-            ("Video", "video"),
-            ("Reels", "reels"),
+            ("Shorts & Video", "creator"),
             ("Music", "music"),
             ("Code", "coding"),
         ],
     ),
     (
+        "Intelligence",
+        [
+            ("Football AI", "football"),
+        ],
+    ),
+    (
+        "Workspace",
+        [
+            ("Projects", "projects"),
+            ("Automations", "automation_lab"),
+        ],
+    ),
+    (
         "Account",
         [
+            ("Profil & Tokens", "dashboard"),
             ("Premium", "premium"),
-            ("Redeem", "redeem"),
             ("Support", "support"),
+            ("Code einlösen", "redeem"),
         ],
     ),
 ]
+
+# Legacy page keys → Creator Studio (Bookmarks / alte Links)
+LEGACY_PAGE_ALIASES: dict[str, str] = {
+    "reels": "creator",
+    "video": "creator",
+}

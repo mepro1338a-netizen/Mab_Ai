@@ -27,6 +27,7 @@ ICON_MAP = {
     "image": "image",
     "video": "video",
     "reels": "reels",
+    "creator": "reels",
     "music": "music",
     "coding": "code",
     "dashboard": "dashboard",
@@ -247,6 +248,8 @@ def render_sidebar(active_page: str | None = None) -> None:
     Example: render_sidebar(st.session_state.get("page", "home"))
     """
     active = (active_page or st.session_state.get("page") or "home").strip()
+    if active in ("reels", "video"):
+        active = "creator"
     inject_sidebar_styles()
     with st.sidebar:
         if WORDMARK.exists():
