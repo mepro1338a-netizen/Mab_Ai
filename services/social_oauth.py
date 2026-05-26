@@ -28,6 +28,7 @@ from config import (
 from db.video_engine import save_social_connection
 from oauth_service import oauth_state_ready, resolve_public_origin
 from services.token_secure import encrypt_token
+from services.youtube_api import parse_youtube_error
 
 SOCIAL_PLATFORMS: dict[str, dict] = {
     "youtube_shorts": {
@@ -192,6 +193,7 @@ def complete_social_connect(
     if not code:
         return False, "OAuth-Code fehlt."
 
+    channel_id = ""
     try:
         if prov == "youtube":
             resp = requests.post(
@@ -218,9 +220,12 @@ def complete_social_connect(
                 timeout=20,
             )
             if ch.ok:
-                items = (ch.json().get("items") or [])
+                items = ch.json().get("items") or []
                 if items:
                     label = items[0].get("snippet", {}).get("title") or label
+                    channel_id = items[0].get("id") or ""
+            elif ch.status_code in (401, 403):
+                return False, parse_youtube_error(ch)
 
         elif prov == "instagram":
             resp = requests.get(
@@ -265,6 +270,12 @@ def complete_social_connect(
         if not access:
             return False, "Kein Access-Token erhalten."
 
+        if prov == "youtube" and not refresh:
+            return False, (
+                "YouTube: Kein Refresh-Token erhalten. "
+                "Bitte Verbindung trennen und erneut verbinden (Google fragt Zustimmung ab)."
+            )
+
         enc_a = encrypt_token(access)
         if not enc_a:
             return False, "OAUTH_STATE_SECRET fehlt — Token kann nicht gespeichert werden."
@@ -277,10 +288,19 @@ def complete_social_connect(
             token_expires_at=expires,
             scopes=meta.get("scopes", ""),
             account_label=label,
+            channel_id=channel_id,
         )
-        return True, f"{meta.get('label', platform_id)} verbunden."
+        detail = f" — Kanal „{label}“" if label and prov == "youtube" else ""
+        return True, f"{meta.get('label', platform_id)} verbunden{detail}."
 
     except requests.HTTPError as exc:
-        return False, f"OAuth Fehler: {exc}"
-    except Exception as exc:
-        return False, str(exc)
+        resp = getattr(exc, "response", None)
+        if resp is not None:
+            return False, parse_youtube_error(resp)
+        return False, "OAuth-Verbindung fehlgeschlagen. Bitte erneut versuchen."
+    except requests.Timeout:
+        return False, "Zeitüberschreitung bei der OAuth-Verbindung."
+    except requests.RequestException:
+        return False, "Netzwerkfehler bei der OAuth-Verbindung."
+    except Exception:
+        return False, "Verbindung fehlgeschlagen. Bitte erneut versuchen."

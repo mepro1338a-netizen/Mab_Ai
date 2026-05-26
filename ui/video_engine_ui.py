@@ -424,18 +424,23 @@ def _tab_preview(username: str) -> None:
             "REPLICATE_API_TOKEN für KI-generierte Clips."
         )
 
-    if can_access_plan_feature(get_user(username), "grand"):
-        svc = SocialPublishService(username)
-        if st.button("Zur Queue hinzufügen", key="ve_add_queue"):
-            svc.add_draft(
-                platform=bundle.get("platform", "tiktok"),
-                title=bundle.get("title", ""),
-                caption=bundle.get("caption", ""),
-                hashtags=bundle.get("hashtags", ""),
-                video_path=path,
-                job_id=job_id,
-            )
-            st.success("In Queue gelegt.")
+    if bundle.get("status") in ("ready", "ready_to_publish") and path:
+        st.checkbox(
+            "Ich möchte dieses Reel auf der gewählten Plattform veröffentlichen",
+            key=f"ve_pub_consent_{job_id}",
+        )
+        plat = bundle.get("platform") or "youtube_shorts"
+        if st.button("Auf Plattform posten", key="ve_pub_now", type="primary"):
+            if not st.session_state.get(f"ve_pub_consent_{job_id}"):
+                st.warning("Bitte Zustimmung bestätigen.")
+            else:
+                svc = SocialPublishService(username)
+                with st.spinner("Wird veröffentlicht…"):
+                    ok, msg = svc.publish_job(job_id, user_consent=True)
+                if ok:
+                    st.success(msg)
+                else:
+                    st.error(msg)
 
 
 def _tab_queue(username: str, user: dict) -> None:
@@ -456,17 +461,48 @@ def _tab_queue(username: str, user: dict) -> None:
     if not jobs:
         st.caption("Keine Jobs.")
         return
+    publishable = [j for j in jobs if j.get("status") in ("ready", "ready_to_publish")]
+    if publishable:
+        st.caption(f"{len(publishable)} Reel(s) bereit zum Veröffentlichen")
+
     for job in jobs[:20]:
+        jid = job["id"]
+        plat = job.get("platform") or ""
         st.markdown(
             f"{_status_badge(job.get('status', ''))} "
-            f"**{html.escape(str(job.get('platform', '')))}** · "
+            f"**{html.escape(str(plat))}** · "
             f"{html.escape(str(job.get('prompt', ''))[:55])}"
         )
-        if job.get("status") == "failed" and st.button("Retry", key=f"retry_{job['id']}"):
-            from db.reel_jobs import update_reel_job
+        if job.get("error_message"):
+            st.caption(f"⚠ {html.escape(str(job['error_message'])[:200])}")
+        if job.get("posted_video_id"):
+            vid = job["posted_video_id"]
+            st.markdown(
+                f"[YouTube Short ansehen](https://www.youtube.com/shorts/{html.escape(vid)})"
+            )
 
-            update_reel_job(job["id"], status="queued", error_message="")
-            st.rerun()
+        cols = st.columns(2)
+        with cols[0]:
+            if job.get("status") == "failed" and st.button("Retry", key=f"retry_{jid}"):
+                from db.reel_jobs import update_reel_job
+
+                update_reel_job(jid, status="queued", error_message="")
+                st.rerun()
+        with cols[1]:
+            if job.get("status") in ("ready", "ready_to_publish") and plat == "youtube_shorts":
+                consent_key = f"ve_q_consent_{jid}"
+                st.checkbox("Zustimmung", key=consent_key)
+                if st.button("→ YouTube Shorts", key=f"pub_{jid}"):
+                    if not st.session_state.get(consent_key):
+                        st.warning("Bitte Zustimmung aktivieren.")
+                    else:
+                        with st.spinner("Upload zu YouTube…"):
+                            ok, msg = svc.publish_job(jid, user_consent=True)
+                        if ok:
+                            st.success(msg)
+                        else:
+                            st.error(msg)
+                        st.rerun()
 
 
 def _tab_schedule(username: str, user: dict, plan: str) -> None:

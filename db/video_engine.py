@@ -145,6 +145,20 @@ def init_video_engine_tables() -> None:
             cur.execute(f"ALTER TABLE scheduled_posts ADD COLUMN {col} {typedef}")
         except Exception:
             pass
+    for col, typedef in (
+        ("channel_id", "TEXT"),
+    ):
+        try:
+            cur.execute(f"ALTER TABLE social_connections ADD COLUMN {col} {typedef}")
+        except Exception:
+            pass
+    for col, typedef in (
+        ("posted_video_id", "TEXT"),
+    ):
+        try:
+            cur.execute(f"ALTER TABLE video_jobs ADD COLUMN {col} {typedef}")
+        except Exception:
+            pass
     cur.execute(
         "CREATE INDEX IF NOT EXISTS idx_video_jobs_user ON video_jobs(username, created_at DESC)"
     )
@@ -240,6 +254,7 @@ def update_video_job(job_id: str, **fields: Any) -> None:
         "status", "provider", "cost_tokens", "title", "caption", "hashtags",
         "error_message", "duration_sec", "prompt", "platform",
         "retry_count", "generation_mode", "user_consent", "auto_post", "scheduled_at",
+        "posted_video_id",
     }
     updates = {k: v for k, v in fields.items() if k in allowed}
     if not updates:
