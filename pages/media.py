@@ -8,6 +8,7 @@ from config import OPENAI_API_KEY, OPENAI_IMAGE_MODEL, OPENAI_TEXT_MODEL, DB_PAT
 from database import spend_tokens, save_usage, get_user, update_tokens
 from ui_core import sync_session_user
 from ui.image_studio import render_image_studio
+from ui.video_studio import render_video_studio
 from ui.prompt_ui import inject_ma_prompt_css, prompt_text_area, prompt_text_input
 from ui.styles import inject_css, page_layout_css, gradient_title_css
 
@@ -705,58 +706,102 @@ def render_coding_ai():
         run_paid_ai("coding", task, cost, "mabyte_code")
 
 
-def render_video_studio():
-    """Long-form / cinematic video — separate from short Reels."""
-    render_hero(
-        "Video Studio",
-        "Cinematic & long-form AI video planning (Kling, Runway). Nicht dasselbe wie Reels Studio.",
+def run_video_generation(
+    user_prompt: str,
+    cost: int,
+    *,
+    seconds: int,
+    platform: str,
+    style: str,
+    quality: str,
+    generate_clip: bool,
+) -> None:
+    from services.video_studio import (
+        build_en_clip_prompt,
+        download_video_url,
+        generate_production_package,
+        generate_replicate_clip,
     )
 
-    seconds = st.slider("Ziel-Länge (Sekunden)", min_value=8, max_value=60, value=15, key="vs_seconds")
-    cost = get_reel_video_cost(min(seconds, 7)) + max(0, seconds - 7) * 15
+    charge_tokens("video", user_prompt, cost)
 
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        st.metric("Preis (ca.)", f"{cost} Tokens")
-    with c2:
-        st.metric("Länge", f"{seconds}s")
-    with c3:
-        st.metric("Tokens", get_tokens())
+    try:
+        with st.spinner("MaByte erstellt dein Video-Paket…"):
+            package, err = generate_production_package(
+                user_prompt,
+                seconds=seconds,
+                platform=platform,
+                style=style,
+            )
 
-    with st.container(border=True):
-        topic = prompt_text_area(
-            placeholder="Frag MaByte… Video-Konzept…",
-            key="vs_topic",
-            height=140,
-        )
-        platform = st.selectbox(
-            "Plattform",
-            ["YouTube", "Website", "Ads", "Instagram (Feed)", "LinkedIn"],
-            key="vs_platform",
-        )
-        style = st.selectbox(
-            "Stil",
-            ["Cinematic", "Documentary", "Premium", "Corporate", "Storytelling"],
-            key="vs_style",
-        )
-        provider = st.selectbox("Provider (später)", ["Kling", "Runway", "Replicate"], key="vs_provider")
-
-    if st.button("Video-Paket erstellen", width="stretch", key="btn_video_studio", type="primary"):
-        if not topic.strip():
-            st.warning("Bitte ein Video-Konzept eingeben.")
+        if err or not package:
+            refund_tokens(cost, "video", user_prompt)
+            st.error(err or "Paket konnte nicht erstellt werden.")
             return
-        prompt = f"""
-Erstelle ein professionelles LONG-FORM Video-Produktionspaket (kein 7s Reel).
 
-Thema: {topic}
-Länge: {seconds} Sekunden
-Plattform: {platform}
-Stil: {style}
-Provider-Ziel: {provider}
+        clip_url = ""
+        clip_bytes = None
+        if generate_clip:
+            with st.spinner("Optional: KI-Clip wird generiert (Replicate)…"):
+                en = build_en_clip_prompt(user_prompt, style=style, platform=platform)
+                clip_url, clip_err = generate_replicate_clip(
+                    en, seconds=min(seconds, 10)
+                )
+                if clip_err:
+                    st.warning(f"Clip: {clip_err}")
+                elif clip_url and clip_url.startswith("http"):
+                    clip_bytes, dl_err = download_video_url(clip_url)
+                    if dl_err:
+                        st.warning(f"Clip-Download: {dl_err}")
 
-Liefere: Storyboard, Shots, Voiceover-Skizze, Caption, Thumbnail-Konzept, Export-Checkliste.
-"""
-        run_paid_ai("reel_video", prompt, cost, "mabyte_video_studio")
+        save_usage(
+            username=username(),
+            tool="video",
+            prompt=str(user_prompt)[:1000],
+            tokens_used=0,
+            cost_tokens=0,
+            api_provider="openai+replicate" if generate_clip else "openai",
+            status="success",
+        )
+
+        st.session_state.video_last_package = package
+        st.session_state.video_last_meta = {
+            "prompt": user_prompt,
+            "seconds": seconds,
+            "platform": platform,
+            "style": style,
+            "quality": quality,
+            "clip_url": clip_url,
+        }
+        if clip_bytes:
+            st.session_state.video_last_clip_bytes = clip_bytes
+        else:
+            st.session_state.pop("video_last_clip_bytes", None)
+
+        st.success("Video-Paket fertig.")
+        st.rerun()
+
+    except Exception as exc:
+        refund_tokens(cost, "video", user_prompt)
+        st.error(f"Fehler: {exc}")
+
+
+def render_video_ai():
+    def _generate(user_prompt: str, cost: int, **opts) -> None:
+        run_video_generation(
+            user_prompt,
+            cost,
+            seconds=int(opts.get("seconds") or 15),
+            platform=str(opts.get("platform") or "YouTube"),
+            style=str(opts.get("style") or "Cinematic"),
+            quality=str(opts.get("quality") or "standard"),
+            generate_clip=bool(opts.get("generate_clip")),
+        )
+
+    render_video_studio(
+        tokens_available=get_tokens(),
+        on_generate=_generate,
+    )
 
 
 def render_reels_studio():
@@ -778,6 +823,7 @@ def render_media(active_tool="reels"):
     elif active_tool == "coding":
         render_coding_ai()
     elif active_tool == "video":
-        render_video_studio()
+        render_video_ai()
+        return
     else:
         render_reels_studio()

@@ -15,6 +15,33 @@ def get_reel_video_cost(seconds: int = 7) -> int:
     return REEL_VIDEO_COST
 
 
+def get_video_studio_cost(
+    seconds: int = 15,
+    *,
+    quality: str = "standard",
+    include_clip: bool = False,
+) -> int:
+    try:
+        from config import TOKEN_COSTS
+
+        base = int(TOKEN_COSTS.get("video_base", 50))
+        per_sec = int(TOKEN_COSTS.get("video_second", 10))
+    except Exception:
+        base, per_sec = 50, 10
+
+    cost = base + max(0, int(seconds) - 8) * per_sec
+    if quality == "hd":
+        try:
+            from config import TOKEN_COSTS
+
+            cost = int(cost * float(TOKEN_COSTS.get("video_quality_high", 1.35)))
+        except Exception:
+            cost = int(cost * 1.35)
+    if include_clip:
+        cost += 120
+    return max(int(cost), 50)
+
+
 def get_automation_unlock_cost() -> int:
     return AUTOMATION_UNLOCK_COST
 
