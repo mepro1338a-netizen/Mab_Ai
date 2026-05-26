@@ -459,8 +459,8 @@ def _step_render(username: str, user: dict, plan: str) -> None:
                 st.session_state.rs_step = 2
                 st.rerun()
         with c3:
-            out = get_job_bundle(jid)
-            path = (out or {}).get("output", {}).get("file_path") if out else ""
+            bundle = get_job_bundle(jid) or {}
+            path = (bundle.get("output") or {}).get("file_path") or ""
             if path and Path(path).exists():
                 with open(path, "rb") as f:
                     st.download_button(
