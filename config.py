@@ -117,8 +117,14 @@ IMAGE_PROVIDER = os.getenv("IMAGE_PROVIDER", "openai")
 VIDEO_PROVIDER = os.getenv("VIDEO_PROVIDER", "auto").strip().lower()
 MUSIC_PROVIDER = os.getenv("MUSIC_PROVIDER", "openai")
 
-REPLICATE_VIDEO_MODEL = os.getenv("REPLICATE_VIDEO_MODEL", "")
-REPLICATE_REELS_MODEL = os.getenv("REPLICATE_REELS_MODEL", REPLICATE_VIDEO_MODEL)
+# VIDEO_MODEL = Railway-Alias (legacy); bevorzugt REPLICATE_VIDEO_MODEL
+REPLICATE_VIDEO_MODEL = (
+    os.getenv("REPLICATE_VIDEO_MODEL", "").strip()
+    or os.getenv("VIDEO_MODEL", "").strip()
+)
+REPLICATE_REELS_MODEL = (
+    os.getenv("REPLICATE_REELS_MODEL", "").strip() or REPLICATE_VIDEO_MODEL
+)
 REPLICATE_MUSIC_MODEL = os.getenv("REPLICATE_MUSIC_MODEL", "")
 
 FAL_VIDEO_ENDPOINT = os.getenv("FAL_VIDEO_ENDPOINT", "")
