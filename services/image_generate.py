@@ -18,7 +18,9 @@ from config import (
 
 
 def map_preset_to_api_size(preset: dict[str, str]) -> str:
-    """API-Football presets -> OpenAI gpt-image size strings."""
+    """Modell waehlt passende Groesse aus dem Prompt."""
+    if str(preset.get("id") or "") == "auto":
+        return "auto"
     aspect = str(preset.get("aspect") or "1:1")
     if aspect == "9:16":
         return "1024x1536"
