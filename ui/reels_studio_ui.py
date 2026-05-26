@@ -15,12 +15,11 @@ from database import get_user, save_usage, spend_tokens
 from db.reel_jobs import update_reel_job
 from db.video_engine import init_video_engine_tables, list_video_jobs
 from pricing import GEN_AI, get_reel_video_cost
-from services.access_control import can_use_automation
 from services.reel_queue import enqueue_reel, process_reel_queue
 from services.social_oauth import SOCIAL_PLATFORMS, connect_auth_url, platform_configured, social_oauth_ready
 from services.social_publish import SocialPublishService
 from services.video_automation import create_automation_rule
-from services.video_engine import engine_status, get_job_bundle
+from services.video_engine import can_use_automation, engine_status, get_job_bundle
 from services.video_providers import ai_provider_available
 from ui.styles import inject_css, page_layout_css
 
