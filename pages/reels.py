@@ -202,6 +202,13 @@ def _tab_hooks(engine: ReelEngine, user: dict) -> None:
         _run_ai_tab(tool="reel_hooks", cost=cost, prompt_key=req.topic, spinner="Hooks…", generator=gen)
 
 
+def _voice_label(voices: list[dict], voice_id: str) -> str:
+    for v in voices:
+        if v.get("id") == voice_id:
+            return str(v.get("label") or voice_id)
+    return str(voice_id)
+
+
 def _tab_voiceover(engine: ReelEngine, user: dict) -> None:
     if not reel_feature_allowed("voiceover", user):
         render_locked_feature("voiceover")
@@ -210,10 +217,13 @@ def _tab_voiceover(engine: ReelEngine, user: dict) -> None:
 
     st.markdown("**Voice AI** — ElevenLabs & OpenAI TTS (Vorbereitung)")
     voices = voice_catalog()
+    voice_ids = [v["id"] for v in voices]
+    if st.session_state.get("reel_voice_id") not in voice_ids:
+        st.session_state.reel_voice_id = voice_ids[0] if voice_ids else ""
     st.selectbox(
         "Stimme",
-        [v["id"] for v in voices],
-        format_func=lambda i: next(v["label"] for v in voices if v["id"] == i),
+        voice_ids,
+        format_func=lambda i: _voice_label(voices, i),
         key="reel_voice_id",
     )
     st.caption("TTS-API wird nach Key-Freigabe aktiviert — jetzt: Voiceover-Skript.")
@@ -329,6 +339,44 @@ def _tab_assets() -> None:
                 st.session_state.reel_preview_hook = t
 
 
+def _safe_creator_tab(label: str, fn, *args, **kwargs) -> None:
+    try:
+        fn(*args, **kwargs)
+    except Exception as exc:
+        st.error(f"{label} konnte nicht geladen werden.")
+        with st.expander("Details"):
+            st.code(str(exc)[:400])
+
+
+def _render_creator_tools(engine: ReelEngine, user: dict) -> None:
+    render_workspace_header()
+    tab_script, tab_hook, tab_voice, tab_clip, tab_cap, tab_pub = st.tabs(
+        [
+            "Script AI",
+            "Hook Generator",
+            "Voiceover",
+            "Clip Builder",
+            "Auto Captions",
+            "Publish Center",
+        ]
+    )
+
+    with tab_script:
+        _safe_creator_tab("Script AI", _tab_script_ai, engine, user)
+    with tab_hook:
+        _safe_creator_tab("Hook Generator", _tab_hooks, engine, user)
+    with tab_voice:
+        _safe_creator_tab("Voiceover", _tab_voiceover, engine, user)
+    with tab_clip:
+        _safe_creator_tab("Clip Builder", _tab_clip_builder, user)
+        with st.expander("Content Assets"):
+            _safe_creator_tab("Assets", _tab_assets)
+    with tab_cap:
+        _safe_creator_tab("Captions", _tab_captions, engine, user)
+    with tab_pub:
+        _safe_creator_tab("Publish", _tab_publish, user)
+
+
 def render_reels_studio_page() -> None:
     """Entry from pages/media.py when active_tool=reels."""
     inject_reel_studio_css()
@@ -348,9 +396,15 @@ def render_reels_studio_page() -> None:
     with col_p:
         render_plan_badge()
 
-    tab_studio, tab_tools = st.tabs(["Video Engine", "Creator Tools"])
+    studio_mode = st.radio(
+        "Bereich",
+        ["Video Engine", "Creator Tools"],
+        horizontal=True,
+        key="reel_studio_mode",
+        label_visibility="collapsed",
+    )
 
-    with tab_studio:
+    if studio_mode == "Video Engine":
         from ui.video_engine_ui import render_video_engine_studio
 
         render_video_engine_studio(
@@ -359,38 +413,7 @@ def render_reels_studio_page() -> None:
             tokens=_tokens(),
             user=user,
         )
-
-    with tab_tools:
-        render_workspace_header()
-        tab_script, tab_hook, tab_voice, tab_clip, tab_cap, tab_pub = st.tabs(
-            [
-                "Script AI",
-                "Hook Generator",
-                "Voiceover",
-                "Clip Builder",
-                "Auto Captions",
-                "Publish Center",
-            ]
-        )
-
-        with tab_script:
-            _tab_script_ai(engine, user)
-
-        with tab_hook:
-            _tab_hooks(engine, user)
-
-        with tab_voice:
-            _tab_voiceover(engine, user)
-
-        with tab_clip:
-            _tab_clip_builder(user)
-            with st.expander("Content Assets"):
-                _tab_assets()
-
-        with tab_cap:
-            _tab_captions(engine, user)
-
-        with tab_pub:
-            _tab_publish(user)
+    else:
+        _render_creator_tools(engine, user)
 
     st.markdown("</div>", unsafe_allow_html=True)

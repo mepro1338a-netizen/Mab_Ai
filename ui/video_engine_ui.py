@@ -203,11 +203,23 @@ def render_video_engine_studio(
         level, text = notice
         getattr(st, level)(text)
 
-    pending = list_queued_reel_jobs(username, limit=3) if studio_type == "reel" else []
-    if pending:
-            with st.spinner("MaByte verarbeitet Queue…"):
-                process_reel_queue(username, plan=plan, max_jobs=1)
-            process_due_schedules(username, plan=plan, limit=1)
+    try:
+        from db.video_engine import init_video_engine_tables
+
+        init_video_engine_tables()
+    except Exception:
+        pass
+
+    if studio_type == "reel":
+        try:
+            queued_n = len(list_queued_reel_jobs(username, limit=20))
+        except Exception:
+            queued_n = 0
+        if queued_n:
+            st.info(
+                f"**{queued_n} Reel(s)** in der Queue — Tab „Queue“ → "
+                "„Queue jetzt abarbeiten“ (ca. 1–3 Min.)."
+            )
 
     tabs = st.tabs(
         ["Create", "Preview", "Queue", "Schedule", "Accounts", "History"]
@@ -226,15 +238,15 @@ def render_video_engine_studio(
             default_dur=default_dur,
         )
     with tabs[1]:
-        _tab_preview(username)
+        _safe_tab("Preview", _tab_preview, username)
     with tabs[2]:
-        _tab_queue(username, user)
+        _safe_tab("Queue", _tab_queue, username, user)
     with tabs[3]:
-        _tab_schedule(username, user, plan)
+        _safe_tab("Schedule", _tab_schedule, username, user, plan)
     with tabs[4]:
-        _tab_accounts(username)
+        _safe_tab("Accounts", _tab_accounts, username)
     with tabs[5]:
-        _tab_history(username, studio_type)
+        _safe_tab("History", _tab_history, username, studio_type)
 
 
 def _tab_create(
