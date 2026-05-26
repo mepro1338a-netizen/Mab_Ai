@@ -9,7 +9,6 @@ import uuid
 import streamlit as st
 
 from pricing import get_image_cost
-from ui.prompt_ui import inject_ma_prompt_css, prompt_text_area
 from ui.styles import inject_css, page_layout_css
 
 # Standard-Export (keine UI-Auswahl) — API waehlt passendes Format
@@ -51,28 +50,81 @@ section.main .block-container > div {
     font-weight: 600;
 }
 .img-head-meta strong { color: #ffffff !important; }
-/* Lila Prompt, weisse Schrift */
-.img-studio div[data-testid="stVerticalBlock"]:has(.mb-prompt-marker) [data-testid="stTextArea"] > div {
-    background:
-        radial-gradient(circle at 8% 0%, rgba(216,180,254,.25), transparent 42%),
-        linear-gradient(135deg, rgba(88,28,135,.98), rgba(49,16,78,.99)) !important;
-    border: 1px solid rgba(192,132,252,.5) !important;
-    border-radius: 18px !important;
-    box-shadow: 0 0 32px rgba(168,85,247,.22), inset 0 1px 0 rgba(255,255,255,.06) !important;
+.img-prompt-label {
+    color: #c4b5fd !important;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    margin: 0 0 8px 2px;
 }
-.img-studio div[data-testid="stVerticalBlock"]:has(.mb-prompt-marker) textarea {
+/* Lila Prompt (Streamlit 1.50: .st-key-image_prompt) */
+.st-key-image_prompt [data-testid="stTextArea"] > label,
+.st-key-image_prompt [data-testid="stTextArea"] > label p {
+    display: none !important;
+}
+.st-key-image_prompt [data-testid="stTextArea"] > div,
+.st-key-image_prompt [data-testid="stTextArea"] div[data-baseweb="textarea"],
+.st-key-image_prompt [data-testid="stTextArea"] div[data-baseweb="base-input"] {
+    background:
+        radial-gradient(circle at 10% 0%, rgba(216,180,254,.32), transparent 46%),
+        radial-gradient(circle at 92% 100%, rgba(96,165,250,.14), transparent 42%),
+        linear-gradient(145deg, rgba(88,28,135,.98), rgba(49,16,78,.99)) !important;
+    background-color: transparent !important;
+    border: 1px solid rgba(192,132,252,.55) !important;
+    border-radius: 20px !important;
+    box-shadow:
+        0 0 44px rgba(168,85,247,.28),
+        0 14px 36px rgba(0,0,0,.32),
+        inset 0 1px 0 rgba(255,255,255,.08) !important;
+    overflow: hidden !important;
+}
+.st-key-image_prompt [data-testid="stTextArea"] div[data-baseweb="textarea"]:focus-within,
+.st-key-image_prompt [data-testid="stTextArea"] div[data-baseweb="base-input"]:focus-within {
+    border-color: rgba(233,213,255,.7) !important;
+    box-shadow:
+        0 0 0 3px rgba(168,85,247,.22),
+        0 0 52px rgba(168,85,247,.35),
+        inset 0 1px 0 rgba(255,255,255,.1) !important;
+}
+.st-key-image_prompt textarea {
     background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
     color: #ffffff !important;
     -webkit-text-fill-color: #ffffff !important;
-    font-size: 15px !important;
+    font-size: 16px !important;
     font-weight: 600 !important;
-    line-height: 1.45 !important;
+    line-height: 1.5 !important;
     caret-color: #e9d5ff !important;
+    padding: 16px 18px !important;
+    min-height: 92px !important;
 }
-.img-studio div[data-testid="stVerticalBlock"]:has(.mb-prompt-marker) textarea::placeholder {
-    color: rgba(255,255,255,.5) !important;
-    -webkit-text-fill-color: rgba(255,255,255,.5) !important;
+.st-key-image_prompt textarea::placeholder {
+    color: rgba(255,255,255,.48) !important;
+    -webkit-text-fill-color: rgba(255,255,255,.48) !important;
     font-weight: 500 !important;
+}
+.st-key-image_prompt textarea:focus {
+    outline: none !important;
+    box-shadow: none !important;
+}
+.st-key-btn_image .stButton > button {
+    min-height: 50px !important;
+    border-radius: 16px !important;
+    font-weight: 800 !important;
+    font-size: 15px !important;
+    background: linear-gradient(135deg, #7c3aed, #a855f7 55%, #c084fc) !important;
+    border: 1px solid rgba(255,255,255,.14) !important;
+    color: #ffffff !important;
+    box-shadow: 0 0 28px rgba(168,85,247,.4), 0 10px 24px rgba(0,0,0,.25) !important;
+}
+.st-key-btn_image .stButton > button:hover {
+    border-color: rgba(255,255,255,.22) !important;
+    box-shadow: 0 0 40px rgba(192,132,252,.55), 0 12px 28px rgba(0,0,0,.3) !important;
+    transform: translateY(-1px);
 }
 .img-studio label,
 .img-studio .stCheckbox label,
@@ -107,8 +159,19 @@ section.main .block-container > div {
 
 
 def inject_image_studio_css() -> None:
-    inject_ma_prompt_css()
     inject_css(page_layout_css(720, 4, 24) + IMAGE_STUDIO_CSS)
+
+
+def _image_prompt_field(*, placeholder: str, height: int = 100) -> str:
+    """Purple prompt bar — scoped via Streamlit key class .st-key-image_prompt."""
+    st.markdown('<div class="img-prompt-label">Prompt</div>', unsafe_allow_html=True)
+    return st.text_area(
+        "Prompt",
+        placeholder=placeholder,
+        key="image_prompt",
+        height=height,
+        label_visibility="collapsed",
+    )
 
 
 def render_image_studio(
@@ -135,15 +198,20 @@ def render_image_studio(
         unsafe_allow_html=True,
     )
 
-    prompt = prompt_text_area(
-        placeholder="Beschreibe dein Bild…",
-        key="image_prompt",
-        height=88,
+    prompt = _image_prompt_field(
+        placeholder="Beschreibe dein Bild — Stil, Farben, Stimmung…",
+        height=100,
     )
 
     hd = st.checkbox("HD (mehr Details)", key="image_hd", value=False)
 
-    if st.button("Bild generieren", type="primary", key="btn_image", width="stretch"):
+    gen_clicked = st.button(
+        "Bild generieren",
+        type="primary",
+        key="btn_image",
+        width="stretch",
+    )
+    if gen_clicked:
         if not (prompt or "").strip():
             st.warning("Bitte kurz beschreiben, was du sehen willst.")
         elif tokens_available < cost:
