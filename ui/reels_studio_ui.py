@@ -179,6 +179,41 @@ def inject_reels_css() -> None:
     inject_css(page_layout_css(960, 8, 32) + REELS_CSS)
 
 
+_VALID_DURATIONS = frozenset({3, 5, 7})
+_VALID_PLATFORMS = frozenset(p[0] for p in PLATFORMS)
+_VALID_STYLES = frozenset(s[0] for s in STYLES)
+
+
+def _safe_int(value, default: int = 0) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _normalize_rs_session() -> int:
+    """Clamp corrupt Streamlit session values that would crash int() or job lookups."""
+    step = _safe_int(st.session_state.get("rs_step"), 0)
+    step = max(0, min(step, len(STEPS) - 1))
+    st.session_state.rs_step = step
+
+    dur = _safe_int(st.session_state.get("rs_duration"), 5)
+    st.session_state.rs_duration = dur if dur in _VALID_DURATIONS else 5
+
+    plat = str(st.session_state.get("rs_platform") or "tiktok")
+    st.session_state.rs_platform = plat if plat in _VALID_PLATFORMS else "tiktok"
+
+    style = str(st.session_state.get("rs_style") or "viral")
+    st.session_state.rs_style = style if style in _VALID_STYLES else "viral"
+
+    return step
+
+
+def _output_file_path(job_id: str) -> str:
+    bundle = get_job_bundle(job_id) or {}
+    return (bundle.get("output") or {}).get("file_path") or ""
+
+
 def _sync_user(username: str) -> None:
     from ui_core import sync_session_user
 
@@ -425,7 +460,9 @@ def _step_render(username: str, user: dict, plan: str) -> None:
         return
 
     for job in jobs[:12]:
-        jid = job["id"]
+        jid = job.get("id")
+        if not jid:
+            continue
         status = job.get("status") or "queued"
         st.markdown(
             f"""
@@ -459,8 +496,7 @@ def _step_render(username: str, user: dict, plan: str) -> None:
                 st.session_state.rs_step = 2
                 st.rerun()
         with c3:
-            bundle = get_job_bundle(jid) or {}
-            path = (bundle.get("output") or {}).get("file_path") or ""
+            path = _output_file_path(jid)
             if path and Path(path).exists():
                 with open(path, "rb") as f:
                     st.download_button(
@@ -538,7 +574,14 @@ def _step_schedule(username: str, user: dict, plan: str) -> None:
     jobs = [j for j in list_video_jobs(username, studio_type="reel", limit=20)
             if j.get("status") in ("ready", "ready_to_publish")]
     if jobs:
-        options = {j["id"]: (j.get("prompt") or j["id"])[:50] for j in jobs}
+        options = {
+            j["id"]: (j.get("prompt") or j["id"])[:50]
+            for j in jobs
+            if j.get("id")
+        }
+        if not options:
+            st.warning("Keine planbaren Reels gefunden.")
+            return
         job_id = st.selectbox(
             "Reel für Planung",
             list(options.keys()),
@@ -742,17 +785,8 @@ def render_reels_studio_premium(
     except Exception:
         pass
 
-    if "rs_step" not in st.session_state:
-        st.session_state.rs_step = 0
-    if "rs_platform" not in st.session_state:
-        st.session_state.rs_platform = "tiktok"
-    if "rs_duration" not in st.session_state:
-        st.session_state.rs_duration = 5
-    if "rs_style" not in st.session_state:
-        st.session_state.rs_style = "viral"
-
     plan = str(user.get("plan") or "free")
-    step = int(st.session_state.rs_step)
+    step = _normalize_rs_session()
 
     _render_header(username, tokens, user)
     _render_stepper(step)
