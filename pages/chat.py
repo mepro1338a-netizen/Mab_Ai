@@ -13,7 +13,7 @@ from database import (
 )
 
 from ui_core import sync_session_user
-from ui.prompt_ui import ma_chat_input
+from ui.prompt_ui import ma_chat_input, render_os_ready_hint
 from ui.styles import inject_css, page_layout_css
 
 
