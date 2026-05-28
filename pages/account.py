@@ -59,8 +59,7 @@ def usage_count(tool):
 
 
 def _dashboard_css() -> None:
-    inject_beta_global_css()
-    inject_css(page_layout_css(1180, 88, 42) + """
+    inject_css(page_layout_css(1180, 92, 42) + """
 .dash-hero {
     border-radius: 32px;
     padding: 34px 38px;

@@ -3,8 +3,7 @@
 from database import ensure_db_ready, get_user
 from payments import confirm_checkout_session
 from ui_core import load_css, sync_session_user
-from ui.button_system import inject_master_buttons
-from ui.sidebar import inject_sidebar_styles, render_sidebar
+from ui.sidebar import render_sidebar
 from ui.sidebar_nav import LEGACY_PAGE_ALIASES
 from ui.error_boundary import safe_render
 from ui.seo import inject_seo_meta
@@ -223,7 +222,6 @@ if page in LEGACY_PAGE_ALIASES:
 # =========================================================
 
 render_sidebar(page)
-inject_sidebar_styles()
 
 PAGE_HANDLERS = {
     "social_oauth": ("Social Connect", lambda: None),
@@ -252,8 +250,6 @@ if page == "auth":
 elif page in PAGE_HANDLERS:
     label, handler = PAGE_HANDLERS[page]
     safe_render(label, handler)
-    inject_sidebar_styles()
-    inject_master_buttons()
 else:
     st.session_state.page = "home"
     st.rerun()

@@ -10,7 +10,6 @@ from pathlib import Path
 
 import streamlit as st
 
-from ui.button_system import inject_master_buttons
 from ui.sidebar_nav import SIDEBAR_SECTIONS
 from ui.styles import inject_css
 
@@ -277,7 +276,6 @@ section[data-testid="stSidebar"] .sidebar-logout-wrap button p {
 
 def inject_sidebar_styles() -> None:
     inject_css(sidebar_master_css())
-    inject_master_buttons()
 
 
 def _img_base64(path: Path) -> str:
@@ -340,7 +338,6 @@ def render_sidebar(active_page: str | None = None) -> None:
     if active in ("reels", "video"):
         active = "creator"
 
-    inject_sidebar_styles()
     with st.sidebar:
         if WORDMARK.exists():
             wordmark_src = _img_base64(WORDMARK)

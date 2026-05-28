@@ -1,9 +1,7 @@
 """MaByte global premium design system — single injection point."""
 from __future__ import annotations
 
-from ui.button_system import inject_master_buttons
-from ui.styles import MB_THEME_VARS, inject_css, page_layout_css
-from ui.prompt_ui import inject_ma_prompt_css
+from ui.styles import inject_css, page_layout_css
 
 
 GLOBAL_DESIGN_CSS = """
@@ -174,11 +172,6 @@ div[data-testid="stTabs"] button[aria-selected="true"] {
 """
 
 
-def inject_design_system(max_width: int = 1480, padding_top: int = 88) -> None:
-    inject_css(
-        MB_THEME_VARS
-        + page_layout_css(max_width, padding_top, 42)
-        + GLOBAL_DESIGN_CSS
-    )
-    inject_ma_prompt_css()
-    inject_master_buttons()
+def inject_design_system(max_width: int = 1480, padding_top: int = 92) -> None:
+    """Page-specific layout override — global shell via ui.app_shell.inject_global_ui()."""
+    inject_css(page_layout_css(max_width, padding_top, 42) + GLOBAL_DESIGN_CSS)

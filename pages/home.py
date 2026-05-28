@@ -24,8 +24,6 @@ def render_home() -> None:
         st.rerun()
         return
 
-    inject_dashboard_css()
-
     user = str(st.session_state.get("user") or "User")
     plan_key = str(st.session_state.get("plan") or "free")
     plan = PLANS.get(plan_key, PLANS["free"])

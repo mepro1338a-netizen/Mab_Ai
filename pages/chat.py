@@ -13,13 +13,7 @@ from database import (
 )
 
 from ui_core import sync_session_user
-from ui.prompt_ui import (
-    inject_ma_prompt_css,
-    ma_chat_input,
-    render_os_hero,
-    render_os_ready_hint,
-    render_quickstart_grid,
-)
+from ui.prompt_ui import ma_chat_input
 from ui.styles import inject_css, page_layout_css
 
 
@@ -192,12 +186,13 @@ def render_chat() -> None:
 
     ensure_messages()
     load_chat_css()
-    inject_ma_prompt_css()
 
     project = get_active_project()
-
-    render_os_hero()
-    quick_prompt = render_quickstart_grid("chat")
+    st.markdown(
+        '<div class="mb-ws-head"><div class="mb-ws-kicker">Workspace</div>'
+        '<div class="mb-ws-title">AI Chat</div></div>',
+        unsafe_allow_html=True,
+    )
     render_messages(project)
 
     pending = st.session_state.pop("chat_pending_prompt", None)
@@ -205,7 +200,5 @@ def render_chat() -> None:
 
     if pending:
         handle_prompt(pending, project)
-    if quick_prompt:
-        handle_prompt(quick_prompt, project)
     if prompt:
         handle_prompt(prompt, project)

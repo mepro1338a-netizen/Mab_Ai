@@ -8,7 +8,6 @@ from config import OPENAI_API_KEY, OPENAI_IMAGE_MODEL, OPENAI_TEXT_MODEL, DB_PAT
 from database import spend_tokens, save_usage, get_user, update_tokens
 from ui_core import sync_session_user
 from ui.image_studio import render_image_studio
-from ui.video_studio import render_video_studio
 from ui.workspace_ui import inject_workspace_css, workspace_header, workspace_marker
 from ui.styles import inject_css, page_layout_css, gradient_title_css
 
@@ -273,208 +272,6 @@ div[data-testid="stAlert"] {
 }
 """
     )
-
-
-def render_reel_script():
-    cost = get_reel_script_cost()
-
-    c1, c2, c3 = st.columns(3)
-
-    with c1:
-        st.metric("Preis", f"{cost} Tokens")
-
-    with c2:
-        st.metric("Output", "Script")
-
-    with c3:
-        st.metric("Tokens", get_tokens())
-
-    st.write("")
-
-    left, right = st.columns([1.2, .8], gap="large")
-
-    with left:
-        with st.container(border=True):
-            topic = st.text_area(
-                "Thema / Idee",
-                placeholder="z.B. Warum dieses Derby viral gehen könnte…",
-                key="script_topic",
-                height=140,
-            )
-
-            platform = st.selectbox(
-                "Plattform",
-                ["TikTok", "Instagram Reels", "YouTube Shorts"],
-                key="script_platform",
-            )
-
-            category = st.selectbox(
-                "Kategorie",
-                ["Football", "Business", "Luxury", "Meme", "Faceless", "Storytelling", "AI News", "Motivation"],
-                key="script_category",
-            )
-
-    with right:
-        with st.container(border=True):
-            style = st.selectbox(
-                "Style",
-                ["Fast Cut", "Aggressive", "Cinematic", "Premium", "Funny", "Dark"],
-                key="script_style",
-            )
-
-            target = st.selectbox(
-                "Ziel",
-                ["Viralität", "Follower", "Kommentare", "Sales", "Branding", "Retention"],
-                key="script_target",
-            )
-
-            cta = st.text_input("CTA", placeholder="Folge für mehr", key="script_cta")
-
-            st.info("Script, Hook, Caption, Szenenplan und Hashtags.")
-
-    if st.button("Reel Script generieren", width="stretch", key="btn_reel_script", type="primary"):
-        if not topic:
-            st.warning("Bitte Idee eingeben.")
-            return
-
-        prompt = f"""
-Erstelle ein virales Shortform Reel Script.
-
-Thema:
-{topic}
-
-Plattform:
-{platform}
-
-Kategorie:
-{category}
-
-Style:
-{style}
-
-Ziel:
-{target}
-
-CTA:
-{cta}
-
-Erstelle exakt:
-
-# Viral Score
-# Hook Strength
-# Viral Hook
-# Full Script
-# Scene Breakdown
-# On Screen Text
-# Caption
-# Hashtags
-# Posting Time
-# Thumbnail Text
-# CTA
-"""
-
-        run_paid_ai("reel_script", prompt, cost, "mabyte_reel_script")
-
-
-def render_reel_video():
-    seconds = st.slider("Videolänge", min_value=3, max_value=7, value=5, key="video_seconds")
-
-    cost = get_reel_video_cost(seconds)
-
-    c1, c2, c3 = st.columns(3)
-
-    with c1:
-        st.metric("Preis", f"{cost} Tokens")
-
-    with c2:
-        st.metric("Länge", f"{seconds}s")
-
-    with c3:
-        st.metric("Tokens", get_tokens())
-
-    st.write("")
-
-    left, right = st.columns([1.2, .8], gap="large")
-
-    with left:
-        with st.container(border=True):
-            topic = st.text_area(
-                "Video-Idee",
-                placeholder="Szene, Stimmung, Hook beschreiben…",
-                key="video_topic",
-                height=140,
-            )
-
-            platform = st.selectbox(
-                "Plattform",
-                ["TikTok", "Instagram Reels", "YouTube Shorts"],
-                key="video_platform",
-            )
-
-            category = st.selectbox(
-                "Video Kategorie",
-                ["Football Edit", "Luxury", "Meme", "Business", "Cinematic", "Storytelling"],
-                key="video_category",
-            )
-
-    with right:
-        with st.container(border=True):
-            style = st.selectbox(
-                "Video Style",
-                ["Fast Cut", "Aggressive", "Premium", "Dark", "Cinematic"],
-                key="video_style",
-            )
-
-            provider = st.selectbox("Provider später", ["Kling", "Runway"], key="video_provider")
-
-            audio = st.checkbox("Audio vorbereiten", value=True, key="video_audio")
-
-            st.info("Bereitet ein echtes Video-Paket vor. API-Anbindung kommt danach.")
-
-    if st.button("Reel Video vorbereiten", width="stretch", key="btn_reel_video", type="primary"):
-        if not topic:
-            st.warning("Bitte Video Idee eingeben.")
-            return
-
-        prompt = f"""
-Erstelle ein vollständiges AI Reel Video Paket.
-
-Thema:
-{topic}
-
-Länge:
-{seconds} Sekunden
-
-Plattform:
-{platform}
-
-Provider:
-{provider}
-
-Kategorie:
-{category}
-
-Style:
-{style}
-
-Audio:
-{audio}
-
-Erstelle exakt:
-
-# Final Video Prompt
-# Shot List
-# Camera Movement
-# Motion Direction
-# Voiceover
-# Caption
-# Hashtags
-# Thumbnail Text
-# Quality Checklist
-# Delivery Package
-"""
-
-        run_paid_ai("reel_video", prompt, cost, "mabyte_reel_video")
 
 
 def render_automation():
@@ -816,25 +613,15 @@ def render_media(active_tool="reels"):
     if active_tool == "image":
         workspace_header("Image Studio", "Bilder und Thumbnails generieren.")
         render_image_ai()
-        return
     elif active_tool == "music":
         render_music_ai()
-        inject_workspace_css()
-        return
     elif active_tool == "coding":
         render_coding_ai()
-        inject_workspace_css()
-        return
     elif active_tool == "video":
         st.session_state.creator_format = "Video"
         render_creator_studio()
-        return
     elif active_tool == "creator":
         render_creator_studio()
-        return
     else:
         st.session_state.creator_format = "Shorts"
         render_creator_studio()
-        return
-
-    inject_workspace_css()

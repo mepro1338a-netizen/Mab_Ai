@@ -1,0 +1,46 @@
+# Smaller Railway image — dev/archive/docs not needed at runtime
+.git
+.github
+.cursor
+__pycache__
+*.py[cod]
+*$py.class
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.venv
+venv
+env
+
+# Legacy / dead code (not imported)
+archive/
+tools/
+
+# Dev & test scripts
+test_logger.py
+db_debug.py
+backup_system.py
+backup_rotation.py
+chat_service.py
+
+# Docs (keep README in repo; not needed in container)
+*.md
+!README.md
+docs/
+DEPLOYMENT.md
+BETA_CHECKLIST.md
+BETA_READINESS.md
+KNOWN_ISSUES.md
+PROJECT_STRUCTURE.md
+ENV_SETUP.md
+
+# Local data
+data/
+*.db
+*.sqlite3
+.env
+.env.*
+
+# IDE
+.idea
+.vscode
