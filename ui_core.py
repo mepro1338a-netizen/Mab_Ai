@@ -81,15 +81,19 @@ body,
 }}
 
 .custom-topbar {{
+    display:block !important;
+    visibility:visible !important;
     position:fixed;
     top:0;
     left:0;
     right:0;
     height:76px;
+    min-height:76px;
     z-index:999999;
-    background:linear-gradient(90deg,rgba(9,8,24,.96),rgba(25,8,42,.96));
-    border-bottom:1px solid rgba(255,255,255,.07);
+    background:linear-gradient(90deg,rgba(9,8,24,.97),rgba(25,8,42,.97));
+    border-bottom:1px solid rgba(255,255,255,.08);
     backdrop-filter:blur(18px);
+    box-shadow:0 4px 24px rgba(0,0,0,.25);
 }}
 
 {slogan_css}

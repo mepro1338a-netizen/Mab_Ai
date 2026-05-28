@@ -1,12 +1,8 @@
 """Premium SaaS UI layer — Creator / Reels Studio."""
 
 PREMIUM_STUDIO_CSS = """
-/* Hide duplicate global slogan when Reels studio is active */
-.stApp:has(.rs-studio) .custom-topbar {
-    display: none !important;
-}
 .stApp:has(.rs-studio) section.main .block-container {
-    padding-top: 18px !important;
+    padding-top: 92px !important;
 }
 
 section.main .block-container {

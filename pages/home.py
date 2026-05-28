@@ -18,12 +18,6 @@ from ui.dashboard_ui import (
 )
 
 
-def _forward_chat(text: str) -> None:
-    st.session_state.chat_pending_prompt = text
-    st.session_state.page = "chat"
-    st.rerun()
-
-
 def render_home() -> None:
     if not st.session_state.get("logged_in"):
         st.session_state.page = "auth"
@@ -56,13 +50,11 @@ def render_home() -> None:
     )
     render_quick_actions()
 
-    st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
-
-    left, right = st.columns([1.35, 1], gap="medium")
-    with left:
+    col_ws, col_lim = st.columns([1.4, 1], gap="medium")
+    with col_ws:
         with st.container(border=True):
             render_workspace_matrix(plan)
-    with right:
+    with col_lim:
         with st.container(border=True):
             render_daily_limits(plan_key)
 
@@ -71,9 +63,9 @@ def render_home() -> None:
 
     jobs = successful_jobs_count(user)
     score = workspace_activity_score(user)
-    st.caption(f"Erfolgreiche Jobs: {format_num(jobs)} · Workspace-Score: {score}/100")
-
-    if st.button("AI Chat öffnen", key="home_open_chat", use_container_width=True):
-        nav("chat")
+    st.markdown(
+        f'<p class="mb-dash-foot">Erfolgreiche Jobs: {format_num(jobs)} · Workspace-Score: {score}/100</p>',
+        unsafe_allow_html=True,
+    )
 
     inject_dashboard_css()

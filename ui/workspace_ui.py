@@ -8,12 +8,9 @@ import streamlit as st
 from ui.styles import inject_css, page_layout_css
 
 WORKSPACE_CSS = """
-.stApp:has(.mb-workspace) .custom-topbar {
-    display: none !important;
-}
 .stApp:has(.mb-workspace) section.main .block-container {
     max-width: 920px !important;
-    padding-top: 18px !important;
+    padding-top: 92px !important;
     padding-bottom: 40px !important;
 }
 .stApp:has(.mb-workspace) section.main div[data-testid="stVerticalBlockBorderWrapper"] {
@@ -63,7 +60,7 @@ WORKSPACE_CSS = """
 
 
 def inject_workspace_css() -> None:
-    inject_css(page_layout_css(920, 18, 40) + WORKSPACE_CSS)
+    inject_css(page_layout_css(920, 92, 40) + WORKSPACE_CSS)
 
 
 def workspace_marker() -> None:
