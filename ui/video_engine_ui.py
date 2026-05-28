@@ -29,7 +29,7 @@ from services.social_oauth import SOCIAL_PLATFORMS
 from services.social_publish import SocialPublishService
 from services.video_automation import create_automation_rule
 from ui.social_connections_ui import render_connected_accounts
-from ui.styles import inject_css, page_layout_css
+from ui.styles import inject_css
 
 PLATFORM_LABELS = {
     "tiktok": "TikTok",
@@ -38,9 +38,10 @@ PLATFORM_LABELS = {
 }
 
 STUDIO_CSS = """
-section.main .block-container {
-    padding-top: 4px !important;
+.stApp:has(.ve-studio) section.main .block-container {
+    padding-top: 92px !important;
     max-width: 900px !important;
+    padding-bottom: 32px !important;
 }
 .ve-head {
     display: flex; flex-wrap: wrap; justify-content: space-between;
@@ -107,7 +108,7 @@ section.main .block-container {
 
 
 def inject_studio_css() -> None:
-    inject_css(page_layout_css(900, 4, 24) + STUDIO_CSS)
+    inject_css(STUDIO_CSS)
 
 
 def _status_badge(status: str) -> str:
@@ -175,6 +176,8 @@ def render_video_engine_studio(
     min_dur = 3 if mode == "reel" else 8
     default_dur = 5 if mode == "reel" else 15
 
+    st.markdown('<div class="ve-studio">', unsafe_allow_html=True)
+
     st.markdown(
         f"""
 <div class="ve-head">
@@ -239,6 +242,8 @@ def render_video_engine_studio(
         _safe_tab("Bibliothek", _tab_library, username, studio_type)
     with tabs[2]:
         _safe_tab("Veröffentlichen", _tab_publish_hub, username, user, plan)
+
+    st.markdown("</div>", unsafe_allow_html=True)
 
 
 def _tab_create(

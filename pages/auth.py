@@ -20,7 +20,8 @@ from oauth_service import (
     verify_state,
 )
 from ui_core import WORDMARK, img_base64, sync_session_user
-from ui.styles import MB_THEME_VARS, inject_css
+from ui.b2b_theme import AUTH_EXTRA_VARS, MB_APP_BACKGROUND, MB_THEME_VARS, streamlit_force_dark_css
+from ui.styles import inject_css
 
 
 def refresh_captcha() -> None:
@@ -235,7 +236,11 @@ def handle_oauth_callback() -> bool:
 
 
 def auth_css() -> None:
-    inject_css(MB_THEME_VARS + """
+    inject_css(
+        MB_THEME_VARS
+        + AUTH_EXTRA_VARS
+        + streamlit_force_dark_css()
+        + """
 .custom-topbar,
 #MainMenu, header, footer,
 [data-testid="stToolbar"],
@@ -245,15 +250,15 @@ def auth_css() -> None:
 }
 
 .stApp, [data-testid="stAppViewContainer"] {
-    background:
-        radial-gradient(circle at 20% 0%, rgba(168,85,247,.16), transparent 34%),
-        radial-gradient(circle at 80% 10%, rgba(96,165,250,.10), transparent 32%),
-        linear-gradient(180deg, #050816 0%, #070b1a 55%, #050711 100%) !important;
+    background: """
+        + MB_APP_BACKGROUND
+        + """ !important;
 }
 
 section.main .block-container {
-    max-width: 920px !important;
-    padding: 32px 20px 48px 20px !important;
+    max-width: 1040px !important;
+    padding: 48px 24px 56px 24px !important;
+    min-height: 100vh !important;
 }
 
 section.main [data-testid="stVerticalBlock"] {
@@ -271,29 +276,28 @@ section.main [data-testid="stHorizontalBlock"] {
 }
 
 .mb-auth-logo img {
-    max-width: 168px;
+    max-width: 156px;
     display: block;
-    margin-bottom: 14px;
-    filter: drop-shadow(0 8px 24px rgba(168,85,247,.22));
+    margin-bottom: 18px;
 }
 
 .mb-auth-logo-fallback {
     width: 48px;
     height: 48px;
-    border-radius: 14px;
+    border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, var(--mb-violet), #2563eb);
-    color: var(--mb-gold);
+    background: #27272a;
+    border: 1px solid #3f3f46;
+    color: #fafafa;
     font-size: 22px;
-    font-weight: 900;
-    margin-bottom: 14px;
-    box-shadow: 0 0 28px rgba(168,85,247,.30);
+    font-weight: 800;
+    margin-bottom: 18px;
 }
 
 .mb-auth-kicker {
-    color: var(--mb-purple) !important;
+    color: #71717a !important;
     font-size: 10px;
     font-weight: 800;
     letter-spacing: .20em;
@@ -302,17 +306,17 @@ section.main [data-testid="stHorizontalBlock"] {
 }
 
 .mb-auth-headline {
-    font-size: clamp(26px, 2.8vw, 36px);
-    line-height: 1.08;
-    font-weight: 900;
-    letter-spacing: -1px;
-    margin: 0 0 10px 0;
+    font-size: clamp(28px, 3vw, 38px);
+    line-height: 1.1;
+    font-weight: 800;
+    letter-spacing: -.04em;
+    margin: 0 0 12px 0;
+    color: #fafafa !important;
 }
 
 .mb-auth-headline span {
-    background: linear-gradient(135deg, var(--mb-gold) 0%, #e9d5ff 50%, var(--mb-blue) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    color: #fafafa !important;
+    -webkit-text-fill-color: #fafafa !important;
 }
 
 .mb-auth-desc {
@@ -324,19 +328,20 @@ section.main [data-testid="stHorizontalBlock"] {
 }
 
 .mb-auth-highlight {
-    color: #e2e8f0 !important;
+    color: #d4d4d8 !important;
     font-size: 13px;
     line-height: 1.55;
-    font-weight: 600;
-    margin: 0 0 16px 0;
-    padding: 12px 14px;
-    border-radius: 14px;
-    background: rgba(168,85,247,.10);
-    border: 1px solid rgba(168,85,247,.18);
+    font-weight: 500;
+    margin: 0 0 18px 0;
+    padding: 14px 16px;
+    border-radius: 12px;
+    background: #27272a;
+    border: 1px solid #3f3f46;
 }
 
 .mb-auth-highlight strong {
-    color: var(--mb-gold) !important;
+    color: #fafafa !important;
+    font-weight: 700;
 }
 
 .mb-auth-bullets {
@@ -348,9 +353,9 @@ section.main [data-testid="stHorizontalBlock"] {
 }
 
 .mb-auth-bullets li {
-    color: #cbd5e1 !important;
+    color: #a1a1aa !important;
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 500;
     padding-left: 18px;
     position: relative;
 }
@@ -359,12 +364,11 @@ section.main [data-testid="stHorizontalBlock"] {
     content: "";
     position: absolute;
     left: 0;
-    top: 7px;
-    width: 7px;
-    height: 7px;
+    top: 8px;
+    width: 6px;
+    height: 6px;
     border-radius: 999px;
-    background: linear-gradient(135deg, var(--mb-gold), var(--mb-purple));
-    box-shadow: 0 0 8px rgba(168,85,247,.45);
+    background: #7c3aed;
 }
 
 /* ── Login card (rechts) ── */
@@ -372,15 +376,11 @@ section.main div[data-testid="stVerticalBlockBorderWrapper"] {
     width: 100% !important;
     max-width: 100% !important;
     margin: 0 !important;
-    background:
-        radial-gradient(circle at top right, rgba(168,85,247,.12), transparent 42%),
-        linear-gradient(165deg, rgba(14,10,32,.98), rgba(6,7,18,.99)) !important;
-    border: 1px solid var(--mb-line) !important;
-    border-radius: 22px !important;
-    padding: 22px 20px 16px 20px !important;
-    box-shadow:
-        0 20px 50px rgba(0,0,0,.35),
-        inset 0 1px 0 rgba(255,255,255,.04) !important;
+    background: #18181b !important;
+    border: 1px solid #3f3f46 !important;
+    border-radius: 16px !important;
+    padding: 28px 26px 22px 26px !important;
+    box-shadow: 0 24px 48px rgba(0, 0, 0, .45) !important;
 }
 
 .mb-auth-card-top {
@@ -426,27 +426,27 @@ section.main div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stHor
 
 section.main div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stHorizontalBlock"]:first-of-type button[kind="secondary"],
 section.main div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stHorizontalBlock"]:first-of-type button[data-testid="stBaseButton-secondary"] {
-    background: rgba(168, 85, 247, .08) !important;
-    background-color: rgba(168, 85, 247, .08) !important;
-    border: 1px solid rgba(168, 85, 247, .24) !important;
-    color: #94a3b8 !important;
+    background: #27272a !important;
+    background-color: #27272a !important;
+    border: 1px solid #3f3f46 !important;
+    color: #a1a1aa !important;
 }
 
 section.main div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stHorizontalBlock"]:first-of-type button[kind="primary"],
 section.main div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stHorizontalBlock"]:first-of-type button[data-testid="stBaseButton-primary"] {
-    background: linear-gradient(135deg, #9333ea 0%, #7c3aed 50%, #2563eb 100%) !important;
+    background: #7c3aed !important;
     background-color: #7c3aed !important;
-    border: 1px solid rgba(168, 85, 247, .40) !important;
+    border: 1px solid #6d28d9 !important;
     color: #ffffff !important;
-    box-shadow: 0 6px 20px rgba(124, 58, 237, .28) !important;
+    box-shadow: none !important;
 }
 
 section.main div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stHorizontalBlock"]:first-of-type button[kind="tertiary"],
 section.main div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stHorizontalBlock"]:first-of-type button[data-testid="stBaseButton-tertiary"] {
-    background: rgba(168, 85, 247, .08) !important;
-    background-color: rgba(168, 85, 247, .08) !important;
-    border: 1px solid rgba(168, 85, 247, .24) !important;
-    color: #94a3b8 !important;
+    background: #27272a !important;
+    background-color: #27272a !important;
+    border: 1px solid #3f3f46 !important;
+    color: #a1a1aa !important;
 }
 
 /* Primary — Einloggen / Account erstellen */
@@ -459,23 +459,21 @@ section.main div[data-testid="stVerticalBlockBorderWrapper"] form button[data-te
     min-height: 46px !important;
     border-radius: 13px !important;
     border: 1px solid rgba(168, 85, 247, .40) !important;
-    background: linear-gradient(135deg, #9333ea 0%, #7c3aed 45%, #2563eb 100%) !important;
+    background: #7c3aed !important;
     background-color: #7c3aed !important;
     color: #ffffff !important;
-    font-weight: 900 !important;
+    font-weight: 700 !important;
     font-size: 14px !important;
-    box-shadow: 0 10px 28px rgba(124, 58, 237, .32) !important;
+    box-shadow: none !important;
     margin-top: 6px !important;
 }
 
 section.main div[data-testid="stVerticalBlockBorderWrapper"] .stFormSubmitButton > button:hover,
 section.main div[data-testid="stVerticalBlockBorderWrapper"] .stFormSubmitButton button:hover,
 section.main div[data-testid="stVerticalBlockBorderWrapper"] form button[kind="primaryFormSubmit"]:hover {
-    background: linear-gradient(135deg, #a855f7 0%, #8b5cf6 45%, #3b82f6 100%) !important;
-    background-color: #8b5cf6 !important;
+    background: #6d28d9 !important;
+    background-color: #6d28d9 !important;
     color: #ffffff !important;
-    transform: translateY(-1px) !important;
-    box-shadow: 0 12px 32px rgba(124, 58, 237, .38) !important;
 }
 
 section.main div[data-testid="stVerticalBlockBorderWrapper"] .stFormSubmitButton > button p,
@@ -515,9 +513,9 @@ section.main div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stNum
 
 section.main div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stTextInput"] div[data-baseweb="input"],
 section.main div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stNumberInput"] div[data-baseweb="input"] {
-    background: rgba(6, 10, 24, .96) !important;
-    background-color: rgba(6, 10, 24, .96) !important;
-    border: 1px solid rgba(168, 85, 247, .38) !important;
+    background: #27272a !important;
+    background-color: #27272a !important;
+    border: 1px solid #3f3f46 !important;
     border-radius: 12px !important;
     min-height: 42px !important;
     overflow: hidden !important;
@@ -540,8 +538,8 @@ section.main div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stNum
 
 section.main div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stTextInput"] div[data-baseweb="input"]:focus-within,
 section.main div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stNumberInput"] div[data-baseweb="input"]:focus-within {
-    border-color: rgba(168, 85, 247, .60) !important;
-    box-shadow: 0 0 0 2px rgba(168, 85, 247, .16) !important;
+    border-color: #7c3aed !important;
+    box-shadow: 0 0 0 2px rgba(124, 58, 237, .22) !important;
 }
 
 section.main div[data-testid="stVerticalBlockBorderWrapper"] [data-testid="stTextInput"] input::placeholder {
@@ -717,8 +715,8 @@ section.main div[data-testid="stVerticalBlockBorderWrapper"] .stNumberInput inpu
 
 section.main div[data-testid="stVerticalBlockBorderWrapper"] .stTextInput div[data-baseweb="input"],
 section.main div[data-testid="stVerticalBlockBorderWrapper"] .stNumberInput div[data-baseweb="input"] {
-    border: 1px solid rgba(168, 85, 247, .38) !important;
-    background: rgba(6, 10, 24, .96) !important;
+    border: 1px solid #3f3f46 !important;
+    background: #27272a !important;
     box-shadow: none !important;
 }
 """
@@ -737,22 +735,21 @@ def brand_panel_html() -> str:
     return f"""
 <div class="mb-auth-brand">
     {logo}
-    <p class="mb-auth-kicker">{html.escape(APP_NAME)} · Creator Operating System</p>
+    <p class="mb-auth-kicker">Enterprise-ready · {html.escape(APP_NAME)}</p>
     <h1 class="mb-auth-headline"><span>{tagline}</span></h1>
     <p class="mb-auth-desc">
-        Baue deine eigenen AI-Videos &amp; Reels, automatisiere deinen Content
-        und skaliere deine Creator-Workflows — alles in einem System.
+        Die B2B-Plattform für Creator-Teams: Video, Bild, Chat und Automation
+        in einer konsistenten Oberfläche — ohne Tool-Chaos.
     </p>
     <p class="mb-auth-highlight">
-        <strong>Deine Idee → AI Video → Reel → Automation.</strong>
-        MaByte macht aus Prompts fertige Shorts und lässt deine Workflows
-        im Hintergrund laufen.
+        <strong>Ein Login. Alle Workspaces.</strong>
+        Token-basiertes Billing, klare Limits, produktionsreife Workflows.
     </p>
     <ul class="mb-auth-bullets">
-        <li>Eigene Reels &amp; Short-Videos mit AI erstellen</li>
-        <li>Video-Studio für schnelle, professionelle Clips</li>
-        <li>Automationen die posten, planen &amp; skalieren</li>
-        <li>Chat, Coding &amp; Content — vereint in MaByte</li>
+        <li>Shorts &amp; Reels mit AI-Rendering</li>
+        <li>Image Studio &amp; Content-Pipelines</li>
+        <li>Football AI &amp; Premium Add-ons</li>
+        <li>DSGVO-konforme Session &amp; OAuth-Anbindung</li>
     </ul>
 </div>
 """
@@ -881,7 +878,7 @@ def render_login_form() -> None:
 
 
 def render_register_form() -> None:
-    card_intro("Account erstellen", "Kostenlos starten — jederzeit upgraden.")
+    card_intro("Registrieren", "Workspace in unter einer Minute anlegen.")
 
     with st.form("register_form", clear_on_submit=False, border=False):
         user = st.text_input("Username", placeholder="z.B. creator123")

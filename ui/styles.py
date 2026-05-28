@@ -6,25 +6,7 @@ import streamlit as st
 # Scope page-specific button CSS here so the sidebar stays identical on every route.
 MAIN_CONTENT_SCOPE = "section.main"
 
-MB_THEME_VARS = """
-:root {
-    --mb-gold: #ffe7a3;
-    --mb-soft: #f8e7b0;
-    --mb-purple: #a855f7;
-    --mb-violet: #7c3aed;
-    --mb-blue: #60a5fa;
-    --mb-muted: #94a3b8;
-    --mb-line: rgba(255, 255, 255, .09);
-    --mb-auth-line: rgba(168, 85, 247, .20);
-    --mb-surface: rgba(12, 10, 28, .94);
-}
-"""
-
-AUTH_EXTRA_VARS = """
-:root {
-    --mb-auth-surface: rgba(12, 10, 28, .94);
-}
-"""
+from ui.b2b_theme import AUTH_EXTRA_VARS, MB_THEME_VARS  # noqa: F401 — re-export
 
 
 def inject_css(css: str) -> None:
@@ -55,7 +37,7 @@ def gradient_title_css(class_name: str = "mb-title") -> str:
     font-weight: 1000;
     letter-spacing: -3px;
     margin-top: 10px;
-    background: linear-gradient(135deg, #ffe7a3, #c084fc, #60a5fa);
+    background: linear-gradient(135deg, #fafafa, #a78bfa, #60a5fa);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }}

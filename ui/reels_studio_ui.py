@@ -213,7 +213,7 @@ div[data-testid="stToggle"] label p { color: #e2e8f0 !important; }
 
 def inject_reels_css() -> None:
     """Inject last so Creator Studio overrides global gray buttons."""
-    inject_css(page_layout_css(1040, 8, 32) + PREMIUM_STUDIO_CSS + REELS_CSS)
+    inject_css(page_layout_css(1040, 92, 32) + PREMIUM_STUDIO_CSS + REELS_CSS)
 
 
 _VALID_DURATIONS = frozenset({3, 5, 7})

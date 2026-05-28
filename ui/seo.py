@@ -26,7 +26,7 @@ def inject_seo_meta() -> None:
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="{html.escape(title)}" />
 <meta name="twitter:description" content="{html.escape(desc)}" />
-<meta name="theme-color" content="#050816" />
+<meta name="theme-color" content="#09090b" />
         """,
         unsafe_allow_html=True,
     )

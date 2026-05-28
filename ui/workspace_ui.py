@@ -14,8 +14,8 @@ WORKSPACE_CSS = """
     padding-bottom: 40px !important;
 }
 .stApp:has(.mb-workspace) section.main div[data-testid="stVerticalBlockBorderWrapper"] {
-    background: rgba(10, 12, 24, .4) !important;
-    border: 1px solid rgba(255, 255, 255, .07) !important;
+    background: #18181b !important;
+    border: 1px solid #3f3f46 !important;
     border-radius: 16px !important;
     box-shadow: none !important;
     backdrop-filter: blur(10px);
@@ -23,9 +23,9 @@ WORKSPACE_CSS = """
 .stApp:has(.mb-workspace) .stTextInput input,
 .stApp:has(.mb-workspace) .stTextArea textarea,
 .stApp:has(.mb-workspace) div[data-baseweb="select"] > div {
-    background: rgba(8, 10, 22, .7) !important;
-    color: #f1f5f9 !important;
-    border-color: rgba(255, 255, 255, .1) !important;
+    background: #27272a !important;
+    color: #fafafa !important;
+    border-color: #3f3f46 !important;
     border-radius: 12px !important;
 }
 .stApp:has(.mb-workspace) label[data-testid="stWidgetLabel"] p,

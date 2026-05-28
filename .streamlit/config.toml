@@ -19,3 +19,15 @@ fastReruns = true
 
 [logger]
 level = "info"
+
+[theme]
+base = "dark"
+primaryColor = "#7c3aed"
+backgroundColor = "#09090b"
+secondaryBackgroundColor = "#18181b"
+textColor = "#fafafa"
+
+[theme.sidebar]
+backgroundColor = "#18181b"
+secondaryBackgroundColor = "#27272a"
+textColor = "#e4e4e7"

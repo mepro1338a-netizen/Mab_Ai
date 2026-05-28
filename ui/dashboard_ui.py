@@ -21,8 +21,8 @@ DASHBOARD_CSS = f"""
     gap: 12px !important;
 }}
 .stApp:has(.mb-dash) section.main div[data-testid="stVerticalBlockBorderWrapper"] {{
-    background: rgba(10, 12, 24, .45) !important;
-    border: 1px solid rgba(255, 255, 255, .08) !important;
+    background: #18181b !important;
+    border: 1px solid #3f3f46 !important;
     border-radius: 16px !important;
     box-shadow: 0 8px 32px rgba(0, 0, 0, .12) !important;
     backdrop-filter: blur(12px);
@@ -67,10 +67,10 @@ DASHBOARD_CSS = f"""
     .mb-dash-stats {{ grid-template-columns: repeat(2, 1fr); }}
 }}
 .mb-dash-stat {{
-    border-radius: 14px;
+    border-radius: 12px;
     padding: 12px 14px;
-    background: rgba(10, 12, 24, .55);
-    border: 1px solid rgba(255, 255, 255, .08);
+    background: #18181b;
+    border: 1px solid #3f3f46;
 }}
 .mb-dash-stat .lbl {{
     color: rgba(148, 163, 184, .9) !important;

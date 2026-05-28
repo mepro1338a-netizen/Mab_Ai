@@ -22,13 +22,13 @@ DEFAULT_PRESET: dict[str, str] = {
 }
 
 IMAGE_STUDIO_CSS = """
-section.main .block-container {
-    padding-top: 4px !important;
-    padding-bottom: 20px !important;
+.stApp:has(.img-studio) section.main .block-container {
+    padding-top: 92px !important;
+    padding-bottom: 32px !important;
     max-width: 720px !important;
 }
-section.main .block-container > div {
-    gap: 0.2rem !important;
+.stApp:has(.img-studio) section.main .block-container > div {
+    gap: 0.35rem !important;
 }
 .img-studio { margin: 0; }
 .img-head {
@@ -39,19 +39,19 @@ section.main .block-container > div {
     margin-bottom: 10px;
 }
 .img-head-title {
-    color: #ffffff !important;
-    font-size: 20px;
+    color: #fafafa !important;
+    font-size: 22px;
     font-weight: 800;
-    letter-spacing: -.3px;
+    letter-spacing: -.35px;
 }
 .img-head-meta {
-    color: #94a3b8 !important;
+    color: #a1a1aa !important;
     font-size: 12px;
     font-weight: 600;
 }
-.img-head-meta strong { color: #ffffff !important; }
+.img-head-meta strong { color: #e4e4e7 !important; }
 .img-prompt-label {
-    color: #c4b5fd !important;
+    color: #a1a1aa !important;
     font-size: 11px;
     font-weight: 800;
     letter-spacing: .14em;
@@ -66,26 +66,17 @@ section.main .block-container > div {
 .st-key-image_prompt [data-testid="stTextArea"] > div,
 .st-key-image_prompt [data-testid="stTextArea"] div[data-baseweb="textarea"],
 .st-key-image_prompt [data-testid="stTextArea"] div[data-baseweb="base-input"] {
-    background:
-        radial-gradient(circle at 10% 0%, rgba(216,180,254,.32), transparent 46%),
-        radial-gradient(circle at 92% 100%, rgba(96,165,250,.14), transparent 42%),
-        linear-gradient(145deg, rgba(88,28,135,.98), rgba(49,16,78,.99)) !important;
-    background-color: transparent !important;
-    border: 1px solid rgba(192,132,252,.55) !important;
-    border-radius: 20px !important;
-    box-shadow:
-        0 0 44px rgba(168,85,247,.28),
-        0 14px 36px rgba(0,0,0,.32),
-        inset 0 1px 0 rgba(255,255,255,.08) !important;
+    background: #27272a !important;
+    background-color: #27272a !important;
+    border: 1px solid #3f3f46 !important;
+    border-radius: 14px !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04) !important;
     overflow: hidden !important;
 }
 .st-key-image_prompt [data-testid="stTextArea"] div[data-baseweb="textarea"]:focus-within,
 .st-key-image_prompt [data-testid="stTextArea"] div[data-baseweb="base-input"]:focus-within {
-    border-color: rgba(233,213,255,.7) !important;
-    box-shadow:
-        0 0 0 3px rgba(168,85,247,.22),
-        0 0 52px rgba(168,85,247,.35),
-        inset 0 1px 0 rgba(255,255,255,.1) !important;
+    border-color: #7c3aed !important;
+    box-shadow: 0 0 0 2px rgba(124, 58, 237, .25) !important;
 }
 .st-key-image_prompt textarea {
     background: transparent !important;
@@ -98,7 +89,7 @@ section.main .block-container > div {
     font-size: 16px !important;
     font-weight: 600 !important;
     line-height: 1.5 !important;
-    caret-color: #e9d5ff !important;
+    caret-color: #a78bfa !important;
     padding: 16px 18px !important;
     min-height: 92px !important;
 }
@@ -112,19 +103,18 @@ section.main .block-container > div {
     box-shadow: none !important;
 }
 .st-key-btn_image .stButton > button {
-    min-height: 50px !important;
-    border-radius: 16px !important;
-    font-weight: 800 !important;
-    font-size: 15px !important;
-    background: linear-gradient(135deg, #7c3aed, #a855f7 55%, #c084fc) !important;
-    border: 1px solid rgba(255,255,255,.14) !important;
+    min-height: 48px !important;
+    border-radius: 12px !important;
+    font-weight: 700 !important;
+    font-size: 14px !important;
+    background: #7c3aed !important;
+    border: 1px solid #6d28d9 !important;
     color: #ffffff !important;
-    box-shadow: 0 0 28px rgba(168,85,247,.4), 0 10px 24px rgba(0,0,0,.25) !important;
+    box-shadow: none !important;
 }
 .st-key-btn_image .stButton > button:hover {
-    border-color: rgba(255,255,255,.22) !important;
-    box-shadow: 0 0 40px rgba(192,132,252,.55), 0 12px 28px rgba(0,0,0,.3) !important;
-    transform: translateY(-1px);
+    background: #6d28d9 !important;
+    border-color: #5b21b6 !important;
 }
 .img-studio label,
 .img-studio .stCheckbox label,
@@ -159,7 +149,7 @@ section.main .block-container > div {
 
 
 def inject_image_studio_css() -> None:
-    inject_css(page_layout_css(720, 4, 24) + IMAGE_STUDIO_CSS)
+    inject_css(IMAGE_STUDIO_CSS)
 
 
 def _image_prompt_field(*, placeholder: str, height: int = 100) -> str:

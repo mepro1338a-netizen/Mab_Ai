@@ -41,15 +41,20 @@ def sidebar_master_css() -> str:
     """Premium SaaS sidebar — single source of truth."""
     return """
 section[data-testid="stSidebar"] {
-    min-width: 15rem !important;
-    width: 15rem !important;
-    background:
-        linear-gradient(180deg, rgba(8, 10, 20, .98) 0%, rgba(6, 6, 14, .99) 100%) !important;
-    border-right: 1px solid rgba(255, 255, 255, .06) !important;
-    box-shadow: 4px 0 40px rgba(0, 0, 0, .35) !important;
+    min-width: 15.5rem !important;
+    width: 15.5rem !important;
+    background: #18181b !important;
+    background-color: #18181b !important;
+    border-right: 1px solid #3f3f46 !important;
+    box-shadow: 1px 0 0 rgba(0, 0, 0, .4) !important;
 }
 section[data-testid="stSidebar"] > div {
-    padding: 10px 10px 16px 10px !important;
+    padding: 12px 10px 20px 10px !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+}
+section[data-testid="stSidebar"] [data-testid="stSidebarContent"] {
+    padding-top: 4px !important;
 }
 section[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
     gap: 2px !important;
@@ -85,15 +90,19 @@ section[data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"] {
 }
 
 .mb-section-label {
-    margin: 10px 0 6px 10px;
-    color: rgba(100, 116, 139, .95) !important;
+    margin: 12px 0 6px 10px;
+    color: #71717a !important;
     font-size: 10px;
     font-weight: 700;
     letter-spacing: .14em;
     text-transform: uppercase;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .mb-nav-section:first-of-type .mb-section-label {
-    margin-top: 4px;
+    margin-top: 8px;
 }
 
 .mb-nav-item {

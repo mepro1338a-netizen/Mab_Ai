@@ -11,7 +11,7 @@ from ui.styles import MB_THEME_VARS, inject_css, page_layout_css
 
 BETA_GLOBAL_CSS = """
 div[data-testid="stAppViewContainer"] > section > div {
-    background: transparent !important;
+    background: #09090b !important;
 }
 div[data-testid="stVerticalBlockBorderWrapper"] > div {
     background: transparent !important;

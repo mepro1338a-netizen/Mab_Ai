@@ -39,20 +39,20 @@ html, body, .stApp {
 /* ---- Scrollbars ---- */
 * {
     scrollbar-width: thin;
-    scrollbar-color: rgba(168,85,247,.45) rgba(8,10,22,.6);
+    scrollbar-color: #52525b #18181b;
 }
 *::-webkit-scrollbar { width: 8px; height: 8px; }
 *::-webkit-scrollbar-thumb {
-    background: rgba(124,58,237,.55);
+    background: #52525b;
     border-radius: 8px;
 }
-*::-webkit-scrollbar-track { background: rgba(8,10,22,.5); }
+*::-webkit-scrollbar-track { background: #18181b; }
 
 /* ---- Forms ---- */
 .stTextInput input, .stTextArea textarea, .stNumberInput input {
-    background: rgba(15,23,42,.94) !important;
-    color: var(--mb-gold) !important;
-    border-radius: 14px !important;
+    background: #27272a !important;
+    color: #fafafa !important;
+    border-radius: 12px !important;
 }
 .stTextInput input:focus, .stTextArea textarea:focus {
     border-color: rgba(168,85,247,.55) !important;

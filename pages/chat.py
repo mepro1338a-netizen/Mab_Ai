@@ -44,20 +44,20 @@ def ensure_messages() -> None:
 
 
 def load_chat_css() -> None:
-    inject_css(page_layout_css(980, 24, 130) + """
+    inject_css(page_layout_css(980, 92, 130) + """
 [data-testid="stChatMessage"] {
-    background: linear-gradient(145deg, rgba(18,14,34,.84), rgba(8,6,18,.98)) !important;
-    border: 1px solid rgba(255,255,255,.08) !important;
-    border-radius: 22px !important;
+    background: #18181b !important;
+    border: 1px solid #3f3f46 !important;
+    border-radius: 14px !important;
     padding: 15px !important;
     margin-bottom: 12px !important;
 }
-[data-testid="stChatMessage"] * { color: #f8fafc !important; }
+[data-testid="stChatMessage"] * { color: #f4f4f5 !important; }
 div[data-testid="stAlert"] {
-    background: linear-gradient(145deg, rgba(12,10,30,.88), rgba(7,6,18,.98)) !important;
-    border: 1px solid rgba(168,85,247,.24) !important;
-    border-radius: 22px !important;
-    color: #ffe7a3 !important;
+    background: #18181b !important;
+    border: 1px solid #3f3f46 !important;
+    border-radius: 14px !important;
+    color: #e4e4e7 !important;
 }
 """)
 

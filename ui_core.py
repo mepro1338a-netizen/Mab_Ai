@@ -4,6 +4,7 @@ from pathlib import Path
 import streamlit as st
 
 from ui.app_shell import inject_global_ui
+from ui.b2b_theme import MB_APP_BACKGROUND
 
 
 ASSET_DIR = Path("assets")
@@ -78,12 +79,12 @@ html, body, .stApp, .main,
 {slogan_css}
 
 h1, h2, h3, h4, h5, h6 {{
-    color: var(--mb-gold) !important;
+    color: #fafafa !important;
     font-weight: 800 !important;
 }}
 
 label, .stMarkdown, .stText, .stCaption {{
-    color: var(--mb-soft) !important;
+    color: #e4e4e7 !important;
 }}
 
 /* Flat panels — no default Streamlit card chrome */
@@ -97,16 +98,16 @@ div[data-testid="stVerticalBlockBorderWrapper"] {{
 
 .stTextInput input, .stTextArea textarea, .stNumberInput input,
 .stDateInput input, .stTimeInput input {{
-    background: rgba(8,10,22,.7) !important;
-    color: #f8fafc !important;
-    border: 1px solid rgba(255,255,255,.10) !important;
+    background: #27272a !important;
+    color: #fafafa !important;
+    border: 1px solid #3f3f46 !important;
     border-radius: var(--mb-radius-md) !important;
     min-height: 42px !important;
 }}
 
 div[data-baseweb="textarea"], div[data-baseweb="input"] {{
-    background: rgba(8,10,22,.55) !important;
-    border: 1px solid rgba(255,255,255,.10) !important;
+    background: #27272a !important;
+    border: 1px solid #3f3f46 !important;
     border-radius: var(--mb-radius-md) !important;
 }}
 

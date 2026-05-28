@@ -606,16 +606,18 @@ def render_reels_studio():
 
 def render_media(active_tool="reels"):
     ensure_logged_in()
-    workspace_marker()
-    inject_workspace_css()
-    media_css()
 
     if active_tool == "image":
-        workspace_header("Image Studio", "Bilder und Thumbnails generieren.")
+        workspace_marker()
+        inject_workspace_css()
         render_image_ai()
     elif active_tool == "music":
+        workspace_marker()
+        inject_workspace_css()
         render_music_ai()
     elif active_tool == "coding":
+        workspace_marker()
+        inject_workspace_css()
         render_coding_ai()
     elif active_tool == "video":
         st.session_state.creator_format = "Video"
