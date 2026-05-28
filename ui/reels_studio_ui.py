@@ -53,30 +53,59 @@ section.main .block-container {
     max-width: 960px !important;
     padding-bottom: 48px !important;
 }
-.rs-header {
-    padding: 22px 24px;
-    border-radius: 22px;
-    margin-bottom: 18px;
+.rs-hero {
+    text-align: center;
+    padding: 6px 0 14px 0;
+}
+.rs-hero-title {
+    font-size: 44px;
+    line-height: 1.05;
+    font-weight: 1000;
+    letter-spacing: -1.6px;
+    margin: 10px 0 8px 0;
+    background: linear-gradient(135deg, rgba(255,231,163,.95), rgba(192,132,252,.96), rgba(96,165,250,.95));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.rs-hero-sub {
+    color: rgba(148,163,184,.92) !important;
+    font-size: 13px;
+    margin: 0;
+}
+.rs-top-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin: 14px 0 14px 0;
+}
+.rs-stat {
+    border-radius: 18px;
+    padding: 14px 16px;
     background:
-        radial-gradient(ellipse 90% 70% at 10% 0%, rgba(124,58,237,.35), transparent 55%),
-        radial-gradient(ellipse 60% 50% at 100% 100%, rgba(37,99,235,.2), transparent 50%),
-        linear-gradient(155deg, rgba(18,10,32,.98), rgba(8,6,18,.99));
-    border: 1px solid rgba(168,85,247,.22);
-    box-shadow: 0 20px 60px rgba(0,0,0,.35), 0 0 80px rgba(124,58,237,.08);
+        radial-gradient(circle at 20% 0%, rgba(168,85,247,.14), transparent 40%),
+        linear-gradient(180deg, rgba(12,18,38,.76), rgba(8,10,22,.90));
+    border: 1px solid rgba(255,255,255,.08);
+    box-shadow: 0 0 30px rgba(124,58,237,.08);
 }
-.rs-title { color: #fff !important; font-size: 26px; font-weight: 900; letter-spacing: -.02em; margin: 0; }
-.rs-sub { color: #94a3b8 !important; font-size: 14px; margin: 8px 0 0 0; line-height: 1.5; }
-.rs-badges { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
-.rs-pill {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 7px 14px; border-radius: 999px; font-size: 12px; font-weight: 700;
-    background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
-    color: #e2e8f0 !important;
+.rs-stat-k { color: rgba(148,163,184,.9) !important; font-size: 10px; font-weight: 900; letter-spacing: .18em; text-transform: uppercase; }
+.rs-stat-v { margin-top: 8px; color: #ffffff !important; font-weight: 1000; font-size: 18px; }
+.rs-stat-s { margin-top: 4px; color: rgba(148,163,184,.9) !important; font-size: 11px; }
+.rs-workflow {
+    margin-top: 8px;
+    padding: 12px 12px;
+    border-radius: 18px;
+    background: rgba(8,10,20,.45);
+    border: 1px solid rgba(255,255,255,.07);
+    backdrop-filter: blur(14px);
 }
-.rs-pill.tokens { border-color: rgba(168,85,247,.4); color: #e9d5ff !important; }
-.rs-pill.plan { border-color: rgba(59,130,246,.35); color: #93c5fd !important; }
-.rs-pill.ok { border-color: rgba(34,197,94,.35); color: #86efac !important; }
-.rs-pill.warn { border-color: rgba(251,191,36,.35); color: #fcd34d !important; }
+.rs-workflow-label {
+    color: rgba(148,163,184,.9) !important;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    margin: 2px 0 10px 2px;
+}
 .rs-stepper {
     display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 20px 0;
     padding: 10px; border-radius: 16px;
@@ -98,19 +127,44 @@ section.main .block-container {
     color: #c4b5fd !important; font-size: 11px; font-weight: 800;
     letter-spacing: .16em; text-transform: uppercase; margin: 18px 0 10px 2px;
 }
-.rs-card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-bottom: 14px; }
-.rs-card {
-    padding: 14px; border-radius: 16px; cursor: default;
-    background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
-    transition: border-color .15s, box-shadow .15s;
+.rs-card-btn button {
+    position: relative;
+    min-height: 86px !important;
+    padding: 14px 14px 12px 14px !important;
+    border-radius: 18px !important;
+    text-align: left !important;
+    background:
+        radial-gradient(circle at 30% 10%, rgba(168,85,247,.12), transparent 38%),
+        linear-gradient(180deg, rgba(12,18,38,.74), rgba(8,10,22,.90)) !important;
+    border: 1px solid rgba(255,255,255,.09) !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.04) !important;
+    transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
 }
-.rs-card.selected {
+.rs-card-btn button:hover {
+    transform: translateY(-1px);
+    border-color: rgba(168,85,247,.22) !important;
+    box-shadow: 0 0 0 1px rgba(168,85,247,.12), 0 0 24px rgba(124,58,237,.12) !important;
+}
+.rs-card-btn-selected button {
     border-color: rgba(168,85,247,.55) !important;
-    box-shadow: 0 0 28px rgba(124,58,237,.2);
-    background: linear-gradient(145deg, rgba(88,28,135,.25), rgba(30,20,50,.6));
+    box-shadow: 0 0 0 1px rgba(168,85,247,.18), 0 0 30px rgba(124,58,237,.20) !important;
+    background:
+        radial-gradient(circle at 30% 10%, rgba(168,85,247,.20), transparent 40%),
+        linear-gradient(180deg, rgba(18,10,32,.92), rgba(8,10,22,.92)) !important;
 }
-.rs-card-title { color: #fff !important; font-weight: 800; font-size: 14px; }
-.rs-card-sub { color: #94a3b8 !important; font-size: 11px; margin-top: 4px; line-height: 1.35; }
+.rs-card-h1 { color: #ffffff !important; font-weight: 1000; font-size: 14px; line-height: 1.15; }
+.rs-card-h2 { color: rgba(148,163,184,.92) !important; font-size: 11px; margin-top: 4px; line-height: 1.3; }
+.rs-card-icon {
+    width: 28px; height: 28px; border-radius: 12px;
+    display: inline-flex; align-items: center; justify-content: center;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, rgba(124,58,237,.7), rgba(59,130,246,.35));
+    border: 1px solid rgba(255,255,255,.12);
+    box-shadow: 0 10px 24px rgba(0,0,0,.22), 0 0 18px rgba(124,58,237,.16);
+    color: #ffffff !important;
+    font-weight: 1000;
+    font-size: 12px;
+}
 .rs-cost-box {
     padding: 14px 18px; border-radius: 14px; margin: 12px 0 16px 0;
     background: rgba(124,58,237,.12); border: 1px solid rgba(168,85,247,.25);
@@ -170,7 +224,8 @@ div[data-testid="stCheckbox"] label,
 div[data-testid="stToggle"] label p { color: #e2e8f0 !important; }
 @media (max-width: 640px) {
     .rs-step { min-width: 58px; font-size: 10px; padding: 8px 4px; }
-    .rs-title { font-size: 22px; }
+    .rs-hero-title { font-size: 28px; letter-spacing: -1px; }
+    .rs-top-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 """
 
@@ -257,20 +312,36 @@ def _render_header(username: str, tokens: int, user: dict) -> None:
     plan = str(user.get("plan") or "free").upper()
     conn_cls, conn_short, conn_detail = _connection_summary(username)
     ai_ok = engine_status().get("ai_ready", False)
-    engine_txt = "KI bereit" if ai_ok else "KI: Key fehlt"
+    engine_txt = "Bereit" if ai_ok else "Key fehlt"
 
     st.markdown(
         f"""
-<div class="rs-header">
-    <h1 class="rs-title">AI Reels Studio</h1>
-    <p class="rs-sub">Erstelle, plane und veröffentliche echte Kurzvideos automatisch.</p>
-    <div class="rs-badges">
-        <span class="rs-pill tokens">{tokens:,} Tokens</span>
-        <span class="rs-pill plan">{html.escape(plan)}</span>
-        <span class="rs-pill {conn_cls}">{html.escape(conn_short)}</span>
-        <span class="rs-pill">{html.escape(engine_txt)}</span>
-    </div>
-    <p style="margin:10px 0 0 0;font-size:12px;color:#64748b !important;">{html.escape(conn_detail)}</p>
+<div class="rs-hero">
+  <div class="rs-hero-title">One system. Infinite intelligence.</div>
+  <p class="rs-hero-sub">Dein All-in-One AI Studio für Content, Automation & Publishing.</p>
+</div>
+
+<div class="rs-top-grid">
+  <div class="rs-stat">
+    <div class="rs-stat-k">Tokens verfügbar</div>
+    <div class="rs-stat-v">{tokens:,}</div>
+    <div class="rs-stat-s">Guthaben / Budget</div>
+  </div>
+  <div class="rs-stat">
+    <div class="rs-stat-k">Plan</div>
+    <div class="rs-stat-v">{html.escape(plan)}</div>
+    <div class="rs-stat-s">Premium Creator Studio</div>
+  </div>
+  <div class="rs-stat">
+    <div class="rs-stat-k">KI Status</div>
+    <div class="rs-stat-v">{html.escape(engine_txt)}</div>
+    <div class="rs-stat-s">Alle Systeme online</div>
+  </div>
+  <div class="rs-stat">
+    <div class="rs-stat-k">Verbindungen</div>
+    <div class="rs-stat-v">{html.escape(conn_short)}</div>
+    <div class="rs-stat-s">{html.escape(conn_detail)}</div>
+  </div>
 </div>
         """,
         unsafe_allow_html=True,
@@ -286,7 +357,11 @@ def _render_stepper(active: int) -> None:
         elif i < active:
             cls += " done"
         parts.append(f'<div class="{cls}">{i + 1}. {html.escape(name)}</div>')
-    st.markdown(f'<div class="rs-stepper">{"".join(parts)}</div>', unsafe_allow_html=True)
+    st.markdown(
+        f'<div class="rs-workflow"><div class="rs-workflow-label">Workflow: Reel Erstellung</div>'
+        f'<div class="rs-stepper">{"".join(parts)}</div></div>',
+        unsafe_allow_html=True,
+    )
 
     cols = st.columns(len(STEPS))
     for i, col in enumerate(cols):
@@ -316,32 +391,49 @@ def _render_card_picker(
     *,
     value_index: int = 0,
 ) -> str | int:
-    """options: tuple of (id, title, sub) or (id, title, sub) with int id."""
+    """options: tuple of (id, title, sub). Renders as clickable card-buttons."""
     st.markdown(f'<div class="rs-section-title">{html.escape(label)}</div>', unsafe_allow_html=True)
     if session_key not in st.session_state:
         st.session_state[session_key] = options[value_index][0]
 
     current = st.session_state[session_key]
-    cards = []
-    for opt in options:
-        oid, title, sub = opt[0], opt[1], opt[2]
-        sel = " selected" if oid == current else ""
-        cards.append(
-            f'<div class="rs-card{sel}"><div class="rs-card-title">{html.escape(title)}</div>'
-            f'<div class="rs-card-sub">{html.escape(sub)}</div></div>'
-        )
-    st.markdown(f'<div class="rs-card-grid">{"".join(cards)}</div>', unsafe_allow_html=True)
-
     cols = st.columns(min(len(options), 4))
     for i, opt in enumerate(options):
+        oid, title, sub = opt[0], opt[1], opt[2]
+        is_sel = oid == current
+        icon = {
+            "tiktok": "TT",
+            "instagram_reels": "IG",
+            "youtube_shorts": "YT",
+            3: "3s",
+            5: "5s",
+            7: "7s",
+            "viral": "V",
+            "football": "FB",
+            "cinematic": "C",
+            "news": "N",
+        }.get(oid, "•")
+
         with cols[i % len(cols)]:
+            wrapper_cls = "rs-card-btn rs-card-btn-selected" if is_sel else "rs-card-btn"
+            st.markdown(f'<div class="{wrapper_cls}">', unsafe_allow_html=True)
             if st.button(
-                f"Wählen: {opt[1]}",
-                key=f"rs_pick_{session_key}_{opt[0]}",
+                f"{title}",
+                key=f"rs_pick_{session_key}_{oid}",
                 use_container_width=True,
+                type="primary" if is_sel else "secondary",
+                help=sub,
             ):
-                st.session_state[session_key] = opt[0]
+                st.session_state[session_key] = oid
                 st.rerun()
+            st.markdown(
+                f'<div style="margin-top:-80px;pointer-events:none;">'
+                f'<div class="rs-card-icon">{html.escape(str(icon))}</div>'
+                f'<div class="rs-card-h1">{html.escape(title)}</div>'
+                f'<div class="rs-card-h2">{html.escape(sub)}</div>'
+                f"</div></div>",
+                unsafe_allow_html=True,
+            )
     return st.session_state[session_key]
 
 
@@ -350,9 +442,13 @@ def _step_idea(username: str, tokens: int, user: dict, plan: str) -> None:
     if notice:
         getattr(st, notice[0], st.info)(notice[1])
 
-    platform = _render_card_picker("Zielplattform", PLATFORMS, "rs_platform", value_index=0)
-    duration = _render_card_picker("Länge", DURATIONS, "rs_duration", value_index=1)
-    style = _render_card_picker("Stil", STYLES, "rs_style", value_index=0)
+    c1, c2, c3 = st.columns([1.2, 1.0, 1.2])
+    with c1:
+        platform = _render_card_picker("Zielplattform", PLATFORMS, "rs_platform", value_index=0)
+    with c2:
+        duration = _render_card_picker("Länge", DURATIONS, "rs_duration", value_index=1)
+    with c3:
+        style = _render_card_picker("Stil", (STYLES[0], STYLES[1], STYLES[2]), "rs_style", value_index=0)
 
     st.markdown('<div class="rs-section-title">Deine Idee</div>', unsafe_allow_html=True)
     prompt = st.text_area(
@@ -373,47 +469,56 @@ def _step_idea(username: str, tokens: int, user: dict, plan: str) -> None:
         unsafe_allow_html=True,
     )
 
-    if st.button("Reel erstellen und in Queue stellen", type="primary", use_container_width=True, key="rs_create"):
-        full_prompt = _full_prompt(prompt, str(style))
-        if not full_prompt.strip():
-            st.warning("Beschreibe kurz deine Idee.")
-            return
-        if tokens < cost:
-            st.error(f"Nicht genug Tokens ({tokens:,} / {cost:,}).")
-            return
-        if not ai_provider_available():
-            st.error("KI-Video ist auf dem Server noch nicht konfiguriert.")
-            return
+    a, b = st.columns([1.0, 1.2])
+    with a:
+        st.button("Prompt verbessern", use_container_width=True, key="rs_prompt_enhance", type="secondary")
+    with b:
+        if st.button(
+            f"Reel erstellen  •  {cost_line}",
+            type="primary",
+            use_container_width=True,
+            key="rs_create",
+        ):
+            full_prompt = _full_prompt(prompt, str(style))
+            if not full_prompt.strip():
+                st.warning("Beschreibe kurz deine Idee.")
+                return
+            if tokens < cost:
+                st.error(f"Nicht genug Tokens ({tokens:,} / {cost:,}).")
+                return
+            if not ai_provider_available():
+                st.error("KI-Video ist auf dem Server noch nicht konfiguriert.")
+                return
 
-        charge_id = f"chg_{uuid.uuid4().hex}"
-        ok, msg = spend_tokens(username, cost)
-        if not ok:
-            st.error(msg)
-            return
-        save_usage(
-            username=username,
-            tool="reel_video",
-            prompt=full_prompt[:1000],
-            tokens_used=cost,
-            cost_tokens=cost,
-            api_provider="video_engine",
-            status="charged",
-        )
-        _sync_user(username)
+            charge_id = f"chg_{uuid.uuid4().hex}"
+            ok, msg = spend_tokens(username, cost)
+            if not ok:
+                st.error(msg)
+                return
+            save_usage(
+                username=username,
+                tool="reel_video",
+                prompt=full_prompt[:1000],
+                tokens_used=cost,
+                cost_tokens=cost,
+                api_provider="video_engine",
+                status="charged",
+            )
+            _sync_user(username)
 
-        job = enqueue_reel(
-            username,
-            prompt=full_prompt.strip(),
-            platform=str(platform),
-            duration_sec=int(duration),
-            mode=GEN_AI,
-            cost_tokens=cost,
-            charge_id=charge_id,
-            auto_metadata=auto_meta,
-        )
-        st.session_state.ve_active_job_id = job.get("id")
-        st.session_state.rs_step = 1
-        st.rerun()
+            job = enqueue_reel(
+                username,
+                prompt=full_prompt.strip(),
+                platform=str(platform),
+                duration_sec=int(duration),
+                mode=GEN_AI,
+                cost_tokens=cost,
+                charge_id=charge_id,
+                auto_metadata=auto_meta,
+            )
+            st.session_state.ve_active_job_id = job.get("id")
+            st.session_state.rs_step = 1
+            st.rerun()
 
 
 def _progress_for_status(status: str) -> float:

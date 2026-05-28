@@ -43,8 +43,8 @@ def sidebar_master_css() -> str:
     return """
 /* MaByte Sidebar — do not duplicate in page CSS */
 section[data-testid="stSidebar"] {
-    min-width: 17.5rem !important;
-    width: 17.5rem !important;
+    min-width: 15.75rem !important;
+    width: 15.75rem !important;
     background:
         radial-gradient(ellipse 120% 80% at 0% 0%, rgba(124,58,237,.22), transparent 50%),
         radial-gradient(ellipse 80% 60% at 100% 100%, rgba(37,99,235,.12), transparent 45%),
@@ -53,7 +53,7 @@ section[data-testid="stSidebar"] {
     box-shadow: 4px 0 32px rgba(0,0,0,.25) !important;
 }
 section[data-testid="stSidebar"] > div {
-    padding: 12px 12px 20px 12px !important;
+    padding: 10px 10px 18px 10px !important;
 }
 section[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
     gap: 8px !important;
