@@ -23,15 +23,15 @@ from ui.premium_foundation import (
 )
 from redeem_tracking import list_redeem_redemptions, redeem_code_tracked
 from ui.styles import inject_css, page_layout_css
-from ui.os_helper import render_os_guide_dashboard
-from ui.prompt_ui import (
-    inject_ma_prompt_css,
-    ma_chat_input,
-    prompt_text_area,
-    render_os_hero,
-    render_os_ready_hint,
-    render_quickstart_grid,
+from ui.dashboard_ui import (
+    inject_dashboard_css,
+    render_daily_limits,
+    render_header,
+    render_recent_activity,
+    render_stats,
 )
+from ui.os_helper import render_os_guide_dashboard
+from ui.prompt_ui import inject_ma_prompt_css, prompt_text_area
 from ui_core import require_login, sync_session_user
 
 
@@ -233,140 +233,40 @@ def _nav(page: str) -> None:
     st.rerun()
 
 
-def _forward_prompt_to_chat(text: str) -> None:
-    st.session_state.chat_pending_prompt = text
-    st.session_state.page = "chat"
-    st.rerun()
-
-
 def render_dashboard():
     require_login()
     refresh_user()
-    _dashboard_css()
+    inject_dashboard_css()
     inject_ma_prompt_css()
 
     plan_key = current_plan_key()
     plan = current_plan()
     tokens = int(st.session_state.get("tokens", 0) or 0)
     fb_plan = str(st.session_state.get("football_plan") or "none")
-    fb_label = fb_plan.replace("football_", "").title() if fb_plan != "none" else "Kein Plan"
-    user = st.session_state.get("user", "User")
+    fb_label = (
+        fb_plan.replace("football_", "").title()
+        if fb_plan not in ("none", "", "free")
+        else "—"
+    )
+    user = str(st.session_state.get("user", "User"))
 
-    render_os_hero()
-    render_os_ready_hint()
-    quick = render_quickstart_grid("dash")
-    if quick:
-        _forward_prompt_to_chat(quick)
+    st.markdown('<div class="mb-dash" aria-hidden="true"></div>', unsafe_allow_html=True)
+    render_header(user=user, greeting=f"Profil · {html.escape(user)} — Nutzung, Limits und Zahlungen.")
+    render_stats(
+        plan_label=str(plan.get("label", plan_key)),
+        tokens=tokens,
+        football_label=fb_label,
+        tier=str(plan.get("badge", "Starter")),
+    )
 
-    pending = st.session_state.pop("dash_pending_prompt", None)
-    prompt = ma_chat_input("Frag MaByte...")
-    if pending:
-        _forward_prompt_to_chat(pending)
-    if prompt:
-        _forward_prompt_to_chat(prompt)
+    if st.button("Zurück zum Dashboard (Home)", key="dash_go_home", width="stretch"):
+        _nav("home")
 
     with st.expander("Mab AI · OS Guide", expanded=False):
         render_os_guide_dashboard()
 
-    with st.expander("Account & Workspaces", expanded=True):
-        st.markdown(
-            f"""
-<div class="dash-hero" style="padding:22px;margin-bottom:16px;">
-    <div class="dash-kicker">Account</div>
-    <div class="dash-title" style="font-size:28px;">{html.escape(str(user))}</div>
-    <div class="dash-sub">Plan, Tokens, Football — Übersicht</div>
-</div>
-            """,
-            unsafe_allow_html=True,
-        )
-        stats = [
-            ("MaByte Plan", plan.get("label", plan_key)),
-            ("Tokens", f"{tokens:,}".replace(",", ".")),
-            ("Football", fb_label),
-            ("Tier", plan.get("badge", "Starter")),
-        ]
-        cards = "".join(
-            f'<div class="dash-stat"><div class="lbl">{html.escape(l)}</div>'
-            f'<div class="val">{html.escape(v)}</div></div>'
-            for l, v in stats
-        )
-        st.markdown(
-            f'<div class="dash-stat-grid" style="grid-template-columns:repeat(4,minmax(0,1fr));">{cards}</div>',
-            unsafe_allow_html=True,
-        )
-
-    qa1, qa2, qa3, qa4 = st.columns(4)
-    with qa1:
-        if st.button("AI Assistant", key="dash_go_chat", width="stretch"):
-            _nav("chat")
-    with qa2:
-        if st.button("Football AI", key="dash_go_fb", width="stretch"):
-            _nav("football")
-    with qa3:
-        if st.button("Premium", key="dash_go_prem", width="stretch"):
-            _nav("premium")
-    with qa4:
-        if st.button("Projekte", key="dash_go_proj", width="stretch"):
-            _nav("projects")
-
-    left, right = st.columns([1.35, 1], gap="large")
-
-    with left:
-        with st.container(border=True):
-            st.markdown(
-                '<div class="dash-kicker" style="margin-bottom:12px;">Workspace Matrix</div>',
-                unsafe_allow_html=True,
-            )
-            features = plan.get("features", [])
-            rows = [
-                ("AI Assistant", "chat"),
-                ("Developer OS", "coding"),
-                ("Creative Workspace", "image"),
-                ("Music Studio", "music"),
-                ("Reels Studio", "reels"),
-                ("Video Studio", "video"),
-                ("Football Intelligence", "football"),
-                ("Automation Lab", "automation"),
-            ]
-            items = []
-            for label, feature in rows:
-                allowed = "all" in features or feature in features
-                cls = "on" if allowed else "off"
-                st_txt = "Freigeschaltet" if allowed else "Upgrade nötig"
-                items.append(
-                    f'<div class="dash-ws-item {cls}">'
-                    f'<div class="name">{html.escape(label)}</div>'
-                    f'<div class="st">{st_txt}</div></div>'
-                )
-            st.markdown(
-                f'<div class="dash-ws-grid">{"".join(items)}</div>',
-                unsafe_allow_html=True,
-            )
-
-    with right:
-        with st.container(border=True):
-            st.markdown(
-                '<div class="dash-kicker" style="margin-bottom:12px;">Tageslimits</div>',
-                unsafe_allow_html=True,
-            )
-            limits = DAILY_LIMITS.get(plan_key, DAILY_LIMITS["free"])
-            limit_rows = [
-                ("Chat", limits.get("chat", 0)),
-                ("Coding", limits.get("coding", 0)),
-                ("Images", limits.get("image", 0)),
-                ("Reels", limits.get("reels", 0)),
-                ("Videos", limits.get("video", 0)),
-                ("Football Reports", limits.get("football_report", 0)),
-                ("Automation", limits.get("automation_job", 0)),
-            ]
-            lr = "".join(
-                f'<div class="dash-limit-row"><span>{html.escape(k)}</span>'
-                f'<span>{html.escape(str(v))} / Tag</span></div>'
-                for k, v in limit_rows
-            )
-            st.markdown(lr, unsafe_allow_html=True)
-
-    st.divider()
+    with st.container(border=True):
+        render_daily_limits(plan_key)
 
     with st.expander("Token-Kosten (Referenz)", expanded=False):
         token_rows = [
@@ -385,23 +285,7 @@ def render_dashboard():
 
     with col_a:
         with st.container(border=True):
-            st.markdown(
-                '<div class="dash-kicker" style="margin-bottom:10px;">Letzte Aktivität</div>',
-                unsafe_allow_html=True,
-            )
-            usage = list_usage(st.session_state.get("user"))
-            if usage:
-                blocks = []
-                for row in usage[:12]:
-                    tool = str(row.get("tool", "system")).replace("_", " ").title()
-                    created = str(row.get("created_at", ""))[:16]
-                    blocks.append(
-                        f'<div class="dash-activity"><div class="t">{html.escape(tool)}</div>'
-                        f'<div class="d">{html.escape(created)}</div></div>'
-                    )
-                st.markdown("".join(blocks), unsafe_allow_html=True)
-            else:
-                render_empty_state("Noch leer", "Starte einen Workspace — Aktivität erscheint hier.")
+            render_recent_activity(str(st.session_state.get("user") or ""), limit=12)
 
     with col_b:
         with st.container(border=True):

@@ -26,45 +26,44 @@ MABYTE_PROMPT_CSS = """
 [data-testid="stChatInput"] > div,
 [data-testid="stChatInput"] div[data-baseweb="textarea"],
 [data-testid="stChatInput"] div[data-baseweb="base-input"] {
-    background:
-        radial-gradient(circle at top left, rgba(192,132,252,.32), transparent 28%),
-        radial-gradient(circle at bottom right, rgba(96,165,250,.14), transparent 34%),
-        linear-gradient(135deg, rgba(58,18,92,.98), rgba(28,8,52,.99)) !important;
-    border-radius: 999px !important;
-    border: 1px solid rgba(192,132,252,.55) !important;
-    box-shadow:
-        0 0 38px rgba(168,85,247,.42),
-        0 10px 40px rgba(0,0,0,.22),
-        inset 0 0 0 1px rgba(255,255,255,.04) !important;
+    background: rgba(10, 12, 24, .85) !important;
+    border-radius: 16px !important;
+    border: 1px solid rgba(168, 85, 247, .28) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, .2), inset 0 1px 0 rgba(255, 255, 255, .04) !important;
+}
+.stApp:has(.mb-dash) [data-testid="stChatInput"] > div,
+.stApp:has(.mb-dash) [data-testid="stChatInput"] div[data-baseweb="textarea"] {
+    border-radius: 14px !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, .18) !important;
 }
 
 [data-testid="stChatInput"] textarea,
 [data-testid="stChatInput"] textarea:focus,
 [data-testid="stChatInput"] textarea:active {
     background: transparent !important;
-    color: #f5d0fe !important;
-    font-weight: 900 !important;
-    font-size: 16px !important;
+    color: #f1f5f9 !important;
+    font-weight: 600 !important;
+    font-size: 15px !important;
     box-shadow: none !important;
     outline: none !important;
     min-height: 24px !important;
 }
 
 [data-testid="stChatInput"] textarea::placeholder {
-    color: rgba(245,208,254,.72) !important;
-    font-weight: 900 !important;
+    color: rgba(148, 163, 184, .85) !important;
+    font-weight: 500 !important;
 }
 
 [data-testid="stChatInput"] button {
-    background: linear-gradient(135deg, #9333ea, #c084fc) !important;
-    border-radius: 999px !important;
-    border: 1px solid rgba(255,255,255,.12) !important;
-    box-shadow: 0 0 26px rgba(192,132,252,.55) !important;
+    background: linear-gradient(135deg, #7c3aed, #6366f1) !important;
+    border-radius: 12px !important;
+    border: 1px solid rgba(255, 255, 255, .1) !important;
+    box-shadow: none !important;
 }
 
 [data-testid="stChatInput"] button:hover {
-    transform: scale(1.04) !important;
-    box-shadow: 0 0 36px rgba(192,132,252,.72) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 20px rgba(124, 58, 237, .25) !important;
 }
 
 /* ===== Form prompt fields (studios, guide, projects) ===== */
