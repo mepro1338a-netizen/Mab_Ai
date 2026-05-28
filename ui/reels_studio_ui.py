@@ -67,20 +67,38 @@ REELS_CSS = """
     z-index: 0;
 }
 .rs-hero > * { position: relative; z-index: 1; }
+.rs-hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: #e9d5ff !important;
+    background: rgba(124, 58, 237, .18);
+    border: 1px solid rgba(168, 85, 247, .35);
+    box-shadow: 0 0 24px rgba(124, 58, 237, .12);
+    margin-bottom: 10px;
+}
 .rs-hero-title {
-    font-size: 44px;
-    line-height: 1.05;
+    font-size: clamp(28px, 5vw, 42px);
+    line-height: 1.08;
     font-weight: 1000;
-    letter-spacing: -1.6px;
-    margin: 10px 0 8px 0;
+    letter-spacing: -1.4px;
+    margin: 0 0 10px 0;
     background: linear-gradient(135deg, rgba(255,231,163,.95), rgba(192,132,252,.96), rgba(96,165,250,.95));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 .rs-hero-sub {
-    color: rgba(148,163,184,.92) !important;
-    font-size: 13px;
-    margin: 0;
+    color: rgba(148,163,184,.95) !important;
+    font-size: 14px;
+    line-height: 1.5;
+    max-width: 520px;
+    margin: 0 auto;
 }
 .rs-top-grid {
     display: grid;
@@ -96,10 +114,19 @@ REELS_CSS = """
         linear-gradient(180deg, rgba(12,18,38,.76), rgba(8,10,22,.90));
     border: 1px solid rgba(255,255,255,.08);
     box-shadow: 0 0 30px rgba(124,58,237,.08);
+    transition: transform .14s ease, border-color .14s ease;
 }
-.rs-stat-k { color: rgba(148,163,184,.9) !important; font-size: 10px; font-weight: 900; letter-spacing: .18em; text-transform: uppercase; }
-.rs-stat-v { margin-top: 8px; color: #ffffff !important; font-weight: 1000; font-size: 18px; }
-.rs-stat-s { margin-top: 4px; color: rgba(148,163,184,.9) !important; font-size: 11px; }
+.rs-stat:hover {
+    transform: translateY(-1px);
+    border-color: rgba(168,85,247,.2);
+}
+.rs-top-grid .rs-stat:nth-child(1) { border-top: 2px solid rgba(251,191,36,.55); }
+.rs-top-grid .rs-stat:nth-child(2) { border-top: 2px solid rgba(168,85,247,.55); }
+.rs-top-grid .rs-stat:nth-child(3) { border-top: 2px solid rgba(34,197,94,.55); }
+.rs-top-grid .rs-stat:nth-child(4) { border-top: 2px solid rgba(96,165,250,.55); }
+.rs-stat-k { color: rgba(148,163,184,.95) !important; font-size: 10px; font-weight: 900; letter-spacing: .18em; text-transform: uppercase; }
+.rs-stat-v { margin-top: 8px; color: #ffffff !important; font-weight: 1000; font-size: 20px; letter-spacing: -0.02em; }
+.rs-stat-s { margin-top: 4px; color: rgba(148,163,184,.92) !important; font-size: 11px; line-height: 1.35; }
 .rs-workflow {
     margin-top: 8px;
     padding: 12px 12px;
@@ -118,13 +145,6 @@ REELS_CSS = """
     letter-spacing: .18em;
     text-transform: uppercase;
     margin: 2px 0 10px 2px;
-}
-div[data-testid="stHorizontalBlock"]:has(div[class*="st-key-rs_step_nav_"]) {
-    padding: 8px 6px 6px 6px;
-    border-radius: 16px;
-    background: rgba(10, 12, 24, .45);
-    border: 1px solid rgba(255, 255, 255, .06);
-    margin-bottom: 4px;
 }
 .rs-section-title {
     color: #c4b5fd !important; font-size: 11px; font-weight: 800;
@@ -192,6 +212,7 @@ div[data-testid="stToggle"] label p { color: #e2e8f0 !important; }
 
 
 def inject_reels_css() -> None:
+    """Inject last so Creator Studio overrides global gray buttons."""
     inject_css(page_layout_css(1040, 8, 32) + PREMIUM_STUDIO_CSS + REELS_CSS)
 
 
@@ -278,8 +299,9 @@ def _render_header(username: str, tokens: int, user: dict) -> None:
     st.markdown(
         f"""
 <div class="rs-hero">
+  <div class="rs-hero-badge">Beta · Creator Studio</div>
   <div class="rs-hero-title">One system. Infinite intelligence.</div>
-  <p class="rs-hero-sub">Dein All-in-One AI Studio für Content, Automation & Publishing.</p>
+  <p class="rs-hero-sub">Reels in Minuten — Idee, KI-Video, Preview, Planen und Posten in einem Flow.</p>
 </div>
 
 <div class="rs-top-grid">
@@ -309,7 +331,23 @@ def _render_header(username: str, tokens: int, user: dict) -> None:
     )
 
 
+def _stepper_dynamic_css(active: int) -> str:
+    rules: list[str] = []
+    for i in range(len(STEPS)):
+        if i < active:
+            rules.append(
+                f".st-key-rs_step_nav_{i} button {{ "
+                f"border-color: rgba(168,85,247,.32) !important; "
+                f"background: rgba(124,58,237,.14) !important; }}"
+                f".st-key-rs_step_nav_{i} button p::first-line {{ color: #c4b5fd !important; }}"
+            )
+    return f"<style>{''.join(rules)}</style>" if rules else ""
+
+
 def _render_stepper(active: int) -> None:
+    done_css = _stepper_dynamic_css(active)
+    if done_css:
+        st.markdown(done_css, unsafe_allow_html=True)
     st.markdown(
         '<div class="rs-workflow"><div class="rs-workflow-label">Workflow · Reel Erstellung</div>',
         unsafe_allow_html=True,
@@ -846,7 +884,6 @@ def render_reels_studio_premium(
     user: dict,
 ) -> None:
     """Premium Reels Studio entry."""
-    inject_reels_css()
     try:
         init_video_engine_tables()
     except Exception:
@@ -855,7 +892,7 @@ def render_reels_studio_premium(
     plan = str(user.get("plan") or "free")
     step = _normalize_rs_session()
 
-    st.markdown('<div class="rs-studio">', unsafe_allow_html=True)
+    st.markdown('<div class="rs-studio" aria-hidden="true"></div>', unsafe_allow_html=True)
     _render_header(username, tokens, user)
     _render_stepper(step)
 
@@ -869,4 +906,5 @@ def render_reels_studio_premium(
         _step_schedule(username, user, plan)
     else:
         _step_publish(username, user)
-    st.markdown("</div>", unsafe_allow_html=True)
+
+    inject_reels_css()

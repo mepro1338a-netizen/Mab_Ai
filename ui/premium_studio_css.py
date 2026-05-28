@@ -161,6 +161,9 @@ div[class*="st-key-rs_pick_"] button::before {
 .st-key-rs_pick_rs_style_cinematic button::before {
     background: linear-gradient(135deg, #6366f1, #312e81);
 }
+.st-key-rs_pick_rs_style_news button::before {
+    background: linear-gradient(135deg, #38bdf8, #1d4ed8);
+}
 div[class*="st-key-rs_pick_"] button:hover {
     transform: translateY(-2px);
     border-color: rgba(168, 85, 247, .28) !important;
@@ -245,8 +248,156 @@ div[data-testid="stToggle"] label {
     font-size: 13px !important;
 }
 
+/* ── Beta: beat global gray button_system on Creator Studio ── */
+.stApp:has(.rs-studio) section.main div[class*="st-key-rs_pick_"] .stButton > button,
+.stApp:has(.rs-studio) section.main div[class*="st-key-rs_pick_"] button[data-testid="stBaseButton-primary"],
+.stApp:has(.rs-studio) section.main div[class*="st-key-rs_pick_"] button[data-testid="stBaseButton-secondary"] {
+    min-height: 104px !important;
+    padding: 14px 14px 12px 14px !important;
+    border-radius: 18px !important;
+    text-align: left !important;
+    border: 1px solid rgba(255, 255, 255, .09) !important;
+    background:
+        radial-gradient(circle at 30% 0%, rgba(168, 85, 247, .08), transparent 42%),
+        linear-gradient(180deg, rgba(12, 18, 38, .78), rgba(8, 10, 22, .9)) !important;
+    background-color: transparent !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04), 0 8px 28px rgba(0, 0, 0, .16) !important;
+    color: transparent !important;
+}
+.stApp:has(.rs-studio) section.main div[class*="st-key-rs_pick_"] button[kind="primary"],
+.stApp:has(.rs-studio) section.main div[class*="st-key-rs_pick_"] [data-testid="stBaseButton-primary"] {
+    border-color: rgba(168, 85, 247, .5) !important;
+    background:
+        radial-gradient(circle at 30% 0%, rgba(168, 85, 247, .18), transparent 45%),
+        linear-gradient(180deg, rgba(22, 12, 38, .94), rgba(8, 10, 22, .94)) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .06),
+        0 0 0 1px rgba(168, 85, 247, .2),
+        0 16px 48px rgba(124, 58, 237, .18) !important;
+}
+.stApp:has(.rs-studio) section.main div[class*="st-key-rs_step_nav_"] .stButton > button,
+.stApp:has(.rs-studio) section.main div[class*="st-key-rs_step_nav_"] button[data-testid="stBaseButton-primary"],
+.stApp:has(.rs-studio) section.main div[class*="st-key-rs_step_nav_"] button[data-testid="stBaseButton-secondary"] {
+    min-height: 56px !important;
+    border-radius: 14px !important;
+    border: 1px solid rgba(255, 255, 255, .08) !important;
+    background: rgba(10, 12, 24, .45) !important;
+    background-color: rgba(10, 12, 24, .45) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04) !important;
+    color: rgba(148, 163, 184, .95) !important;
+}
+.stApp:has(.rs-studio) section.main div[class*="st-key-rs_step_nav_"] button[kind="primary"],
+.stApp:has(.rs-studio) section.main div[class*="st-key-rs_step_nav_"] [data-testid="stBaseButton-primary"] {
+    border-color: rgba(168, 85, 247, .45) !important;
+    background: linear-gradient(135deg, rgba(124, 58, 237, .55), rgba(59, 130, 246, .22)) !important;
+    background-color: transparent !important;
+    color: #fff !important;
+    box-shadow: 0 0 24px rgba(124, 58, 237, .2), inset 0 1px 0 rgba(255, 255, 255, .06) !important;
+}
+.stApp:has(.rs-studio) section.main .st-key-rs_create .stButton > button,
+.stApp:has(.rs-studio) section.main .st-key-rs_create button[data-testid="stBaseButton-primary"] {
+    min-height: 52px !important;
+    font-size: 14px !important;
+    font-weight: 900 !important;
+    letter-spacing: -0.02em !important;
+    border-radius: 16px !important;
+    color: #fff !important;
+    background: linear-gradient(135deg, #7c3aed, #a855f7 45%, #6366f1) !important;
+    background-color: transparent !important;
+    border: 1px solid rgba(255, 255, 255, .18) !important;
+    box-shadow: 0 18px 50px rgba(124, 58, 237, .28), 0 0 40px rgba(168, 85, 247, .14) !important;
+}
+.stApp:has(.rs-studio) section.main .st-key-rs_create button p {
+    color: #fff !important;
+}
+.stApp:has(.rs-studio) section.main .st-key-rs_prompt_enhance .stButton > button,
+.stApp:has(.rs-studio) section.main .st-key-rs_prompt_enhance button[data-testid="stBaseButton-secondary"] {
+    min-height: 52px !important;
+    border-radius: 16px !important;
+    color: #e2e8f0 !important;
+    background: rgba(10, 12, 24, .55) !important;
+    background-color: rgba(10, 12, 24, .55) !important;
+    border: 1px solid rgba(168, 85, 247, .22) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .04), 0 8px 24px rgba(0, 0, 0, .18) !important;
+}
+.stApp:has(.rs-studio) section.main .st-key-rs_prompt_enhance button:hover {
+    border-color: rgba(168, 85, 247, .38) !important;
+    box-shadow: 0 12px 32px rgba(124, 58, 237, .12) !important;
+}
+.stApp:has(.rs-studio) section.main .st-key-rs_prompt_enhance button p {
+    color: #e2e8f0 !important;
+}
+
+/* Workflow connector line */
+.stApp:has(.rs-studio) div[data-testid="stHorizontalBlock"]:has(div[class*="st-key-rs_step_nav_"]) {
+    position: relative !important;
+    gap: 4px !important;
+    padding: 10px 8px 8px 8px !important;
+    border-radius: 16px !important;
+    background: rgba(10, 12, 24, .38) !important;
+    border: 1px solid rgba(255, 255, 255, .06) !important;
+    margin: 0 0 6px 0 !important;
+}
+.stApp:has(.rs-studio) div[data-testid="stHorizontalBlock"]:has(div[class*="st-key-rs_step_nav_"])::before {
+    content: "";
+    position: absolute;
+    left: 9%;
+    right: 9%;
+    top: 30px;
+    height: 2px;
+    background: linear-gradient(
+        90deg,
+        rgba(168, 85, 247, 0),
+        rgba(168, 85, 247, .45) 20%,
+        rgba(96, 165, 250, .35) 50%,
+        rgba(168, 85, 247, .45) 80%,
+        rgba(168, 85, 247, 0));
+    pointer-events: none;
+    z-index: 0;
+}
+.stApp:has(.rs-studio) div[data-testid="stHorizontalBlock"]:has(div[class*="st-key-rs_step_nav_"]) [data-testid="column"] {
+    position: relative;
+    z-index: 1;
+}
+
+/* Remove Streamlit glass boxes inside studio */
+.stApp:has(.rs-studio) section.main div[data-testid="stVerticalBlockBorderWrapper"] {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    padding: 0 !important;
+}
+
+/* Premium toggle (no orange Streamlit default) */
+.stApp:has(.rs-studio) .st-key-rs_auto_meta [data-testid="stToggle"] label p,
+.stApp:has(.rs-studio) .st-key-rs_auto_post [data-testid="stToggle"] label p {
+    color: rgba(226, 232, 240, .92) !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+}
+.stApp:has(.rs-studio) .st-key-rs_auto_meta [role="switch"],
+.stApp:has(.rs-studio) .st-key-rs_auto_post [role="switch"] {
+    background: rgba(30, 27, 50, .9) !important;
+    border: 1px solid rgba(255, 255, 255, .12) !important;
+}
+.stApp:has(.rs-studio) .st-key-rs_auto_meta [role="switch"][aria-checked="true"],
+.stApp:has(.rs-studio) .st-key-rs_auto_post [role="switch"][aria-checked="true"] {
+    background: linear-gradient(135deg, #7c3aed, #a855f7) !important;
+    border-color: rgba(168, 85, 247, .5) !important;
+    box-shadow: 0 0 20px rgba(124, 58, 237, .25) !important;
+}
+.stApp:has(.rs-studio) .st-key-rs_auto_meta [role="switch"] > div,
+.stApp:has(.rs-studio) .st-key-rs_auto_post [role="switch"] > div {
+    background: #f8fafc !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .25) !important;
+}
+
 @media (max-width: 900px) {
     .rs-picker-row [data-testid="column"] { min-width: 100% !important; }
     div[class*="st-key-rs_step_nav_"] button { min-height: 48px !important; }
+    .stApp:has(.rs-studio) div[data-testid="stHorizontalBlock"]:has(div[class*="st-key-rs_step_nav_"])::before {
+        top: 26px;
+    }
 }
 """

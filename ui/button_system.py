@@ -32,16 +32,16 @@ section[data-testid="stSidebar"] .mb-nav-item {_BTN} {{
 }}
 section[data-testid="stSidebar"] .mb-nav-item {_BTN} {{
     width: 100% !important;
-    min-height: 50px !important;
-    border-radius: 16px !important;
+    min-height: 42px !important;
+    border-radius: 14px !important;
     border: 1px solid {_GRAY_BORDER} !important;
     background: {_GRAY_BG} !important;
     background-color: rgba(32,32,36,.99) !important;
     color: {_GRAY_COLOR} !important;
     font-weight: 700 !important;
-    font-size: 14px !important;
+    font-size: 13px !important;
     text-align: left !important;
-    padding: 12px 14px 12px 54px !important;
+    padding: 9px 10px 9px 48px !important;
     position: relative !important;
     box-shadow: {_GRAY_GLOW} !important;
     transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease !important;
@@ -49,7 +49,7 @@ section[data-testid="stSidebar"] .mb-nav-item {_BTN} {{
 section[data-testid="stSidebar"] .mb-nav-item {_BTN_P} {{
     color: {_GRAY_COLOR} !important;
     font-weight: 700 !important;
-    font-size: 14px !important;
+    font-size: 13px !important;
 }}
 section[data-testid="stSidebar"] .mb-nav-item button[kind="primary"],
 section[data-testid="stSidebar"] .mb-nav-item button[kind="secondary"],
@@ -104,10 +104,10 @@ section[data-testid="stSidebar"] .sidebar-logout-wrap {_BTN}:hover {{
 """
 
 MAIN_BUTTON_CSS = f"""
-/* Main — alle Buttons grau, Schrift weiß */
-section.main .stButton > button,
-section.main .stButton {_BTN},
-section.main {_BTN} {{
+/* Main — grau (nicht im Reels Creator Studio; dort premium_studio_css) */
+.stApp:not(:has(.rs-studio)) section.main .stButton > button,
+.stApp:not(:has(.rs-studio)) section.main .stButton {_BTN},
+.stApp:not(:has(.rs-studio)) section.main {_BTN} {{
     border-radius: 15px !important;
     font-weight: 700 !important;
     min-height: 46px !important;
@@ -118,38 +118,38 @@ section.main {_BTN} {{
     box-shadow: {_GRAY_GLOW} !important;
     transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease !important;
 }}
-section.main .stButton > button p,
-section.main .stButton {_BTN_P},
-section.main {_BTN_P} {{
+.stApp:not(:has(.rs-studio)) section.main .stButton > button p,
+.stApp:not(:has(.rs-studio)) section.main .stButton {_BTN_P},
+.stApp:not(:has(.rs-studio)) section.main {_BTN_P} {{
     color: {_GRAY_COLOR} !important;
     font-weight: 700 !important;
 }}
-section.main .stButton > button[kind="secondary"],
-section.main .stButton > button[kind="primary"],
-section.main button[data-testid="stBaseButton-secondary"],
-section.main button[data-testid="stBaseButton-primary"],
-section.main [data-testid="stBaseButton-secondary"],
-section.main [data-testid="stBaseButton-primary"],
-section.main .mb-btn-gold .stButton > button,
-section.main .mb-btn-gold {_BTN} {{
+.stApp:not(:has(.rs-studio)) section.main .stButton > button[kind="secondary"],
+.stApp:not(:has(.rs-studio)) section.main .stButton > button[kind="primary"],
+.stApp:not(:has(.rs-studio)) section.main button[data-testid="stBaseButton-secondary"],
+.stApp:not(:has(.rs-studio)) section.main button[data-testid="stBaseButton-primary"],
+.stApp:not(:has(.rs-studio)) section.main [data-testid="stBaseButton-secondary"],
+.stApp:not(:has(.rs-studio)) section.main [data-testid="stBaseButton-primary"],
+.stApp:not(:has(.rs-studio)) section.main .mb-btn-gold .stButton > button,
+.stApp:not(:has(.rs-studio)) section.main .mb-btn-gold {_BTN} {{
     background: {_GRAY_BG} !important;
     background-color: rgba(32,32,36,.99) !important;
     color: {_GRAY_COLOR} !important;
     border: 1px solid {_GRAY_BORDER} !important;
     box-shadow: {_GRAY_GLOW} !important;
 }}
-section.main .stButton > button[kind="secondary"] p,
-section.main .stButton > button[kind="primary"] p,
-section.main button[data-testid="stBaseButton-secondary"] p,
-section.main button[data-testid="stBaseButton-primary"] p,
-section.main .mb-btn-gold {_BTN_P} {{
+.stApp:not(:has(.rs-studio)) section.main .stButton > button[kind="secondary"] p,
+.stApp:not(:has(.rs-studio)) section.main .stButton > button[kind="primary"] p,
+.stApp:not(:has(.rs-studio)) section.main button[data-testid="stBaseButton-secondary"] p,
+.stApp:not(:has(.rs-studio)) section.main button[data-testid="stBaseButton-primary"] p,
+.stApp:not(:has(.rs-studio)) section.main .mb-btn-gold {_BTN_P} {{
     color: {_GRAY_COLOR} !important;
 }}
-section.main .stButton > button:hover,
-section.main .stButton {_BTN}:hover,
-section.main button[data-testid="stBaseButton-secondary"]:hover,
-section.main button[data-testid="stBaseButton-primary"]:hover,
-section.main .mb-btn-gold {_BTN}:hover {{
+.stApp:not(:has(.rs-studio)) section.main .stButton > button:hover,
+.stApp:not(:has(.rs-studio)) section.main .stButton {_BTN}:hover,
+.stApp:not(:has(.rs-studio)) section.main button[data-testid="stBaseButton-secondary"]:hover,
+.stApp:not(:has(.rs-studio)) section.main button[data-testid="stBaseButton-primary"]:hover,
+.stApp:not(:has(.rs-studio)) section.main .mb-btn-gold {_BTN}:hover {{
     transform: translateY(-1px) !important;
     color: {_GRAY_COLOR} !important;
     border-color: {_GRAY_BORDER_HOVER} !important;
@@ -157,14 +157,14 @@ section.main .mb-btn-gold {_BTN}:hover {{
     background-color: rgba(44,44,48,.99) !important;
     box-shadow: {_GRAY_GLOW_HOVER} !important;
 }}
-section.main .stButton > button:hover p,
-section.main .mb-btn-gold {_BTN}:hover p {{
+.stApp:not(:has(.rs-studio)) section.main .stButton > button:hover p,
+.stApp:not(:has(.rs-studio)) section.main .mb-btn-gold {_BTN}:hover p {{
     color: {_GRAY_COLOR} !important;
 }}
-section.main .stButton > button:disabled,
-section.main button[disabled],
-section.main [data-testid="stBaseButton-secondary"][disabled],
-section.main [data-testid="stBaseButton-primary"][disabled] {{
+.stApp:not(:has(.rs-studio)) section.main .stButton > button:disabled,
+.stApp:not(:has(.rs-studio)) section.main button[disabled],
+.stApp:not(:has(.rs-studio)) section.main [data-testid="stBaseButton-secondary"][disabled],
+.stApp:not(:has(.rs-studio)) section.main [data-testid="stBaseButton-primary"][disabled] {{
     opacity: .45 !important;
     background: linear-gradient(135deg, rgba(38,38,42,.9), rgba(28,28,32,.95)) !important;
     background-color: rgba(32,32,36,.95) !important;
@@ -173,18 +173,18 @@ section.main [data-testid="stBaseButton-primary"][disabled] {{
     box-shadow: none !important;
     transform: none !important;
 }}
-section.main .stButton > button:disabled p,
-section.main button[disabled] p {{
+.stApp:not(:has(.rs-studio)) section.main .stButton > button:disabled p,
+.stApp:not(:has(.rs-studio)) section.main button[disabled] p {{
     color: rgba(255,255,255,.55) !important;
 }}
 
 /* Form submit */
-section.main .stFormSubmitButton > button,
-section.main .stFormSubmitButton button,
-section.main [data-testid="stFormSubmitButton"] > button,
-section.main [data-testid="stFormSubmitButton"] button,
-section.main form button[kind="primaryFormSubmit"],
-section.main form button[data-testid="stBaseButton-primaryFormSubmit"] {{
+.stApp:not(:has(.rs-studio)) section.main .stFormSubmitButton > button,
+.stApp:not(:has(.rs-studio)) section.main .stFormSubmitButton button,
+.stApp:not(:has(.rs-studio)) section.main [data-testid="stFormSubmitButton"] > button,
+.stApp:not(:has(.rs-studio)) section.main [data-testid="stFormSubmitButton"] button,
+.stApp:not(:has(.rs-studio)) section.main form button[kind="primaryFormSubmit"],
+.stApp:not(:has(.rs-studio)) section.main form button[data-testid="stBaseButton-primaryFormSubmit"] {{
     background: {_GRAY_BG} !important;
     background-color: rgba(32,32,36,.99) !important;
     color: {_GRAY_COLOR} !important;
@@ -194,15 +194,15 @@ section.main form button[data-testid="stBaseButton-primaryFormSubmit"] {{
     border-radius: 15px !important;
     box-shadow: {_GRAY_GLOW} !important;
 }}
-section.main .stFormSubmitButton button p,
-section.main form button[kind="primaryFormSubmit"] p {{
+.stApp:not(:has(.rs-studio)) section.main .stFormSubmitButton button p,
+.stApp:not(:has(.rs-studio)) section.main form button[kind="primaryFormSubmit"] p {{
     color: {_GRAY_COLOR} !important;
 }}
 
 /* Link buttons */
-section.main a[data-testid="stLinkButtonLink"],
-div[data-testid="stLinkButton"] a,
-section.main .mb-stripe-checkout-wrap a {{
+.stApp:not(:has(.rs-studio)) section.main a[data-testid="stLinkButtonLink"],
+.stApp:not(:has(.rs-studio)) div[data-testid="stLinkButton"] a,
+.stApp:not(:has(.rs-studio)) section.main .mb-stripe-checkout-wrap a {{
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -225,8 +225,8 @@ div[data-testid="stLinkButton"] a:hover {{
 }}
 
 /* Download */
-section.main [data-testid="stDownloadButton"] > button,
-section.main [data-testid="stDownloadButton"] button {{
+.stApp:not(:has(.rs-studio)) section.main [data-testid="stDownloadButton"] > button,
+.stApp:not(:has(.rs-studio)) section.main [data-testid="stDownloadButton"] button {{
     background: {_GRAY_BG} !important;
     color: {_GRAY_COLOR} !important;
     border: 1px solid {_GRAY_BORDER} !important;

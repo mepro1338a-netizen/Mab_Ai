@@ -43,8 +43,8 @@ def sidebar_master_css() -> str:
     return """
 /* MaByte Sidebar — do not duplicate in page CSS */
 section[data-testid="stSidebar"] {
-    min-width: 14rem !important;
-    width: 14rem !important;
+    min-width: 11.25rem !important;
+    width: 11.25rem !important;
     background:
         radial-gradient(ellipse 120% 80% at 0% 0%, rgba(124,58,237,.22), transparent 50%),
         radial-gradient(ellipse 80% 60% at 100% 100%, rgba(37,99,235,.12), transparent 45%),
@@ -53,7 +53,7 @@ section[data-testid="stSidebar"] {
     box-shadow: 4px 0 32px rgba(0,0,0,.25) !important;
 }
 section[data-testid="stSidebar"] > div {
-    padding: 10px 10px 18px 10px !important;
+    padding: 8px 8px 14px 8px !important;
 }
 section[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
     gap: 8px !important;
@@ -66,15 +66,15 @@ section[data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"] {
     box-shadow: none !important;
 }
 .sidebar-logo-wrap {
-    padding: 4px 0 18px 0;
+    padding: 2px 0 12px 0;
 }
 .sidebar-logo-wrap img {
     width: 100%;
-    border-radius: 22px;
-    box-shadow: 0 18px 45px rgba(0,0,0,.22);
+    border-radius: 16px;
+    box-shadow: 0 12px 32px rgba(0,0,0,.2);
 }
 .mb-section-label {
-    margin: 16px 0 6px 4px;
+    margin: 12px 0 4px 4px;
     color: rgba(192,132,252,.85) !important;
     font-size: 10px;
     font-weight: 1000;
