@@ -34,11 +34,49 @@ WORKSPACE_CSS = """
     font-size: 13px !important;
     font-weight: 600 !important;
 }
+.stApp:has(.mb-workspace) .mb-ws-kicker {
+    color: #71717a !important;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+}
+.stApp:has(.mb-workspace) .mb-ws-title {
+    color: #fafafa !important;
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    margin: 6px 0 4px 0;
+}
+.stApp:has(.mb-workspace) .mb-ws-sub {
+    color: #a1a1aa !important;
+    font-size: 14px;
+    line-height: 1.45;
+}
+.stApp:has(.mb-workspace) .stButton > button[kind="primary"],
+.stApp:has(.mb-workspace) button[data-testid="stBaseButton-primary"] {
+    background: #7c3aed !important;
+    background-color: #7c3aed !important;
+    border: 1px solid #6d28d9 !important;
+    color: #ffffff !important;
+    box-shadow: none !important;
+    border-radius: 10px !important;
+    font-weight: 600 !important;
+}
+.stApp:has(.mb-workspace) .stButton > button[kind="primary"]:hover,
+.stApp:has(.mb-workspace) button[data-testid="stBaseButton-primary"]:hover {
+    background: #6d28d9 !important;
+    background-color: #6d28d9 !important;
+}
+.stApp:has(.mb-workspace) .stButton > button[kind="primary"] p,
+.stApp:has(.mb-workspace) button[data-testid="stBaseButton-primary"] p {
+    color: #ffffff !important;
+}
 .mb-ws-head {
     margin-bottom: 18px;
 }
 .mb-ws-kicker {
-    color: rgba(192, 132, 252, .85) !important;
+    color: #71717a !important;
     font-size: 10px;
     font-weight: 800;
     letter-spacing: .18em;

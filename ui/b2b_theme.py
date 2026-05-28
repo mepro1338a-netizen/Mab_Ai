@@ -1,6 +1,8 @@
 """B2B zinc/anthracite theme — single source for MaByte surfaces + Streamlit overrides."""
 from __future__ import annotations
 
+import streamlit as st
+
 MB_THEME_VARS = """
 :root {
     --mb-zinc-950: #09090b;
@@ -28,9 +30,7 @@ MB_THEME_VARS = """
 }
 """
 
-MB_APP_BACKGROUND = """
-    linear-gradient(180deg, #09090b 0%, #18181b 42%, #09090b 100%)
-"""
+MB_APP_BACKGROUND = "linear-gradient(180deg, #09090b 0%, #18181b 42%, #09090b 100%)"
 
 AUTH_EXTRA_VARS = """
 :root {
@@ -38,23 +38,53 @@ AUTH_EXTRA_VARS = """
 }
 """
 
+# Streamlit theme tokens (light + dark) — must win over config.toml defaults in the browser.
+STREAMLIT_THEME_VARS = """
+.stApp,
+.stApp[data-theme="light"],
+.stApp[data-theme="dark"] {
+    --background-color: #09090b !important;
+    --secondary-background-color: #18181b !important;
+    --text-color: #fafafa !important;
+    --primary-color: #7c3aed !important;
+    --border-color: #3f3f46 !important;
+}
+section[data-testid="stSidebar"],
+section[data-testid="stSidebar"] .stApp {
+    --background-color: #18181b !important;
+    --secondary-background-color: #27272a !important;
+    --text-color: #e4e4e7 !important;
+}
+"""
+
 
 def streamlit_force_dark_css() -> str:
     """Kill light Streamlit defaults (sidebar, main, widgets, deploy)."""
-    return """
+    return (
+        STREAMLIT_THEME_VARS
+        + """
 html, body {
     color-scheme: dark !important;
     background-color: #09090b !important;
 }
 
 .stApp,
+.stApp > header,
+.stApp[data-theme="light"],
+.stApp[data-theme="dark"],
 [data-testid="stAppViewContainer"],
+[data-testid="stAppViewContainer"] > section,
+[data-testid="stAppViewContainer"] > section > div,
 [data-testid="stAppViewBlockContainer"],
+[data-testid="stMainBlockContainer"],
 section.main,
 section.main > div,
+section.main .block-container,
 .main,
 .main .block-container {
-    background: linear-gradient(180deg, #09090b 0%, #18181b 42%, #09090b 100%) !important;
+    background: """
+        + MB_APP_BACKGROUND
+        + """ !important;
     background-color: #09090b !important;
     color: #e4e4e7 !important;
 }
@@ -65,10 +95,30 @@ section[data-testid="stSidebar"] > div,
 section[data-testid="stSidebar"] [data-testid="stSidebarContent"],
 section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"],
 section[data-testid="stSidebar"] [data-testid="stVerticalBlock"],
-section[data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"] {
+section[data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"],
+section[data-testid="stSidebar"] [data-testid="stSidebarNav"] {
     background: #18181b !important;
     background-color: #18181b !important;
     color: #e4e4e7 !important;
+}
+
+/* Every sidebar button — kill white Streamlit secondary look */
+section[data-testid="stSidebar"] .stButton > button,
+section[data-testid="stSidebar"] button[kind="secondary"],
+section[data-testid="stSidebar"] button[kind="primary"],
+section[data-testid="stSidebar"] button[data-testid="stBaseButton-secondary"],
+section[data-testid="stSidebar"] button[data-testid="stBaseButton-primary"] {
+    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
+    border: 1px solid transparent !important;
+    box-shadow: none !important;
+    color: #a1a1aa !important;
+}
+
+section[data-testid="stSidebar"] .stButton > button p,
+section[data-testid="stSidebar"] button p {
+    color: inherit !important;
 }
 
 button[data-testid="collapsedControl"],
@@ -92,7 +142,9 @@ button[kind="header"] {
 .stRadio label p,
 label[data-testid="stWidgetLabel"] p,
 .stCaption,
-[data-testid="stWidgetLabel"] p {
+[data-testid="stWidgetLabel"] p,
+section.main .stMarkdown p,
+section.main .stMarkdown span {
     color: #d4d4d8 !important;
 }
 
@@ -108,8 +160,8 @@ div[data-baseweb="textarea"] {
 }
 
 div[data-testid="stVerticalBlockBorderWrapper"] {
-    background: rgba(24, 24, 27, .55) !important;
-    border-color: rgba(63, 63, 70, .75) !important;
+    background: #18181b !important;
+    border-color: #3f3f46 !important;
 }
 
 /* Streamlit chrome */
@@ -130,4 +182,33 @@ a[data-testid="stDeployButton"] {
 iframe[title="streamlit_app"] {
     background: #09090b !important;
 }
+
+.mb-error-panel {
+    padding: 20px 22px;
+    border-radius: 14px;
+    background: #18181b;
+    border: 1px solid #3f3f46;
+    margin-bottom: 12px;
+}
+.mb-error-panel h3 {
+    color: #fafafa !important;
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0 0 8px 0;
+}
+.mb-error-panel p {
+    color: #a1a1aa !important;
+    font-size: 14px;
+    line-height: 1.5;
+    margin: 0;
+}
 """
+    )
+
+
+def inject_theme_lock() -> None:
+    """Final override — must run every script execution, after page widgets."""
+    st.markdown(
+        f"<style>{streamlit_force_dark_css().strip()}</style>",
+        unsafe_allow_html=True,
+    )
