@@ -242,6 +242,9 @@ section.main .block-container {
     border-radius: 18px !important;
     box-shadow: inset 0 2px 12px rgba(0,0,0,.25), 0 0 32px rgba(124,58,237,.12) !important;
 }
+.st-key-rs_prompt div[data-testid="stTextArea"] div[data-baseweb="textarea"] {
+    background: linear-gradient(145deg, rgba(49,16,78,.98), rgba(24,10,40,.99)) !important;
+}
 .st-key-rs_prompt textarea {
     background: rgba(8,10,22,.0) !important;
     color: #f8fafc !important;

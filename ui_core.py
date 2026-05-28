@@ -149,7 +149,11 @@ div[data-baseweb="input"] {{
     border:1px solid rgba(255,255,255,.10)!important;
     border-radius:var(--mb-radius-md)!important;
 }}
-.stTextArea textarea {{
+/* Force textarea wrapper to stay dark (Streamlit sometimes injects white) */
+div[data-testid="stTextArea"] div[data-baseweb="textarea"] {{
+    background:rgba(8,10,22,.55)!important;
+}}
+div[data-testid="stTextArea"] textarea {{
     background:transparent!important;
 }}
 div[data-baseweb="textarea"]:focus-within,
@@ -197,6 +201,50 @@ div[data-testid="stAlert"] {{
     background:linear-gradient(135deg,rgba(80,20,120,.28),rgba(30,64,175,.22))!important;
     border:1px solid rgba(255,255,255,.08)!important;
     border-radius:16px!important;
+}}
+
+/* =========================
+   Radio (Format switch) as premium segmented control
+   ========================= */
+div[data-testid="stRadio"] > label {{
+    display:none!important;
+}}
+div[data-testid="stRadio"] div[role="radiogroup"] {{
+    display:inline-flex !important;
+    gap: 8px !important;
+    padding: 6px !important;
+    border-radius: var(--mb-radius-lg) !important;
+    background: rgba(10,12,24,.45) !important;
+    border: 1px solid rgba(255,255,255,.08) !important;
+    backdrop-filter: blur(14px);
+}}
+div[data-testid="stRadio"] div[role="radiogroup"] label {{
+    margin: 0 !important;
+    padding: 8px 14px !important;
+    border-radius: var(--mb-radius-md) !important;
+    border: 1px solid rgba(255,255,255,.08) !important;
+    background: rgba(10,12,24,.28) !important;
+    transition: transform .14s ease, box-shadow .14s ease, border-color .14s ease, background .14s ease;
+}}
+div[data-testid="stRadio"] div[role="radiogroup"] label:hover {{
+    transform: translateY(-1px);
+    border-color: rgba(168,85,247,.18) !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,.22), 0 0 24px rgba(124,58,237,.10) !important;
+}}
+div[data-testid="stRadio"] div[role="radiogroup"] label input {{
+    display:none!important;
+}}
+div[data-testid="stRadio"] div[role="radiogroup"] label p {{
+    margin: 0 !important;
+    color: rgba(226,232,240,.92) !important;
+    font-weight: 900 !important;
+    letter-spacing: -0.01em;
+}}
+/* selected (uses :has where supported; safe fallback keeps default) */
+div[data-testid="stRadio"] div[role="radiogroup"] label:has(input:checked) {{
+    background: linear-gradient(135deg, rgba(124,58,237,.40), rgba(59,130,246,.18)) !important;
+    border-color: rgba(168,85,247,.35) !important;
+    box-shadow: 0 14px 44px rgba(0,0,0,.26), 0 0 30px rgba(124,58,237,.14) !important;
 }}
 
 [data-testid="metric-container"] {{
