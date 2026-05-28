@@ -43,8 +43,8 @@ def sidebar_master_css() -> str:
     return """
 /* MaByte Sidebar — do not duplicate in page CSS */
 section[data-testid="stSidebar"] {
-    min-width: 15.75rem !important;
-    width: 15.75rem !important;
+    min-width: 14rem !important;
+    width: 14rem !important;
     background:
         radial-gradient(ellipse 120% 80% at 0% 0%, rgba(124,58,237,.22), transparent 50%),
         radial-gradient(ellipse 80% 60% at 100% 100%, rgba(37,99,235,.12), transparent 45%),

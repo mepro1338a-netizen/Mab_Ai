@@ -155,6 +155,13 @@ div[data-testid="stTextArea"] div[data-baseweb="textarea"] {{
 }}
 div[data-testid="stTextArea"] textarea {{
     background:transparent!important;
+    background-color:transparent!important;
+    color:#f8fafc!important;
+    -webkit-text-fill-color:#f8fafc!important;
+}}
+div[data-testid="stTextArea"] div[data-baseweb="textarea"] > div,
+div[data-testid="stTextArea"] [data-baseweb="textarea"] {{
+    background-color:rgba(8,10,22,.55)!important;
 }}
 div[data-baseweb="textarea"]:focus-within,
 div[data-baseweb="select"] > div:focus-within,

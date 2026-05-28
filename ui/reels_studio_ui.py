@@ -22,6 +22,7 @@ from services.video_automation import create_automation_rule
 from services.video_engine import can_use_automation, engine_status, get_job_bundle
 from services.video_providers import ai_provider_available
 from ui.styles import inject_css, page_layout_css
+from ui.premium_studio_css import PREMIUM_STUDIO_CSS
 
 STEPS = ("Idee", "Video erzeugen", "Preview", "Planen", "Posten")
 
@@ -154,55 +155,17 @@ section.main .block-container {
 .rs-step.done { color: #a78bfa !important; }
 .rs-section-title {
     color: #c4b5fd !important; font-size: 11px; font-weight: 800;
-    letter-spacing: .16em; text-transform: uppercase; margin: 18px 0 10px 2px;
+    letter-spacing: .16em; text-transform: uppercase; margin: 14px 0 8px 2px;
 }
-.rs-card-btn button {
-    position: relative;
-    min-height: 86px !important;
-    padding: 14px 14px 12px 14px !important;
-    border-radius: 18px !important;
-    text-align: left !important;
+.rs-prompt-shell {
+    padding: 14px 14px 10px 14px;
+    border-radius: 20px;
     background:
-        radial-gradient(circle at 30% 10%, rgba(168,85,247,.12), transparent 38%),
-        linear-gradient(180deg, rgba(12,18,38,.74), rgba(8,10,22,.90)) !important;
-    border: 1px solid rgba(255,255,255,.09) !important;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,.04) !important;
-    transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
-}
-.rs-card-btn button * {
-    /* Hide Streamlit's default button label to avoid duplicated text */
-    opacity: 0 !important;
-}
-.rs-card-btn button {
-    overflow: hidden !important;
-}
-.rs-card-btn button:focus {
-    outline: none !important;
-}
-.rs-card-btn button:hover {
-    transform: translateY(-1px);
-    border-color: rgba(168,85,247,.22) !important;
-    box-shadow: 0 0 0 1px rgba(168,85,247,.12), 0 0 24px rgba(124,58,237,.12) !important;
-}
-.rs-card-btn-selected button {
-    border-color: rgba(168,85,247,.55) !important;
-    box-shadow: 0 0 0 1px rgba(168,85,247,.18), 0 0 30px rgba(124,58,237,.20) !important;
-    background:
-        radial-gradient(circle at 30% 10%, rgba(168,85,247,.20), transparent 40%),
-        linear-gradient(180deg, rgba(18,10,32,.92), rgba(8,10,22,.92)) !important;
-}
-.rs-card-h1 { color: #ffffff !important; font-weight: 1000; font-size: 14px; line-height: 1.15; }
-.rs-card-h2 { color: rgba(148,163,184,.92) !important; font-size: 11px; margin-top: 4px; line-height: 1.3; }
-.rs-card-icon {
-    width: 28px; height: 28px; border-radius: 12px;
-    display: inline-flex; align-items: center; justify-content: center;
-    margin-bottom: 8px;
-    background: linear-gradient(135deg, rgba(124,58,237,.7), rgba(59,130,246,.35));
-    border: 1px solid rgba(255,255,255,.12);
-    box-shadow: 0 10px 24px rgba(0,0,0,.22), 0 0 18px rgba(124,58,237,.16);
-    color: #ffffff !important;
-    font-weight: 1000;
-    font-size: 12px;
+        radial-gradient(circle at 20% 0%, rgba(168,85,247,.10), transparent 42%),
+        linear-gradient(180deg, rgba(10,12,24,.55), rgba(8,10,22,.72));
+    border: 1px solid rgba(255,255,255,.08);
+    backdrop-filter: blur(16px);
+    box-shadow: 0 18px 60px rgba(0,0,0,.28);
 }
 .rs-cost-box {
     padding: 14px 18px; border-radius: 14px; margin: 12px 0 16px 0;
@@ -235,38 +198,6 @@ section.main .block-container {
     background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
 }
 .st-key-rs_prompt [data-testid="stTextArea"] > label { display: none !important; }
-.st-key-rs_prompt [data-testid="stTextArea"] > div,
-.st-key-rs_prompt [data-testid="stTextArea"] div[data-baseweb="textarea"] {
-    background: linear-gradient(145deg, rgba(49,16,78,.98), rgba(24,10,40,.99)) !important;
-    border: 1px solid rgba(168,85,247,.4) !important;
-    border-radius: 18px !important;
-    box-shadow: inset 0 2px 12px rgba(0,0,0,.25), 0 0 32px rgba(124,58,237,.12) !important;
-}
-.st-key-rs_prompt div[data-testid="stTextArea"] div[data-baseweb="textarea"] {
-    background: linear-gradient(145deg, rgba(49,16,78,.98), rgba(24,10,40,.99)) !important;
-}
-.st-key-rs_prompt textarea {
-    background: rgba(8,10,22,.0) !important;
-    color: #f8fafc !important;
-    -webkit-text-fill-color: #f8fafc !important;
-    font-size: 16px !important; line-height: 1.5 !important;
-    min-height: 120px !important;
-}
-.st-key-rs_prompt [data-baseweb="textarea"] textarea {
-    background: transparent !important;
-}
-.st-key-rs_prompt textarea,
-.st-key-rs_prompt [data-testid="stTextArea"] textarea {
-    background-color: transparent !important;
-}
-.st-key-rs_prompt textarea {
-    /* Force dark even if parent styling changes */
-    caret-color: #f8fafc !important;
-}
-.st-key-rs_prompt textarea::placeholder {
-    color: rgba(248,250,252,.4) !important;
-    -webkit-text-fill-color: rgba(248,250,252,.4) !important;
-}
 div[data-testid="stDateInput"] input,
 div[data-testid="stTimeInput"] input,
 div[data-testid="stTextInput"] input {
@@ -285,7 +216,21 @@ div[data-testid="stToggle"] label p { color: #e2e8f0 !important; }
 
 
 def inject_reels_css() -> None:
-    inject_css(page_layout_css(960, 8, 32) + REELS_CSS)
+    inject_css(page_layout_css(1040, 8, 32) + PREMIUM_STUDIO_CSS + REELS_CSS)
+
+
+_CARD_ICONS: dict = {
+    "tiktok": "TT",
+    "instagram_reels": "IG",
+    "youtube_shorts": "YT",
+    3: "3s",
+    5: "5s",
+    7: "7s",
+    "viral": "V",
+    "football": "FB",
+    "cinematic": "C",
+    "news": "N",
+}
 
 
 _VALID_DURATIONS = frozenset({3, 5, 7})
@@ -433,34 +378,22 @@ def _render_card_picker(
     *,
     value_index: int = 0,
 ) -> str | int:
-    """options: tuple of (id, title, sub). Renders as clickable card-buttons."""
+    """Clickable premium cards — label inside button (no overlay / duplicate text)."""
     st.markdown(f'<div class="rs-section-title">{html.escape(label)}</div>', unsafe_allow_html=True)
     if session_key not in st.session_state:
         st.session_state[session_key] = options[value_index][0]
 
     current = st.session_state[session_key]
-    cols = st.columns(min(len(options), 4))
+    cols = st.columns(len(options))
     for i, opt in enumerate(options):
         oid, title, sub = opt[0], opt[1], opt[2]
         is_sel = oid == current
-        icon = {
-            "tiktok": "TT",
-            "instagram_reels": "IG",
-            "youtube_shorts": "YT",
-            3: "3s",
-            5: "5s",
-            7: "7s",
-            "viral": "V",
-            "football": "FB",
-            "cinematic": "C",
-            "news": "N",
-        }.get(oid, "•")
+        icon = _CARD_ICONS.get(oid, "•")
+        btn_label = f"{icon}  {title}\n{sub}"
 
-        with cols[i % len(cols)]:
-            wrapper_cls = "rs-card-btn rs-card-btn-selected" if is_sel else "rs-card-btn"
-            st.markdown(f'<div class="{wrapper_cls}">', unsafe_allow_html=True)
+        with cols[i]:
             if st.button(
-                " ",
+                btn_label,
                 key=f"rs_pick_{session_key}_{oid}",
                 use_container_width=True,
                 type="primary" if is_sel else "secondary",
@@ -468,14 +401,6 @@ def _render_card_picker(
             ):
                 st.session_state[session_key] = oid
                 st.rerun()
-            st.markdown(
-                f'<div style="margin-top:-80px;pointer-events:none;">'
-                f'<div class="rs-card-icon">{html.escape(str(icon))}</div>'
-                f'<div class="rs-card-h1">{html.escape(title)}</div>'
-                f'<div class="rs-card-h2">{html.escape(sub)}</div>'
-                f"</div></div>",
-                unsafe_allow_html=True,
-            )
     return st.session_state[session_key]
 
 
@@ -492,7 +417,10 @@ def _step_idea(username: str, tokens: int, user: dict, plan: str) -> None:
     with c3:
         style = _render_card_picker("Stil", (STYLES[0], STYLES[1], STYLES[2]), "rs_style", value_index=0)
 
-    st.markdown('<div class="rs-section-title">Deine Idee</div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="rs-prompt-shell"><div class="rs-section-title" style="margin-top:0;">Deine Idee</div>',
+        unsafe_allow_html=True,
+    )
     prompt = st.text_area(
         "Prompt",
         placeholder="z.B. Derby-Highlight, Tor in der 89. Minute, euphorische Stimmung…",
@@ -500,6 +428,7 @@ def _step_idea(username: str, tokens: int, user: dict, plan: str) -> None:
         height=130,
         label_visibility="collapsed",
     )
+    st.markdown("</div>", unsafe_allow_html=True)
 
     auto_meta = st.toggle("Titel, Caption und Hashtags automatisch generieren", value=True, key="rs_auto_meta")
 
@@ -935,6 +864,7 @@ def render_reels_studio_premium(
     plan = str(user.get("plan") or "free")
     step = _normalize_rs_session()
 
+    st.markdown('<div class="rs-studio">', unsafe_allow_html=True)
     _render_header(username, tokens, user)
     _render_stepper(step)
 
@@ -948,3 +878,4 @@ def render_reels_studio_premium(
         _step_schedule(username, user, plan)
     else:
         _step_publish(username, user)
+    st.markdown("</div>", unsafe_allow_html=True)
