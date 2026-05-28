@@ -140,6 +140,16 @@ section.main .block-container {
     box-shadow: inset 0 1px 0 rgba(255,255,255,.04) !important;
     transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
 }
+.rs-card-btn button * {
+    /* Hide Streamlit's default button label to avoid duplicated text */
+    opacity: 0 !important;
+}
+.rs-card-btn button {
+    overflow: hidden !important;
+}
+.rs-card-btn button:focus {
+    outline: none !important;
+}
 .rs-card-btn button:hover {
     transform: translateY(-1px);
     border-color: rgba(168,85,247,.22) !important;
@@ -204,10 +214,22 @@ section.main .block-container {
     box-shadow: inset 0 2px 12px rgba(0,0,0,.25), 0 0 32px rgba(124,58,237,.12) !important;
 }
 .st-key-rs_prompt textarea {
-    background: transparent !important; color: #f8fafc !important;
+    background: rgba(8,10,22,.0) !important;
+    color: #f8fafc !important;
     -webkit-text-fill-color: #f8fafc !important;
     font-size: 16px !important; line-height: 1.5 !important;
     min-height: 120px !important;
+}
+.st-key-rs_prompt [data-baseweb="textarea"] textarea {
+    background: transparent !important;
+}
+.st-key-rs_prompt textarea,
+.st-key-rs_prompt [data-testid="stTextArea"] textarea {
+    background-color: transparent !important;
+}
+.st-key-rs_prompt textarea {
+    /* Force dark even if parent styling changes */
+    caret-color: #f8fafc !important;
 }
 .st-key-rs_prompt textarea::placeholder {
     color: rgba(248,250,252,.4) !important;
@@ -363,18 +385,6 @@ def _render_stepper(active: int) -> None:
         unsafe_allow_html=True,
     )
 
-    cols = st.columns(len(STEPS))
-    for i, col in enumerate(cols):
-        with col:
-            if st.button(
-                f"Schritt {i + 1}",
-                key=f"rs_go_step_{i}",
-                use_container_width=True,
-                disabled=(i == active),
-            ):
-                st.session_state.rs_step = i
-                st.rerun()
-
 
 def _full_prompt(base: str, style_key: str) -> str:
     extra = STYLE_PROMPT.get(style_key, "")
@@ -418,7 +428,7 @@ def _render_card_picker(
             wrapper_cls = "rs-card-btn rs-card-btn-selected" if is_sel else "rs-card-btn"
             st.markdown(f'<div class="{wrapper_cls}">', unsafe_allow_html=True)
             if st.button(
-                f"{title}",
+                " ",
                 key=f"rs_pick_{session_key}_{oid}",
                 use_container_width=True,
                 type="primary" if is_sel else "secondary",
