@@ -21,7 +21,6 @@ def _tokens() -> int:
 def _render_format_switch() -> str:
     """Premium segmented control — no Streamlit radio dots."""
     cur = str(st.session_state.get("creator_format") or "Shorts")
-    st.markdown('<div class="mb-format-bar">', unsafe_allow_html=True)
     c1, c2 = st.columns(2)
     with c1:
         if st.button(
@@ -41,7 +40,6 @@ def _render_format_switch() -> str:
         ):
             st.session_state.creator_format = "Video"
             st.rerun()
-    st.markdown("</div>", unsafe_allow_html=True)
     return str(st.session_state.get("creator_format") or "Shorts")
 
 

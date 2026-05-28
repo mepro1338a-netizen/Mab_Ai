@@ -49,15 +49,24 @@ STYLE_PROMPT = {
 }
 
 REELS_CSS = """
-section.main .block-container {
-    padding-top: 8px !important;
-    max-width: 960px !important;
-    padding-bottom: 48px !important;
-}
 .rs-hero {
     text-align: center;
-    padding: 6px 0 14px 0;
+    padding: 8px 0 16px 0;
+    position: relative;
 }
+.rs-hero::before {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: -20px;
+    width: 320px;
+    height: 120px;
+    transform: translateX(-50%);
+    background: radial-gradient(circle, rgba(168, 85, 247, .22), transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+}
+.rs-hero > * { position: relative; z-index: 1; }
 .rs-hero-title {
     font-size: 44px;
     line-height: 1.05;
@@ -110,49 +119,13 @@ section.main .block-container {
     text-transform: uppercase;
     margin: 2px 0 10px 2px;
 }
-.rs-stepper {
-    position: relative;
-    display: flex;
-    flex-wrap: nowrap;
-    gap: 0;
-    margin: 0;
-    padding: 10px;
+div[data-testid="stHorizontalBlock"]:has(div[class*="st-key-rs_step_nav_"]) {
+    padding: 8px 6px 6px 6px;
     border-radius: 16px;
-    background: rgba(10,12,24,.45);
-    border: 1px solid rgba(255,255,255,.06);
-    overflow: hidden;
+    background: rgba(10, 12, 24, .45);
+    border: 1px solid rgba(255, 255, 255, .06);
+    margin-bottom: 4px;
 }
-.rs-stepper::before {
-    content:"";
-    position:absolute;
-    left: 30px;
-    right: 30px;
-    top: 50%;
-    height: 2px;
-    transform: translateY(-50%);
-    background: linear-gradient(90deg, rgba(168,85,247,.0), rgba(168,85,247,.35), rgba(96,165,250,.28), rgba(96,165,250,.0));
-    opacity: .75;
-}
-.rs-step {
-    position: relative;
-    flex: 1;
-    min-width: 120px;
-    text-align: center;
-    padding: 10px 6px;
-    border-radius: 14px;
-    font-size: 11px;
-    font-weight: 900;
-    color: rgba(148,163,184,.92) !important;
-    border: 1px solid transparent;
-    z-index: 2;
-}
-.rs-step.active {
-    color: #fff !important;
-    background: linear-gradient(135deg, rgba(124,58,237,.5), rgba(59,130,246,.25));
-    border-color: rgba(168,85,247,.45);
-    box-shadow: 0 0 24px rgba(124,58,237,.25);
-}
-.rs-step.done { color: #a78bfa !important; }
 .rs-section-title {
     color: #c4b5fd !important; font-size: 11px; font-weight: 800;
     letter-spacing: .16em; text-transform: uppercase; margin: 14px 0 8px 2px;
@@ -198,6 +171,10 @@ section.main .block-container {
     background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08);
 }
 .st-key-rs_prompt [data-testid="stTextArea"] > label { display: none !important; }
+.st-key-rs_prompt [data-testid="stTextArea"] *,
+.st-key-rs_prompt [data-baseweb="base-input"] {
+    background-color: transparent !important;
+}
 div[data-testid="stDateInput"] input,
 div[data-testid="stTimeInput"] input,
 div[data-testid="stTextInput"] input {
@@ -208,7 +185,6 @@ div[data-testid="stTextInput"] input {
 div[data-testid="stCheckbox"] label,
 div[data-testid="stToggle"] label p { color: #e2e8f0 !important; }
 @media (max-width: 640px) {
-    .rs-step { min-width: 58px; font-size: 10px; padding: 8px 4px; }
     .rs-hero-title { font-size: 28px; letter-spacing: -1px; }
     .rs-top-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
@@ -217,20 +193,6 @@ div[data-testid="stToggle"] label p { color: #e2e8f0 !important; }
 
 def inject_reels_css() -> None:
     inject_css(page_layout_css(1040, 8, 32) + PREMIUM_STUDIO_CSS + REELS_CSS)
-
-
-_CARD_ICONS: dict = {
-    "tiktok": "TT",
-    "instagram_reels": "IG",
-    "youtube_shorts": "YT",
-    3: "3s",
-    5: "5s",
-    7: "7s",
-    "viral": "V",
-    "football": "FB",
-    "cinematic": "C",
-    "news": "N",
-}
 
 
 _VALID_DURATIONS = frozenset({3, 5, 7})
@@ -348,18 +310,36 @@ def _render_header(username: str, tokens: int, user: dict) -> None:
 
 
 def _render_stepper(active: int) -> None:
-    parts = []
-    for i, name in enumerate(STEPS):
-        cls = "rs-step"
-        if i == active:
-            cls += " active"
-        elif i < active:
-            cls += " done"
-        parts.append(f'<div class="{cls}">{i + 1}. {html.escape(name)}</div>')
     st.markdown(
-        f'<div class="rs-workflow"><div class="rs-workflow-label">Workflow: Reel Erstellung</div>'
-        f'<div class="rs-stepper">{"".join(parts)}</div></div>',
+        '<div class="rs-workflow"><div class="rs-workflow-label">Workflow · Reel Erstellung</div>',
         unsafe_allow_html=True,
+    )
+    cols = st.columns(len(STEPS))
+    for i, col in enumerate(cols):
+        with col:
+            label = f"{i + 1}\n{STEPS[i]}"
+            if st.button(
+                label,
+                key=f"rs_step_nav_{i}",
+                use_container_width=True,
+                type="primary" if i == active else "secondary",
+            ):
+                if i != active:
+                    st.session_state.rs_step = i
+                    st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+def _enhance_prompt(text: str, style_key: str, duration: int, platform: str) -> str:
+    t = (text or "").strip()
+    if not t:
+        return t
+    plat = next((p[1] for p in PLATFORMS if p[0] == platform), "Short-Form")
+    style_hint = STYLE_PROMPT.get(style_key, "").rstrip(".")
+    return (
+        f"{t} — Optimiert für {plat}, {duration}s, 9:16 vertical. "
+        f"Starker Hook in Sekunde 1, hohe Retention, premium Look."
+        + (f" {style_hint}." if style_hint else "")
     )
 
 
@@ -388,8 +368,7 @@ def _render_card_picker(
     for i, opt in enumerate(options):
         oid, title, sub = opt[0], opt[1], opt[2]
         is_sel = oid == current
-        icon = _CARD_ICONS.get(oid, "•")
-        btn_label = f"{icon}  {title}\n{sub}"
+        btn_label = f"{title}\n{sub}"
 
         with cols[i]:
             if st.button(
@@ -409,13 +388,11 @@ def _step_idea(username: str, tokens: int, user: dict, plan: str) -> None:
     if notice:
         getattr(st, notice[0], st.info)(notice[1])
 
-    c1, c2, c3 = st.columns([1.2, 1.0, 1.2])
-    with c1:
-        platform = _render_card_picker("Zielplattform", PLATFORMS, "rs_platform", value_index=0)
-    with c2:
-        duration = _render_card_picker("Länge", DURATIONS, "rs_duration", value_index=1)
-    with c3:
-        style = _render_card_picker("Stil", (STYLES[0], STYLES[1], STYLES[2]), "rs_style", value_index=0)
+    st.markdown('<div class="rs-picker-row">', unsafe_allow_html=True)
+    platform = _render_card_picker("Zielplattform", PLATFORMS, "rs_platform", value_index=0)
+    duration = _render_card_picker("Länge", DURATIONS, "rs_duration", value_index=1)
+    style = _render_card_picker("Stil", STYLES, "rs_style", value_index=0)
+    st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown(
         '<div class="rs-prompt-shell"><div class="rs-section-title" style="margin-top:0;">Deine Idee</div>',
@@ -440,9 +417,23 @@ def _step_idea(username: str, tokens: int, user: dict, plan: str) -> None:
         unsafe_allow_html=True,
     )
 
+    def _apply_prompt_enhance() -> None:
+        st.session_state.rs_prompt = _enhance_prompt(
+            st.session_state.get("rs_prompt", ""),
+            str(st.session_state.get("rs_style", "viral")),
+            int(st.session_state.get("rs_duration", 5)),
+            str(st.session_state.get("rs_platform", "tiktok")),
+        )
+
     a, b = st.columns([1.0, 1.2])
     with a:
-        st.button("Prompt verbessern", use_container_width=True, key="rs_prompt_enhance", type="secondary")
+        st.button(
+            "Prompt verbessern",
+            use_container_width=True,
+            key="rs_prompt_enhance",
+            type="secondary",
+            on_click=_apply_prompt_enhance,
+        )
     with b:
         if st.button(
             f"Reel erstellen  •  {cost_line}",
