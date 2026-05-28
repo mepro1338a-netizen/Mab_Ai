@@ -38,6 +38,14 @@ def load_css() -> None:
     inject_design_system(1480, 88)
     inject_css(f"""
 {MB_THEME_VARS}
+:root {{
+    --mb-radius-sm: 12px;
+    --mb-radius-md: 16px;
+    --mb-radius-lg: 22px;
+    --mb-glass: rgba(12, 18, 38, .62);
+    --mb-glass-2: rgba(8, 10, 22, .76);
+    --mb-line-strong: rgba(255,255,255,.10);
+}}
 
 #MainMenu,
 footer,
@@ -91,6 +99,12 @@ h1,h2,h3,h4,h5,h6 {{
     font-weight:1000!important;
 }}
 
+/* Typography scale */
+body, p, div, span, input, textarea {{
+    font-feature-settings: "ss01" 1, "ss02" 1;
+    letter-spacing: -0.01em;
+}}
+
 label,
 .stMarkdown,
 .stText,
@@ -98,16 +112,29 @@ label,
     color:var(--mb-soft)!important;
 }}
 
+/* Panel glass — reduces "Streamlit box" look */
+div[data-testid="stVerticalBlockBorderWrapper"] {{
+    background:
+        radial-gradient(circle at 20% 0%, rgba(168,85,247,.10), transparent 36%),
+        radial-gradient(circle at 100% 100%, rgba(96,165,250,.07), transparent 40%),
+        linear-gradient(180deg,var(--mb-glass),var(--mb-glass-2))!important;
+    border:1px solid rgba(255,255,255,.08)!important;
+    border-radius:var(--mb-radius-lg)!important;
+    box-shadow:0 18px 70px rgba(0,0,0,.35), 0 0 50px rgba(168,85,247,.06)!important;
+    backdrop-filter:blur(18px);
+}}
+
 .stTextInput input,
 .stTextArea textarea,
 .stNumberInput input,
 .stDateInput input,
 .stTimeInput input {{
-    background:rgba(15,23,42,.92)!important;
-    color:var(--mb-gold)!important;
-    border:1px solid rgba(96,165,250,.24)!important;
-    border-radius:15px!important;
+    background:rgba(8,10,22,.65)!important;
+    color:#f8fafc!important;
+    border:1px solid rgba(255,255,255,.10)!important;
+    border-radius:var(--mb-radius-md)!important;
     min-height:44px!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.04), 0 0 0 1px rgba(168,85,247,.06)!important;
 }}
 
 .stTextInput input::placeholder,
@@ -115,22 +142,55 @@ label,
     color:var(--mb-muted)!important;
 }}
 
+/* Baseweb wrappers (prevents white textarea/select backgrounds) */
+div[data-baseweb="textarea"],
+div[data-baseweb="input"] {{
+    background:rgba(8,10,22,.55)!important;
+    border:1px solid rgba(255,255,255,.10)!important;
+    border-radius:var(--mb-radius-md)!important;
+}}
+.stTextArea textarea {{
+    background:transparent!important;
+}}
+div[data-baseweb="textarea"]:focus-within,
+div[data-baseweb="select"] > div:focus-within,
+.stTextInput input:focus,
+.stTextArea textarea:focus {{
+    border-color:rgba(168,85,247,.38)!important;
+    box-shadow:0 0 0 1px rgba(168,85,247,.22), 0 0 28px rgba(124,58,237,.14)!important;
+}}
+
 .stSelectbox div[data-baseweb="select"] > div,
 .stMultiSelect div[data-baseweb="select"] > div {{
-    background:rgba(15,23,42,.92)!important;
-    color:var(--mb-gold)!important;
-    border:1px solid rgba(96,165,250,.24)!important;
-    border-radius:15px!important;
+    background:rgba(8,10,22,.65)!important;
+    color:#f8fafc!important;
+    border:1px solid rgba(255,255,255,.10)!important;
+    border-radius:var(--mb-radius-md)!important;
     min-height:44px!important;
 }}
 
-div[data-testid="stVerticalBlockBorderWrapper"] {{
-    background:
-        radial-gradient(circle at top left, rgba(168,85,247,.10), transparent 32%),
-        linear-gradient(180deg,rgba(12,18,38,.90),rgba(8,12,26,.98))!important;
-    border:1px solid var(--mb-line)!important;
-    border-radius:24px!important;
-    box-shadow:0 0 36px rgba(0,140,255,.075)!important;
+/* Buttons — remove gray Streamlit feel */
+div.stButton > button,
+button[kind],
+button[data-testid^="stBaseButton"] {{
+    border-radius:var(--mb-radius-md)!important;
+    border:1px solid rgba(255,255,255,.10)!important;
+    background:rgba(10,12,24,.55)!important;
+    color:#f8fafc!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.04), 0 10px 30px rgba(0,0,0,.22)!important;
+    transition:transform .14s ease, box-shadow .14s ease, border-color .14s ease, background .14s ease;
+}}
+div.stButton > button:hover,
+button[kind]:hover {{
+    transform:translateY(-1px);
+    border-color:rgba(168,85,247,.22)!important;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.05), 0 14px 44px rgba(0,0,0,.28), 0 0 26px rgba(124,58,237,.12)!important;
+}}
+button[kind="primary"],
+button[data-testid="stBaseButton-primary"] {{
+    background:linear-gradient(135deg, rgba(124,58,237,.95), rgba(168,85,247,.86))!important;
+    border-color:rgba(255,255,255,.18)!important;
+    box-shadow:0 18px 55px rgba(124,58,237,.18), 0 0 38px rgba(168,85,247,.16)!important;
 }}
 
 div[data-testid="stAlert"] {{

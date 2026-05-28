@@ -96,6 +96,23 @@ section[data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"] {
     margin: 0 0 8px 0 !important;
     padding: 0 !important;
 }
+.mb-nav-item button {
+    border-radius: 16px !important;
+    background: rgba(10,12,24,.32) !important;
+    border: 1px solid rgba(255,255,255,.08) !important;
+    box-shadow: none !important;
+    transition: transform .14s ease, border-color .14s ease, box-shadow .14s ease, background .14s ease;
+}
+.mb-nav-item button:hover {
+    transform: translateY(-1px);
+    border-color: rgba(168,85,247,.18) !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,.24), 0 0 24px rgba(124,58,237,.10) !important;
+    background: rgba(10,12,24,.40) !important;
+}
+.mb-nav-active button {
+    background: linear-gradient(135deg, rgba(124,58,237,.34), rgba(59,130,246,.18)) !important;
+    border-color: rgba(168,85,247,.35) !important;
+}
 .mb-nav-item [data-testid="column"] {
     display: none !important;
 }

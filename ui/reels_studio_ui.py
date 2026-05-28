@@ -94,8 +94,11 @@ section.main .block-container {
     margin-top: 8px;
     padding: 12px 12px;
     border-radius: 18px;
-    background: rgba(8,10,20,.45);
-    border: 1px solid rgba(255,255,255,.07);
+    background:
+        radial-gradient(circle at 20% 0%, rgba(168,85,247,.12), transparent 42%),
+        radial-gradient(circle at 100% 100%, rgba(96,165,250,.08), transparent 45%),
+        linear-gradient(180deg, rgba(10,12,24,.55), rgba(8,10,22,.72));
+    border: 1px solid rgba(255,255,255,.09);
     backdrop-filter: blur(14px);
 }
 .rs-workflow-label {
@@ -107,14 +110,40 @@ section.main .block-container {
     margin: 2px 0 10px 2px;
 }
 .rs-stepper {
-    display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 20px 0;
-    padding: 10px; border-radius: 16px;
-    background: rgba(15,10,28,.85); border: 1px solid rgba(255,255,255,.06);
+    position: relative;
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0;
+    margin: 0;
+    padding: 10px;
+    border-radius: 16px;
+    background: rgba(10,12,24,.45);
+    border: 1px solid rgba(255,255,255,.06);
+    overflow: hidden;
+}
+.rs-stepper::before {
+    content:"";
+    position:absolute;
+    left: 30px;
+    right: 30px;
+    top: 50%;
+    height: 2px;
+    transform: translateY(-50%);
+    background: linear-gradient(90deg, rgba(168,85,247,.0), rgba(168,85,247,.35), rgba(96,165,250,.28), rgba(96,165,250,.0));
+    opacity: .75;
 }
 .rs-step {
-    flex: 1; min-width: 72px; text-align: center; padding: 10px 8px;
-    border-radius: 12px; font-size: 11px; font-weight: 800; color: #64748b !important;
+    position: relative;
+    flex: 1;
+    min-width: 120px;
+    text-align: center;
+    padding: 10px 6px;
+    border-radius: 14px;
+    font-size: 11px;
+    font-weight: 900;
+    color: rgba(148,163,184,.92) !important;
     border: 1px solid transparent;
+    z-index: 2;
 }
 .rs-step.active {
     color: #fff !important;
