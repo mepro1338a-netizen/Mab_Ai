@@ -9,7 +9,7 @@ from database import spend_tokens, save_usage, get_user, update_tokens
 from ui_core import sync_session_user
 from ui.image_studio import render_image_studio
 from ui.video_studio import render_video_studio
-from ui.prompt_ui import inject_ma_prompt_css, prompt_text_area, prompt_text_input
+from ui.workspace_ui import inject_workspace_css, workspace_header, workspace_marker
 from ui.styles import inject_css, page_layout_css, gradient_title_css
 
 try:
@@ -275,16 +275,6 @@ div[data-testid="stAlert"] {
     )
 
 
-def render_hero(title, subtitle):
-    st.markdown(
-        f"""
-<div class="mb-title">{title}</div>
-<div class="mb-sub">{subtitle}</div>
-""",
-        unsafe_allow_html=True,
-    )
-
-
 def render_reel_script():
     cost = get_reel_script_cost()
 
@@ -305,10 +295,11 @@ def render_reel_script():
 
     with left:
         with st.container(border=True):
-            topic = prompt_text_area(
-                placeholder="Frag MaByte… z.B. Warum Arsenal dieses Jahr gefährlich ist…",
+            topic = st.text_area(
+                "Thema / Idee",
+                placeholder="z.B. Warum dieses Derby viral gehen könnte…",
                 key="script_topic",
-                height=160,
+                height=140,
             )
 
             platform = st.selectbox(
@@ -407,10 +398,11 @@ def render_reel_video():
 
     with left:
         with st.container(border=True):
-            topic = prompt_text_area(
-                placeholder="Frag MaByte… Video-Idee beschreiben…",
+            topic = st.text_area(
+                "Video-Idee",
+                placeholder="Szene, Stimmung, Hook beschreiben…",
                 key="video_topic",
-                height=160,
+                height=140,
             )
 
             platform = st.selectbox(
@@ -539,8 +531,9 @@ Einmalig freischalten. Danach kannst du Reel-Workflows vorbereiten:
     st.success("Automation System ist aktiv.")
 
     with st.container(border=True):
-        idea = prompt_text_area(
-            placeholder="Frag MaByte… Automation beschreiben…",
+        idea = st.text_area(
+            "Automation",
+            placeholder="Trigger und Ablauf beschreiben…",
             key="auto_idea",
             height=150,
         )
@@ -670,10 +663,14 @@ def render_image_ai():
 
 
 def render_music_ai():
-    render_hero("Music AI", "Create music concepts and song packages.")
+    workspace_header("Music Studio", "Song-Konzept und Lyrics-Package generieren.")
 
     with st.container(border=True):
-        topic = prompt_text_input(placeholder="Frag MaByte… Song-Thema…", key="music_topic")
+        topic = st.text_input(
+            "Thema",
+            placeholder="z.B. Dark Trap, 140 BPM, Nachtleben",
+            key="music_topic",
+        )
         genre = st.selectbox("Genre", ["Rap", "Trap", "Pop", "EDM", "Phonk", "Afro", "Rock"], key="music_genre")
         length = st.selectbox("Länge", ["short", "medium", "long"], key="music_length")
         cost = get_music_cost(length=length)
@@ -687,13 +684,14 @@ def render_music_ai():
 
 
 def render_coding_ai():
-    render_hero("Coding Studio", "Build, debug and ship code faster.")
+    workspace_header("Code Studio", "Code schreiben, debuggen und erklären lassen.")
 
     with st.container(border=True):
-        task = prompt_text_area(
-            placeholder="Frag MaByte… Was soll gebaut oder gefixt werden?",
+        task = st.text_area(
+            "Aufgabe",
+            placeholder="Was soll gebaut, geprüft oder erklärt werden?",
             key="coding_task",
-            height=160,
+            height=140,
         )
         complexity = st.selectbox("Komplexität", ["normal", "advanced", "fullstack"], key="coding_complexity")
         cost = get_coding_cost(complexity=complexity)
@@ -811,16 +809,22 @@ def render_reels_studio():
 
 def render_media(active_tool="reels"):
     ensure_logged_in()
+    workspace_marker()
+    inject_workspace_css()
     media_css()
-    inject_ma_prompt_css()
 
     if active_tool == "image":
+        workspace_header("Image Studio", "Bilder und Thumbnails generieren.")
         render_image_ai()
         return
     elif active_tool == "music":
         render_music_ai()
+        inject_workspace_css()
+        return
     elif active_tool == "coding":
         render_coding_ai()
+        inject_workspace_css()
+        return
     elif active_tool == "video":
         st.session_state.creator_format = "Video"
         render_creator_studio()
@@ -831,3 +835,6 @@ def render_media(active_tool="reels"):
     else:
         st.session_state.creator_format = "Shorts"
         render_creator_studio()
+        return
+
+    inject_workspace_css()

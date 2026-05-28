@@ -16,7 +16,6 @@ from ui.dashboard_ui import (
     render_stats,
     render_workspace_matrix,
 )
-from ui.prompt_ui import inject_ma_prompt_css, ma_chat_input
 
 
 def _forward_chat(text: str) -> None:
@@ -32,7 +31,6 @@ def render_home() -> None:
         return
 
     inject_dashboard_css()
-    inject_ma_prompt_css()
 
     user = str(st.session_state.get("user") or "User")
     plan_key = str(st.session_state.get("plan") or "free")
@@ -75,8 +73,7 @@ def render_home() -> None:
     score = workspace_activity_score(user)
     st.caption(f"Erfolgreiche Jobs: {format_num(jobs)} · Workspace-Score: {score}/100")
 
-    prompt = ma_chat_input("Frag MaByte…")
-    if prompt:
-        _forward_chat(prompt)
+    if st.button("AI Chat öffnen", key="home_open_chat", use_container_width=True):
+        nav("chat")
 
     inject_dashboard_css()

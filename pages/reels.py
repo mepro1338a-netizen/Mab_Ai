@@ -155,7 +155,8 @@ def _tab_script_ai(engine: ReelEngine, user: dict) -> None:
         st.slider("Länge (s)", 15, 60, 30, key="reel_duration")
 
     topic = prompt_text_area(
-        placeholder="z.B. Bayern vs Dortmund — warum dieses Derby viral geht…",
+        label="Thema",
+        placeholder="z.B. Derby-Highlight, Hook in Sekunde 1…",
         key="reel_topic",
         height=100,
     )

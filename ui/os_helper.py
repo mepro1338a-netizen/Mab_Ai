@@ -46,7 +46,8 @@ def render_os_guide_dashboard() -> None:
     with c1:
         pending = st.session_state.pop("os_guide_pending_query", None)
         user_q = prompt_text_input(
-            placeholder="Frag MaByte… z.B. Wo ist Odds Lab?",
+            placeholder="z.B. Wo finde ich Odds Lab?",
+            label="Frage an den Guide",
             key="os_guide_dash_input",
         )
         if prompt_submit_button("Senden", key="os_guide_dash_ask"):

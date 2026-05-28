@@ -103,7 +103,8 @@ def render_create_automation():
 
         from ui.prompt_ui import prompt_text_area
         trigger = prompt_text_area(
-            placeholder="Frag MaByte… Trigger / Instruction beschreiben…",
+            placeholder="Trigger und Anweisung beschreiben…",
+            label="Automation",
             key="auto_lab_trigger",
             height=140,
         )

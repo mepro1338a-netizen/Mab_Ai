@@ -39,24 +39,21 @@ ICON_MAP = {
 
 
 def sidebar_master_css() -> str:
-    """Single sidebar stylesheet — injected last so every page looks identical."""
+    """Premium SaaS sidebar — single source of truth."""
     return """
-/* MaByte Sidebar — do not duplicate in page CSS */
 section[data-testid="stSidebar"] {
-    min-width: 11.25rem !important;
-    width: 11.25rem !important;
+    min-width: 15rem !important;
+    width: 15rem !important;
     background:
-        radial-gradient(ellipse 120% 80% at 0% 0%, rgba(124,58,237,.22), transparent 50%),
-        radial-gradient(ellipse 80% 60% at 100% 100%, rgba(37,99,235,.12), transparent 45%),
-        linear-gradient(185deg, #0c0614 0%, #1a0a28 42%, #08040f 100%) !important;
-    border-right: 1px solid rgba(255,231,163,.08) !important;
-    box-shadow: 4px 0 32px rgba(0,0,0,.25) !important;
+        linear-gradient(180deg, rgba(8, 10, 20, .98) 0%, rgba(6, 6, 14, .99) 100%) !important;
+    border-right: 1px solid rgba(255, 255, 255, .06) !important;
+    box-shadow: 4px 0 40px rgba(0, 0, 0, .35) !important;
 }
 section[data-testid="stSidebar"] > div {
-    padding: 8px 8px 14px 8px !important;
+    padding: 10px 10px 16px 10px !important;
 }
 section[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
-    gap: 8px !important;
+    gap: 2px !important;
 }
 section[data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"] {
     background: transparent !important;
@@ -65,135 +62,210 @@ section[data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"] {
     margin: 0 !important;
     box-shadow: none !important;
 }
+
 .sidebar-logo-wrap {
-    padding: 2px 0 12px 0;
+    padding: 4px 4px 14px 4px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid rgba(255, 255, 255, .06);
 }
 .sidebar-logo-wrap img {
     width: 100%;
-    border-radius: 16px;
-    box-shadow: 0 12px 32px rgba(0,0,0,.2);
+    max-height: 52px;
+    object-fit: contain;
+    border-radius: 12px;
 }
-.mb-section-label {
-    margin: 12px 0 4px 4px;
-    color: rgba(192,132,252,.85) !important;
-    font-size: 10px;
-    font-weight: 1000;
-    letter-spacing: .22em;
-    text-transform: uppercase;
-}
-.mb-section-label:first-of-type {
-    margin-top: 6px;
-}
+
 .mb-nav-section {
-    margin-bottom: 14px;
-    padding-bottom: 4px;
-    border-bottom: 1px solid rgba(168,85,247,.08);
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, .05);
 }
 .mb-nav-section:last-of-type {
     border-bottom: none;
+    margin-bottom: 6px;
 }
+
+.mb-section-label {
+    margin: 10px 0 6px 10px;
+    color: rgba(100, 116, 139, .95) !important;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+}
+.mb-nav-section:first-of-type .mb-section-label {
+    margin-top: 4px;
+}
+
 .mb-nav-item {
-    margin: 0 0 8px 0 !important;
+    margin: 0 0 2px 0 !important;
     padding: 0 !important;
 }
-.mb-nav-item button {
-    border-radius: 16px !important;
-    background: rgba(10,12,24,.32) !important;
-    border: 1px solid rgba(255,255,255,.08) !important;
+
+/* Base nav button — inactive */
+section[data-testid="stSidebar"] .mb-nav-item:not(.mb-nav-active) .stButton > button,
+section[data-testid="stSidebar"] .mb-nav-item:not(.mb-nav-active) button[data-testid="stBaseButton-secondary"] {
+    width: 100% !important;
+    min-height: 40px !important;
+    padding: 0 12px 0 44px !important;
+    border-radius: 10px !important;
+    border: 1px solid transparent !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    color: rgba(148, 163, 184, .95) !important;
+    font-weight: 600 !important;
+    font-size: 13px !important;
+    text-align: left !important;
     box-shadow: none !important;
-    transition: transform .14s ease, border-color .14s ease, box-shadow .14s ease, background .14s ease;
+    position: relative !important;
+    transition: background .12s ease, color .12s ease, border-color .12s ease !important;
 }
-.mb-nav-item button:hover {
-    transform: translateY(-1px);
-    border-color: rgba(168,85,247,.18) !important;
-    box-shadow: 0 10px 30px rgba(0,0,0,.24), 0 0 24px rgba(124,58,237,.10) !important;
-    background: rgba(10,12,24,.40) !important;
+section[data-testid="stSidebar"] .mb-nav-item:not(.mb-nav-active) button p {
+    color: rgba(148, 163, 184, .95) !important;
+    font-weight: 600 !important;
+    font-size: 13px !important;
 }
-.mb-nav-active button {
-    background: linear-gradient(135deg, rgba(124,58,237,.34), rgba(59,130,246,.18)) !important;
-    border-color: rgba(168,85,247,.35) !important;
+section[data-testid="stSidebar"] .mb-nav-item:not(.mb-nav-active) .stButton > button:hover,
+section[data-testid="stSidebar"] .mb-nav-item:not(.mb-nav-active) button:hover {
+    background: rgba(255, 255, 255, .04) !important;
+    color: #e2e8f0 !important;
+    border-color: rgba(255, 255, 255, .06) !important;
 }
-.mb-nav-item [data-testid="column"] {
-    display: none !important;
+section[data-testid="stSidebar"] .mb-nav-item:not(.mb-nav-active) .stButton > button:hover p {
+    color: #e2e8f0 !important;
 }
-.mb-nav-item [data-testid="stVerticalBlock"] {
-    gap: 0 !important;
+
+/* Active nav — single clear state */
+section[data-testid="stSidebar"] .mb-nav-active .stButton > button,
+section[data-testid="stSidebar"] .mb-nav-active button[data-testid="stBaseButton-secondary"] {
+    width: 100% !important;
+    min-height: 40px !important;
+    padding: 0 12px 0 44px !important;
+    border-radius: 10px !important;
+    border: 1px solid rgba(168, 85, 247, .28) !important;
+    background: rgba(124, 58, 237, .14) !important;
+    background-color: rgba(124, 58, 237, .14) !important;
+    color: #fff !important;
+    font-weight: 700 !important;
+    font-size: 13px !important;
+    text-align: left !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05) !important;
+    position: relative !important;
 }
-.mb-nav-item .stButton > button::before,
-.mb-nav-item button::before,
-.mb-nav-item [data-testid="stBaseButton-secondary"]::before,
-.mb-nav-item [data-testid="stBaseButton-primary"]::before {
+section[data-testid="stSidebar"] .mb-nav-active button p {
+    color: #fff !important;
+    font-weight: 700 !important;
+}
+section[data-testid="stSidebar"] .mb-nav-active .stButton > button::before,
+section[data-testid="stSidebar"] .mb-nav-active button::before {
     content: "";
     position: absolute;
-    left: 12px;
+    left: 0;
+    top: 8px;
+    bottom: 8px;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: linear-gradient(180deg, #c084fc, #7c3aed);
+    box-shadow: 0 0 12px rgba(168, 85, 247, .5);
+}
+
+/* Nav icon */
+section[data-testid="stSidebar"] .mb-nav-item .stButton > button::after,
+section[data-testid="stSidebar"] .mb-nav-item button::after {
+    content: "";
+    position: absolute;
+    left: 10px;
     top: 50%;
     transform: translateY(-50%);
-    width: 30px;
-    height: 30px;
-    border-radius: 11px;
-    background:
-        radial-gradient(circle at 30% 20%, rgba(255,231,163,.18), transparent 45%),
-        linear-gradient(135deg, rgba(49,18,62,.95), rgba(20,9,32,.98));
-    border: 1px solid rgba(255,231,163,.14);
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background-color: rgba(255, 255, 255, .04);
+    border: 1px solid rgba(255, 255, 255, .08);
     background-image: var(--mb-nav-icon);
     background-repeat: no-repeat;
     background-position: center;
-    background-size: 20px 20px;
-    box-shadow: 0 6px 14px rgba(0,0,0,.16);
+    background-size: 16px 16px;
+    pointer-events: none;
 }
-.mb-nav-active button::before,
-.mb-nav-active [data-testid="stBaseButton-secondary"]::before,
-.mb-nav-active [data-testid="stBaseButton-primary"]::before {
-    border-color: rgba(255,231,163,.42);
-    box-shadow: 0 0 16px rgba(168,85,247,.28);
+section[data-testid="stSidebar"] .mb-nav-active .stButton > button::after,
+section[data-testid="stSidebar"] .mb-nav-active button::after {
+    border-color: rgba(168, 85, 247, .35);
+    background-color: rgba(124, 58, 237, .2);
+    box-shadow: 0 0 14px rgba(124, 58, 237, .2);
 }
+
+.mb-nav-item [data-testid="column"] {
+    display: none !important;
+}
+
 .sidebar-user-card {
-    background:
-        radial-gradient(circle at top right, rgba(168,85,247,.2), transparent 40%),
-        linear-gradient(165deg, rgba(22,10,38,.98), rgba(8,5,14,.99));
-    border: 1px solid rgba(255,231,163,.1);
-    border-radius: 22px;
-    padding: 16px 18px;
-    margin-top: 14px;
-    margin-bottom: 8px;
-    box-shadow: 0 12px 40px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.04);
+    margin-top: 12px;
+    padding: 14px 14px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, .03);
+    border: 1px solid rgba(255, 255, 255, .07);
 }
 .sidebar-user-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: 8px;
 }
 .sidebar-user-name {
-    font-size: 18px;
-    font-weight: 1000;
-    color: #ffffff !important;
+    font-size: 14px;
+    font-weight: 700;
+    color: #f8fafc !important;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 .sidebar-user-plan {
-    display: inline-flex;
-    padding: 6px 11px;
-    border-radius: 999px;
-    background: linear-gradient(135deg, #7c3aed, #a855f7);
-    color: #ffffff !important;
-    font-size: 11px;
-    font-weight: 1000;
-    white-space: nowrap;
+    padding: 4px 8px;
+    border-radius: 6px;
+    background: rgba(124, 58, 237, .25);
+    border: 1px solid rgba(168, 85, 247, .3);
+    color: #e9d5ff !important;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .04em;
+    text-transform: uppercase;
 }
 .sidebar-user-tokens {
-    color: #ffe7a3 !important;
-    font-size: 30px;
-    font-weight: 1000;
+    color: #f8fafc !important;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin-top: 10px;
     line-height: 1;
-    margin-top: 14px;
 }
 .sidebar-user-caption {
-    color: #94a3b8 !important;
-    font-size: 13px;
-    margin-top: 6px;
+    color: #64748b !important;
+    font-size: 11px;
+    margin-top: 4px;
 }
+
+section[data-testid="stSidebar"] .sidebar-logout-wrap .stButton > button,
+section[data-testid="stSidebar"] .sidebar-logout-wrap button {
+    min-height: 38px !important;
+    margin-top: 8px !important;
+    border-radius: 10px !important;
+    background: transparent !important;
+    border: 1px solid rgba(255, 255, 255, .08) !important;
+    color: rgba(148, 163, 184, .9) !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    box-shadow: none !important;
+}
+section[data-testid="stSidebar"] .sidebar-logout-wrap button:hover {
+    background: rgba(255, 255, 255, .04) !important;
+    color: #e2e8f0 !important;
+}
+section[data-testid="stSidebar"] .sidebar-logout-wrap button p {
+    color: inherit !important;
+    font-size: 12px !important;
+}
+
 @media (max-width: 768px) {
     section[data-testid="stSidebar"] {
         min-width: 100% !important;
@@ -267,6 +339,7 @@ def render_sidebar(active_page: str | None = None) -> None:
     active = (active_page or st.session_state.get("page") or "home").strip()
     if active in ("reels", "video"):
         active = "creator"
+
     inject_sidebar_styles()
     with st.sidebar:
         if WORDMARK.exists():
@@ -280,7 +353,7 @@ def render_sidebar(active_page: str | None = None) -> None:
                 unsafe_allow_html=True,
             )
         else:
-            st.markdown("## MaByte")
+            st.markdown("### MaByte")
 
         for section_title, items in SIDEBAR_SECTIONS:
             _nav_section(section_title, items, active)
@@ -292,8 +365,8 @@ def render_sidebar(active_page: str | None = None) -> None:
         fb_plan = html.escape(str(st.session_state.get("football_plan", "none")))
         tokens = int(st.session_state.get("tokens", 0) or 0)
         fb_line = ""
-        if fb_plan and fb_plan != "none":
-            fb_line = f'<div class="sidebar-user-caption">Football: {fb_plan}</div>'
+        if fb_plan and fb_plan not in ("none", "", "free"):
+            fb_line = f'<div class="sidebar-user-caption">Football · {fb_plan}</div>'
 
         st.markdown(
             f"""
@@ -311,7 +384,7 @@ def render_sidebar(active_page: str | None = None) -> None:
         )
 
         st.markdown('<div class="sidebar-logout-wrap">', unsafe_allow_html=True)
-        if st.button("Abmelden", key="nav_logout", width="stretch"):
+        if st.button("Abmelden", key="nav_logout", width="stretch", type="secondary"):
             from services.session_auth import logout_session
             logout_session()
             st.rerun()

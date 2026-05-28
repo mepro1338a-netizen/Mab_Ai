@@ -66,34 +66,8 @@ MABYTE_PROMPT_CSS = """
     box-shadow: 0 6px 20px rgba(124, 58, 237, .25) !important;
 }
 
-/* ===== Form prompt fields (studios, guide, projects) ===== */
+/* Legacy prompt marker — prefer labeled st.text_input in workspaces */
 .mb-prompt-marker { display: none; }
-
-div[data-testid="stVerticalBlock"]:has(.mb-prompt-marker) [data-testid="stTextArea"] > div,
-div[data-testid="stVerticalBlock"]:has(.mb-prompt-marker) [data-testid="stTextInput"] > div > div {
-    background:
-        radial-gradient(circle at top left, rgba(192,132,252,.22), transparent 30%),
-        linear-gradient(135deg, rgba(58,18,92,.95), rgba(28,8,52,.98)) !important;
-    border-radius: 20px !important;
-    border: 1px solid rgba(192,132,252,.45) !important;
-    box-shadow:
-        0 0 28px rgba(168,85,247,.28),
-        inset 0 0 0 1px rgba(255,255,255,.04) !important;
-}
-
-div[data-testid="stVerticalBlock"]:has(.mb-prompt-marker) textarea,
-div[data-testid="stVerticalBlock"]:has(.mb-prompt-marker) input {
-    background: transparent !important;
-    color: #f5d0fe !important;
-    font-weight: 800 !important;
-    font-size: 15px !important;
-}
-
-div[data-testid="stVerticalBlock"]:has(.mb-prompt-marker) textarea::placeholder,
-div[data-testid="stVerticalBlock"]:has(.mb-prompt-marker) input::placeholder {
-    color: rgba(245,208,254,.65) !important;
-    font-weight: 800 !important;
-}
 
 .mb-prompt-submit .stButton > button {
     background: linear-gradient(135deg, #9333ea, #7c3aed) !important;
@@ -204,39 +178,35 @@ def render_quickstart_grid(key_prefix: str = "qs") -> str | None:
     return clicked
 
 
-def ma_chat_input(placeholder: str = "Frag MaByte...") -> str | None:
+def ma_chat_input(placeholder: str = "Nachricht eingeben…") -> str | None:
     return st.chat_input(placeholder)
 
 
 def prompt_text_area(
     *,
-    placeholder: str = "Frag MaByte...",
+    placeholder: str = "",
     key: str,
     height: int = 120,
-    label: str = "",
+    label: str = "Beschreibung",
 ) -> str:
-    st.markdown('<span class="mb-prompt-marker"></span>', unsafe_allow_html=True)
     return st.text_area(
         label,
         placeholder=placeholder,
         key=key,
         height=height,
-        label_visibility="collapsed",
     )
 
 
 def prompt_text_input(
     *,
-    placeholder: str = "Frag MaByte...",
+    placeholder: str = "",
     key: str,
-    label: str = "",
+    label: str = "Eingabe",
 ) -> str:
-    st.markdown('<span class="mb-prompt-marker"></span>', unsafe_allow_html=True)
     return st.text_input(
         label,
         placeholder=placeholder,
         key=key,
-        label_visibility="collapsed",
     )
 
 

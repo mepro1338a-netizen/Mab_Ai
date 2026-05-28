@@ -237,7 +237,6 @@ def render_dashboard():
     require_login()
     refresh_user()
     inject_dashboard_css()
-    inject_ma_prompt_css()
 
     plan_key = current_plan_key()
     plan = current_plan()
@@ -656,7 +655,8 @@ def render_support():
             with c3:
                 subject = st.text_input("Betreff", placeholder="Kurze Zusammenfassung")
             message = prompt_text_area(
-                placeholder="Frag MaByte… Support-Anliegen beschreiben…",
+                placeholder="Beschreibe dein Anliegen…",
+                label="Nachricht",
                 key="support_ticket_msg",
                 height=160,
             )

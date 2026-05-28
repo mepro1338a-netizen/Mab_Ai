@@ -1402,7 +1402,8 @@ def render_football_odds_calculator(summary: dict) -> None:
                 key="fb_odds_input_prob",
             )
             match_note = prompt_text_input(
-                placeholder="Frag MaByte… Match-Notiz",
+                placeholder="Optional: eigene Match-Notiz",
+                label="Notiz",
                 key="fb_odds_input_note",
             )
             calc = st.form_submit_button("Analyse starten", width="stretch")

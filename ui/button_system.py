@@ -24,84 +24,8 @@ _GRAY_BORDER_HOVER = "rgba(255,255,255,.2)"
 _GRAY_GLOW = "0 8px 20px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.06)"
 _GRAY_GLOW_HOVER = "0 0 18px rgba(255,255,255,.08), 0 10px 24px rgba(0,0,0,.22)"
 
-SIDEBAR_NAV_BUTTON_CSS = f"""
-/* Sidebar — grau, weiße Schrift */
-section[data-testid="stSidebar"] .mb-nav-item .stButton,
-section[data-testid="stSidebar"] .mb-nav-item {_BTN} {{
-    width: 100% !important;
-}}
-section[data-testid="stSidebar"] .mb-nav-item {_BTN} {{
-    width: 100% !important;
-    min-height: 42px !important;
-    border-radius: 14px !important;
-    border: 1px solid {_GRAY_BORDER} !important;
-    background: {_GRAY_BG} !important;
-    background-color: rgba(32,32,36,.99) !important;
-    color: {_GRAY_COLOR} !important;
-    font-weight: 700 !important;
-    font-size: 13px !important;
-    text-align: left !important;
-    padding: 9px 10px 9px 48px !important;
-    position: relative !important;
-    box-shadow: {_GRAY_GLOW} !important;
-    transition: transform .16s ease, box-shadow .16s ease, border-color .16s ease !important;
-}}
-section[data-testid="stSidebar"] .mb-nav-item {_BTN_P} {{
-    color: {_GRAY_COLOR} !important;
-    font-weight: 700 !important;
-    font-size: 13px !important;
-}}
-section[data-testid="stSidebar"] .mb-nav-item button[kind="primary"],
-section[data-testid="stSidebar"] .mb-nav-item button[kind="secondary"],
-section[data-testid="stSidebar"] .mb-nav-item [data-testid="stBaseButton-primary"],
-section[data-testid="stSidebar"] .mb-nav-item [data-testid="stBaseButton-secondary"] {{
-    background: {_GRAY_BG} !important;
-    background-color: rgba(32,32,36,.99) !important;
-    color: {_GRAY_COLOR} !important;
-}}
-section[data-testid="stSidebar"] .mb-nav-item {_BTN}:hover {{
-    transform: translateY(-1px) !important;
-    color: {_GRAY_COLOR} !important;
-    border-color: {_GRAY_BORDER_HOVER} !important;
-    background: {_GRAY_BG_HOVER} !important;
-    background-color: rgba(44,44,48,.99) !important;
-    box-shadow: {_GRAY_GLOW_HOVER} !important;
-}}
-section[data-testid="stSidebar"] .mb-nav-item {_BTN}:hover p {{
-    color: {_GRAY_COLOR} !important;
-}}
-section[data-testid="stSidebar"] .mb-nav-active {_BTN} {{
-    color: {_GRAY_COLOR} !important;
-    border-color: {_GRAY_BORDER_HOVER} !important;
-    background: {_GRAY_BG_ACTIVE} !important;
-    background-color: rgba(52,52,56,.99) !important;
-    box-shadow: {_GRAY_GLOW_HOVER} !important;
-}}
-section[data-testid="stSidebar"] .mb-nav-active {_BTN_P} {{
-    color: {_GRAY_COLOR} !important;
-}}
-section[data-testid="stSidebar"] .sidebar-logout-wrap {_BTN} {{
-    width: 100% !important;
-    min-height: 40px !important;
-    padding: 8px 14px !important;
-    text-align: center !important;
-    border-radius: 12px !important;
-    background: linear-gradient(135deg, rgba(40,40,44,.95), rgba(28,28,32,.98)) !important;
-    background-color: rgba(30,30,34,.98) !important;
-    border: 1px solid {_GRAY_BORDER} !important;
-    color: {_GRAY_COLOR} !important;
-    box-shadow: none !important;
-}}
-section[data-testid="stSidebar"] .sidebar-logout-wrap {_BTN_P} {{
-    color: {_GRAY_COLOR} !important;
-    text-align: center !important;
-}}
-section[data-testid="stSidebar"] .sidebar-logout-wrap {_BTN}:hover {{
-    color: {_GRAY_COLOR} !important;
-    border-color: {_GRAY_BORDER_HOVER} !important;
-    background: {_GRAY_BG_HOVER} !important;
-}}
-"""
+# Sidebar nav styled in ui/sidebar.py (not gray buttons)
+SIDEBAR_NAV_BUTTON_CSS = ""
 
 MAIN_BUTTON_CSS = f"""
 /* Main — grau (nicht im Reels Creator Studio; dort premium_studio_css) */

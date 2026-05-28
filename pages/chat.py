@@ -201,7 +201,7 @@ def render_chat() -> None:
     render_messages(project)
 
     pending = st.session_state.pop("chat_pending_prompt", None)
-    prompt = ma_chat_input("Frag MaByte...")
+    prompt = ma_chat_input("Nachricht eingeben…")
 
     if pending:
         handle_prompt(pending, project)

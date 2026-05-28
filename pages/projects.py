@@ -175,7 +175,8 @@ def render_project_memory(project_id):
 
         from ui.prompt_ui import prompt_text_area
         content = prompt_text_area(
-            placeholder="Frag MaByte… Kontext, Ziele, Stil speichern…",
+            placeholder="Kontext, Ziele und Stil für dieses Projekt…",
+            label="Projekt-Notiz",
             key="proj_memory_content",
             height=180,
         )
