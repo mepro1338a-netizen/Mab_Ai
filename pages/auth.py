@@ -20,7 +20,6 @@ from oauth_service import (
 )
 from ui_core import sync_session_user
 from ui.auth_premium import auth_styles_bundle, card_hero_html, render_brand_column
-from ui.b2b_theme import streamlit_force_dark_css
 from ui.styles import inject_css
 
 
@@ -238,7 +237,6 @@ def handle_oauth_callback() -> bool:
 def auth_css() -> None:
     inject_css(
         auth_styles_bundle()
-        + streamlit_force_dark_css()
         + """
 section.main [data-testid="stVerticalBlock"] { gap: .45rem !important; }
 section.main [data-testid="stHorizontalBlock"] {
@@ -744,7 +742,6 @@ def render_auth() -> None:
     if "auth_mode" not in st.session_state:
         st.session_state.auth_mode = "login"
 
-    st.markdown('<div class="mb-auth-page">', unsafe_allow_html=True)
     brand_col, login_col = st.columns([1.15, 1], gap="large")
 
     with brand_col:
@@ -774,6 +771,5 @@ def render_auth() -> None:
             )
         st.markdown("</div>", unsafe_allow_html=True)
 
-    st.markdown("</div>", unsafe_allow_html=True)
     st.caption("MaByte · Sichere Anmeldung · Production")
 

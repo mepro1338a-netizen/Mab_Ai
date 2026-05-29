@@ -26,7 +26,7 @@ def _render_format_switch() -> str:
         if st.button(
             "Shorts",
             key="creator_fmt_shorts",
-            use_container_width=True,
+            width="stretch",
             type="primary" if cur == "Shorts" else "secondary",
         ):
             st.session_state.creator_format = "Shorts"
@@ -35,7 +35,7 @@ def _render_format_switch() -> str:
         if st.button(
             "Video",
             key="creator_fmt_video",
-            use_container_width=True,
+            width="stretch",
             type="primary" if cur == "Video" else "secondary",
         ):
             st.session_state.creator_format = "Video"

@@ -44,14 +44,14 @@ def _render_oauth_connect(username: str, pid: str, label: str, *, reconnect: boo
             btn_label,
             url,
             type="primary",
-            use_container_width=True,
+            width="stretch",
             key=f"soc_oauth_{pid}_{'re' if reconnect else 'new'}",
         )
     else:
         st.button(
             btn_label,
             disabled=True,
-            use_container_width=True,
+            width="stretch",
             key=f"soc_oauth_dis_{pid}",
         )
         if not social_oauth_ready():
@@ -119,7 +119,7 @@ def render_connected_accounts(username: str) -> None:
             if st.button(
                 "Kanalstatus aktualisieren",
                 key=f"soc_ch_{pid}",
-                use_container_width=True,
+                width="stretch",
             ):
                 with st.spinner("Lade Kanal…"):
                     info, err = svc.youtube_channel_status(pid)
@@ -160,20 +160,20 @@ def render_connected_accounts(username: str) -> None:
                 st.button(
                     f"{label} verbinden",
                     disabled=True,
-                    use_container_width=True,
+                    width="stretch",
                     key=f"soc_dis_{pid}",
                 )
             else:
                 st.button(
                     "Nicht verfügbar",
                     disabled=True,
-                    use_container_width=True,
+                    width="stretch",
                     key=f"soc_na_{pid}",
                 )
 
         with c2:
             if status == "connected":
-                if st.button("Trennen", key=f"soc_disc_{pid}", use_container_width=True):
+                if st.button("Trennen", key=f"soc_disc_{pid}", width="stretch"):
                     svc.disconnect(pid)
                     st.session_state.pop(f"yt_ch_{username}", None)
                     st.success("Getrennt.")

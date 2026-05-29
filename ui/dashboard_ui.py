@@ -255,17 +255,17 @@ def render_quick_actions() -> None:
     st.markdown('<div class="mb-dash-actions">', unsafe_allow_html=True)
     c1, c2, c3, c4 = st.columns(4)
     with c1:
-        if st.button("Shorts erstellen", key="dash_go_creator", use_container_width=True, type="primary"):
+        if st.button("Shorts erstellen", key="dash_go_creator", width="stretch", type="primary"):
             st.session_state.creator_format = "Shorts"
             nav("creator")
     with c2:
-        if st.button("AI Chat", key="dash_go_chat", use_container_width=True):
+        if st.button("AI Chat", key="dash_go_chat", width="stretch"):
             nav("chat")
     with c3:
-        if st.button("Football AI", key="dash_go_fb", use_container_width=True):
+        if st.button("Football AI", key="dash_go_fb", width="stretch"):
             nav("football")
     with c4:
-        if st.button("Premium", key="dash_go_prem", use_container_width=True):
+        if st.button("Premium", key="dash_go_prem", width="stretch"):
             nav("premium")
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -287,7 +287,7 @@ def render_workspace_matrix(plan: dict) -> None:
             if st.button(
                 btn_label,
                 key=f"dash_ws_{page}",
-                use_container_width=True,
+                width="stretch",
                 disabled=not ok,
             ):
                 if page == "creator":

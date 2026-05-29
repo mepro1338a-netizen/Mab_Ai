@@ -359,7 +359,7 @@ def _render_stepper(active: int) -> None:
             if st.button(
                 label,
                 key=f"rs_step_nav_{i}",
-                use_container_width=True,
+                width="stretch",
                 type="primary" if i == active else "secondary",
             ):
                 if i != active:
@@ -412,7 +412,7 @@ def _render_card_picker(
             if st.button(
                 btn_label,
                 key=f"rs_pick_{session_key}_{oid}",
-                use_container_width=True,
+                width="stretch",
                 type="primary" if is_sel else "secondary",
                 help=sub,
             ):
@@ -467,7 +467,7 @@ def _step_idea(username: str, tokens: int, user: dict, plan: str) -> None:
     with a:
         st.button(
             "Prompt verbessern",
-            use_container_width=True,
+            width="stretch",
             key="rs_prompt_enhance",
             type="secondary",
             on_click=_apply_prompt_enhance,
@@ -476,7 +476,7 @@ def _step_idea(username: str, tokens: int, user: dict, plan: str) -> None:
         if st.button(
             f"Reel erstellen  •  {cost_line}",
             type="primary",
-            use_container_width=True,
+            width="stretch",
             key="rs_create",
         ):
             full_prompt = _full_prompt(prompt, str(style))
@@ -544,7 +544,7 @@ def _step_render(username: str, user: dict, plan: str) -> None:
             "Starte die Queue einmal — Rendering dauert etwa 1–3 Minuten.</div>",
             unsafe_allow_html=True,
         )
-        if st.button("Rendering starten", type="primary", use_container_width=True, key="rs_run_queue"):
+        if st.button("Rendering starten", type="primary", width="stretch", key="rs_run_queue"):
             with st.spinner("MaByte rendert dein Reel…"):
                 try:
                     process_reel_queue(username, plan=plan, max_jobs=1)
@@ -590,12 +590,12 @@ def _step_render(username: str, user: dict, plan: str) -> None:
 
         c1, c2, c3, c4 = st.columns(4)
         with c1:
-            if status == "failed" and st.button("Retry", key=f"rs_retry_{jid}", use_container_width=True):
+            if status == "failed" and st.button("Retry", key=f"rs_retry_{jid}", width="stretch"):
                 update_reel_job(jid, status="queued", error_message="")
                 st.rerun()
         with c2:
             if status in ("ready", "ready_to_publish", "posted") and st.button(
-                "Preview", key=f"rs_prev_{jid}", use_container_width=True
+                "Preview", key=f"rs_prev_{jid}", width="stretch"
             ):
                 st.session_state.ve_active_job_id = jid
                 st.session_state.rs_step = 2
@@ -610,7 +610,7 @@ def _step_render(username: str, user: dict, plan: str) -> None:
                         file_name=f"mabyte_reel_{jid[:8]}.mp4",
                         mime="video/mp4",
                         key=f"rs_dl_{jid}",
-                        use_container_width=True,
+                        width="stretch",
                     )
 
 
@@ -656,12 +656,12 @@ def _step_preview(username: str) -> None:
                 file_name=f"mabyte_reel_{job_id[:8]}.mp4",
                 mime="video/mp4",
                 key="rs_download_mp4",
-                use_container_width=True,
+                width="stretch",
             )
     else:
         st.info("Video wird noch gerendert oder die Datei ist nicht verfügbar.")
 
-    if st.button("Weiter zu Planen", use_container_width=True, key="rs_to_schedule"):
+    if st.button("Weiter zu Planen", width="stretch", key="rs_to_schedule"):
         st.session_state.rs_step = 3
         st.rerun()
 
@@ -712,7 +712,7 @@ def _step_schedule(username: str, user: dict, plan: str) -> None:
         key="rs_publish_consent",
     )
 
-    if st.button("Veröffentlichung planen", type="primary", use_container_width=True, key="rs_save_sched"):
+    if st.button("Veröffentlichung planen", type="primary", width="stretch", key="rs_save_sched"):
         if auto_post and not consent:
             st.warning("Für Auto-Post brauchst du die Bestätigung unten.")
             return
@@ -824,14 +824,14 @@ def _render_publish_accounts(username: str) -> None:
         with c1:
             url = connect_auth_url(username, pid)
             if status in ("connected", "expired") and url:
-                st.link_button("Erneut verbinden", url, use_container_width=True, key=f"rs_oauth_re_{pid}")
+                st.link_button("Erneut verbinden", url, width="stretch", key=f"rs_oauth_re_{pid}")
             elif platform_configured(pid) and url:
-                st.link_button("Verbinden", url, use_container_width=True, key=f"rs_oauth_{pid}")
+                st.link_button("Verbinden", url, width="stretch", key=f"rs_oauth_{pid}")
             else:
-                st.button("Verbinden", disabled=True, use_container_width=True, key=f"rs_oauth_dis_{pid}")
+                st.button("Verbinden", disabled=True, width="stretch", key=f"rs_oauth_dis_{pid}")
         with c2:
             if status == "connected":
-                if st.button("Trennen", key=f"rs_disc_{pid}", use_container_width=True):
+                if st.button("Trennen", key=f"rs_disc_{pid}", width="stretch"):
                     svc.disconnect(pid)
                     st.success("Getrennt.")
                     st.rerun()
@@ -864,7 +864,7 @@ def _step_publish(username: str, user: dict) -> None:
         value=False,
         key="rs_post_consent_final",
     )
-    if st.button("Jetzt veröffentlichen", type="primary", use_container_width=True, key="rs_post_now"):
+    if st.button("Jetzt veröffentlichen", type="primary", width="stretch", key="rs_post_now"):
         if not consent:
             st.warning("Bitte die Bestätigung aktivieren.")
             return

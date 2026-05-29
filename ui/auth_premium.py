@@ -4,15 +4,17 @@ from __future__ import annotations
 import html
 
 from config import APP_NAME, APP_TAGLINE
-from ui.b2b_theme import MB_APP_BACKGROUND, MB_THEME_VARS, streamlit_force_dark_css
+from ui.b2b_theme import MB_APP_BACKGROUND, MB_THEME_VARS
 from ui_core import WORDMARK
 
 
-AUTH_PREMIUM_CSS = """
-.mb-auth-page {
-    position: relative;
-    min-height: calc(100vh - 96px);
-    z-index: 1;
+AUTH_PREMIUM_CSS = (
+    """
+.stApp, [data-testid="stAppViewContainer"] {
+    background: """
+    + MB_APP_BACKGROUND
+    + """ !important;
+    background-color: #09090b !important;
 }
 section.main .block-container,
 section.main [data-testid="stVerticalBlock"],
@@ -21,22 +23,6 @@ section.main .element-container {
     visibility: visible !important;
     opacity: 1 !important;
 }
-.mb-auth-page::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    z-index: 0;
-    background:
-        radial-gradient(ellipse 55% 45% at 12% 8%, rgba(124, 58, 237, .22), transparent 55%),
-        radial-gradient(ellipse 40% 35% at 88% 18%, rgba(96, 165, 250, .12), transparent 50%),
-        radial-gradient(ellipse 50% 40% at 50% 100%, rgba(24, 24, 27, .9), transparent 60%);
-}
-.mb-auth-page > [data-testid="column"] {
-    position: relative;
-    z-index: 1;
-}
-
 .mb-auth-brand {
     padding: 12px 8px 24px 8px;
 }
@@ -205,6 +191,7 @@ section.main div[data-testid="stVerticalBlockBorderWrapper"] {
     .mb-auth-pill-row { justify-content: center; }
 }
 """
+)
 
 
 def render_brand_column() -> None:
@@ -213,7 +200,7 @@ def render_brand_column() -> None:
 
     st.markdown('<div class="mb-auth-brand">', unsafe_allow_html=True)
     if WORDMARK.exists():
-        st.image(str(WORDMARK), use_container_width=True)
+        st.image(str(WORDMARK), width="stretch")
     else:
         st.markdown(
             f'<div class="mb-auth-logo-fallback">{html.escape(APP_NAME[:1])}</div>',

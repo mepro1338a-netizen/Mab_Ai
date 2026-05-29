@@ -238,7 +238,7 @@ def _render_image_result_block() -> None:
         """,
         unsafe_allow_html=True,
     )
-    st.image(image_bytes, use_container_width=True)
+    st.image(image_bytes, width="stretch")
     c1, c2 = st.columns(2)
     with c1:
         st.download_button(
