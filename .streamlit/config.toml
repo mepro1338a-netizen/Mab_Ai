@@ -5,14 +5,14 @@ showSidebarNavigation = false
 headless = true
 address = "0.0.0.0"
 port = 8501
-enableCORS = false
+# CORS must be true when XSRF protection is on (Streamlit requirement).
+enableCORS = true
 enableXsrfProtection = true
 enableWebsocketCompression = false
 maxUploadSize = 200
 
 [browser]
 gatherUsageStats = false
-serverAddress = "0.0.0.0"
 
 [runner]
 fastReruns = true

@@ -26,8 +26,8 @@ def configure_production_env() -> None:
     os.environ.setdefault("STREAMLIT_SERVER_HEADLESS", "true")
     os.environ.setdefault("STREAMLIT_BROWSER_GATHER_USAGE_STATS", "false")
     os.environ.setdefault("STREAMLIT_GLOBAL_DEVELOPMENT_MODE", "false")
-    # Custom domain / Railway reverse proxy (HTTPS)
-    os.environ.setdefault("STREAMLIT_SERVER_ENABLECORS", "false")
+    # Railway reverse proxy: CORS + XSRF must both be enabled (see Streamlit docs).
+    os.environ.setdefault("STREAMLIT_SERVER_ENABLECORS", "true")
     os.environ.setdefault("STREAMLIT_SERVER_ENABLEXSRFPROTECTION", "true")
 
 
