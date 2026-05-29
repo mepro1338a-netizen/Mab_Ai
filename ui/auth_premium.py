@@ -58,24 +58,26 @@ html { color-scheme: dark !important; }
     padding-top: 0 !important;
 }
 """
-+ _s("""
-section.main .block-container {
++ """
+.stApp [data-testid="stMain"] .block-container,
+.stApp [data-testid="stMainBlockContainer"] {
     max-width: 100% !important;
     padding: 0 !important;
 }
-section.main > div > div > [data-testid="stVerticalBlock"] {
+.stApp [data-testid="stMain"] [data-testid="stVerticalBlock"] {
     gap: 0 !important;
-    padding: 0 !important;
 }
 .stApp [data-testid="stMarkdownContainer"]:has(.mb-topbar),
 .stApp [data-testid="stMarkdownContainer"]:has(.mb-page-foot) {
     margin: 0 !important;
     padding: 0 !important;
 }
-section.main > div > div > [data-testid="stHorizontalBlock"] {
+
+/* Auth split layout — Streamlit 1.50: hero + panel are direct stColumn children */
+.stApp [data-testid="stHorizontalBlock"]:has(.auth-grid-marker) {
     display: grid !important;
     grid-template-columns: minmax(0, 1fr) 520px !important;
-    gap: 64px !important;
+    gap: 72px !important;
     align-items: center !important;
     min-height: calc(100vh - 80px) !important;
     max-width: 1440px !important;
@@ -83,86 +85,94 @@ section.main > div > div > [data-testid="stHorizontalBlock"] {
     padding: 80px 72px !important;
     box-sizing: border-box !important;
 }
-[data-testid="column"]:first-child {
+.stApp [data-testid="stHorizontalBlock"]:has(.auth-grid-marker) > [data-testid="stColumn"]:first-child {
     flex: unset !important;
     max-width: none !important;
     width: auto !important;
     min-width: 0 !important;
     padding: 0 !important;
-    display: block !important;
 }
-[data-testid="column"]:last-child {
+.stApp [data-testid="stHorizontalBlock"]:has(.auth-grid-marker) > [data-testid="stColumn"]:last-child {
     flex: unset !important;
-    max-width: none !important;
-    width: 520px !important;
+    max-width: 520px !important;
+    width: 100% !important;
     min-width: 0 !important;
     padding: 0 !important;
-    display: block !important;
+    justify-self: end !important;
+    align-self: center !important;
 }
-[data-testid="column"]:last-child > [data-testid="stVerticalBlock"] {
-    width: 520px !important;
-    max-width: 520px !important;
+
+/* Login card — only the Streamlit block that directly wraps the marker */
+.stApp .login-card,
+.stApp [data-testid="stVerticalBlock"]:has(> [data-testid="stElementContainer"] .login-card-root),
+.stApp [data-testid="stVerticalBlockBorderWrapper"]:has(> [data-testid="stVerticalBlock"] > [data-testid="stElementContainer"] .login-card-root) {
     box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 520px !important;
+    margin: 0 auto !important;
     padding: 48px !important;
     border-radius: 28px !important;
-    background: rgba(8, 12, 30, 0.82) !important;
-    border: 1px solid rgba(255, 255, 255, 0.12) !important;
-    box-shadow: 0 0 60px rgba(123, 97, 255, 0.25) !important;
+    background: rgba(8, 12, 30, 0.86) !important;
+    border: 1px solid rgba(255, 255, 255, 0.14) !important;
+    box-shadow: 0 0 80px rgba(123, 97, 255, 0.28) !important;
     gap: 0 !important;
-    margin: 0 !important;
 }
-[data-testid="column"]:last-child [data-testid="stElementContainer"],
-[data-testid="column"]:last-child [data-testid="stMarkdownContainer"],
-[data-testid="column"]:last-child [data-testid="stVerticalBlockBorderWrapper"] {
-    margin: 0 !important;
+.stApp [data-testid="stVerticalBlockBorderWrapper"]:has(> [data-testid="stVerticalBlock"] > [data-testid="stElementContainer"] .login-card-root) > [data-testid="stVerticalBlock"] {
     padding: 0 !important;
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
 }
+.stApp [data-testid="stVerticalBlock"]:has(> [data-testid="stElementContainer"] .login-card-root) > [data-testid="stElementContainer"],
+.stApp [data-testid="stVerticalBlock"]:has(> [data-testid="stElementContainer"] .login-card-root) > [data-testid="stMarkdownContainer"],
+.stApp [data-testid="stVerticalBlockBorderWrapper"]:has(> [data-testid="stVerticalBlock"] > [data-testid="stElementContainer"] .login-card-root) [data-testid="stElementContainer"],
+.stApp [data-testid="stVerticalBlockBorderWrapper"]:has(> [data-testid="stVerticalBlock"] > [data-testid="stElementContainer"] .login-card-root) [data-testid="stMarkdownContainer"] {
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
 @media (max-width: 1100px) {
-    section.main > div > div > [data-testid="stHorizontalBlock"] {
+    .stApp [data-testid="stHorizontalBlock"]:has(.auth-grid-marker) {
         grid-template-columns: 1fr !important;
         gap: 40px !important;
         padding: 48px 32px !important;
         min-height: auto !important;
     }
-    [data-testid="column"]:last-child {
-        width: 100% !important;
+    .stApp [data-testid="stHorizontalBlock"]:has(.auth-grid-marker) > [data-testid="stColumn"]:last-child {
         max-width: 520px !important;
-        margin: 0 auto !important;
+        justify-self: center !important;
     }
-    [data-testid="column"]:last-child > [data-testid="stVerticalBlock"] {
-        width: 100% !important;
-        max-width: 520px !important;
-    }
-    .mb-feat-grid { grid-template-columns: repeat(2, 1fr) !important; }
+    .stApp .mb-feat-grid { grid-template-columns: repeat(2, 1fr) !important; }
 }
 @media (max-width: 640px) {
-    section.main > div > div > [data-testid="stHorizontalBlock"] {
+    .stApp [data-testid="stHorizontalBlock"]:has(.auth-grid-marker) {
         padding: 32px 16px !important;
         gap: 32px !important;
     }
-    [data-testid="column"]:last-child > [data-testid="stVerticalBlock"] {
+    .stApp .login-card,
+    .stApp [data-testid="stVerticalBlock"]:has(> [data-testid="stElementContainer"] .login-card-root),
+    .stApp [data-testid="stVerticalBlockBorderWrapper"]:has(> [data-testid="stVerticalBlock"] > [data-testid="stElementContainer"] .login-card-root) {
         padding: 32px 24px !important;
     }
-    .mb-feat-grid { grid-template-columns: 1fr !important; }
-    .mb-hero { padding: 4px 0 12px 0 !important; }
-    .mb-stats-row { flex-direction: column !important; align-items: flex-start !important; gap: 10px !important; }
-    .mb-stat { padding-right: 0 !important; margin-right: 0 !important; border-right: none !important; }
-    .mb-page-foot { flex-direction: column !important; text-align: center !important; }
+    .stApp .mb-feat-grid { grid-template-columns: 1fr !important; }
+    .stApp .mb-hero { padding: 4px 0 12px 0 !important; }
+    .stApp .mb-stats-row { flex-direction: column !important; align-items: flex-start !important; gap: 10px !important; }
+    .stApp .mb-stat { padding-right: 0 !important; margin-right: 0 !important; border-right: none !important; }
+    .stApp .mb-page-foot { flex-direction: column !important; text-align: center !important; }
 }
 @media (max-height: 860px) {
-    .mb-stats-row { display: none !important; }
-    .mb-hero-sub { margin-bottom: 14px !important; font-size: 12px !important; line-height: 1.55 !important; }
-    .mb-feat-grid { margin-bottom: 12px !important; }
-    .mb-hero-title { margin-bottom: 12px !important; font-size: clamp(26px, 3vw, 36px) !important; }
-    section.main > div > div > [data-testid="stHorizontalBlock"] {
+    .stApp .mb-stats-row { display: none !important; }
+    .stApp .mb-hero-sub { margin-bottom: 14px !important; font-size: 12px !important; line-height: 1.55 !important; }
+    .stApp .mb-feat-grid { margin-bottom: 12px !important; }
+    .stApp .mb-hero-title { margin-bottom: 12px !important; font-size: clamp(26px, 3vw, 36px) !important; }
+    .stApp [data-testid="stHorizontalBlock"]:has(.auth-grid-marker) {
         padding-top: 48px !important;
         padding-bottom: 48px !important;
     }
 }
-""")
+"""
 + """
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
@@ -659,74 +669,103 @@ section.main > div > div > [data-testid="stHorizontalBlock"] {
 
 def widget_css() -> str:
     g = _G
+    card = f'{g} [data-testid="stVerticalBlock"]:has(> [data-testid="stElementContainer"] .login-card-root)'
+    card_wrap = (
+        f'{g} [data-testid="stVerticalBlockBorderWrapper"]:has('
+        f'> [data-testid="stVerticalBlock"] > [data-testid="stElementContainer"] .login-card-root)'
+    )
     return f"""
-{g} [data-testid="stForm"] {{
+{card} [data-testid="stForm"],
+{card_wrap} [data-testid="stForm"] {{
     border: none !important; padding: 0 !important; background: transparent !important;
 }}
-{g} [data-testid="stTextInput"] [data-testid="stWidgetLabel"],
-{g} [data-testid="stNumberInput"] [data-testid="stWidgetLabel"],
-{g} label[data-testid="stWidgetLabel"]:has(+ div [data-baseweb="input"]) {{ display: none !important; }}
-{g} [data-testid="stTextInput"],
-{g} [data-testid="stNumberInput"] {{ margin-bottom: 12px !important; }}
-{g} [data-testid="column"]:last-child > [data-testid="stVerticalBlock"] > [data-testid="stElementContainer"] {{
+{card} [data-testid="stTextInput"] [data-testid="stWidgetLabel"],
+{card} [data-testid="stNumberInput"] [data-testid="stWidgetLabel"],
+{card_wrap} [data-testid="stTextInput"] [data-testid="stWidgetLabel"],
+{card_wrap} [data-testid="stNumberInput"] [data-testid="stWidgetLabel"],
+{card} label[data-testid="stWidgetLabel"]:has(+ div [data-baseweb="input"]) {{ display: none !important; }}
+{card} [data-testid="stTextInput"],
+{card} [data-testid="stNumberInput"],
+{card_wrap} [data-testid="stTextInput"],
+{card_wrap} [data-testid="stNumberInput"] {{ margin-bottom: 12px !important; }}
+{card} > [data-testid="stElementContainer"],
+{card} > [data-testid="stMarkdownContainer"],
+{card_wrap} > [data-testid="stElementContainer"],
+{card_wrap} > [data-testid="stMarkdownContainer"] {{
     margin-bottom: 0 !important;
 }}
-{g} [data-testid="column"]:last-child > [data-testid="stVerticalBlock"] > [data-testid="stMarkdownContainer"] {{
-    margin-bottom: 0 !important;
-}}
-{g} [data-testid="stTextInput"] > div,
-{g} [data-testid="stTextInput"] > div > div,
-{g} [data-testid="stTextInput"] fieldset,
-{g} [data-testid="stNumberInput"] > div,
-{g} [data-testid="stNumberInput"] > div > div {{
+{card} [data-testid="stTextInput"] > div,
+{card} [data-testid="stTextInput"] > div > div,
+{card} [data-testid="stTextInput"] fieldset,
+{card} [data-testid="stNumberInput"] > div,
+{card} [data-testid="stNumberInput"] > div > div,
+{card_wrap} [data-testid="stTextInput"] > div,
+{card_wrap} [data-testid="stTextInput"] > div > div,
+{card_wrap} [data-testid="stNumberInput"] > div,
+{card_wrap} [data-testid="stNumberInput"] > div > div {{
     background: transparent !important;
     border: none !important;
     padding: 0 !important;
     box-shadow: none !important;
 }}
-{g} div[data-baseweb="input"],
-{g} [data-testid="stTextInput"] div[data-baseweb="input"],
-{g} [data-testid="stNumberInput"] div[data-baseweb="input"] {{
-    background: rgba(5, 8, 22, 0.75) !important;
-    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+{card} div[data-baseweb="input"],
+{card} [data-testid="stTextInput"] div[data-baseweb="input"],
+{card} [data-testid="stNumberInput"] div[data-baseweb="input"],
+{card_wrap} div[data-baseweb="input"],
+{card_wrap} [data-testid="stTextInput"] div[data-baseweb="input"],
+{card_wrap} [data-testid="stNumberInput"] div[data-baseweb="input"] {{
+    background: rgba(5, 8, 22, 0.85) !important;
+    border: 1px solid rgba(255, 255, 255, 0.14) !important;
     border-radius: 12px !important;
     min-height: 44px !important;
     box-shadow: inset 0 2px 8px rgba(0,0,0,0.3) !important;
 }}
-{g} [data-testid="stForm"] [data-testid="stTextInput"]:first-of-type div[data-baseweb="input"] {{
-    background: rgba(5, 8, 22, 0.75) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%2364748b' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3C/svg%3E") no-repeat 14px center / 16px 16px !important;
+{card} [data-testid="stForm"] [data-testid="stTextInput"]:first-of-type div[data-baseweb="input"],
+{card_wrap} [data-testid="stForm"] [data-testid="stTextInput"]:first-of-type div[data-baseweb="input"] {{
+    background: rgba(5, 8, 22, 0.85) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%2364748b' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3C/svg%3E") no-repeat 14px center / 16px 16px !important;
 }}
-{g} [data-testid="stForm"] [data-testid="stTextInput"]:nth-of-type(2) div[data-baseweb="input"] {{
-    background: rgba(5, 8, 22, 0.75) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%2364748b' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='11' width='18' height='11' rx='2'/%3E%3Cpath d='M7 11V7a5 5 0 0 1 10 0v4'/%3E%3C/svg%3E") no-repeat 14px center / 16px 16px !important;
+{card} [data-testid="stForm"] [data-testid="stTextInput"]:nth-of-type(2) div[data-baseweb="input"],
+{card_wrap} [data-testid="stForm"] [data-testid="stTextInput"]:nth-of-type(2) div[data-baseweb="input"] {{
+    background: rgba(5, 8, 22, 0.85) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%2364748b' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='11' width='18' height='11' rx='2'/%3E%3Cpath d='M7 11V7a5 5 0 0 1 10 0v4'/%3E%3C/svg%3E") no-repeat 14px center / 16px 16px !important;
 }}
-{g} div[data-baseweb="input"]:focus-within {{
+{card} div[data-baseweb="input"]:focus-within,
+{card_wrap} div[data-baseweb="input"]:focus-within {{
     border-color: rgba(123, 97, 255, 0.55) !important;
     box-shadow: 0 0 0 3px rgba(123, 97, 255, 0.15), 0 0 24px rgba(123, 97, 255, 0.12) !important;
 }}
-{g} [data-testid="stTextInput"] input,
-{g} [data-testid="stNumberInput"] input {{
-    background: transparent !important;
-    color: #fafafa !important;
-    -webkit-text-fill-color: #fafafa !important;
+{card} [data-testid="stTextInput"] input,
+{card} [data-testid="stNumberInput"] input,
+{card_wrap} [data-testid="stTextInput"] input,
+{card_wrap} [data-testid="stNumberInput"] input {{
+    background: rgba(5, 8, 22, 0.85) !important;
+    color: white !important;
+    -webkit-text-fill-color: white !important;
+    border: 1px solid rgba(255, 255, 255, 0.14) !important;
     font-size: 13px !important;
     font-family: inherit !important;
     caret-color: #A855F7 !important;
     padding-left: 40px !important;
 }}
-{g} [data-testid="stTextInput"] input::placeholder {{ color: #475569 !important; opacity: 1 !important; }}
-{g} [data-testid="stTextInput"] input:-webkit-autofill,
-{g} [data-testid="stTextInput"] input:-webkit-autofill:focus {{
+{card} [data-testid="stTextInput"] input::placeholder,
+{card_wrap} [data-testid="stTextInput"] input::placeholder {{ color: #475569 !important; opacity: 1 !important; }}
+{card} [data-testid="stTextInput"] input:-webkit-autofill,
+{card} [data-testid="stTextInput"] input:-webkit-autofill:focus,
+{card_wrap} [data-testid="stTextInput"] input:-webkit-autofill,
+{card_wrap} [data-testid="stTextInput"] input:-webkit-autofill:focus {{
     -webkit-box-shadow: 0 0 0 1000px #050816 inset !important;
     -webkit-text-fill-color: #fafafa !important;
 }}
-{g} [data-testid="stTextInput"] button {{ color: #64748b !important; background: transparent !important; }}
+{card} [data-testid="stTextInput"] button,
+{card_wrap} [data-testid="stTextInput"] button {{ color: #64748b !important; background: transparent !important; }}
 
 /* Remember me checkbox */
-{g} [data-testid="stCheckbox"] {{
+{card} [data-testid="stCheckbox"],
+{card_wrap} [data-testid="stCheckbox"] {{
     margin: 0 !important;
     padding: 0 !important;
 }}
-{g} [data-testid="stCheckbox"] label {{
+{card} [data-testid="stCheckbox"] label,
+{card_wrap} [data-testid="stCheckbox"] label {{
     display: flex !important;
     align-items: center !important;
     gap: 8px !important;
@@ -739,35 +778,43 @@ def widget_css() -> str:
     border: none !important;
     box-shadow: none !important;
 }}
-{g} [data-testid="stCheckbox"] label span,
-{g} [data-testid="stCheckbox"] label p {{
+{card} [data-testid="stCheckbox"] label span,
+{card} [data-testid="stCheckbox"] label p,
+{card_wrap} [data-testid="stCheckbox"] label span,
+{card_wrap} [data-testid="stCheckbox"] label p {{
     color: #94a3b8 !important;
     font-size: 13px !important;
     font-weight: 500 !important;
 }}
-{g} [data-testid="stCheckbox"] [data-baseweb="checkbox"] {{
+{card} [data-testid="stCheckbox"] [data-baseweb="checkbox"],
+{card_wrap} [data-testid="stCheckbox"] [data-baseweb="checkbox"] {{
     background: rgba(5, 8, 22, 0.85) !important;
     border-color: rgba(255,255,255,0.12) !important;
 }}
-{g} [data-testid="stCheckbox"] [data-baseweb="checkbox"]:hover {{
+{card} [data-testid="stCheckbox"] [data-baseweb="checkbox"]:hover,
+{card_wrap} [data-testid="stCheckbox"] [data-baseweb="checkbox"]:hover {{
     border-color: rgba(123, 97, 255, 0.45) !important;
 }}
 
 /* Extras row layout */
-{g} [data-testid="stForm"] [data-testid="stHorizontalBlock"] {{
+{card} [data-testid="stForm"] [data-testid="stHorizontalBlock"],
+{card_wrap} [data-testid="stForm"] [data-testid="stHorizontalBlock"] {{
     align-items: center !important;
     gap: 8px !important;
     margin: 0 0 14px 0 !important;
 }}
-{g} [data-testid="stForm"] [data-testid="stHorizontalBlock"] [data-testid="column"]:first-child {{
+{card} [data-testid="stForm"] [data-testid="stHorizontalBlock"] [data-testid="stColumn"]:first-child,
+{card_wrap} [data-testid="stForm"] [data-testid="stHorizontalBlock"] [data-testid="stColumn"]:first-child {{
     flex: 1 !important; max-width: none !important; padding: 0 !important;
     display: flex !important; align-items: center !important;
 }}
-{g} [data-testid="stForm"] [data-testid="stHorizontalBlock"] [data-testid="column"]:last-child {{
+{card} [data-testid="stForm"] [data-testid="stHorizontalBlock"] [data-testid="stColumn"]:last-child,
+{card_wrap} [data-testid="stForm"] [data-testid="stHorizontalBlock"] [data-testid="stColumn"]:last-child {{
     flex: 0 0 auto !important; max-width: none !important; padding: 0 !important;
     display: flex !important; justify-content: flex-end !important; align-items: center !important;
 }}
-{g} [data-testid="stForm"] [data-testid="stHorizontalBlock"] [data-testid="column"]:last-child [data-testid="stMarkdownContainer"] {{
+{card} [data-testid="stForm"] [data-testid="stHorizontalBlock"] [data-testid="stColumn"]:last-child [data-testid="stMarkdownContainer"],
+{card_wrap} [data-testid="stForm"] [data-testid="stHorizontalBlock"] [data-testid="stColumn"]:last-child [data-testid="stMarkdownContainer"] {{
     width: auto !important;
 }}
 {g} .mb-forgot-link {{
@@ -775,14 +822,26 @@ def widget_css() -> str:
     display: inline-block !important;
 }}
 
-/* Primary CTA — login / register submit (direct form children only) */
-{g} [data-testid="column"]:last-child form > .stFormSubmitButton > button,
-{g} [data-testid="column"]:last-child form > div.stFormSubmitButton > button,
-{g} [data-testid="column"]:last-child form > .stFormSubmitButton button[kind="secondary"],
-{g} [data-testid="column"]:last-child form > .stFormSubmitButton button[kind="primary"],
-{g} [data-testid="column"]:last-child form > .stFormSubmitButton button[data-testid="stBaseButton-secondary"],
-{g} [data-testid="column"]:last-child form > .stFormSubmitButton button[data-testid="stBaseButton-primary"],
-{g} [data-testid="column"]:last-child form > .stFormSubmitButton button[data-testid="stBaseButton-primaryFormSubmit"] {{
+/* Primary CTA — login / register submit */
+{card} [data-testid="stForm"] [data-testid="stFormSubmitButton"] button,
+{card} [data-testid="stForm"] .stFormSubmitButton button,
+{card} [data-testid="stForm"] div.stButton > button,
+{card_wrap} [data-testid="stForm"] [data-testid="stFormSubmitButton"] button,
+{card_wrap} [data-testid="stForm"] .stFormSubmitButton button,
+{card_wrap} [data-testid="stForm"] div.stButton > button,
+{card} [data-testid="stFormSubmitButton"] button,
+{card} .stFormSubmitButton button,
+{card_wrap} [data-testid="stFormSubmitButton"] button,
+{card_wrap} .stFormSubmitButton button,
+{card} [data-testid="stForm"] [data-testid="stFormSubmitButton"] button[kind="secondary"],
+{card} [data-testid="stForm"] [data-testid="stFormSubmitButton"] button[kind="secondaryFormSubmit"],
+{card} [data-testid="stForm"] [data-testid="stFormSubmitButton"] button[kind="primary"],
+{card} [data-testid="stForm"] [data-testid="stFormSubmitButton"] button[data-testid="stBaseButton-secondary"],
+{card} [data-testid="stForm"] [data-testid="stFormSubmitButton"] button[data-testid="stBaseButton-primary"],
+{card} [data-testid="stForm"] [data-testid="stFormSubmitButton"] button[data-testid="stBaseButton-secondaryFormSubmit"],
+{card} [data-testid="stForm"] [data-testid="stFormSubmitButton"] button[data-testid="stBaseButton-primaryFormSubmit"],
+{card} [data-testid="stFormSubmitButton"] button[kind="secondaryFormSubmit"],
+{card} [data-testid="stFormSubmitButton"] button[data-testid="stBaseButton-secondaryFormSubmit"] {{
     width: 100% !important;
     height: 58px !important;
     min-height: 58px !important;
@@ -792,79 +851,91 @@ def widget_css() -> str:
     background: linear-gradient(135deg, #a855f7, #3b82f6) !important;
     background-color: transparent !important;
     background-image: linear-gradient(135deg, #a855f7, #3b82f6) !important;
-    color: #fff !important;
+    color: white !important;
     font-weight: 700 !important;
     font-size: 14px !important;
     font-family: inherit !important;
     box-shadow: 0 4px 20px rgba(123, 97, 255, 0.35) !important;
 }}
-{g} [data-testid="column"]:last-child form > .stFormSubmitButton > button:hover,
-{g} [data-testid="column"]:last-child form > div.stFormSubmitButton > button:hover {{
+{card} [data-testid="stForm"] [data-testid="stFormSubmitButton"] button:hover,
+{card} [data-testid="stForm"] .stFormSubmitButton button:hover,
+{card} [data-testid="stFormSubmitButton"] button:hover,
+{card_wrap} [data-testid="stForm"] [data-testid="stFormSubmitButton"] button:hover,
+{card_wrap} [data-testid="stForm"] .stFormSubmitButton button:hover,
+{card_wrap} [data-testid="stFormSubmitButton"] button:hover {{
     filter: brightness(1.06) !important;
     box-shadow: 0 6px 28px rgba(123, 97, 255, 0.45) !important;
 }}
-{g} [data-testid="column"]:last-child form > .stFormSubmitButton > button p,
-{g} [data-testid="column"]:last-child form > .stFormSubmitButton > button span,
-{g} [data-testid="column"]:last-child form > div.stFormSubmitButton > button p,
-{g} [data-testid="column"]:last-child form > div.stFormSubmitButton > button span {{
-    color: #fff !important;
+{card} [data-testid="stForm"] [data-testid="stFormSubmitButton"] button p,
+{card} [data-testid="stForm"] [data-testid="stFormSubmitButton"] button span,
+{card} [data-testid="stForm"] .stFormSubmitButton button p,
+{card} [data-testid="stForm"] .stFormSubmitButton button span,
+{card} [data-testid="stFormSubmitButton"] button p,
+{card} [data-testid="stFormSubmitButton"] button span,
+{card_wrap} [data-testid="stForm"] [data-testid="stFormSubmitButton"] button p,
+{card_wrap} [data-testid="stForm"] [data-testid="stFormSubmitButton"] button span {{
+    color: white !important;
     font-weight: 700 !important;
 }}
 
-/* Forced input styling inside login card */
-{g} [data-testid="column"]:last-child input {{
-    background: rgba(5, 8, 22, 0.85) !important;
-    color: white !important;
-    border: 1px solid rgba(255, 255, 255, 0.14) !important;
-}}
-
 /* Mode switch link button */
-{g} [data-testid="column"]:last-child [data-testid="stHorizontalBlock"]:has(.mb-panel-switch-note) {{
+{card} [data-testid="stHorizontalBlock"]:has(.mb-panel-switch-note),
+{card_wrap} [data-testid="stHorizontalBlock"]:has(.mb-panel-switch-note) {{
     align-items: center !important;
     margin-top: 16px !important;
     gap: 4px !important;
 }}
-{g} [data-testid="column"]:last-child [data-testid="stHorizontalBlock"]:has(.mb-panel-switch-note) [data-testid="column"]:first-child {{
+{card} [data-testid="stHorizontalBlock"]:has(.mb-panel-switch-note) [data-testid="stColumn"]:first-child,
+{card_wrap} [data-testid="stHorizontalBlock"]:has(.mb-panel-switch-note) [data-testid="stColumn"]:first-child {{
     flex: 1 !important; max-width: none !important; padding: 0 !important;
 }}
-{g} [data-testid="column"]:last-child [data-testid="stHorizontalBlock"]:has(.mb-panel-switch-note) [data-testid="column"]:last-child {{
+{card} [data-testid="stHorizontalBlock"]:has(.mb-panel-switch-note) [data-testid="stColumn"]:last-child,
+{card_wrap} [data-testid="stHorizontalBlock"]:has(.mb-panel-switch-note) [data-testid="stColumn"]:last-child {{
     flex: 0 0 auto !important; max-width: none !important; padding: 0 !important;
 }}
-{g} [data-testid="column"]:last-child [data-testid="stHorizontalBlock"]:has(.mb-panel-switch-note) .stButton {{
+{card} [data-testid="stHorizontalBlock"]:has(.mb-panel-switch-note) .stButton,
+{card_wrap} [data-testid="stHorizontalBlock"]:has(.mb-panel-switch-note) .stButton {{
     display: flex !important;
     justify-content: flex-start !important;
     margin: 0 !important;
     width: 100% !important;
 }}
-{g} [data-testid="column"]:last-child [data-testid="stHorizontalBlock"]:has(.mb-panel-switch-note) .stButton > button {{
+{card} [data-testid="stHorizontalBlock"]:has(.mb-panel-switch-note) .stButton > button,
+{card_wrap} [data-testid="stHorizontalBlock"]:has(.mb-panel-switch-note) .stButton > button {{
     display: inline !important;
     width: auto !important;
     min-height: auto !important;
+    height: auto !important;
     padding: 0 !important;
     margin: 0 !important;
     border: none !important;
     background: transparent !important;
+    background-image: none !important;
     box-shadow: none !important;
     color: #7B61FF !important;
     font-size: 14px !important;
     font-weight: 600 !important;
 }}
-{g} [data-testid="column"]:last-child [data-testid="stHorizontalBlock"]:has(.mb-panel-switch-note) .stButton > button:hover {{
+{card} [data-testid="stHorizontalBlock"]:has(.mb-panel-switch-note) .stButton > button:hover,
+{card_wrap} [data-testid="stHorizontalBlock"]:has(.mb-panel-switch-note) .stButton > button:hover {{
     color: #A855F7 !important;
     background: transparent !important;
     box-shadow: none !important;
 }}
-{g} [data-testid="column"]:last-child [data-testid="stHorizontalBlock"]:has(.mb-panel-switch-note) .stButton > button p {{
+{card} [data-testid="stHorizontalBlock"]:has(.mb-panel-switch-note) .stButton > button p,
+{card_wrap} [data-testid="stHorizontalBlock"]:has(.mb-panel-switch-note) .stButton > button p {{
     color: #7B61FF !important;
     font-weight: 600 !important;
 }}
 
 {g} [data-testid="stAlert"] {{ display: none !important; }}
-{g} [data-testid="stVerticalBlock"] {{ gap: 0 !important; }}
+{card}, {card_wrap} {{ gap: 0 !important; }}
 
 /* Captcha refresh — small icon button */
-{g} [data-testid="column"]:last-child form [data-testid="stHorizontalBlock"] .stFormSubmitButton > button,
-{g} [data-testid="column"]:last-child form [data-testid="stHorizontalBlock"] .stButton > button {{
+{card} [data-testid="stForm"] [data-testid="stHorizontalBlock"] [data-testid="stFormSubmitButton"] button,
+{card} [data-testid="stForm"] [data-testid="stHorizontalBlock"] .stButton > button,
+{card_wrap} [data-testid="stForm"] [data-testid="stHorizontalBlock"] [data-testid="stFormSubmitButton"] button,
+{card_wrap} [data-testid="stForm"] [data-testid="stHorizontalBlock"] .stButton > button {{
     min-height: 48px !important;
     height: 48px !important;
     width: 100% !important;
@@ -875,8 +946,10 @@ def widget_css() -> str:
     color: #94a3b8 !important;
     box-shadow: none !important;
 }}
-{g} [data-testid="column"]:last-child form [data-testid="stHorizontalBlock"] .stFormSubmitButton > button p,
-{g} [data-testid="column"]:last-child form [data-testid="stHorizontalBlock"] .stButton > button p {{
+{card} [data-testid="stForm"] [data-testid="stHorizontalBlock"] [data-testid="stFormSubmitButton"] button p,
+{card} [data-testid="stForm"] [data-testid="stHorizontalBlock"] .stButton > button p,
+{card_wrap} [data-testid="stForm"] [data-testid="stHorizontalBlock"] [data-testid="stFormSubmitButton"] button p,
+{card_wrap} [data-testid="stForm"] [data-testid="stHorizontalBlock"] .stButton > button p {{
     color: #94a3b8 !important;
     font-weight: 600 !important;
 }}
@@ -955,6 +1028,14 @@ def _stat_item(icon: str, val: str, label: str) -> str:
         f'<span class="mb-stat-label">{label}</span></div>'
         f'</div>'
     )
+
+
+def auth_grid_marker_html() -> str:
+    return '<span class="auth-grid-marker" hidden aria-hidden="true"></span>'
+
+
+def login_card_marker_html() -> str:
+    return '<span class="login-card-root" hidden aria-hidden="true"></span>'
 
 
 def page_open_html(mode_class: str = "") -> str:

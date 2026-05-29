@@ -16,9 +16,11 @@ from oauth_service import (
     verify_state,
 )
 from ui.auth_premium import (
+    auth_grid_marker_html,
     auth_styles_bundle,
     forgot_password_html,
     hero_html,
+    login_card_marker_html,
     notice_html,
     page_close_html,
     page_open_html,
@@ -260,6 +262,7 @@ def render_auth_switch() -> None:
 
 def render_gate_panel() -> None:
     mode = st.session_state.get("gate_mode", "login")
+    st.markdown(login_card_marker_html(), unsafe_allow_html=True)
     st.markdown(panel_shell_html(register=(mode == "register")), unsafe_allow_html=True)
     _show_gate_notice()
     if mode == "register":
@@ -284,9 +287,11 @@ def render_auth() -> None:
 
     hero_col, panel_col = st.columns([11, 9], gap="small")
     with hero_col:
+        st.markdown(auth_grid_marker_html(), unsafe_allow_html=True)
         st.markdown(hero_html(), unsafe_allow_html=True)
     with panel_col:
-        render_gate_panel()
+        with st.container():
+            render_gate_panel()
 
     st.markdown(page_close_html(), unsafe_allow_html=True)
     inject_css(auth_styles_bundle())
