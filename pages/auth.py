@@ -24,7 +24,6 @@ from ui.auth_premium import (
     presentation_html,
 )
 from ui.styles import inject_css
-from ui_core import WORDMARK
 
 
 def refresh_captcha() -> None:
@@ -241,6 +240,15 @@ def auth_css() -> None:
     inject_css(auth_styles_bundle())
 
 
+def auth_css_final() -> None:
+    """Injected last so it overrides Streamlit widget inline styles."""
+    from ui.auth_premium import login_override_css
+
+    css = login_override_css()
+    inject_css(css)
+    st.html(f"<style id='mb-login-final'>{css}</style>", height=0)
+
+
 GOOGLE_ICON_SVG = """
 <svg class="g-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/>
@@ -282,7 +290,7 @@ def render_login_form() -> None:
     with st.form("login_form", clear_on_submit=False, border=False):
         user = st.text_input("Benutzername", placeholder="dein-benutzername")
         pw = st.text_input("Passwort", type="password", placeholder="Dein Passwort")
-        if st.form_submit_button("Anmelden", type="primary", width="stretch"):
+        if st.form_submit_button("Anmelden", type="secondary", width="stretch"):
             do_login(user, pw)
 
 
@@ -306,7 +314,7 @@ def render_register_form() -> None:
             refresh = st.form_submit_button("Neu")
         st.markdown("</div>", unsafe_allow_html=True)
 
-        submitted = st.form_submit_button("Konto erstellen", type="primary", width="stretch")
+        submitted = st.form_submit_button("Konto erstellen", type="secondary", width="stretch")
 
     if refresh:
         refresh_captcha()
@@ -316,11 +324,9 @@ def render_register_form() -> None:
 
 
 def render_pitch_column() -> None:
-    try:
-        if WORDMARK.exists():
-            st.image(str(WORDMARK), width=128)
-    except Exception:
-        pass
+    from ui.auth_premium import brand_mark_html
+
+    st.markdown(brand_mark_html(), unsafe_allow_html=True)
     st.markdown(presentation_html(), unsafe_allow_html=True)
 
 
@@ -328,21 +334,27 @@ def render_login_column() -> None:
     with st.container(border=True):
         st.markdown(login_card_head_html(), unsafe_allow_html=True)
 
-        tab_login, tab_register = st.tabs(["Anmelden", "Registrieren"])
+        mode = st.segmented_control(
+            "Modus",
+            options=["Anmelden", "Registrieren"],
+            default="Anmelden",
+            label_visibility="collapsed",
+            width="stretch",
+        )
 
-        with tab_login:
-            render_google_login()
-            render_login_form()
-
-        with tab_register:
+        if mode == "Registrieren":
             st.caption("Kostenlos registrieren — dauert unter einer Minute.")
             render_register_form()
+        else:
+            render_google_login()
+            render_login_form()
 
         st.markdown(login_footer_html(), unsafe_allow_html=True)
 
 
 def render_auth() -> None:
     ensure_captcha()
+    st.markdown('<div class="mb-login-route" aria-hidden="true"></div>', unsafe_allow_html=True)
     auth_css()
     handle_oauth_callback()
 
@@ -354,3 +366,5 @@ def render_auth() -> None:
     with login_col:
         _show_oauth_notice()
         render_login_column()
+
+    auth_css_final()
