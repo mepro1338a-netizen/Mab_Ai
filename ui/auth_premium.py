@@ -25,14 +25,6 @@ GATE_CSS = (
     --mb-glow: 0 0 40px rgba(123, 97, 255, 0.25);
     --mb-radius: 20px;
 }
-@keyframes mb-glow-pulse {
-    0%, 100% { opacity: 0.45; transform: translateX(-50%) scale(1); }
-    50% { opacity: 0.75; transform: translateX(-50%) scale(1.06); }
-}
-@keyframes mb-shimmer {
-    0% { background-position: 0% 50%; }
-    100% { background-position: 200% 50%; }
-}
 html { color-scheme: dark !important; }
 .stApp, .stApp[data-theme="light"], .stApp[data-theme="dark"] {
     --primary-color: #7B61FF !important;
@@ -73,8 +65,7 @@ section.main .block-container {
 }
 section.main > div > div > [data-testid="stVerticalBlock"] {
     gap: 0 !important;
-    padding-top: 52px !important;
-    padding-bottom: 40px !important;
+    padding: 0 !important;
 }
 .stApp [data-testid="stMarkdownContainer"]:has(.mb-topbar),
 .stApp [data-testid="stMarkdownContainer"]:has(.mb-page-foot) {
@@ -82,36 +73,43 @@ section.main > div > div > [data-testid="stVerticalBlock"] {
     padding: 0 !important;
 }
 section.main > div > div > [data-testid="stHorizontalBlock"] {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 520px !important;
+    gap: 64px !important;
     align-items: center !important;
-    gap: 0 !important;
-    min-height: calc(100vh - 52px) !important;
-    max-width: 1200px !important;
+    min-height: calc(100vh - 80px) !important;
+    max-width: 1440px !important;
     margin: 0 auto !important;
-    padding: 0 32px !important;
+    padding: 80px 72px !important;
+    box-sizing: border-box !important;
 }
 [data-testid="column"]:first-child {
-    flex: 0 0 52% !important;
-    max-width: 52% !important;
-    padding: 0 20px 0 0 !important;
-    display: flex !important;
-    align-items: center !important;
+    flex: unset !important;
+    max-width: none !important;
+    width: auto !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+    display: block !important;
 }
 [data-testid="column"]:last-child {
-    flex: 0 0 48% !important;
-    max-width: 48% !important;
-    padding: 0 0 0 12px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    overflow: visible !important;
+    flex: unset !important;
+    max-width: none !important;
+    width: 520px !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+    display: block !important;
 }
 [data-testid="column"]:last-child > [data-testid="stVerticalBlock"] {
-    width: 100% !important;
+    width: 520px !important;
     max-width: 520px !important;
+    box-sizing: border-box !important;
+    padding: 48px !important;
+    border-radius: 28px !important;
+    background: rgba(8, 12, 30, 0.82) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 0 60px rgba(123, 97, 255, 0.25) !important;
     gap: 0 !important;
-    padding: 0 !important;
-    overflow: visible !important;
-    margin: 0 auto !important;
+    margin: 0 !important;
 }
 [data-testid="column"]:last-child [data-testid="stElementContainer"],
 [data-testid="column"]:last-child [data-testid="stMarkdownContainer"],
@@ -122,33 +120,36 @@ section.main > div > div > [data-testid="stHorizontalBlock"] {
     border: none !important;
     box-shadow: none !important;
 }
-@media (max-width: 1024px) {
-    section.main > div > div > [data-testid="stVerticalBlock"] {
-        padding-top: 52px !important;
-        padding-bottom: 32px !important;
-    }
+@media (max-width: 1100px) {
     section.main > div > div > [data-testid="stHorizontalBlock"] {
-        flex-direction: column !important;
-        padding: 0 20px !important;
+        grid-template-columns: 1fr !important;
+        gap: 40px !important;
+        padding: 48px 32px !important;
+        min-height: auto !important;
     }
-    [data-testid="column"]:first-child,
     [data-testid="column"]:last-child {
-        flex: 1 1 auto !important;
-        max-width: 100% !important;
-        padding: 0 !important;
+        width: 100% !important;
+        max-width: 520px !important;
+        margin: 0 auto !important;
     }
     [data-testid="column"]:last-child > [data-testid="stVerticalBlock"] {
-        max-width: 100% !important;
+        width: 100% !important;
+        max-width: 520px !important;
     }
     .mb-feat-grid { grid-template-columns: repeat(2, 1fr) !important; }
 }
 @media (max-width: 640px) {
-    section.main > div > div > [data-testid="stHorizontalBlock"] { padding: 0 16px !important; }
+    section.main > div > div > [data-testid="stHorizontalBlock"] {
+        padding: 32px 16px !important;
+        gap: 32px !important;
+    }
+    [data-testid="column"]:last-child > [data-testid="stVerticalBlock"] {
+        padding: 32px 24px !important;
+    }
     .mb-feat-grid { grid-template-columns: 1fr !important; }
     .mb-hero { padding: 4px 0 12px 0 !important; }
     .mb-stats-row { flex-direction: column !important; align-items: flex-start !important; gap: 10px !important; }
     .mb-stat { padding-right: 0 !important; margin-right: 0 !important; border-right: none !important; }
-    .mb-glass-inner { padding: 32px 28px !important; }
     .mb-page-foot { flex-direction: column !important; text-align: center !important; }
 }
 @media (max-height: 860px) {
@@ -156,7 +157,10 @@ section.main > div > div > [data-testid="stHorizontalBlock"] {
     .mb-hero-sub { margin-bottom: 14px !important; font-size: 12px !important; line-height: 1.55 !important; }
     .mb-feat-grid { margin-bottom: 12px !important; }
     .mb-hero-title { margin-bottom: 12px !important; font-size: clamp(26px, 3vw, 36px) !important; }
-    .mb-glass-inner { padding: 24px 24px 20px 24px !important; }
+    section.main > div > div > [data-testid="stHorizontalBlock"] {
+        padding-top: 48px !important;
+        padding-bottom: 48px !important;
+    }
 }
 """)
 + """
@@ -186,18 +190,6 @@ section.main > div > div > [data-testid="stHorizontalBlock"] {
         radial-gradient(ellipse 100% 60% at 50% 110%, rgba(10, 16, 36, 0.9), transparent 70%),
         linear-gradient(180deg, #050816 0%, #0A1024 45%, #050816 100%);
 }
-.mb-auth-bg::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background:
-        radial-gradient(ellipse 120% 40% at 50% 95%, rgba(123, 97, 255, 0.12) 0%, transparent 55%),
-        url("https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1920&q=80&auto=format&fit=crop") center bottom / cover no-repeat;
-    opacity: 0.42;
-    mix-blend-mode: luminosity;
-    mask-image: linear-gradient(to top, black 0%, transparent 72%);
-    -webkit-mask-image: linear-gradient(to top, black 0%, transparent 72%);
-}
 .mb-auth-aurora {
     position: fixed;
     inset: 0;
@@ -222,13 +214,11 @@ section.main > div > div > [data-testid="stHorizontalBlock"] {
         radial-gradient(1px 1px at 92% 30%, rgba(255,255,255,0.35), transparent);
 }
 
-/* ── Top bar — fixed, kein Layout-Platz ── */
+/* ── Top bar — normal document flow ── */
 .mb-topbar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 100;
+    position: relative;
+    z-index: 10;
+    width: 100%;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -385,7 +375,6 @@ section.main > div > div > [data-testid="stHorizontalBlock"] {
 }
 .mb-feat-card:hover {
     border-color: rgba(123, 97, 255, 0.32);
-    transform: translateY(-2px);
     box-shadow: 0 8px 32px rgba(123, 97, 255, 0.14), inset 0 1px 0 rgba(255,255,255,0.06);
 }
 .mb-feat-icon {
@@ -479,43 +468,9 @@ section.main > div > div > [data-testid="stHorizontalBlock"] {
     line-height: 1.3;
 }
 
-/* ── Login card ── */
-.mb-glass-wrap {
-    position: relative;
-    width: 100%;
-    max-width: 520px;
-    margin: 0 auto;
-    overflow: visible;
-    transform: none;
-    z-index: 2;
-}
-.mb-glass-card {
-    border-radius: 28px;
-    padding: 1px;
-    background: linear-gradient(135deg, rgba(168, 85, 247, 0.45), rgba(59, 130, 246, 0.25));
-    box-shadow: var(--mb-glow), 0 24px 64px rgba(0, 0, 0, 0.45);
-    overflow: visible;
-}
-.mb-glass-inner {
-    position: relative;
-    border-radius: 27px;
-    padding: 48px;
-    background: rgba(6, 10, 24, 0.82);
-    backdrop-filter: blur(24px) saturate(1.4);
-    -webkit-backdrop-filter: blur(24px) saturate(1.4);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
-    overflow: visible;
-}
-.mb-glass-inner::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 10%;
-    right: 10%;
-    height: 2px;
-    border-radius: 0 0 4px 4px;
-    background: linear-gradient(90deg, transparent, #A855F7, #3b82f6, transparent);
-    box-shadow: 0 0 16px rgba(168, 85, 247, 0.5);
+/* ── Login card header (inside Streamlit column card) ── */
+.mb-login-head {
+    margin: 0 0 4px 0;
 }
 .mb-panel-logo {
     width: 40px;
@@ -820,20 +775,22 @@ def widget_css() -> str:
     display: inline-block !important;
 }}
 
-/* Primary CTA */
-{g} form .stFormSubmitButton button,
-{g} form .stFormSubmitButton button[kind="secondary"],
-{g} form .stFormSubmitButton button[kind="primary"],
-{g} form .stFormSubmitButton button[data-testid="stBaseButton-secondary"],
-{g} form .stFormSubmitButton button[data-testid="stBaseButton-primary"],
-{g} form .stFormSubmitButton button[data-testid="stBaseButton-primaryFormSubmit"] {{
+/* Primary CTA — login / register submit (direct form children only) */
+{g} [data-testid="column"]:last-child form > .stFormSubmitButton > button,
+{g} [data-testid="column"]:last-child form > div.stFormSubmitButton > button,
+{g} [data-testid="column"]:last-child form > .stFormSubmitButton button[kind="secondary"],
+{g} [data-testid="column"]:last-child form > .stFormSubmitButton button[kind="primary"],
+{g} [data-testid="column"]:last-child form > .stFormSubmitButton button[data-testid="stBaseButton-secondary"],
+{g} [data-testid="column"]:last-child form > .stFormSubmitButton button[data-testid="stBaseButton-primary"],
+{g} [data-testid="column"]:last-child form > .stFormSubmitButton button[data-testid="stBaseButton-primaryFormSubmit"] {{
     width: 100% !important;
-    min-height: 44px !important;
+    height: 58px !important;
+    min-height: 58px !important;
     margin-top: 0 !important;
-    border-radius: 12px !important;
-    border: none !important;
+    border-radius: 16px !important;
+    border: 0 !important;
     background: linear-gradient(135deg, #a855f7, #3b82f6) !important;
-    background-color: #7B61FF !important;
+    background-color: transparent !important;
     background-image: linear-gradient(135deg, #a855f7, #3b82f6) !important;
     color: #fff !important;
     font-weight: 700 !important;
@@ -841,14 +798,24 @@ def widget_css() -> str:
     font-family: inherit !important;
     box-shadow: 0 4px 20px rgba(123, 97, 255, 0.35) !important;
 }}
-{g} form .stFormSubmitButton button:hover {{
+{g} [data-testid="column"]:last-child form > .stFormSubmitButton > button:hover,
+{g} [data-testid="column"]:last-child form > div.stFormSubmitButton > button:hover {{
     filter: brightness(1.06) !important;
     box-shadow: 0 6px 28px rgba(123, 97, 255, 0.45) !important;
 }}
-{g} form .stFormSubmitButton button p,
-{g} form .stFormSubmitButton button span {{
+{g} [data-testid="column"]:last-child form > .stFormSubmitButton > button p,
+{g} [data-testid="column"]:last-child form > .stFormSubmitButton > button span,
+{g} [data-testid="column"]:last-child form > div.stFormSubmitButton > button p,
+{g} [data-testid="column"]:last-child form > div.stFormSubmitButton > button span {{
     color: #fff !important;
     font-weight: 700 !important;
+}}
+
+/* Forced input styling inside login card */
+{g} [data-testid="column"]:last-child input {{
+    background: rgba(5, 8, 22, 0.85) !important;
+    color: white !important;
+    border: 1px solid rgba(255, 255, 255, 0.14) !important;
 }}
 
 /* Mode switch link button */
@@ -886,7 +853,6 @@ def widget_css() -> str:
     color: #A855F7 !important;
     background: transparent !important;
     box-shadow: none !important;
-    transform: none !important;
 }}
 {g} [data-testid="column"]:last-child [data-testid="stHorizontalBlock"]:has(.mb-panel-switch-note) .stButton > button p {{
     color: #7B61FF !important;
@@ -897,13 +863,22 @@ def widget_css() -> str:
 {g} [data-testid="stVerticalBlock"] {{ gap: 0 !important; }}
 
 /* Captcha refresh — small icon button */
-{g} [data-testid="stForm"] [data-testid="stHorizontalBlock"] .stButton:last-child button {{
+{g} [data-testid="column"]:last-child form [data-testid="stHorizontalBlock"] .stFormSubmitButton > button,
+{g} [data-testid="column"]:last-child form [data-testid="stHorizontalBlock"] .stButton > button {{
     min-height: 48px !important;
+    height: 48px !important;
     width: 100% !important;
+    border-radius: 12px !important;
     background: rgba(5, 8, 22, 0.85) !important;
+    background-image: none !important;
     border: 1px solid rgba(255,255,255,0.08) !important;
     color: #94a3b8 !important;
     box-shadow: none !important;
+}}
+{g} [data-testid="column"]:last-child form [data-testid="stHorizontalBlock"] .stFormSubmitButton > button p,
+{g} [data-testid="column"]:last-child form [data-testid="stHorizontalBlock"] .stButton > button p {{
+    color: #94a3b8 !important;
+    font-weight: 600 !important;
 }}
 """
 
@@ -1035,21 +1010,23 @@ def panel_shell_html(*, register: bool) -> str:
     initial = html.escape(APP_NAME[:1] if APP_NAME else "M")
     if register:
         return (
-            '<div class="mb-glass-wrap"><div class="mb-glass-card"><div class="mb-glass-inner">'
+            '<div class="mb-login-head">'
             f'{_hex_logo(initial)}'
             '<h2 class="mb-panel-title">Workspace anlegen</h2>'
             '<p class="mb-panel-sub">Erstelle dein Konto und starte in Minuten.</p>'
+            '</div>'
         )
     return (
-        '<div class="mb-glass-wrap"><div class="mb-glass-card"><div class="mb-glass-inner">'
+        '<div class="mb-login-head">'
         f'{_hex_logo(initial)}'
         '<h2 class="mb-panel-title">Willkommen zurück</h2>'
         '<p class="mb-panel-sub">Melde dich an, um fortzufahren.</p>'
+        '</div>'
     )
 
 
 def panel_close_html() -> str:
-    return '</div></div></div>'
+    return ""
 
 
 def forgot_password_html() -> str:
