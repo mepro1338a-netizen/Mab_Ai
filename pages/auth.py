@@ -194,7 +194,7 @@ def render_login_form() -> None:
     with st.form("gate_login_form", clear_on_submit=False, border=False):
         user = st.text_input("Benutzername", placeholder="Benutzername", label_visibility="collapsed")
         pw = st.text_input("Passwort", type="password", placeholder="Passwort", label_visibility="collapsed")
-        if st.form_submit_button("Anmelden", type="primary", width="stretch"):
+        if st.form_submit_button("In MaByte einloggen", type="primary", width="stretch"):
             do_login(user, pw)
 
 
