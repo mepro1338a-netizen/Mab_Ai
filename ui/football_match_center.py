@@ -12,24 +12,22 @@ from ui.styles import inject_css
 
 MATCH_CENTER_CSS = """
 .fb-mc-header {
-    border-radius: 24px;
-    padding: 22px 26px;
-    margin-bottom: 18px;
-    background: linear-gradient(135deg, rgba(6,14,10,.96), rgba(10,16,36,.98));
-    border: 1px solid rgba(34,197,94,.22);
-    box-shadow: 0 20px 60px rgba(0,0,0,.32);
+    border-radius: 16px;
+    padding: 16px 20px;
+    margin-bottom: 14px;
+    background: linear-gradient(135deg, rgba(8,16,12,.95), rgba(12,14,28,.98));
+    border: 1px solid rgba(34,197,94,.2);
 }
 .fb-mc-title {
     color: #f0fdf4 !important;
-    font-size: 28px;
-    font-weight: 1000;
-    letter-spacing: -1px;
+    font-size: 22px;
+    font-weight: 900;
     margin: 0;
 }
 .fb-mc-sub {
     color: #64748b !important;
-    font-size: 13px;
-    margin: 6px 0 0 0;
+    font-size: 12px;
+    margin: 4px 0 0 0;
 }
 .fb-mc-ticker {
     display: flex;
@@ -296,7 +294,7 @@ def render_mc_header(*, live_count: int, today_count: int, api_used: int, api_li
         f"""
 <div class="fb-mc-header">
     <h2 class="fb-mc-title">Live Match Center</h2>
-    <p class="fb-mc-sub">Premium Top-Ligen zuerst · Live · Deutschland · UEFA · Trading-Terminal</p>
+    <p class="fb-mc-sub">Bundesliga · UEFA · Topligen — kuratiert, ohne Kleinligen-Rauschen</p>
     <div class="fb-mc-ticker">
         <span class="fb-mc-stat">Jetzt live<strong>{live_count}</strong></span>
         <span class="fb-mc-stat">Heute<strong>{today_count}</strong></span>
@@ -370,6 +368,43 @@ def render_premium_live_empty(*, raw_live_count: int) -> None:
         """,
         unsafe_allow_html=True,
     )
+
+
+def render_match_grid(
+    fixtures: list[dict[str, Any]],
+    *,
+    key_prefix: str = "mc",
+    selected_fixture: int | None = None,
+    max_cards: int = 24,
+) -> None:
+    rows = fixtures[:max_cards]
+    if not rows:
+        return
+    for i in range(0, len(rows), 3):
+        cols = st.columns(3)
+        for j, col in enumerate(cols):
+            if i + j >= len(rows):
+                break
+            fx = rows[i + j]
+            card = parse_match_card(fx)
+            fid = card.get("fixture_id")
+            if not fid:
+                continue
+            try:
+                fid_int = int(fid)
+            except (TypeError, ValueError):
+                continue
+            with col:
+                st.markdown(_render_match_card_html(card), unsafe_allow_html=True)
+                btn_type = "primary" if selected_fixture == fid_int else "secondary"
+                if st.button(
+                    "Analyse",
+                    key=f"{key_prefix}_a_{fid_int}",
+                    width="stretch",
+                    type=btn_type,
+                ):
+                    st.session_state.fb_mc_selected_fixture = fid_int
+                    st.rerun()
 
 
 def render_match_section(

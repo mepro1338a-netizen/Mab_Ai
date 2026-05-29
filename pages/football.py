@@ -1042,23 +1042,29 @@ def render_football_live_data(summary: dict) -> None:
         )
 
         def _live_block():
-            if st.button("Live aktualisieren", key="football_refresh_live", width="stretch"):
+            from services.football_leagues import premium_league_ids
+            from services.football_match_center import filter_fixtures
+
+            if st.button("Top-Ligen live laden", key="football_refresh_live", width="stretch"):
                 try:
                     with st.spinner("Live-Spiele werden geladen…"):
-                        st.session_state.football_live_fixtures = service.get_live_fixtures(
-                            username=username,
+                        raw = service.get_live_fixtures(username=username)
+                        st.session_state.football_live_fixtures = filter_fixtures(
+                            raw,
+                            league_ids=set(premium_league_ids()),
                         )
                 except FootballAPIError as exc:
                     st.error(str(exc))
             live_rows = st.session_state.get("football_live_fixtures") or []
+            st.caption("Nur Bundesliga, UEFA & Topligen — für alle Live-Spiele: Tab «Live Center».")
             if live_rows:
                 st.markdown(
-                    f'<span class="fb-league-chip"><strong>{len(live_rows)}</strong> Live-Spiele</span>',
+                    f'<span class="fb-league-chip"><strong>{len(live_rows)}</strong> Top-Live-Spiele</span>',
                     unsafe_allow_html=True,
                 )
             render_fixture_cards(
                 live_rows,
-                empty_msg="Keine Live-Spiele — Aktualisieren drücken.",
+                empty_msg="Keine Top-Ligen live — später erneut versuchen.",
             )
 
         gated_api_block(

@@ -21,6 +21,7 @@ from config import (
     FOOTBALL_API_STANDINGS_CACHE_TTL,
     FOOTBALL_API_TIMEOUT,
     FOOTBALL_DEFAULT_SEASON,
+    football_api_season,
 )
 from logger import log_error, log_info, log_warning
 from security import check_rate_limit
@@ -351,7 +352,7 @@ class FootballService:
       params: dict[str, Any] = {"date": str(date).strip()[:10]}
       if league_id:
           params["league"] = int(league_id)
-          params["season"] = int(season or FOOTBALL_DEFAULT_SEASON)
+          params["season"] = int(season or football_api_season() or FOOTBALL_DEFAULT_SEASON)
       return self._request(
           "fixtures",
           params,

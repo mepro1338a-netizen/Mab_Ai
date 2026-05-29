@@ -15,18 +15,16 @@ LEAGUE_CATALOG: dict[str, list[dict[str, Any]]] = {
     k: list(v) for k, v in FOOTBALL_LEAGUE_GROUPS.items()
 }
 
-CATEGORY_LABELS: dict[str, str] = {
-    "premium": "Premium",
-    "heute": "Heute",
+VIEW_LABELS: dict[str, str] = {
+    "top": "Top-Spiele",
     "live": "Live",
-    "morgen": "Morgen",
+    "heute": "Heute",
     "deutschland": "Deutschland",
-    "uefa": "UEFA",
-    "europa_top": "Topligen",
-    "national": "Nationalteams",
-    "favoriten": "Favoriten",
-    "alle": "Alle Ligen",
+    "europa": "Europa",
 }
+
+# Legacy alias
+CATEGORY_LABELS = VIEW_LABELS
 
 LIVE_STATUSES = frozenset({"1H", "HT", "2H", "ET", "P", "BT", "LIVE", "INT"})
 FINISHED_STATUSES = frozenset({"FT", "AET", "PEN", "AWD", "WO"})
@@ -54,18 +52,25 @@ def league_name_map() -> dict[int, str]:
     return {lid: str(meta.get("name") or "") for lid, meta in FOOTBALL_LEAGUE_META.items()}
 
 
-def league_ids_for_category(category: str, favorites: list[int] | None = None) -> set[int] | None:
-    """Return league ID set for filter. None = no league restriction (alle live)."""
-    if category in ("premium", "heute", "live", "morgen"):
-        return set(FOOTBALL_PREMIUM_LEAGUE_IDS)
-    if category == "alle":
+def league_ids_for_view(view: str, favorites: list[int] | None = None) -> set[int] | None:
+    """Return league ID set for filter. None = all leagues worldwide."""
+    if view == "alle":
         return None
-    if category == "favoriten":
+    if view == "deutschland":
+        return {int(lg["id"]) for lg in LEAGUE_CATALOG.get("deutschland", [])}
+    if view == "europa":
+        ids: set[int] = set()
+        for grp in ("uefa", "europa_top"):
+            ids.update(int(lg["id"]) for lg in LEAGUE_CATALOG.get(grp, []))
+        return ids
+    if view == "favoriten":
         fav = favorites or []
         return {int(i) for i in fav if int(i) in FOOTBALL_LEAGUE_META}
-    if category in LEAGUE_CATALOG:
-        return {int(lg["id"]) for lg in LEAGUE_CATALOG[category]}
     return set(FOOTBALL_PREMIUM_LEAGUE_IDS)
+
+
+def league_ids_for_category(category: str, favorites: list[int] | None = None) -> set[int] | None:
+    return league_ids_for_view(category, favorites=favorites)
 
 
 def leagues_for_category(category: str, favorites: list[int] | None = None) -> list[dict[str, Any]]:

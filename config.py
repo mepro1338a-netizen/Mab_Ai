@@ -155,6 +155,15 @@ FOOTBALL_API_INJURIES_CACHE_TTL = int(os.getenv("FOOTBALL_API_INJURIES_CACHE_TTL
 FOOTBALL_API_TIMEOUT = int(os.getenv("FOOTBALL_API_TIMEOUT", "20") or 20)
 FOOTBALL_DEFAULT_SEASON = int(os.getenv("FOOTBALL_DEFAULT_SEASON", "2025") or 2025)
 
+
+def football_api_season() -> int:
+    """API-Football season year (start year of e.g. 2025/26 → 2025)."""
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    now = datetime.now(ZoneInfo("Europe/Berlin"))
+    return now.year if now.month >= 7 else now.year - 1
+
 # API-Football league IDs (v3) — zentral für Live Match Center
 FOOTBALL_LEAGUE_GROUPS: dict[str, list[dict[str, str | int]]] = {
     "deutschland": [
