@@ -18,9 +18,13 @@ from oauth_service import (
     verify_state,
 )
 from ui.auth_premium import (
+    access_card_close_html,
+    access_card_open_html,
     auth_styles_bundle,
+    header_html,
     hero_html,
     notice_html,
+    page_close_html,
     panel_foot_html,
     panel_head_html,
 )
@@ -245,9 +249,13 @@ def render_google_block() -> None:
 def render_login_form() -> None:
     st.markdown('<div class="mb-login-form">', unsafe_allow_html=True)
     with st.form("gate_login_form", clear_on_submit=False, border=False):
+        st.markdown('<div class="mb-field-group"><label class="mb-field-label">Benutzername</label>', unsafe_allow_html=True)
         user = st.text_input("Benutzername", placeholder="dein-benutzername", label_visibility="collapsed")
-        pw = st.text_input("Passwort", type="password", placeholder="Dein Passwort", label_visibility="collapsed")
-        if st.form_submit_button("In MaByte einsteigen →", type="primary", width="stretch"):
+        st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown('<div class="mb-field-group"><label class="mb-field-label">Passwort</label>', unsafe_allow_html=True)
+        pw = st.text_input("Passwort", type="password", placeholder="••••••••", label_visibility="collapsed")
+        st.markdown("</div>", unsafe_allow_html=True)
+        if st.form_submit_button("Zukunft starten →", type="primary", width="stretch"):
             do_login(user, pw)
     st.markdown("</div>", unsafe_allow_html=True)
 
@@ -276,7 +284,7 @@ def render_register_form() -> None:
             st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
             refresh = st.form_submit_button("↻")
         st.markdown("</div>", unsafe_allow_html=True)
-        submitted = st.form_submit_button("Konto erstellen →", type="primary", width="stretch")
+        submitted = st.form_submit_button("Zukunft erschaffen →", type="primary", width="stretch")
 
     if refresh:
         refresh_captcha()
@@ -309,10 +317,14 @@ def render_auth() -> None:
     inject_css(auth_styles_bundle())
     handle_oauth_callback()
 
-    hero_col, panel_col = st.columns([1.15, 0.85], gap="large")
+    st.markdown(header_html(), unsafe_allow_html=True)
+
+    hero_col, panel_col = st.columns([1.12, 0.88], gap="large")
 
     with hero_col:
         st.markdown(hero_html(), unsafe_allow_html=True)
 
     with panel_col:
         render_gate_panel()
+
+    st.markdown(page_close_html(), unsafe_allow_html=True)
