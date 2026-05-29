@@ -83,7 +83,12 @@ def do_login(username: str, password: str) -> None:
     if not allowed:
         _set_gate_notice("error", msg)
         return
-    ok, user = verify_login(username, password)
+    result = verify_login(username, password)
+    if len(result) >= 3:
+        ok, login_msg, user = result[0], result[1], result[2]
+    else:
+        ok, user = result[0], result[1]
+        login_msg = ""
     if ok and user:
         ip_address, user_agent = client_meta()
         record_login_event(user["id"], ip_address, user_agent, "password")
@@ -92,7 +97,7 @@ def do_login(username: str, password: str) -> None:
         st.rerun()
         return
     record_login_failure(username)
-    _set_gate_notice("error", "Benutzername oder Passwort falsch.")
+    _set_gate_notice("error", login_msg or "Benutzername oder Passwort falsch.")
 
 
 def do_register(username: str, email: str, password: str, captcha: int) -> None:
@@ -188,13 +193,11 @@ def render_login_form() -> None:
             placeholder="Passwort",
             label_visibility="collapsed",
         )
-        st.markdown('<div class="mb-form-extras-wrap">', unsafe_allow_html=True)
         ex1, ex2 = st.columns([1.2, 0.8], gap="small")
         with ex1:
             st.checkbox("Angemeldet bleiben", key="gate_remember", label_visibility="visible")
         with ex2:
             st.markdown(forgot_password_html(), unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
         submitted = st.form_submit_button("In MaByte einloggen", type="primary", width="stretch")
     if submitted:
         do_login(user, pw)

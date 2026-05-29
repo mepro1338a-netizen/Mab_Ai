@@ -23,7 +23,7 @@ GATE_CSS = (
     --mb-blue: #5B8CFF;
     --mb-line: rgba(255, 255, 255, 0.08);
     --mb-glow: 0 0 40px rgba(123, 97, 255, 0.25);
-    --mb-radius: 20px;
+    --mb-radius: 24px;
 }
 html { color-scheme: dark !important; }
 .stApp, .stApp[data-theme="light"], .stApp[data-theme="dark"] {
@@ -56,28 +56,32 @@ section.main .block-container {
 }
 section.main > div > div > [data-testid="stVerticalBlock"] { gap: 0 !important; }
 section.main > div > div > [data-testid="stHorizontalBlock"] {
-    align-items: stretch !important;
+    align-items: center !important;
     gap: 0 !important;
-    min-height: calc(100vh - 52px) !important;
+    min-height: calc(100vh - 140px) !important;
 }
 [data-testid="column"]:first-child {
     flex: 0 0 55% !important;
     max-width: 55% !important;
     padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
 }
 [data-testid="column"]:last-child {
     flex: 0 0 45% !important;
     max-width: 45% !important;
-    padding: 0 !important;
+    padding: 24px 40px 24px 16px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
+    overflow: visible !important;
 }
 [data-testid="column"]:last-child > [data-testid="stVerticalBlock"] {
     width: 100% !important;
     max-width: 520px !important;
     gap: 0 !important;
-    padding: 32px 24px !important;
+    padding: 0 !important;
+    overflow: visible !important;
 }
 [data-testid="column"]:last-child [data-testid="stElementContainer"],
 [data-testid="column"]:last-child [data-testid="stMarkdownContainer"],
@@ -107,7 +111,10 @@ section.main > div > div > [data-testid="stHorizontalBlock"] {
 }
 @media (max-width: 640px) {
     .mb-feat-grid { grid-template-columns: 1fr !important; }
-    .mb-topbar-lang { display: none !important; }
+    .mb-topbar { padding: 14px 20px !important; }
+    .mb-topbar-claim { display: none !important; }
+    .mb-topbar-live { display: none !important; }
+    .mb-hero { padding: 16px 20px 24px 20px !important; }
 }
 """)
 + """
@@ -170,13 +177,27 @@ section.main > div > div > [data-testid="stHorizontalBlock"] {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 20px 40px;
+    padding: 18px 40px;
     max-width: 100%;
+    border-bottom: 1px solid var(--mb-line);
+    background: rgba(5, 8, 22, 0.72);
+    backdrop-filter: blur(16px);
 }
 .mb-topbar-brand {
     display: flex;
     align-items: center;
     gap: 12px;
+}
+.mb-topbar-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.mb-topbar-claim {
+    font-size: 12px;
+    font-weight: 500;
+    color: #64748b !important;
+    letter-spacing: 0.01em;
 }
 .mb-logo-mark {
     width: 38px;
@@ -210,13 +231,41 @@ section.main > div > div > [data-testid="stHorizontalBlock"] {
     background: rgba(10, 16, 36, 0.6);
     backdrop-filter: blur(12px);
 }
+.mb-topbar-live {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #86efac !important;
+    padding: 8px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(34, 197, 94, 0.25);
+    background: rgba(34, 197, 94, 0.08);
+    margin-left: 10px;
+}
+.mb-topbar-live-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #22c55e;
+    box-shadow: 0 0 8px rgba(34, 197, 94, 0.7);
+}
+.mb-topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 0;
+}
 
 /* ── Hero left ── */
 .mb-hero {
     position: relative;
     z-index: 2;
-    padding: 8px 48px 48px 48px;
-    max-width: 720px;
+    padding: 24px 48px 32px 48px;
+    max-width: 100%;
+    width: 100%;
 }
 .mb-hero-pill {
     display: inline-flex;
@@ -373,12 +422,12 @@ section.main > div > div > [data-testid="stHorizontalBlock"] {
     padding: 1px;
     background: linear-gradient(160deg, rgba(168,85,247,0.5), rgba(91,140,255,0.15), rgba(123,97,255,0.3));
     box-shadow: var(--mb-glow), 0 32px 80px rgba(0, 0, 0, 0.55);
-    overflow: hidden;
+    overflow: visible;
 }
 .mb-glass-inner {
     position: relative;
     border-radius: calc(var(--mb-radius) - 1px);
-    padding: 32px 32px 28px 32px;
+    padding: 36px 36px 32px 36px;
     background: rgba(10, 16, 36, 0.72);
     backdrop-filter: blur(24px) saturate(1.4);
     -webkit-backdrop-filter: blur(24px) saturate(1.4);
@@ -580,8 +629,9 @@ def widget_css() -> str:
 {g} [data-testid="stForm"] {{
     border: none !important; padding: 0 !important; background: transparent !important;
 }}
-{g} [data-testid="stWidgetLabel"],
-{g} label[data-testid="stWidgetLabel"] {{ display: none !important; }}
+{g} [data-testid="stTextInput"] [data-testid="stWidgetLabel"],
+{g} [data-testid="stNumberInput"] [data-testid="stWidgetLabel"],
+{g} label[data-testid="stWidgetLabel"]:has(+ div [data-baseweb="input"]) {{ display: none !important; }}
 {g} [data-testid="stTextInput"],
 {g} [data-testid="stNumberInput"] {{ margin-bottom: 14px !important; }}
 {g} [data-testid="stTextInput"] > div,
@@ -653,16 +703,25 @@ def widget_css() -> str:
 }}
 
 /* Extras row layout */
-{g} .mb-form-extras-wrap [data-testid="stHorizontalBlock"] {{
+{g} [data-testid="stForm"] [data-testid="stHorizontalBlock"] {{
     align-items: center !important;
-    gap: 0 !important;
+    gap: 8px !important;
+    margin: 4px 0 18px 0 !important;
 }}
-{g} .mb-form-extras-wrap [data-testid="column"]:first-child {{
+{g} [data-testid="stForm"] [data-testid="stHorizontalBlock"] [data-testid="column"]:first-child {{
     flex: 1 !important; max-width: none !important; padding: 0 !important;
+    display: flex !important; align-items: center !important;
 }}
-{g} .mb-form-extras-wrap [data-testid="column"]:last-child {{
+{g} [data-testid="stForm"] [data-testid="stHorizontalBlock"] [data-testid="column"]:last-child {{
     flex: 0 0 auto !important; max-width: none !important; padding: 0 !important;
-    justify-content: flex-end !important;
+    display: flex !important; justify-content: flex-end !important; align-items: center !important;
+}}
+{g} [data-testid="stForm"] [data-testid="stHorizontalBlock"] [data-testid="column"]:last-child [data-testid="stMarkdownContainer"] {{
+    width: auto !important;
+}}
+{g} .mb-forgot-link {{
+    white-space: nowrap !important;
+    display: inline-block !important;
 }}
 
 /* Primary CTA */
@@ -746,9 +805,15 @@ def page_open_html(mode_class: str = "") -> str:
         f'<div class="mb-auth-stars" aria-hidden="true"></div>'
         f'<div class="mb-topbar">'
         f'<div class="mb-topbar-brand">{_logo_mark(initial)}'
-        f'<span class="mb-topbar-name">{name}</span></div>'
+        f'<div class="mb-topbar-text">'
+        f'<span class="mb-topbar-name">{name}</span>'
+        f'<span class="mb-topbar-claim">One system. Infinite intelligence.</span>'
+        f'</div></div>'
+        f'<div class="mb-topbar-actions">'
         f'<span class="mb-topbar-lang">🌐 DE</span>'
-        f'</div>'
+        f'<span class="mb-topbar-live">'
+        f'<span class="mb-topbar-live-dot"></span>Live</span>'
+        f'</div></div>'
     )
 
 
@@ -757,7 +822,7 @@ def hero_html() -> str:
         '<div class="mb-hero">'
         '<div class="mb-hero-pill">'
         '<span class="mb-hero-pill-dot"></span>'
-        'Creator · Football · Automation'
+        'CREATOR · FOOTBALL · AUTOMATION'
         '</div>'
         '<h1 class="mb-hero-title">'
         'One system.<br>'
@@ -798,12 +863,12 @@ def hero_html() -> str:
         '<div class="mb-stat">'
         '<div class="mb-stat-icon" aria-hidden="true">▶</div>'
         '<div><span class="mb-stat-val">1 Mio+</span>'
-        '<span class="mb-stat-label">Videos</span></div>'
+        '<span class="mb-stat-label">Videos erstellt</span></div>'
         '</div>'
         '<div class="mb-stat">'
         '<div class="mb-stat-icon" aria-hidden="true">🏢</div>'
         '<div><span class="mb-stat-val">500+</span>'
-        '<span class="mb-stat-label">Teams</span></div>'
+        '<span class="mb-stat-label">Teams &amp; Unternehmen</span></div>'
         '</div>'
         '</div>'
         '</div>'
@@ -823,7 +888,7 @@ def panel_shell_html(*, register: bool) -> str:
         '<div class="mb-glass-wrap"><div class="mb-glass-card"><div class="mb-glass-inner">'
         f'{_hex_logo(initial)}'
         '<h2 class="mb-panel-title">Willkommen zurück</h2>'
-        '<p class="mb-panel-sub">Melde dich an, um fortzufahren.</p>'
+        '<p class="mb-panel-sub">Schön, dass du wieder da bist.</p>'
     )
 
 
@@ -856,6 +921,8 @@ def page_close_html() -> str:
         '<a href="#">AGB</a>'
         '<span class="mb-page-foot-sep">|</span>'
         '<a href="#">Impressum</a>'
+        '<span class="mb-page-foot-sep">|</span>'
+        '<a href="#">Support</a>'
         '</div>'
         '</footer>'
         '</div>'
