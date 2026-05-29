@@ -1,8 +1,11 @@
 """Live Match Center — fixture grouping, filtering, match detail bundles."""
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from typing import Any
+from zoneinfo import ZoneInfo
+
+_FB_TZ = ZoneInfo("Europe/Berlin")
 
 from config import FOOTBALL_DEFAULT_SEASON, football_plan_rank
 from services.football_leagues import (
@@ -26,9 +29,25 @@ def _league_id(fixture: dict[str, Any]) -> int | None:
         return None
 
 
+def _local_today_tomorrow() -> tuple[str, str]:
+    now = datetime.now(_FB_TZ)
+    today = now.date()
+    return today.isoformat(), (today + timedelta(days=1)).isoformat()
+
+
 def _fixture_date(fixture: dict[str, Any]) -> str:
+    """Kickoff date in Europe/Berlin (matches user expectation for Heute/Morgen)."""
     raw = str((fixture.get("fixture") or {}).get("date") or "")
-    return raw[:10] if raw else ""
+    if not raw:
+        return ""
+    try:
+        normalized = raw.replace("Z", "+00:00")
+        dt = datetime.fromisoformat(normalized)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=_FB_TZ)
+        return dt.astimezone(_FB_TZ).date().isoformat()
+    except ValueError:
+        return raw[:10] if raw else ""
 
 
 def _status_short(fixture: dict[str, Any]) -> str:
@@ -110,8 +129,9 @@ def filter_fixtures(
     search_l = country.strip().lower()
     for fx in fixtures or []:
         lid = _league_id(fx)
-        if league_ids and lid not in league_ids:
-            continue
+        if league_ids:
+            if lid is None or int(lid) not in league_ids:
+                continue
         if search_l:
             league = fx.get("league") or {}
             teams = fx.get("teams") or {}
@@ -168,20 +188,48 @@ def classify_fixtures(
     finished_today: list[dict[str, Any]] = []
     tomorrow_list: list[dict[str, Any]] = []
 
+    placed: set[int] = set()
+
+    def _fid(fx: dict[str, Any]) -> int | None:
+        try:
+            return int((fx.get("fixture") or {}).get("id") or 0) or None
+        except (TypeError, ValueError):
+            return None
+
     for fx in fixtures:
         d = _fixture_date(fx)
         st = _status_short(fx)
+        fid = _fid(fx)
         if st in LIVE_STATUSES:
             live_now.append(fx)
+            if fid:
+                placed.add(fid)
             continue
         if d == tomorrow:
             tomorrow_list.append(fx)
+            if fid:
+                placed.add(fid)
             continue
         if d != today:
             continue
         if st in FINISHED_STATUSES:
             finished_today.append(fx)
         elif st in SCHEDULED_STATUSES or st not in FINISHED_STATUSES:
+            later_today.append(fx)
+        if fid:
+            placed.add(fid)
+
+    for fx in fixtures:
+        fid = _fid(fx)
+        if not fid or fid in placed:
+            continue
+        d = _fixture_date(fx)
+        st = _status_short(fx)
+        if st in LIVE_STATUSES:
+            live_now.append(fx)
+        elif d == tomorrow:
+            tomorrow_list.append(fx)
+        elif d == today:
             later_today.append(fx)
 
     return {
@@ -275,6 +323,27 @@ def fetch_live_center_payload(
     if scope == "live" and premium_only and not show_all_live and effective_ids:
         filtered = filter_fixtures(live_rows, league_ids=effective_ids, country=country_filter)
 
+    if not filtered and effective_ids and not errors:
+        supplemental: list[dict[str, Any]] = []
+        for lid in sorted(effective_ids)[:10]:
+            try:
+                supplemental.extend(
+                    service.get_fixtures_by_date(
+                        today_s,
+                        league_id=int(lid),
+                        username=username,
+                    )
+                )
+            except FootballAPIError:
+                pass
+        if supplemental:
+            merged = dedupe_fixtures(live_rows + supplemental + tomorrow_rows)
+            filtered = filter_fixtures(
+                merged,
+                league_ids=effective_ids,
+                country=country_filter,
+            )
+
     sections = classify_fixtures(filtered, today=today_s, tomorrow=tomorrow_s)
 
     show_prompt = (
@@ -298,6 +367,8 @@ def fetch_live_center_payload(
         "show_all_live_prompt": show_prompt,
         "premium_only": premium_only,
         "show_all_live": show_all_live,
+        "raw_merged_count": len(merged),
+        "today_local": today_s,
     }
 
 

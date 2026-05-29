@@ -38,20 +38,41 @@ ICON_MAP = {
 
 
 def sidebar_master_css() -> str:
-    """Premium B2B sidebar — compact nav, zinc surfaces."""
+    """Futuristic MaByte sidebar — glass, neon accents, command-deck feel."""
     return """
 section[data-testid="stSidebar"] {
-    min-width: 14.5rem !important;
-    width: 14.5rem !important;
-    background: #18181b !important;
-    background-color: #18181b !important;
-    border-right: 1px solid #27272a !important;
-    box-shadow: none !important;
+    min-width: 15rem !important;
+    width: 15rem !important;
+    background:
+        radial-gradient(120% 80% at 0% 0%, rgba(168,85,247,.14) 0%, transparent 55%),
+        radial-gradient(90% 60% at 100% 100%, rgba(34,197,94,.08) 0%, transparent 50%),
+        linear-gradient(180deg, #0a0a12 0%, #0f1018 45%, #12121c 100%) !important;
+    border-right: 1px solid rgba(168,85,247,.22) !important;
+    box-shadow: 4px 0 32px rgba(0,0,0,.45), inset -1px 0 0 rgba(255,255,255,.04) !important;
+}
+section[data-testid="stSidebar"]::before {
+    content: "";
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 15rem;
+    height: 100%;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(255,255,255,.012) 2px,
+        rgba(255,255,255,.012) 4px
+    );
+    z-index: 0;
 }
 section[data-testid="stSidebar"] > div {
-    padding: 14px 10px 18px 10px !important;
+    padding: 16px 11px 20px 11px !important;
     overflow-x: hidden !important;
     overflow-y: auto !important;
+    position: relative;
+    z-index: 1;
 }
 section[data-testid="stSidebar"] [data-testid="stSidebarContent"] {
     padding-top: 0 !important;
@@ -68,17 +89,27 @@ section[data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"] {
 }
 
 .sidebar-logo-wrap {
-    padding: 2px 6px 16px 6px;
-    margin-bottom: 6px;
-    border-bottom: 1px solid #27272a;
+    padding: 4px 8px 18px 8px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid rgba(168,85,247,.2);
+    position: relative;
+}
+.sidebar-logo-wrap::after {
+    content: "";
+    position: absolute;
+    left: 8px;
+    right: 8px;
+    bottom: -1px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,231,163,.45), rgba(168,85,247,.6), transparent);
 }
 .sidebar-logo-wrap img {
     width: 100%;
-    max-height: 44px;
+    max-height: 46px;
     object-fit: contain;
     object-position: left center;
     border-radius: 0;
-    filter: brightness(1.05);
+    filter: drop-shadow(0 0 12px rgba(168,85,247,.35)) brightness(1.08);
 }
 
 .mb-nav-section {
@@ -111,21 +142,21 @@ section[data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"] {
 section[data-testid="stSidebar"] .mb-nav-item:not(.mb-nav-active) .stButton > button,
 section[data-testid="stSidebar"] .mb-nav-item:not(.mb-nav-active) button {
     width: 100% !important;
-    min-height: 36px !important;
-    height: 36px !important;
-    padding: 0 10px 0 36px !important;
-    border-radius: 8px !important;
-    border: none !important;
-    background: transparent !important;
-    background-color: transparent !important;
+    min-height: 38px !important;
+    height: 38px !important;
+    padding: 0 10px 0 38px !important;
+    border-radius: 10px !important;
+    border: 1px solid transparent !important;
+    background: rgba(15,23,42,.35) !important;
+    background-color: rgba(15,23,42,.35) !important;
     background-image: none !important;
-    color: #a1a1aa !important;
+    color: #94a3b8 !important;
     font-weight: 500 !important;
     font-size: 13px !important;
     text-align: left !important;
     box-shadow: none !important;
     position: relative !important;
-    transition: background .1s ease, color .1s ease !important;
+    transition: border-color .15s ease, background .15s ease, color .15s ease, box-shadow .15s ease !important;
 }
 section[data-testid="stSidebar"] .mb-nav-item:not(.mb-nav-active) button p {
     color: #a1a1aa !important;
@@ -134,9 +165,11 @@ section[data-testid="stSidebar"] .mb-nav-item:not(.mb-nav-active) button p {
 }
 section[data-testid="stSidebar"] .mb-nav-item:not(.mb-nav-active) .stButton > button:hover,
 section[data-testid="stSidebar"] .mb-nav-item:not(.mb-nav-active) button:hover {
-    background: #27272a !important;
-    background-color: #27272a !important;
-    color: #fafafa !important;
+    background: rgba(30,27,75,.55) !important;
+    background-color: rgba(30,27,75,.55) !important;
+    border-color: rgba(168,85,247,.28) !important;
+    color: #f8fafc !important;
+    box-shadow: 0 0 18px rgba(168,85,247,.12) !important;
 }
 section[data-testid="stSidebar"] .mb-nav-item:not(.mb-nav-active) button:hover p {
     color: #fafafa !important;
@@ -170,11 +203,12 @@ section[data-testid="stSidebar"] .mb-nav-active button::before {
     content: "";
     position: absolute;
     left: 0;
-    top: 6px;
-    bottom: 6px;
-    width: 2px;
-    border-radius: 2px;
-    background: #a78bfa;
+    top: 5px;
+    bottom: 5px;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: linear-gradient(180deg, #ffe7a3, #a855f7);
+    box-shadow: 0 0 10px rgba(168,85,247,.8);
 }
 
 /* Nav icon — minimal */
@@ -206,11 +240,12 @@ section[data-testid="stSidebar"] .mb-nav-active button::after {
 }
 
 .sidebar-user-card {
-    margin-top: 14px;
-    padding: 12px 12px;
-    border-radius: 10px;
-    background: #27272a;
-    border: 1px solid #3f3f46;
+    margin-top: 16px;
+    padding: 14px 14px;
+    border-radius: 14px;
+    background: linear-gradient(145deg, rgba(20,18,40,.9), rgba(10,12,22,.95));
+    border: 1px solid rgba(168,85,247,.28);
+    box-shadow: 0 8px 28px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.05);
 }
 .sidebar-user-row {
     display: flex;
@@ -227,23 +262,24 @@ section[data-testid="stSidebar"] .mb-nav-active button::after {
     white-space: nowrap;
 }
 .sidebar-user-plan {
-    padding: 3px 7px;
-    border-radius: 5px;
-    background: #3f3f46;
-    border: none;
-    color: #d4d4d8 !important;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: rgba(168,85,247,.2);
+    border: 1px solid rgba(168,85,247,.35);
+    color: #e9d5ff !important;
     font-size: 9px;
-    font-weight: 700;
-    letter-spacing: .06em;
+    font-weight: 800;
+    letter-spacing: .08em;
     text-transform: uppercase;
 }
 .sidebar-user-tokens {
-    color: #fafafa !important;
-    font-size: 20px;
-    font-weight: 700;
+    color: #ffe7a3 !important;
+    font-size: 22px;
+    font-weight: 800;
     letter-spacing: -0.02em;
     margin-top: 8px;
     line-height: 1;
+    text-shadow: 0 0 24px rgba(255,231,163,.25);
 }
 .sidebar-user-caption {
     color: #71717a !important;
@@ -253,21 +289,22 @@ section[data-testid="stSidebar"] .mb-nav-active button::after {
 
 section[data-testid="stSidebar"] .sidebar-logout-wrap .stButton > button,
 section[data-testid="stSidebar"] .sidebar-logout-wrap button {
-    min-height: 34px !important;
-    height: 34px !important;
-    margin-top: 10px !important;
-    border-radius: 8px !important;
-    background: transparent !important;
-    background-color: transparent !important;
-    border: 1px solid #3f3f46 !important;
-    color: #a1a1aa !important;
+    min-height: 36px !important;
+    height: 36px !important;
+    margin-top: 12px !important;
+    border-radius: 10px !important;
+    background: rgba(15,23,42,.5) !important;
+    background-color: rgba(15,23,42,.5) !important;
+    border: 1px solid rgba(100,116,139,.35) !important;
+    color: #94a3b8 !important;
     font-size: 12px !important;
-    font-weight: 500 !important;
+    font-weight: 600 !important;
     box-shadow: none !important;
 }
 section[data-testid="stSidebar"] .sidebar-logout-wrap button:hover {
-    background: #27272a !important;
-    color: #fafafa !important;
+    background: rgba(127,29,29,.35) !important;
+    border-color: rgba(248,113,113,.4) !important;
+    color: #fecaca !important;
 }
 section[data-testid="stSidebar"] .sidebar-logout-wrap button p {
     color: inherit !important;

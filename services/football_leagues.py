@@ -56,7 +56,7 @@ def league_name_map() -> dict[int, str]:
 
 def league_ids_for_category(category: str, favorites: list[int] | None = None) -> set[int] | None:
     """Return league ID set for filter. None = no league restriction (alle live)."""
-    if category == "premium":
+    if category in ("premium", "heute", "live", "morgen"):
         return set(FOOTBALL_PREMIUM_LEAGUE_IDS)
     if category == "alle":
         return None

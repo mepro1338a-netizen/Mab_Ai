@@ -11,11 +11,7 @@ from services.football_access import (
     consume_action,
 )
 from services.football_elite_live import EliteLiveIntelEngine, pro_preview_from_bundle
-from services.football_leagues import (
-    CATEGORY_LABELS,
-    league_ids_for_category,
-    leagues_for_category,
-)
+from services.football_leagues import CATEGORY_LABELS, league_ids_for_category
 from services.football_match_center import fetch_live_center_payload, fetch_match_detail
 from services.football_service import FootballAPIError, get_football_service
 from ui.football_components import inject_football_components_css, render_elite_live_dashboard
@@ -29,6 +25,8 @@ from ui.football_match_center import (
     render_premium_live_empty,
 )
 from ui.premium_foundation import render_upgrade_card
+
+_FB_MC_DATA_VERSION = 2
 
 _FILTER_KEYS = (
     "premium",
@@ -64,10 +62,14 @@ def _init_session() -> None:
         "fb_mc_filter_sig": "",
         "fb_mc_show_all_live": False,
         "fb_mc_selected_fixture": None,
+        "fb_mc_data_version": _FB_MC_DATA_VERSION,
     }
     for key, val in defaults.items():
         if key not in st.session_state:
             st.session_state[key] = val
+    if st.session_state.get("fb_mc_data_version") != _FB_MC_DATA_VERSION:
+        st.session_state.fb_mc_data_version = _FB_MC_DATA_VERSION
+        st.session_state.fb_mc_payload = None
 
 
 def _scope_for_category(category: str) -> str:
@@ -89,7 +91,7 @@ def _filter_signature(
     ids = sorted(league_filter or [])
     return (
         f"{category}|{','.join(map(str, ids))}|{country.strip().lower()}|"
-        f"all_live={int(show_all_live)}"
+        f"all_live={int(show_all_live)}|v={_FB_MC_DATA_VERSION}"
     )
 
 
@@ -115,6 +117,33 @@ def _resolve_fixture_id() -> int | None:
         except (TypeError, ValueError):
             pass
     return None
+
+
+def _render_empty_hint(payload: dict, category: str) -> None:
+    total = int(payload.get("total_fixtures") or 0)
+    if total > 0:
+        return
+    raw = int(payload.get("raw_merged_count") or 0)
+    live_raw = int(payload.get("raw_live_count") or 0)
+    today_local = payload.get("today_local") or "—"
+    st.markdown(
+        f'<div class="fb-empty">'
+        f"Keine Spiele in dieser Ansicht (Datum lokal: <strong>{today_local}</strong>). "
+        f"API-Rohdaten: {raw} Spiele, {live_raw} live weltweit."
+        f"</div>",
+        unsafe_allow_html=True,
+    )
+    c1, c2 = st.columns(2)
+    with c1:
+        if st.button("Alle Ligen anzeigen", key="fb_mc_empty_alle", width="stretch"):
+            st.session_state.fb_mc_category = "alle"
+            st.session_state.fb_mc_show_all_live = True
+            st.session_state.fb_mc_payload = None
+            st.rerun()
+    with c2:
+        if st.button("Erneut laden", key="fb_mc_empty_reload", width="stretch"):
+            st.session_state.fb_mc_payload = None
+            st.rerun()
 
 
 def render_tab_live_match_center(
@@ -185,7 +214,7 @@ def render_tab_live_match_center(
         st.info("Noch keine Favoriten — unten im Expander Ligen auswählen und speichern.")
 
     league_filter = league_ids_for_category(category, favorites=favs)
-    if category == "favoriten" and not league_filter:
+    if category == "favoriten" and league_filter is not None and not league_filter:
         league_filter = set()
 
     country_filter = st.text_input(
@@ -216,7 +245,7 @@ def render_tab_live_match_center(
     scope = _scope_for_category(category)
 
     if refresh or st.session_state.fb_mc_payload is None:
-        if category == "favoriten" and not league_filter:
+        if category == "favoriten" and league_filter is not None and not league_filter:
             st.session_state.fb_mc_payload = {
                 "configured": True,
                 "errors": [],
@@ -229,7 +258,9 @@ def render_tab_live_match_center(
                 "total_fixtures": 0,
                 "premium_live_count": 0,
                 "raw_live_count": 0,
+                "raw_merged_count": 0,
                 "show_all_live_prompt": False,
+                "today_local": "",
             }
         else:
             with st.spinner("Spiele werden geladen…"):
@@ -279,6 +310,8 @@ def render_tab_live_match_center(
             st.rerun()
     elif category == "premium" and not show_all_live:
         st.caption("Premium-Ansicht: Top-Ligen · sortiert nach Relevanz")
+
+    _render_empty_hint(payload, category)
 
     show_sections = {
         "live_now": category in (
@@ -343,7 +376,7 @@ def render_tab_live_match_center(
         fixture_id = None
 
     if not opts and not fixture_id:
-        st.info("Keine Spiele geladen — Filter anpassen oder aktualisieren.")
+        st.info("Keine Spiele geladen — Filter „Alle Ligen“ testen oder aktualisieren.")
     else:
         labels = list(opts.keys())
         id_to_label = {v: k for k, v in opts.items()}
