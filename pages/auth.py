@@ -19,7 +19,8 @@ from oauth_service import (
     verify_state,
 )
 from ui_core import sync_session_user
-from ui.auth_premium import auth_styles_bundle, brand_panel_html, card_hero_html
+from ui.auth_premium import auth_styles_bundle, card_hero_html, render_brand_column
+from ui.b2b_theme import streamlit_force_dark_css
 from ui.styles import inject_css
 
 
@@ -237,6 +238,7 @@ def handle_oauth_callback() -> bool:
 def auth_css() -> None:
     inject_css(
         auth_styles_bundle()
+        + streamlit_force_dark_css()
         + """
 section.main [data-testid="stVerticalBlock"] { gap: .45rem !important; }
 section.main [data-testid="stHorizontalBlock"] {
@@ -746,7 +748,7 @@ def render_auth() -> None:
     brand_col, login_col = st.columns([1.15, 1], gap="large")
 
     with brand_col:
-        st.markdown(brand_panel_html(), unsafe_allow_html=True)
+        render_brand_column()
 
     with login_col:
         st.markdown('<div class="mb-auth-card-wrap">', unsafe_allow_html=True)

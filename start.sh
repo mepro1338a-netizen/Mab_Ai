@@ -5,6 +5,6 @@ exec streamlit run main.py \
   --server.port="$PORT" \
   --server.address=0.0.0.0 \
   --server.headless=true \
-  --server.enableCORS=true \
-  --server.enableXsrfProtection=true \
+  --server.enableCORS=false \
+  --server.enableXsrfProtection=false \
   --browser.gatherUsageStats=false

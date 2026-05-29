@@ -5,13 +5,21 @@ import html
 
 from config import APP_NAME, APP_TAGLINE
 from ui.b2b_theme import MB_APP_BACKGROUND, MB_THEME_VARS, streamlit_force_dark_css
-from ui_core import WORDMARK, img_base64
+from ui_core import WORDMARK
 
 
 AUTH_PREMIUM_CSS = """
 .mb-auth-page {
     position: relative;
     min-height: calc(100vh - 96px);
+    z-index: 1;
+}
+section.main .block-container,
+section.main [data-testid="stVerticalBlock"],
+section.main [data-testid="column"],
+section.main .element-container {
+    visibility: visible !important;
+    opacity: 1 !important;
 }
 .mb-auth-page::before {
     content: "";
@@ -199,19 +207,23 @@ section.main div[data-testid="stVerticalBlockBorderWrapper"] {
 """
 
 
-def brand_panel_html() -> str:
+def render_brand_column() -> None:
+    """Logo via st.image — avoids 1MB+ inline base64 breaking Streamlit on Railway."""
+    import streamlit as st
+
+    st.markdown('<div class="mb-auth-brand">', unsafe_allow_html=True)
     if WORDMARK.exists():
-        src = img_base64(WORDMARK)
-        logo = f'<div class="mb-auth-logo"><img src="data:image/png;base64,{src}" alt="{html.escape(APP_NAME)}"></div>'
+        st.image(str(WORDMARK), use_container_width=True)
     else:
-        logo = f'<div class="mb-auth-logo"><div class="mb-auth-logo-fallback">{html.escape(APP_NAME[:1])}</div></div>'
+        st.markdown(
+            f'<div class="mb-auth-logo-fallback">{html.escape(APP_NAME[:1])}</div>',
+            unsafe_allow_html=True,
+        )
 
     tagline = html.escape(APP_TAGLINE)
     name = html.escape(APP_NAME)
-
-    return f"""
-<div class="mb-auth-brand">
-    {logo}
+    st.markdown(
+        f"""
     <p class="mb-auth-eyebrow">Creator Operating System · B2B Ready</p>
     <h1 class="mb-auth-hero-title">{name}</h1>
     <p class="mb-auth-hero-tagline">{tagline}</p>
@@ -243,8 +255,10 @@ def brand_panel_html() -> str:
             <span>Reels rendern, planen und veröffentlichen in einem Flow.</span>
         </div>
     </div>
-</div>
-"""
+        """,
+        unsafe_allow_html=True,
+    )
+    st.markdown("</div>", unsafe_allow_html=True)
 
 
 def card_hero_html() -> str:
@@ -257,9 +271,9 @@ def card_hero_html() -> str:
 
 
 def auth_styles_bundle() -> str:
+    """Lighter than full app shell — no duplicate mega CSS on login route."""
     return (
         MB_THEME_VARS
-        + streamlit_force_dark_css()
         + AUTH_PREMIUM_CSS
         + """
 .custom-topbar, #MainMenu, header, footer,
