@@ -229,24 +229,30 @@ def render_register_form() -> None:
 
 def render_auth_switch() -> None:
     mode = st.session_state.get("gate_mode", "login")
-    st.markdown('<div class="mb-panel-switch">', unsafe_allow_html=True)
-    if mode == "login":
-        st.markdown(
-            '<span class="mb-panel-switch-note">Noch kein Konto?</span>',
-            unsafe_allow_html=True,
-        )
-        if st.button("Jetzt registrieren →", key="switch_register", type="tertiary"):
-            st.session_state.gate_mode = "register"
-            st.rerun()
-    else:
-        st.markdown(
-            '<span class="mb-panel-switch-note">Bereits ein Konto?</span>',
-            unsafe_allow_html=True,
-        )
-        if st.button("Anmelden →", key="switch_login", type="tertiary"):
-            st.session_state.gate_mode = "login"
-            st.rerun()
-    st.markdown("</div>", unsafe_allow_html=True)
+    _, center, _ = st.columns([0.08, 0.84, 0.08])
+    with center:
+        if mode == "login":
+            note_col, btn_col = st.columns([0.52, 0.48], gap="small")
+            with note_col:
+                st.markdown(
+                    '<p class="mb-panel-switch-note">Noch kein Konto?</p>',
+                    unsafe_allow_html=True,
+                )
+            with btn_col:
+                if st.button("Jetzt registrieren →", key="switch_register", type="tertiary"):
+                    st.session_state.gate_mode = "register"
+                    st.rerun()
+        else:
+            note_col, btn_col = st.columns([0.52, 0.48], gap="small")
+            with note_col:
+                st.markdown(
+                    '<p class="mb-panel-switch-note">Bereits ein Konto?</p>',
+                    unsafe_allow_html=True,
+                )
+            with btn_col:
+                if st.button("Anmelden →", key="switch_login", type="tertiary"):
+                    st.session_state.gate_mode = "login"
+                    st.rerun()
 
 
 def render_gate_panel() -> None:

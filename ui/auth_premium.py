@@ -112,9 +112,10 @@ section.main > div > div > [data-testid="stHorizontalBlock"] {
 @media (max-width: 640px) {
     .mb-feat-grid { grid-template-columns: 1fr !important; }
     .mb-topbar { padding: 14px 20px !important; }
-    .mb-topbar-claim { display: none !important; }
-    .mb-topbar-live { display: none !important; }
     .mb-hero { padding: 16px 20px 24px 20px !important; }
+    .mb-stats-row { flex-direction: column !important; align-items: flex-start !important; gap: 12px !important; }
+    .mb-stat { padding-right: 0 !important; margin-right: 0 !important; border-right: none !important; }
+    .mb-glass-inner { padding: 28px 24px 24px 24px !important; }
 }
 """)
 + """
@@ -150,10 +151,19 @@ section.main > div > div > [data-testid="stHorizontalBlock"] {
     background:
         radial-gradient(ellipse 120% 40% at 50% 95%, rgba(123, 97, 255, 0.12) 0%, transparent 55%),
         url("https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1920&q=80&auto=format&fit=crop") center bottom / cover no-repeat;
-    opacity: 0.35;
+    opacity: 0.42;
     mix-blend-mode: luminosity;
-    mask-image: linear-gradient(to top, black 0%, transparent 65%);
-    -webkit-mask-image: linear-gradient(to top, black 0%, transparent 65%);
+    mask-image: linear-gradient(to top, black 0%, transparent 72%);
+    -webkit-mask-image: linear-gradient(to top, black 0%, transparent 72%);
+}
+.mb-auth-aurora {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background:
+        radial-gradient(ellipse 55% 35% at 72% 8%, rgba(168, 85, 247, 0.28), transparent 60%),
+        radial-gradient(ellipse 45% 30% at 15% 12%, rgba(91, 140, 255, 0.18), transparent 55%);
 }
 .mb-auth-stars {
     position: fixed;
@@ -193,12 +203,8 @@ section.main > div > div > [data-testid="stHorizontalBlock"] {
     flex-direction: column;
     gap: 2px;
 }
-.mb-topbar-claim {
-    font-size: 12px;
-    font-weight: 500;
-    color: #64748b !important;
-    letter-spacing: 0.01em;
-}
+.mb-topbar-claim { display: none !important; }
+.mb-topbar-live { display: none !important; }
 .mb-logo-mark {
     width: 38px;
     height: 38px;
@@ -291,11 +297,11 @@ section.main > div > div > [data-testid="stHorizontalBlock"] {
     box-shadow: 0 0 6px rgba(123, 97, 255, 0.8);
 }
 .mb-hero-title {
-    font-size: clamp(36px, 4.5vw, 56px);
+    font-size: clamp(40px, 5vw, 64px);
     font-weight: 800;
-    letter-spacing: -0.04em;
-    line-height: 1.08;
-    margin: 0 0 20px 0;
+    letter-spacing: -0.045em;
+    line-height: 1.06;
+    margin: 0 0 24px 0;
     color: #fafafa !important;
 }
 .mb-hero-title .mb-grad {
@@ -306,96 +312,124 @@ section.main > div > div > [data-testid="stHorizontalBlock"] {
     background-clip: text;
 }
 .mb-hero-sub {
-    font-size: 16px;
-    line-height: 1.7;
+    font-size: 15px;
+    line-height: 1.75;
     color: #94a3b8 !important;
-    margin: 0 0 32px 0;
-    max-width: 540px;
+    margin: 0 0 36px 0;
+    max-width: 560px;
 }
 
 /* Feature cards — 4 col glass row */
 .mb-feat-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-    margin-bottom: 28px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 32px;
 }
 .mb-feat-card {
-    padding: 18px 16px;
-    border-radius: var(--mb-radius);
-    background: rgba(10, 16, 36, 0.45);
+    padding: 16px 14px;
+    border-radius: 16px;
+    background: rgba(10, 16, 36, 0.52);
     border: 1px solid var(--mb-line);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    box-shadow: var(--mb-glow), inset 0 1px 0 rgba(255,255,255,0.04);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
     transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s;
 }
 .mb-feat-card:hover {
-    border-color: rgba(123, 97, 255, 0.35);
+    border-color: rgba(123, 97, 255, 0.32);
     transform: translateY(-2px);
-    box-shadow: 0 0 48px rgba(123, 97, 255, 0.3), inset 0 1px 0 rgba(255,255,255,0.06);
+    box-shadow: 0 8px 32px rgba(123, 97, 255, 0.14), inset 0 1px 0 rgba(255,255,255,0.06);
 }
 .mb-feat-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 12px;
-    background: linear-gradient(135deg, rgba(168,85,247,0.25), rgba(91,140,255,0.15));
-    border: 1px solid rgba(123, 97, 255, 0.25);
-    font-size: 16px;
-    line-height: 1;
+    margin-bottom: 10px;
+    background: linear-gradient(135deg, rgba(168,85,247,0.3), rgba(91,140,255,0.18));
+    border: 1px solid rgba(123, 97, 255, 0.22);
+}
+.mb-feat-icon svg {
+    width: 16px;
+    height: 16px;
+    stroke: #c4b5fd;
+    fill: none;
+    stroke-width: 1.75;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
 .mb-feat-title {
     display: block;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 700;
     color: #fafafa !important;
-    margin-bottom: 4px;
+    margin-bottom: 3px;
     letter-spacing: -0.01em;
+    line-height: 1.3;
 }
 .mb-feat-desc {
-    font-size: 11px;
+    font-size: 10px;
     color: #64748b !important;
-    line-height: 1.45;
+    line-height: 1.4;
 }
 
 /* Stats row */
 .mb-stats-row {
     display: flex;
     align-items: center;
-    gap: 28px;
+    gap: 0;
     flex-wrap: nowrap;
+    padding-top: 4px;
 }
 .mb-stat {
     display: flex;
     align-items: center;
     gap: 10px;
+    padding-right: 24px;
+    margin-right: 24px;
+    border-right: 1px solid var(--mb-line);
+}
+.mb-stat:last-child {
+    padding-right: 0;
+    margin-right: 0;
+    border-right: none;
 }
 .mb-stat-icon {
-    width: 32px;
-    height: 32px;
+    width: 30px;
+    height: 30px;
     border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 14px;
-    background: rgba(123, 97, 255, 0.12);
-    border: 1px solid rgba(123, 97, 255, 0.2);
+    background: rgba(123, 97, 255, 0.1);
+    border: 1px solid rgba(123, 97, 255, 0.18);
+    flex-shrink: 0;
+}
+.mb-stat-icon svg {
+    width: 14px;
+    height: 14px;
+    stroke: #a78bfa;
+    fill: none;
+    stroke-width: 1.75;
+    stroke-linecap: round;
+    stroke-linejoin: round;
 }
 .mb-stat-val {
     display: block;
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 700;
     color: #fafafa !important;
     letter-spacing: -0.02em;
+    line-height: 1.2;
 }
 .mb-stat-label {
     display: block;
-    font-size: 11px;
+    font-size: 10px;
     color: #64748b !important;
+    line-height: 1.3;
 }
 
 /* ── Glass login card ── */
@@ -407,42 +441,42 @@ section.main > div > div > [data-testid="stHorizontalBlock"] {
 .mb-glass-wrap::before {
     content: "";
     position: absolute;
-    top: -20px;
+    top: -32px;
     left: 50%;
     transform: translateX(-50%);
-    width: 70%;
-    height: 80px;
-    background: radial-gradient(ellipse, rgba(123, 97, 255, 0.45), transparent 70%);
-    filter: blur(24px);
+    width: 85%;
+    height: 100px;
+    background: radial-gradient(ellipse, rgba(168, 85, 247, 0.55), rgba(123, 97, 255, 0.2) 45%, transparent 72%);
+    filter: blur(32px);
     z-index: -1;
     pointer-events: none;
 }
 .mb-glass-card {
     border-radius: var(--mb-radius);
     padding: 1px;
-    background: linear-gradient(160deg, rgba(168,85,247,0.5), rgba(91,140,255,0.15), rgba(123,97,255,0.3));
-    box-shadow: var(--mb-glow), 0 32px 80px rgba(0, 0, 0, 0.55);
+    background: linear-gradient(165deg, rgba(168,85,247,0.55) 0%, rgba(91,140,255,0.12) 45%, rgba(123,97,255,0.35) 100%);
+    box-shadow: var(--mb-glow), 0 40px 100px rgba(0, 0, 0, 0.6);
     overflow: visible;
 }
 .mb-glass-inner {
     position: relative;
     border-radius: calc(var(--mb-radius) - 1px);
-    padding: 36px 36px 32px 36px;
-    background: rgba(10, 16, 36, 0.72);
-    backdrop-filter: blur(24px) saturate(1.4);
-    -webkit-backdrop-filter: blur(24px) saturate(1.4);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+    padding: 40px 40px 36px 40px;
+    background: rgba(8, 12, 28, 0.58);
+    backdrop-filter: blur(32px) saturate(1.5);
+    -webkit-backdrop-filter: blur(32px) saturate(1.5);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
 }
 .mb-glass-inner::before {
     content: "";
     position: absolute;
     top: 0;
-    left: 10%;
-    right: 10%;
-    height: 2px;
-    border-radius: 0 0 4px 4px;
-    background: linear-gradient(90deg, transparent, #A855F7, #5B8CFF, transparent);
-    box-shadow: 0 0 24px rgba(168, 85, 247, 0.7);
+    left: 8%;
+    right: 8%;
+    height: 3px;
+    border-radius: 0 0 6px 6px;
+    background: linear-gradient(90deg, transparent, #A855F7 20%, #5B8CFF 80%, transparent);
+    box-shadow: 0 0 32px rgba(168, 85, 247, 0.85);
 }
 .mb-panel-logo {
     width: 48px;
@@ -535,16 +569,14 @@ section.main > div > div > [data-testid="stHorizontalBlock"] {
 }
 .mb-forgot-link:hover { color: #A855F7 !important; }
 
-/* Panel switch + foot */
-.mb-panel-switch {
-    text-align: center;
-    margin-top: 20px;
+/* Panel switch row */
+.mb-panel-switch-note {
+    display: block;
+    margin: 0;
+    padding-top: 8px;
     font-size: 14px;
     color: #64748b !important;
-}
-.mb-panel-switch-note {
-    display: inline;
-    margin-right: 4px;
+    text-align: right;
 }
 
 /* Page footer */
@@ -647,11 +679,17 @@ def widget_css() -> str:
 {g} div[data-baseweb="input"],
 {g} [data-testid="stTextInput"] div[data-baseweb="input"],
 {g} [data-testid="stNumberInput"] div[data-baseweb="input"] {{
-    background: rgba(5, 8, 22, 0.85) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    background: rgba(5, 8, 22, 0.88) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
     border-radius: 12px !important;
-    min-height: 48px !important;
-    box-shadow: inset 0 2px 8px rgba(0,0,0,0.3) !important;
+    min-height: 50px !important;
+    box-shadow: inset 0 2px 10px rgba(0,0,0,0.35) !important;
+}}
+{g} [data-testid="stForm"] [data-testid="stTextInput"]:first-of-type div[data-baseweb="input"] {{
+    background: rgba(5, 8, 22, 0.88) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%2364748b' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3C/svg%3E") no-repeat 14px center / 16px 16px !important;
+}}
+{g} [data-testid="stForm"] [data-testid="stTextInput"]:nth-of-type(2) div[data-baseweb="input"] {{
+    background: rgba(5, 8, 22, 0.88) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%2364748b' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='11' width='18' height='11' rx='2'/%3E%3Cpath d='M7 11V7a5 5 0 0 1 10 0v4'/%3E%3C/svg%3E") no-repeat 14px center / 16px 16px !important;
 }}
 {g} div[data-baseweb="input"]:focus-within {{
     border-color: rgba(123, 97, 255, 0.55) !important;
@@ -665,7 +703,7 @@ def widget_css() -> str:
     font-size: 14px !important;
     font-family: inherit !important;
     caret-color: #A855F7 !important;
-    padding-left: 14px !important;
+    padding-left: 42px !important;
 }}
 {g} [data-testid="stTextInput"] input::placeholder {{ color: #475569 !important; opacity: 1 !important; }}
 {g} [data-testid="stTextInput"] input:-webkit-autofill,
@@ -725,30 +763,47 @@ def widget_css() -> str:
 }}
 
 /* Primary CTA */
-{g} form button,
-{g} .stFormSubmitButton button {{
+{g} form .stFormSubmitButton button {{
     width: 100% !important;
-    min-height: 48px !important;
-    margin-top: 0 !important;
+    min-height: 52px !important;
+    margin-top: 4px !important;
     border-radius: 12px !important;
     border: none !important;
-    background: linear-gradient(135deg, #A855F7 0%, #7B61FF 50%, #5B8CFF 100%) !important;
+    background: linear-gradient(90deg, #A855F7 0%, #7B61FF 40%, #5B8CFF 100%) !important;
     color: #fff !important;
     font-weight: 700 !important;
     font-size: 15px !important;
+    letter-spacing: -0.01em !important;
     font-family: inherit !important;
-    box-shadow: var(--mb-glow), inset 0 1px 0 rgba(255,255,255,0.15) !important;
-    transition: box-shadow 0.2s, transform 0.15s !important;
+    box-shadow: 0 0 40px rgba(123, 97, 255, 0.35), inset 0 1px 0 rgba(255,255,255,0.18) !important;
+    transition: box-shadow 0.2s, transform 0.15s, filter 0.2s !important;
 }}
-{g} form button:hover {{
-    box-shadow: 0 0 48px rgba(123, 97, 255, 0.4), inset 0 1px 0 rgba(255,255,255,0.2) !important;
+{g} form .stFormSubmitButton button:hover {{
+    box-shadow: 0 0 52px rgba(123, 97, 255, 0.48), inset 0 1px 0 rgba(255,255,255,0.22) !important;
     transform: translateY(-1px) !important;
+    filter: brightness(1.05) !important;
 }}
-{g} form button p {{ color: #fff !important; font-weight: 700 !important; }}
+{g} form .stFormSubmitButton button p {{ color: #fff !important; font-weight: 700 !important; }}
 
 /* Mode switch link button */
-{g} .mb-panel-switch .stButton > button,
-{g} .mb-panel-switch .stButton > button[kind="tertiary"] {{
+{g} [data-testid="column"]:last-child [data-testid="stHorizontalBlock"]:has(.mb-panel-switch-note) {{
+    align-items: center !important;
+    margin-top: 20px !important;
+    gap: 4px !important;
+}}
+{g} [data-testid="column"]:last-child [data-testid="stHorizontalBlock"]:has(.mb-panel-switch-note) [data-testid="column"]:first-child {{
+    flex: 1 !important; max-width: none !important; padding: 0 !important;
+}}
+{g} [data-testid="column"]:last-child [data-testid="stHorizontalBlock"]:has(.mb-panel-switch-note) [data-testid="column"]:last-child {{
+    flex: 0 0 auto !important; max-width: none !important; padding: 0 !important;
+}}
+{g} [data-testid="column"]:last-child [data-testid="stHorizontalBlock"]:has(.mb-panel-switch-note) .stButton {{
+    display: flex !important;
+    justify-content: flex-start !important;
+    margin: 0 !important;
+    width: 100% !important;
+}}
+{g} [data-testid="column"]:last-child [data-testid="stHorizontalBlock"]:has(.mb-panel-switch-note) .stButton > button {{
     display: inline !important;
     width: auto !important;
     min-height: auto !important;
@@ -761,13 +816,13 @@ def widget_css() -> str:
     font-size: 14px !important;
     font-weight: 600 !important;
 }}
-{g} .mb-panel-switch .stButton > button:hover {{
+{g} [data-testid="column"]:last-child [data-testid="stHorizontalBlock"]:has(.mb-panel-switch-note) .stButton > button:hover {{
     color: #A855F7 !important;
     background: transparent !important;
     box-shadow: none !important;
     transform: none !important;
 }}
-{g} .mb-panel-switch .stButton > button p {{
+{g} [data-testid="column"]:last-child [data-testid="stHorizontalBlock"]:has(.mb-panel-switch-note) .stButton > button p {{
     color: #7B61FF !important;
     font-weight: 600 !important;
 }}
@@ -795,6 +850,72 @@ def _hex_logo(initial: str) -> str:
     return f'<div class="mb-panel-logo" aria-hidden="true">{html.escape(initial)}</div>'
 
 
+# Inline SVG icons — premium, no emoji
+_SVG_REELS = (
+    '<svg viewBox="0 0 24 24" aria-hidden="true">'
+    '<rect x="2" y="4" width="20" height="16" rx="2"/>'
+    '<path d="M10 9l6 3-6 3V9z"/>'
+    '</svg>'
+)
+_SVG_BALL = (
+    '<svg viewBox="0 0 24 24" aria-hidden="true">'
+    '<circle cx="12" cy="12" r="9"/>'
+    '<path d="M12 3c2 2.5 2 6.5 0 9M12 3c-2 2.5-2 6.5 0 9M3 12h18"/>'
+    '</svg>'
+)
+_SVG_ROCKET = (
+    '<svg viewBox="0 0 24 24" aria-hidden="true">'
+    '<path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/>'
+    '<path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/>'
+    '<path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>'
+    '</svg>'
+)
+_SVG_TEAM = (
+    '<svg viewBox="0 0 24 24" aria-hidden="true">'
+    '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>'
+    '<circle cx="9" cy="7" r="4"/>'
+    '<path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>'
+    '</svg>'
+)
+_SVG_USER = (
+    '<svg viewBox="0 0 24 24" aria-hidden="true">'
+    '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>'
+    '<circle cx="12" cy="7" r="4"/>'
+    '</svg>'
+)
+_SVG_PLAY = (
+    '<svg viewBox="0 0 24 24" aria-hidden="true">'
+    '<polygon points="5 3 19 12 5 21 5 3"/>'
+    '</svg>'
+)
+_SVG_BUILD = (
+    '<svg viewBox="0 0 24 24" aria-hidden="true">'
+    '<rect x="4" y="2" width="16" height="20" rx="2"/>'
+    '<path d="M9 22v-4h6v4M8 6h.01M16 6h.01M12 6h.01M12 10h.01M12 14h.01M16 10h.01M16 14h.01M8 10h.01M8 14h.01"/>'
+    '</svg>'
+)
+
+
+def _feat_card(icon: str, title: str, desc: str) -> str:
+    return (
+        f'<div class="mb-feat-card">'
+        f'<div class="mb-feat-icon">{icon}</div>'
+        f'<span class="mb-feat-title">{html.escape(title)}</span>'
+        f'<span class="mb-feat-desc">{desc}</span>'
+        f'</div>'
+    )
+
+
+def _stat_item(icon: str, val: str, label: str) -> str:
+    return (
+        f'<div class="mb-stat">'
+        f'<div class="mb-stat-icon">{icon}</div>'
+        f'<div><span class="mb-stat-val">{html.escape(val)}</span>'
+        f'<span class="mb-stat-label">{label}</span></div>'
+        f'</div>'
+    )
+
+
 def page_open_html(mode_class: str = "") -> str:
     name = html.escape(APP_NAME)
     initial = html.escape(APP_NAME[:1] if APP_NAME else "M")
@@ -802,17 +923,13 @@ def page_open_html(mode_class: str = "") -> str:
     return (
         f'<div class="mb-auth-page {extra}">'
         f'<div class="mb-auth-bg" aria-hidden="true"></div>'
+        f'<div class="mb-auth-aurora" aria-hidden="true"></div>'
         f'<div class="mb-auth-stars" aria-hidden="true"></div>'
         f'<div class="mb-topbar">'
         f'<div class="mb-topbar-brand">{_logo_mark(initial)}'
-        f'<div class="mb-topbar-text">'
-        f'<span class="mb-topbar-name">{name}</span>'
-        f'<span class="mb-topbar-claim">One system. Infinite intelligence.</span>'
-        f'</div></div>'
+        f'<span class="mb-topbar-name">{name}</span></div>'
         f'<div class="mb-topbar-actions">'
         f'<span class="mb-topbar-lang">🌐 DE</span>'
-        f'<span class="mb-topbar-live">'
-        f'<span class="mb-topbar-live-dot"></span>Live</span>'
         f'</div></div>'
     )
 
@@ -829,48 +946,21 @@ def hero_html() -> str:
         '<span class="mb-grad">Infinite intelligence.</span>'
         '</h1>'
         '<p class="mb-hero-sub">'
-        'MaByte vereint Creator AI, Football Intelligence, '
-        'Automatisierung und Publishing in einer Plattform.'
+        'MaByte ist dein All-in-One System für AI-gestützte Content Creation, '
+        'Football Intelligence und Automatisierung. Für Creator, Teams und '
+        'Unternehmen, die skalieren wollen.'
         '</p>'
         '<div class="mb-feat-grid">'
-        '<div class="mb-feat-card">'
-        '<div class="mb-feat-icon" aria-hidden="true">🎬</div>'
-        '<span class="mb-feat-title">AI Reels Studio</span>'
-        '<span class="mb-feat-desc">Shorts &amp; Video mit KI-Power</span>'
-        '</div>'
-        '<div class="mb-feat-card">'
-        '<div class="mb-feat-icon" aria-hidden="true">⚽</div>'
-        '<span class="mb-feat-title">Football Intelligence</span>'
-        '<span class="mb-feat-desc">Analyse, Insights &amp; Predictions</span>'
-        '</div>'
-        '<div class="mb-feat-card">'
-        '<div class="mb-feat-icon" aria-hidden="true">🚀</div>'
-        '<span class="mb-feat-title">Auto Publishing</span>'
-        '<span class="mb-feat-desc">Multi-Plattform in einem Flow</span>'
-        '</div>'
-        '<div class="mb-feat-card">'
-        '<div class="mb-feat-icon" aria-hidden="true">👥</div>'
-        '<span class="mb-feat-title">Team Workspaces</span>'
-        '<span class="mb-feat-desc">Collaboration für Agenturen</span>'
-        '</div>'
-        '</div>'
+        + _feat_card(_SVG_REELS, "AI Reels Studio", "Shorts &amp; Video mit KI-Power")
+        + _feat_card(_SVG_BALL, "Football Intelligence", "Analyse, Insights &amp; Predictions")
+        + _feat_card(_SVG_ROCKET, "Auto Publishing", "Multi-Plattform in einem Flow")
+        + _feat_card(_SVG_TEAM, "Team Workspaces", "Collaboration für Agenturen")
+        + '</div>'
         '<div class="mb-stats-row">'
-        '<div class="mb-stat">'
-        '<div class="mb-stat-icon" aria-hidden="true">👤</div>'
-        '<div><span class="mb-stat-val">10.000+</span>'
-        '<span class="mb-stat-label">Creator</span></div>'
-        '</div>'
-        '<div class="mb-stat">'
-        '<div class="mb-stat-icon" aria-hidden="true">▶</div>'
-        '<div><span class="mb-stat-val">1 Mio+</span>'
-        '<span class="mb-stat-label">Videos erstellt</span></div>'
-        '</div>'
-        '<div class="mb-stat">'
-        '<div class="mb-stat-icon" aria-hidden="true">🏢</div>'
-        '<div><span class="mb-stat-val">500+</span>'
-        '<span class="mb-stat-label">Teams &amp; Unternehmen</span></div>'
-        '</div>'
-        '</div>'
+        + _stat_item(_SVG_USER, "10K+", "Aktive Creator")
+        + _stat_item(_SVG_PLAY, "1M+", "Videos erstellt")
+        + _stat_item(_SVG_BUILD, "500+", "Teams &amp; Unternehmen")
+        + '</div>'
         '</div>'
     )
 
@@ -888,7 +978,7 @@ def panel_shell_html(*, register: bool) -> str:
         '<div class="mb-glass-wrap"><div class="mb-glass-card"><div class="mb-glass-inner">'
         f'{_hex_logo(initial)}'
         '<h2 class="mb-panel-title">Willkommen zurück</h2>'
-        '<p class="mb-panel-sub">Schön, dass du wieder da bist.</p>'
+        '<p class="mb-panel-sub">Melde dich an, um fortzufahren.</p>'
     )
 
 
