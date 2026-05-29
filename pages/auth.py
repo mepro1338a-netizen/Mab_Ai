@@ -19,9 +19,10 @@ from oauth_service import (
 )
 from ui.auth_premium import (
     auth_styles_bundle,
-    login_card_head_html,
-    login_footer_html,
-    presentation_html,
+    hero_html,
+    notice_html,
+    panel_foot_html,
+    panel_head_html,
 )
 from ui.styles import inject_css
 
@@ -39,44 +40,32 @@ def ensure_captcha() -> None:
 def client_meta() -> tuple[str, str]:
     ip_address = "unknown"
     user_agent = "streamlit-client"
-
     try:
         from streamlit.runtime.scriptrunner import get_script_run_ctx
 
         ctx = get_script_run_ctx()
         headers = getattr(ctx, "request_headers", {}) if ctx else {}
-
         if headers:
             ip_address = headers.get("X-Forwarded-For", "unknown")
             user_agent = headers.get("User-Agent", "streamlit-client")
-
     except Exception:
         pass
-
     return ip_address, user_agent
+
+
+def show_notice(level: str, message: str) -> None:
+    st.markdown(notice_html(level, message), unsafe_allow_html=True)
 
 
 def do_login(username: str, password: str) -> None:
     username = (username or "").strip().lower()
-
     allowed, msg = check_login_rate(username)
-
     if not allowed:
-        st.error(msg)
-        try:
-            record_login_event(
-                username=username,
-                ip_address="rate_limited",
-                user_agent="blocked",
-                success=False,
-            )
-        except Exception:
-            pass
+        show_notice("error", msg)
         return
 
     ok, msg, user = verify_login(username, password)
     ip_address, user_agent = client_meta()
-
     try:
         record_login_event(
             username=username,
@@ -99,56 +88,45 @@ def do_login(username: str, password: str) -> None:
 
     record_login_failure(username)
     log_auth("login_failed", username=username, success=False)
-    st.error(user_friendly_error("auth"))
+    show_notice("error", user_friendly_error("auth"))
 
 
 def do_register(username: str, email: str, password: str, captcha: int) -> None:
     username = (username or "").strip().lower()
     email = (email or "").strip().lower()
-
     result = int(st.session_state.captcha_a) + int(st.session_state.captcha_b)
 
     if not is_valid_username(username):
-        st.error("Bitte einen gültigen Benutzernamen wählen (3–20 Zeichen, Buchstaben/Zahlen).")
+        show_notice("error", "Bitte einen gültigen Benutzernamen wählen.")
         return
-
     if not is_valid_email(email):
-        st.error("Bitte eine gültige E-Mail-Adresse eingeben.")
+        show_notice("error", "Bitte eine gültige E-Mail-Adresse eingeben.")
         return
-
     if len(password or "") < 6:
-        st.error("Das Passwort muss mindestens 6 Zeichen lang sein.")
+        show_notice("error", "Das Passwort muss mindestens 6 Zeichen haben.")
         return
-
     if int(captcha or 0) != result:
-        st.error("Die Rechenaufgabe war leider falsch — bitte erneut versuchen.")
+        show_notice("error", "Die Rechenaufgabe war falsch — bitte erneut versuchen.")
         refresh_captcha()
         return
 
     ok, msg = create_user(username=username, email=email, password=password)
-
     if ok:
-        st.success("Dein Konto wurde erstellt. Wechsle zum Tab «Anmelden» und logge dich ein.")
+        st.session_state.gate_mode = "login"
+        show_notice("success", "Konto erstellt! Wechsle zu «Anmelden» und starte durch.")
         refresh_captcha()
     else:
-        st.error(msg)
+        show_notice("error", msg)
 
 
-def _set_oauth_notice(level: str, message: str) -> None:
-    st.session_state.oauth_notice = (level, message)
+def _set_gate_notice(level: str, message: str) -> None:
+    st.session_state.gate_notice = (level, message)
 
 
-def _show_oauth_notice() -> None:
-    notice = st.session_state.pop("oauth_notice", None)
-    if not notice:
-        return
-    level, text = notice
-    if level == "success":
-        st.success(text)
-    elif level == "info":
-        st.info(text)
-    else:
-        st.error(text)
+def _show_gate_notice() -> None:
+    notice = st.session_state.pop("gate_notice", None)
+    if notice:
+        show_notice(notice[0], notice[1])
 
 
 def finish_oauth_login(user: dict, *, provider: str) -> None:
@@ -169,14 +147,12 @@ def finish_oauth_login(user: dict, *, provider: str) -> None:
 
     if resume_pending_social_connect():
         return
-    _set_oauth_notice("success", "Willkommen zurück — du bist angemeldet.")
     st.session_state.page = "home"
     st.rerun()
 
 
 def handle_oauth_callback() -> bool:
     params = st.query_params
-
     oauth_error = params.get("error")
     if oauth_error:
         desc = params.get("error_description") or ""
@@ -184,7 +160,7 @@ def handle_oauth_callback() -> bool:
             desc = desc[0] if desc else ""
         if isinstance(oauth_error, list):
             oauth_error = oauth_error[0] if oauth_error else ""
-        _set_oauth_notice("error", friendly_oauth_error(str(oauth_error), str(desc)))
+        _set_gate_notice("error", friendly_oauth_error(str(oauth_error), str(desc)))
         st.query_params.clear()
         return False
 
@@ -197,60 +173,29 @@ def handle_oauth_callback() -> bool:
 
     if not code and not state:
         return False
-
     if not code or not state:
-        _set_oauth_notice("error", "Die Anmeldung konnte nicht abgeschlossen werden. Bitte versuche es erneut.")
+        _set_gate_notice("error", "Anmeldung fehlgeschlagen. Bitte erneut versuchen.")
         st.query_params.clear()
         return False
 
     provider = verify_state(str(state))
     if not provider:
-        log_oauth("oauth_invalid_state", success=False)
-        _set_oauth_notice(
-            "error",
-            "Anmelde-Sitzung abgelaufen oder ungültig. Bitte «Mit Google anmelden» erneut klicken.",
-        )
+        _set_gate_notice("error", "Sitzung abgelaufen — bitte «Mit Google anmelden» erneut klicken.")
         st.query_params.clear()
         return False
 
     ok, msg, user = complete_oauth(provider, str(code))
     st.query_params.clear()
-
     if ok and user:
         finish_oauth_login(user, provider=provider)
         return True
 
-    ip_address, user_agent = client_meta()
-    try:
-        record_login_event(
-            username=str(user.get("username") if user else "oauth"),
-            ip_address=ip_address,
-            user_agent=user_agent,
-            success=False,
-        )
-    except Exception:
-        pass
-
-    log_oauth("oauth_failed", provider=provider or "?", success=False)
-    _set_oauth_notice("error", user_friendly_error("oauth", msg))
+    _set_gate_notice("error", user_friendly_error("oauth", msg))
     return False
 
 
-def auth_css() -> None:
-    inject_css(auth_styles_bundle())
-
-
-def auth_css_final() -> None:
-    """Injected last so it overrides Streamlit widget inline styles."""
-    from ui.auth_premium import login_override_css
-
-    css = login_override_css()
-    inject_css(css)
-    st.html(f"<style id='mb-login-final'>{css}</style>", height=0)
-
-
 GOOGLE_ICON_SVG = """
-<svg class="g-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+<svg class="g-icon" viewBox="0 0 24 24" aria-hidden="true">
   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/>
   <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
   <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
@@ -269,52 +214,77 @@ def google_login_link() -> str:
             f"{GOOGLE_ICON_SVG}{html.escape(label)}</a>"
         )
     return (
-        f'<span class="mb-login-google disabled" title="Derzeit nicht verfügbar">'
+        f'<span class="mb-login-google disabled">'
         f"{GOOGLE_ICON_SVG}{html.escape(label)}</span>"
     )
 
 
-def render_google_login() -> None:
-    st.markdown(google_login_link(), unsafe_allow_html=True)
-    st.markdown(
-        '<p class="mb-login-trust">Sicher über Google — wir speichern kein Google-Passwort.</p>',
-        unsafe_allow_html=True,
-    )
-    st.markdown('<div class="mb-login-divider">oder mit Zugangsdaten</div>', unsafe_allow_html=True)
+def render_mode_switch() -> str:
+    mode = st.session_state.get("gate_mode", "login")
+    st.markdown('<div class="mb-mode-switch">', unsafe_allow_html=True)
+    c1, c2 = st.columns(2, gap="small")
+    with c1:
+        if st.button(
+            "Anmelden",
+            key="gate_login",
+            width="stretch",
+            type="primary" if mode == "login" else "secondary",
+        ):
+            st.session_state.gate_mode = "login"
+            st.rerun()
+    with c2:
+        if st.button(
+            "Registrieren",
+            key="gate_register",
+            width="stretch",
+            type="primary" if mode == "register" else "secondary",
+        ):
+            st.session_state.gate_mode = "register"
+            st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)
+    return st.session_state.get("gate_mode", "login")
 
-    if not provider_configured("google"):
-        st.caption("Google-Anmeldung derzeit nicht verfügbar — nutze Benutzername und Passwort.")
+
+def render_google_block() -> None:
+    st.markdown(google_login_link(), unsafe_allow_html=True)
+    st.markdown('<p class="mb-login-hint">Schnell starten — kein Passwort bei uns gespeichert</p>', unsafe_allow_html=True)
+    st.markdown('<div class="mb-login-divider">oder mit Zugangsdaten</div>', unsafe_allow_html=True)
 
 
 def render_login_form() -> None:
-    with st.form("login_form", clear_on_submit=False, border=False):
-        user = st.text_input("Benutzername", placeholder="dein-benutzername")
-        pw = st.text_input("Passwort", type="password", placeholder="Dein Passwort")
-        if st.form_submit_button("Anmelden", type="secondary", width="stretch"):
+    with st.form("gate_login_form", clear_on_submit=False, border=False):
+        user = st.text_input("Benutzername", placeholder="dein-benutzername", label_visibility="collapsed")
+        pw = st.text_input("Passwort", type="password", placeholder="Passwort", label_visibility="collapsed")
+        st.markdown('<p style="height:4px;margin:0"></p>', unsafe_allow_html=True)
+        if st.form_submit_button("In MaByte einsteigen →", type="secondary", width="stretch"):
             do_login(user, pw)
 
 
 def render_register_form() -> None:
-    with st.form("register_form", clear_on_submit=False, border=False):
-        user = st.text_input("Benutzername", placeholder="z. B. creator123")
-        email = st.text_input("E-Mail", placeholder="name@firma.de")
-        pw = st.text_input("Passwort", type="password", placeholder="Mindestens 6 Zeichen")
-
+    with st.form("gate_register_form", clear_on_submit=False, border=False):
+        user = st.text_input("Benutzername", placeholder="Benutzername wählen", label_visibility="collapsed")
+        email = st.text_input("E-Mail", placeholder="deine@email.de", label_visibility="collapsed")
+        pw = st.text_input("Passwort", type="password", placeholder="Passwort (min. 6 Zeichen)", label_visibility="collapsed")
+        a, b = st.session_state.captcha_a, st.session_state.captcha_b
+        st.markdown(
+            f'<p style="color:#71717a;font-size:11px;margin:0 0 6px 0">Rechenaufgabe: {a} + {b} = ?</p>',
+            unsafe_allow_html=True,
+        )
         st.markdown('<div class="mb-login-captcha">', unsafe_allow_html=True)
-        cap_col, ref_col = st.columns([0.84, 0.16], gap="small")
+        cap_col, ref_col = st.columns([0.82, 0.18], gap="small")
         with cap_col:
             captcha = st.number_input(
-                f"Rechenaufgabe: {st.session_state.captcha_a} + {st.session_state.captcha_b} = ?",
+                "Ergebnis",
                 min_value=0,
                 max_value=20,
                 step=1,
+                label_visibility="collapsed",
             )
         with ref_col:
-            st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
-            refresh = st.form_submit_button("Neu")
+            st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
+            refresh = st.form_submit_button("↻")
         st.markdown("</div>", unsafe_allow_html=True)
-
-        submitted = st.form_submit_button("Konto erstellen", type="secondary", width="stretch")
+        submitted = st.form_submit_button("Konto erstellen →", type="secondary", width="stretch")
 
     if refresh:
         refresh_captcha()
@@ -323,48 +293,36 @@ def render_register_form() -> None:
         do_register(user, email, pw, captcha)
 
 
-def render_pitch_column() -> None:
-    from ui.auth_premium import brand_mark_html
-
-    st.markdown(brand_mark_html(), unsafe_allow_html=True)
-    st.markdown(presentation_html(), unsafe_allow_html=True)
-
-
-def render_login_column() -> None:
+def render_gate_panel() -> None:
     with st.container(border=True):
-        st.markdown(login_card_head_html(), unsafe_allow_html=True)
+        st.markdown(panel_head_html(), unsafe_allow_html=True)
+        _show_gate_notice()
+        mode = render_mode_switch()
 
-        mode = st.segmented_control(
-            "Modus",
-            options=["Anmelden", "Registrieren"],
-            default="Anmelden",
-            label_visibility="collapsed",
-            width="stretch",
-        )
-
-        if mode == "Registrieren":
-            st.caption("Kostenlos registrieren — dauert unter einer Minute.")
+        if mode == "register":
             render_register_form()
         else:
-            render_google_login()
+            render_google_block()
             render_login_form()
 
-        st.markdown(login_footer_html(), unsafe_allow_html=True)
+        st.markdown(panel_foot_html(), unsafe_allow_html=True)
 
 
 def render_auth() -> None:
     ensure_captcha()
-    st.markdown('<div class="mb-login-route" aria-hidden="true"></div>', unsafe_allow_html=True)
-    auth_css()
+    if "gate_mode" not in st.session_state:
+        st.session_state.gate_mode = "login"
+
+    st.markdown('<div class="mb-gate" aria-hidden="true"></div>', unsafe_allow_html=True)
+    inject_css(auth_styles_bundle())
     handle_oauth_callback()
 
-    pitch_col, login_col = st.columns([1.15, 0.85], gap="large")
+    hero_col, panel_col = st.columns([1.25, 0.75], gap="small")
 
-    with pitch_col:
-        render_pitch_column()
+    with hero_col:
+        st.markdown(hero_html(), unsafe_allow_html=True)
 
-    with login_col:
-        _show_oauth_notice()
-        render_login_column()
+    with panel_col:
+        render_gate_panel()
 
-    auth_css_final()
+    inject_css(auth_styles_bundle())
