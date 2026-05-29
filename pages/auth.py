@@ -68,7 +68,7 @@ def _show_gate_notice() -> None:
 
 def finish_oauth_login(user: dict, *, provider: str) -> None:
     ip_address, user_agent = client_meta()
-    record_login_event(user["id"], ip_address, user_agent, provider)
+    record_login_event(user.get("username") or "", ip_address, user_agent, success=True)
     rotate_session_on_login(user)
     log_oauth(f"Login via {provider}: {user.get('username')}")
     st.session_state.pop("gate_notice", None)
@@ -93,7 +93,7 @@ def do_login(username: str, password: str) -> None:
         login_msg = ""
     if ok and user:
         ip_address, user_agent = client_meta()
-        record_login_event(user["id"], ip_address, user_agent, "password")
+        record_login_event(user.get("username") or username, ip_address, user_agent, success=True)
         rotate_session_on_login(user)
         log_auth(f"Login: {username}")
         st.rerun()
