@@ -176,9 +176,8 @@ def google_login_link() -> str:
 def render_google_block() -> None:
     st.markdown(
         '<div class="mb-oauth-zone">'
-        '<p class="mb-oauth-label">Schneller Zugang</p>'
-        '<div class="mb-login-divider">ODER</div>'
         + google_login_link()
+        + '<div class="mb-login-divider">ODER</div>'
         + '</div>',
         unsafe_allow_html=True,
     )
@@ -266,8 +265,8 @@ def render_gate_panel() -> None:
     if mode == "register":
         render_register_form()
     else:
-        render_login_form()
         render_google_block()
+        render_login_form()
     render_auth_switch()
     st.markdown(panel_close_html(), unsafe_allow_html=True)
 

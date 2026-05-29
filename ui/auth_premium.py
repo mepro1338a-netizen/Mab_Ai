@@ -74,7 +74,7 @@ section.main .block-container {
 section.main > div > div > [data-testid="stVerticalBlock"] {
     gap: 0 !important;
     padding-top: 52px !important;
-    padding-bottom: 44px !important;
+    padding-bottom: 40px !important;
 }
 .stApp [data-testid="stMarkdownContainer"]:has(.mb-topbar),
 .stApp [data-testid="stMarkdownContainer"]:has(.mb-page-foot) {
@@ -82,35 +82,36 @@ section.main > div > div > [data-testid="stVerticalBlock"] {
     padding: 0 !important;
 }
 section.main > div > div > [data-testid="stHorizontalBlock"] {
-    align-items: flex-start !important;
+    align-items: center !important;
     gap: 0 !important;
-    min-height: 0 !important;
-    max-width: 1180px !important;
+    min-height: calc(100vh - 52px) !important;
+    max-width: 1200px !important;
     margin: 0 auto !important;
-    padding: 0 28px !important;
+    padding: 0 32px !important;
 }
 [data-testid="column"]:first-child {
-    flex: 0 0 55% !important;
-    max-width: 55% !important;
-    padding: 0 16px 0 0 !important;
+    flex: 0 0 52% !important;
+    max-width: 52% !important;
+    padding: 0 20px 0 0 !important;
     display: flex !important;
-    align-items: flex-start !important;
+    align-items: center !important;
 }
 [data-testid="column"]:last-child {
-    flex: 0 0 45% !important;
-    max-width: 45% !important;
-    padding: 0 0 0 8px !important;
+    flex: 0 0 48% !important;
+    max-width: 48% !important;
+    padding: 0 0 0 12px !important;
     display: flex !important;
-    align-items: flex-start !important;
+    align-items: center !important;
     justify-content: center !important;
     overflow: visible !important;
 }
 [data-testid="column"]:last-child > [data-testid="stVerticalBlock"] {
     width: 100% !important;
-    max-width: 400px !important;
+    max-width: 520px !important;
     gap: 0 !important;
     padding: 0 !important;
     overflow: visible !important;
+    margin: 0 auto !important;
 }
 [data-testid="column"]:last-child [data-testid="stElementContainer"],
 [data-testid="column"]:last-child [data-testid="stMarkdownContainer"],
@@ -147,7 +148,7 @@ section.main > div > div > [data-testid="stHorizontalBlock"] {
     .mb-hero { padding: 4px 0 12px 0 !important; }
     .mb-stats-row { flex-direction: column !important; align-items: flex-start !important; gap: 10px !important; }
     .mb-stat { padding-right: 0 !important; margin-right: 0 !important; border-right: none !important; }
-    .mb-glass-inner { padding: 22px 20px 20px 20px !important; }
+    .mb-glass-inner { padding: 32px 28px !important; }
     .mb-page-foot { flex-direction: column !important; text-align: center !important; }
 }
 @media (max-height: 860px) {
@@ -478,66 +479,48 @@ section.main > div > div > [data-testid="stHorizontalBlock"] {
     line-height: 1.3;
 }
 
-/* ── Login portal — premium animated card ── */
-.mb-login-portal {
-    position: relative;
-    width: 100%;
-    z-index: 2;
-}
-.mb-portal-glow {
-    position: absolute;
-    top: -24px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 78%;
-    height: 64px;
-    background: radial-gradient(ellipse, rgba(168, 85, 247, 0.5), rgba(91, 140, 255, 0.12) 50%, transparent 72%);
-    filter: blur(26px);
-    z-index: 0;
-    pointer-events: none;
-    animation: mb-glow-pulse 4s ease-in-out infinite;
-}
+/* ── Login card ── */
 .mb-glass-wrap {
     position: relative;
-    z-index: 2;
     width: 100%;
-}
-.mb-glass-wrap::before {
-    display: none;
+    max-width: 520px;
+    margin: 0 auto;
+    overflow: visible;
+    transform: none;
+    z-index: 2;
 }
 .mb-glass-card {
-    border-radius: var(--mb-radius);
+    border-radius: 28px;
     padding: 1px;
-    background: linear-gradient(120deg, #A855F7, #5B8CFF, #7B61FF, #A855F7);
-    background-size: 200% 200%;
-    animation: mb-shimmer 8s linear infinite;
-    box-shadow: 0 0 28px rgba(123, 97, 255, 0.2), 0 20px 56px rgba(0, 0, 0, 0.42);
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.45), rgba(59, 130, 246, 0.25));
+    box-shadow: var(--mb-glow), 0 24px 64px rgba(0, 0, 0, 0.45);
     overflow: visible;
 }
 .mb-glass-inner {
     position: relative;
-    border-radius: calc(var(--mb-radius) - 1px);
-    padding: 22px 24px 18px 24px;
-    background: rgba(6, 10, 24, 0.84);
-    backdrop-filter: blur(28px) saturate(1.45);
-    -webkit-backdrop-filter: blur(28px) saturate(1.45);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.07);
+    border-radius: 27px;
+    padding: 48px;
+    background: rgba(6, 10, 24, 0.82);
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+    overflow: visible;
 }
 .mb-glass-inner::before {
     content: "";
     position: absolute;
     top: 0;
-    left: 12%;
-    right: 12%;
+    left: 10%;
+    right: 10%;
     height: 2px;
     border-radius: 0 0 4px 4px;
-    background: linear-gradient(90deg, transparent, #A855F7 25%, #5B8CFF 75%, transparent);
-    box-shadow: 0 0 18px rgba(168, 85, 247, 0.65);
+    background: linear-gradient(90deg, transparent, #A855F7, #3b82f6, transparent);
+    box-shadow: 0 0 16px rgba(168, 85, 247, 0.5);
 }
 .mb-panel-logo {
-    width: 36px;
-    height: 36px;
-    margin: 0 auto 10px auto;
+    width: 40px;
+    height: 40px;
+    margin: 0 auto 14px auto;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -557,29 +540,19 @@ section.main > div > div > [data-testid="stHorizontalBlock"] {
     text-align: center;
 }
 .mb-panel-sub {
-    font-size: 12px;
+    font-size: 13px;
     color: #64748b !important;
-    margin: 0 0 14px 0;
-    line-height: 1.4;
+    margin: 0 0 20px 0;
+    line-height: 1.45;
     text-align: center;
 }
 
-/* OAuth zone — below login */
+/* Google + divider — inside card, above form */
 .mb-oauth-zone {
-    margin-top: 4px;
-    padding-top: 2px;
+    margin: 0 0 0 0;
+    padding: 0;
 }
-.mb-oauth-label {
-    font-size: 10px;
-    font-weight: 600;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: #475569 !important;
-    text-align: center;
-    margin: 0 0 2px 0;
-}
-
-/* Google + divider */
+.mb-oauth-label { display: none !important; }
 .mb-login-google {
     display: flex;
     align-items: center;
@@ -609,7 +582,7 @@ section.main > div > div > [data-testid="stHorizontalBlock"] {
     display: flex;
     align-items: center;
     gap: 10px;
-    margin: 12px 0 10px 0;
+    margin: 16px 0;
     font-size: 10px;
     font-weight: 600;
     letter-spacing: 0.12em;
@@ -739,7 +712,13 @@ def widget_css() -> str:
 {g} [data-testid="stNumberInput"] [data-testid="stWidgetLabel"],
 {g} label[data-testid="stWidgetLabel"]:has(+ div [data-baseweb="input"]) {{ display: none !important; }}
 {g} [data-testid="stTextInput"],
-{g} [data-testid="stNumberInput"] {{ margin-bottom: 10px !important; }}
+{g} [data-testid="stNumberInput"] {{ margin-bottom: 12px !important; }}
+{g} [data-testid="column"]:last-child > [data-testid="stVerticalBlock"] > [data-testid="stElementContainer"] {{
+    margin-bottom: 0 !important;
+}}
+{g} [data-testid="column"]:last-child > [data-testid="stVerticalBlock"] > [data-testid="stMarkdownContainer"] {{
+    margin-bottom: 0 !important;
+}}
 {g} [data-testid="stTextInput"] > div,
 {g} [data-testid="stTextInput"] > div > div,
 {g} [data-testid="stTextInput"] fieldset,
@@ -753,17 +732,17 @@ def widget_css() -> str:
 {g} div[data-baseweb="input"],
 {g} [data-testid="stTextInput"] div[data-baseweb="input"],
 {g} [data-testid="stNumberInput"] div[data-baseweb="input"] {{
-    background: rgba(5, 8, 22, 0.88) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    background: rgba(5, 8, 22, 0.75) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
     border-radius: 12px !important;
-    min-height: 40px !important;
-    box-shadow: inset 0 2px 10px rgba(0,0,0,0.35) !important;
+    min-height: 44px !important;
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.3) !important;
 }}
 {g} [data-testid="stForm"] [data-testid="stTextInput"]:first-of-type div[data-baseweb="input"] {{
-    background: rgba(5, 8, 22, 0.88) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%2364748b' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3C/svg%3E") no-repeat 14px center / 16px 16px !important;
+    background: rgba(5, 8, 22, 0.75) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%2364748b' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3C/svg%3E") no-repeat 14px center / 16px 16px !important;
 }}
 {g} [data-testid="stForm"] [data-testid="stTextInput"]:nth-of-type(2) div[data-baseweb="input"] {{
-    background: rgba(5, 8, 22, 0.88) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%2364748b' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='11' width='18' height='11' rx='2'/%3E%3Cpath d='M7 11V7a5 5 0 0 1 10 0v4'/%3E%3C/svg%3E") no-repeat 14px center / 16px 16px !important;
+    background: rgba(5, 8, 22, 0.75) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%2364748b' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='11' width='18' height='11' rx='2'/%3E%3Cpath d='M7 11V7a5 5 0 0 1 10 0v4'/%3E%3C/svg%3E") no-repeat 14px center / 16px 16px !important;
 }}
 {g} div[data-baseweb="input"]:focus-within {{
     border-color: rgba(123, 97, 255, 0.55) !important;
@@ -823,7 +802,7 @@ def widget_css() -> str:
 {g} [data-testid="stForm"] [data-testid="stHorizontalBlock"] {{
     align-items: center !important;
     gap: 8px !important;
-    margin: 4px 0 18px 0 !important;
+    margin: 0 0 14px 0 !important;
 }}
 {g} [data-testid="stForm"] [data-testid="stHorizontalBlock"] [data-testid="column"]:first-child {{
     flex: 1 !important; max-width: none !important; padding: 0 !important;
@@ -841,7 +820,7 @@ def widget_css() -> str:
     display: inline-block !important;
 }}
 
-/* Primary CTA — secondary button styled as neon gradient */
+/* Primary CTA */
 {g} form .stFormSubmitButton button,
 {g} form .stFormSubmitButton button[kind="secondary"],
 {g} form .stFormSubmitButton button[kind="primary"],
@@ -849,29 +828,22 @@ def widget_css() -> str:
 {g} form .stFormSubmitButton button[data-testid="stBaseButton-primary"],
 {g} form .stFormSubmitButton button[data-testid="stBaseButton-primaryFormSubmit"] {{
     width: 100% !important;
-    min-height: 42px !important;
-    margin-top: 2px !important;
-    border-radius: 10px !important;
-    border: 1px solid rgba(167, 139, 250, 0.35) !important;
-    background: linear-gradient(90deg, #9333ea 0%, #7B61FF 45%, #5B8CFF 100%) !important;
+    min-height: 44px !important;
+    margin-top: 0 !important;
+    border-radius: 12px !important;
+    border: none !important;
+    background: linear-gradient(135deg, #a855f7, #3b82f6) !important;
     background-color: #7B61FF !important;
-    background-image: linear-gradient(90deg, #9333ea 0%, #7B61FF 45%, #5B8CFF 100%) !important;
+    background-image: linear-gradient(135deg, #a855f7, #3b82f6) !important;
     color: #fff !important;
     font-weight: 700 !important;
     font-size: 14px !important;
-    letter-spacing: -0.01em !important;
     font-family: inherit !important;
-    box-shadow: 0 4px 24px rgba(123, 97, 255, 0.4), inset 0 1px 0 rgba(255,255,255,0.15) !important;
-    transition: box-shadow 0.2s, transform 0.15s, filter 0.2s !important;
+    box-shadow: 0 4px 20px rgba(123, 97, 255, 0.35) !important;
 }}
-{g} form .stFormSubmitButton button:hover,
-{g} form .stFormSubmitButton button[kind="secondary"]:hover,
-{g} form .stFormSubmitButton button[kind="primary"]:hover {{
-    box-shadow: 0 6px 32px rgba(123, 97, 255, 0.52), inset 0 1px 0 rgba(255,255,255,0.2) !important;
-    transform: translateY(-1px) !important;
+{g} form .stFormSubmitButton button:hover {{
     filter: brightness(1.06) !important;
-    background: linear-gradient(90deg, #a855f7 0%, #8b5cf6 45%, #60a5fa 100%) !important;
-    background-image: linear-gradient(90deg, #a855f7 0%, #8b5cf6 45%, #60a5fa 100%) !important;
+    box-shadow: 0 6px 28px rgba(123, 97, 255, 0.45) !important;
 }}
 {g} form .stFormSubmitButton button p,
 {g} form .stFormSubmitButton button span {{
@@ -882,7 +854,7 @@ def widget_css() -> str:
 /* Mode switch link button */
 {g} [data-testid="column"]:last-child [data-testid="stHorizontalBlock"]:has(.mb-panel-switch-note) {{
     align-items: center !important;
-    margin-top: 20px !important;
+    margin-top: 16px !important;
     gap: 4px !important;
 }}
 {g} [data-testid="column"]:last-child [data-testid="stHorizontalBlock"]:has(.mb-panel-switch-note) [data-testid="column"]:first-child {{
@@ -1063,16 +1035,12 @@ def panel_shell_html(*, register: bool) -> str:
     initial = html.escape(APP_NAME[:1] if APP_NAME else "M")
     if register:
         return (
-            '<div class="mb-login-portal">'
-            '<div class="mb-portal-glow" aria-hidden="true"></div>'
             '<div class="mb-glass-wrap"><div class="mb-glass-card"><div class="mb-glass-inner">'
             f'{_hex_logo(initial)}'
             '<h2 class="mb-panel-title">Workspace anlegen</h2>'
             '<p class="mb-panel-sub">Erstelle dein Konto und starte in Minuten.</p>'
         )
     return (
-        '<div class="mb-login-portal">'
-        '<div class="mb-portal-glow" aria-hidden="true"></div>'
         '<div class="mb-glass-wrap"><div class="mb-glass-card"><div class="mb-glass-inner">'
         f'{_hex_logo(initial)}'
         '<h2 class="mb-panel-title">Willkommen zurück</h2>'
@@ -1081,7 +1049,7 @@ def panel_shell_html(*, register: bool) -> str:
 
 
 def panel_close_html() -> str:
-    return '</div></div></div></div>'
+    return '</div></div></div>'
 
 
 def forgot_password_html() -> str:
