@@ -286,8 +286,9 @@ def render_register_form() -> None:
 
 
 def render_gate_panel() -> None:
+    mode = st.session_state.get("gate_mode", "login")
     with st.container(border=True):
-        st.markdown(panel_head_html(), unsafe_allow_html=True)
+        st.markdown(panel_head_html(register=(mode == "register")), unsafe_allow_html=True)
         _show_gate_notice()
         mode = render_mode_switch()
 
@@ -308,7 +309,7 @@ def render_auth() -> None:
     inject_css(auth_styles_bundle())
     handle_oauth_callback()
 
-    hero_col, panel_col = st.columns([1.2, 0.8], gap="large")
+    hero_col, panel_col = st.columns([1.15, 0.85], gap="large")
 
     with hero_col:
         st.markdown(hero_html(), unsafe_allow_html=True)
