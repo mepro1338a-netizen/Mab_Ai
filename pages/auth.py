@@ -253,3 +253,4 @@ def render_auth() -> None:
         render_gate_panel()
 
     st.markdown(page_close_html(), unsafe_allow_html=True)
+    inject_css(auth_styles_bundle())
