@@ -17,10 +17,11 @@ from oauth_service import (
 )
 from ui.auth_premium import (
     auth_styles_bundle,
-    header_html,
+    forgot_password_html,
     hero_html,
     notice_html,
     page_close_html,
+    page_open_html,
     panel_close_html,
     panel_shell_html,
 )
@@ -167,35 +168,36 @@ def google_login_link() -> str:
     return f'<span class="mb-login-google disabled">{GOOGLE_ICON_SVG}{html.escape(label)}</span>'
 
 
-def render_mode_switch() -> str:
-    mode = st.session_state.get("gate_mode", "login")
-    c1, c2 = st.columns(2, gap="small")
-    with c1:
-        if st.button("Anmelden", key="gate_login", width="stretch", type="tertiary"):
-            st.session_state.gate_mode = "login"
-            st.rerun()
-    with c2:
-        if st.button("Registrieren", key="gate_register", width="stretch", type="tertiary"):
-            st.session_state.gate_mode = "register"
-            st.rerun()
-    return mode
-
-
 def render_google_block() -> None:
     st.markdown(
-        google_login_link()
-        + '<p class="mb-login-hint">Schnell starten — kein Passwort bei uns gespeichert</p>'
-        + '<div class="mb-login-divider">oder mit Zugangsdaten</div>',
+        google_login_link() + '<div class="mb-login-divider">ODER</div>',
         unsafe_allow_html=True,
     )
 
 
 def render_login_form() -> None:
     with st.form("gate_login_form", clear_on_submit=False, border=False):
-        user = st.text_input("Benutzername", placeholder="Benutzername", label_visibility="collapsed")
-        pw = st.text_input("Passwort", type="password", placeholder="Passwort", label_visibility="collapsed")
-        if st.form_submit_button("In MaByte einloggen", type="primary", width="stretch"):
-            do_login(user, pw)
+        user = st.text_input(
+            "Benutzername",
+            placeholder="Benutzername oder E-Mail",
+            label_visibility="collapsed",
+        )
+        pw = st.text_input(
+            "Passwort",
+            type="password",
+            placeholder="Passwort",
+            label_visibility="collapsed",
+        )
+        st.markdown('<div class="mb-form-extras-wrap">', unsafe_allow_html=True)
+        ex1, ex2 = st.columns([1.2, 0.8], gap="small")
+        with ex1:
+            st.checkbox("Angemeldet bleiben", key="gate_remember", label_visibility="visible")
+        with ex2:
+            st.markdown(forgot_password_html(), unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+        submitted = st.form_submit_button("In MaByte einloggen", type="primary", width="stretch")
+    if submitted:
+        do_login(user, pw)
 
 
 def render_register_form() -> None:
@@ -222,16 +224,38 @@ def render_register_form() -> None:
         do_register(user, email, pw, captcha)
 
 
+def render_auth_switch() -> None:
+    mode = st.session_state.get("gate_mode", "login")
+    st.markdown('<div class="mb-panel-switch">', unsafe_allow_html=True)
+    if mode == "login":
+        st.markdown(
+            '<span class="mb-panel-switch-note">Noch kein Konto?</span>',
+            unsafe_allow_html=True,
+        )
+        if st.button("Jetzt registrieren →", key="switch_register", type="tertiary"):
+            st.session_state.gate_mode = "register"
+            st.rerun()
+    else:
+        st.markdown(
+            '<span class="mb-panel-switch-note">Bereits ein Konto?</span>',
+            unsafe_allow_html=True,
+        )
+        if st.button("Anmelden →", key="switch_login", type="tertiary"):
+            st.session_state.gate_mode = "login"
+            st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
 def render_gate_panel() -> None:
     mode = st.session_state.get("gate_mode", "login")
     st.markdown(panel_shell_html(register=(mode == "register")), unsafe_allow_html=True)
     _show_gate_notice()
-    mode = render_mode_switch()
     if mode == "register":
         render_register_form()
     else:
         render_google_block()
         render_login_form()
+    render_auth_switch()
     st.markdown(panel_close_html(), unsafe_allow_html=True)
 
 
@@ -244,9 +268,9 @@ def render_auth() -> None:
     handle_oauth_callback()
 
     mode_class = "mb-mode-register" if st.session_state.gate_mode == "register" else "mb-mode-login"
-    st.markdown(header_html(mode_class), unsafe_allow_html=True)
+    st.markdown(page_open_html(mode_class), unsafe_allow_html=True)
 
-    hero_col, panel_col = st.columns([1.08, 0.92], gap="medium")
+    hero_col, panel_col = st.columns([11, 9], gap="small")
     with hero_col:
         st.markdown(hero_html(), unsafe_allow_html=True)
     with panel_col:

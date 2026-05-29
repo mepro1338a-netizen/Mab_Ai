@@ -1,10 +1,9 @@
-"""MaByte B2B Premium Login — Creator + Football AI Gateway."""
+"""MaByte Enterprise Login — Linear / Stripe grade B2B gateway."""
 from __future__ import annotations
 
 import html
 
 from config import APP_NAME
-from ui.b2b_theme import MB_THEME_VARS
 
 _G = ".stApp:has(.mb-auth-page)"
 
@@ -13,19 +12,28 @@ def _s(css: str) -> str:
     return _G + " " + css
 
 
-GATE_CSS = (
-    MB_THEME_VARS
-    + """
+# Design tokens — #050816 #0A1024 #7B61FF #A855F7 #5B8CFF
+GATE_CSS = """
+:root {
+    --mb-bg: #050816;
+    --mb-bg-2: #0A1024;
+    --mb-violet: #7B61FF;
+    --mb-purple: #A855F7;
+    --mb-blue: #5B8CFF;
+    --mb-line: rgba(255, 255, 255, 0.08);
+    --mb-glow: 0 0 40px rgba(123, 97, 255, 0.25);
+    --mb-radius: 20px;
+}
 html { color-scheme: dark !important; }
 .stApp, .stApp[data-theme="light"], .stApp[data-theme="dark"] {
-    --primary-color: #7c3aed !important;
-    --background-color: #050508 !important;
+    --primary-color: #7B61FF !important;
+    --background-color: #050816 !important;
     --text-color: #fafafa !important;
 }
 .stApp:has(.mb-auth-page),
 .stApp:has(.mb-auth-page) [data-testid="stAppViewContainer"],
 .stApp:has(.mb-auth-page) [data-testid="stAppViewContainer"] > section {
-    background: #050508 !important;
+    background: var(--mb-bg) !important;
 }
 .stApp:has(.mb-auth-page) #MainMenu,
 .stApp:has(.mb-auth-page) footer,
@@ -39,225 +47,256 @@ html { color-scheme: dark !important; }
     display: none !important;
     height: 0 !important;
 }
-.stApp:has(.mb-auth-page) [data-testid="stAppViewBlockContainer"],
-.stApp:has(.mb-auth-page) [data-testid="stMainBlockContainer"] {
-    padding-top: 0 !important;
-}
 """
-    + _s("""
++ _s("""
 section.main .block-container {
-    max-width: 1200px !important;
-    padding: 0 28px 36px 28px !important;
+    max-width: 100% !important;
+    padding: 0 !important;
 }
 section.main > div > div > [data-testid="stVerticalBlock"] { gap: 0 !important; }
 section.main > div > div > [data-testid="stHorizontalBlock"] {
-    align-items: flex-start !important;
-    gap: 3rem !important;
+    align-items: stretch !important;
+    gap: 0 !important;
+    min-height: calc(100vh - 52px) !important;
 }
-[data-testid="column"]:first-child { padding: 0 12px 0 0 !important; flex: 1.12 !important; }
+[data-testid="column"]:first-child {
+    flex: 0 0 55% !important;
+    max-width: 55% !important;
+    padding: 0 !important;
+}
 [data-testid="column"]:last-child {
-    padding: 0 !important; flex: 0.88 !important;
-    display: flex !important; justify-content: flex-end !important;
+    flex: 0 0 45% !important;
+    max-width: 45% !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
 }
 [data-testid="column"]:last-child > [data-testid="stVerticalBlock"] {
-    width: 100% !important; max-width: 420px !important; gap: 0 !important;
+    width: 100% !important;
+    max-width: 520px !important;
+    gap: 0 !important;
+    padding: 32px 24px !important;
 }
 [data-testid="column"]:last-child [data-testid="stElementContainer"],
 [data-testid="column"]:last-child [data-testid="stMarkdownContainer"],
 [data-testid="column"]:last-child [data-testid="stVerticalBlockBorderWrapper"] {
-    margin: 0 !important; padding: 0 !important;
-    background: transparent !important; border: none !important; box-shadow: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
 }
-@media (max-width: 960px) {
-    section.main .block-container { padding: 0 18px 28px 18px !important; }
+@media (max-width: 1024px) {
     section.main > div > div > [data-testid="stHorizontalBlock"] {
-        flex-direction: column !important; gap: 2rem !important;
+        flex-direction: column !important;
+        min-height: auto !important;
     }
     [data-testid="column"]:first-child,
-    [data-testid="column"]:last-child { flex: 1 !important; padding: 0 !important; }
-    [data-testid="column"]:last-child > [data-testid="stVerticalBlock"] { max-width: 100% !important; }
-    .mb-header-tagline { display: none !important; }
+    [data-testid="column"]:last-child {
+        flex: 1 1 auto !important;
+        max-width: 100% !important;
+    }
+    [data-testid="column"]:last-child > [data-testid="stVerticalBlock"] {
+        max-width: 100% !important;
+        padding: 0 20px 32px !important;
+    }
+    .mb-feat-grid { grid-template-columns: repeat(2, 1fr) !important; }
+    .mb-stats-row { flex-wrap: wrap !important; gap: 16px !important; }
+}
+@media (max-width: 640px) {
     .mb-feat-grid { grid-template-columns: 1fr !important; }
-    .mb-header { margin: 0 -18px 24px -18px !important; padding: 0 18px !important; }
+    .mb-topbar-lang { display: none !important; }
 }
 """)
-    + """
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
++ """
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
 .mb-auth-page {
     position: relative;
     width: 100%;
-    font-family: "Inter", system-ui, sans-serif;
+    min-height: 100vh;
+    font-family: "Inter", system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
+    color: #fafafa;
 }
 
-/* Ambient + grid */
+/* ── Background: stadium + space ── */
 .mb-auth-bg {
     position: fixed;
     inset: 0;
     z-index: 0;
     pointer-events: none;
-    background:
-        radial-gradient(ellipse 50% 40% at 8% 10%, rgba(124, 58, 237, 0.22), transparent 55%),
-        radial-gradient(ellipse 45% 35% at 92% 80%, rgba(59, 130, 246, 0.14), transparent 50%),
-        radial-gradient(ellipse 30% 25% at 50% 50%, rgba(139, 92, 246, 0.06), transparent 60%),
-        #050508;
+    background-color: #050816;
+    background-image:
+        radial-gradient(ellipse 80% 50% at 50% 100%, rgba(123, 97, 255, 0.18), transparent 60%),
+        radial-gradient(ellipse 60% 40% at 20% 20%, rgba(168, 85, 247, 0.22), transparent 55%),
+        radial-gradient(ellipse 50% 35% at 85% 15%, rgba(91, 140, 255, 0.16), transparent 50%),
+        radial-gradient(ellipse 100% 60% at 50% 110%, rgba(10, 16, 36, 0.9), transparent 70%),
+        linear-gradient(180deg, #050816 0%, #0A1024 45%, #050816 100%);
 }
-.mb-auth-grid {
+.mb-auth-bg::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(ellipse 120% 40% at 50% 95%, rgba(123, 97, 255, 0.12) 0%, transparent 55%),
+        url("https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1920&q=80&auto=format&fit=crop") center bottom / cover no-repeat;
+    opacity: 0.35;
+    mix-blend-mode: luminosity;
+    mask-image: linear-gradient(to top, black 0%, transparent 65%);
+    -webkit-mask-image: linear-gradient(to top, black 0%, transparent 65%);
+}
+.mb-auth-stars {
     position: fixed;
     inset: 0;
     z-index: 0;
     pointer-events: none;
-    opacity: 0.25;
+    opacity: 0.4;
     background-image:
-        linear-gradient(rgba(139, 92, 246, 0.05) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(139, 92, 246, 0.05) 1px, transparent 1px);
-    background-size: 56px 56px;
-    mask-image: radial-gradient(ellipse 80% 70% at 40% 30%, black 15%, transparent 75%);
+        radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.5), transparent),
+        radial-gradient(1px 1px at 30% 65%, rgba(255,255,255,0.35), transparent),
+        radial-gradient(1px 1px at 55% 15%, rgba(255,255,255,0.4), transparent),
+        radial-gradient(1px 1px at 70% 45%, rgba(255,255,255,0.3), transparent),
+        radial-gradient(1px 1px at 85% 75%, rgba(255,255,255,0.45), transparent),
+        radial-gradient(1px 1px at 92% 30%, rgba(255,255,255,0.35), transparent);
 }
 
-/* Header */
-.mb-header {
+/* ── Top bar ── */
+.mb-topbar {
     position: relative;
-    z-index: 2;
-    margin: 0 -28px 32px -28px;
-    padding: 0 28px;
-    border-bottom: 1px solid rgba(139, 92, 246, 0.15);
-    background: rgba(8, 8, 12, 0.72);
-    backdrop-filter: blur(20px) saturate(1.4);
-    -webkit-backdrop-filter: blur(20px) saturate(1.4);
-    box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset, 0 8px 32px rgba(0,0,0,0.35);
-}
-.mb-header-inner {
+    z-index: 10;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    min-height: 60px;
-    max-width: 1200px;
-    margin: 0 auto;
-    gap: 16px;
+    padding: 20px 40px;
+    max-width: 100%;
 }
-.mb-header-brand {
+.mb-topbar-brand {
     display: flex;
     align-items: center;
     gap: 12px;
 }
-.mb-logo {
-    width: 40px;
-    height: 40px;
-    border-radius: 11px;
+.mb-logo-mark {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 18px;
+    font-size: 17px;
     font-weight: 800;
     color: #fff !important;
-    background: linear-gradient(135deg, #a855f7, #6366f1);
-    box-shadow: 0 0 24px rgba(124, 58, 237, 0.45), 0 0 0 1px rgba(255,255,255,0.12) inset;
+    background: linear-gradient(135deg, #A855F7 0%, #7B61FF 50%, #5B8CFF 100%);
+    box-shadow: var(--mb-glow), inset 0 1px 0 rgba(255,255,255,0.2);
 }
-.mb-header-text { display: flex; flex-direction: column; gap: 1px; }
-.mb-header-name {
-    font-size: 16px;
+.mb-topbar-name {
+    font-size: 17px;
     font-weight: 700;
     color: #fafafa !important;
     letter-spacing: -0.03em;
-    line-height: 1.2;
 }
-.mb-header-tagline {
-    font-size: 12px;
-    font-weight: 500;
-    color: #a78bfa !important;
-    letter-spacing: 0.01em;
-}
-.mb-header-status {
+.mb-topbar-lang {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: #86efac !important;
-    padding: 6px 12px;
-    border-radius: 999px;
-    border: 1px solid rgba(34, 197, 94, 0.25);
-    background: rgba(34, 197, 94, 0.08);
-}
-.mb-header-status-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: #22c55e;
-    box-shadow: 0 0 8px rgba(34, 197, 94, 0.7);
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #94a3b8 !important;
+    padding: 8px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--mb-line);
+    background: rgba(10, 16, 36, 0.6);
+    backdrop-filter: blur(12px);
 }
 
-/* Hero left */
+/* ── Hero left ── */
 .mb-hero {
     position: relative;
-    z-index: 1;
-    max-width: 560px;
+    z-index: 2;
+    padding: 8px 48px 48px 48px;
+    max-width: 720px;
 }
-.mb-hero-logo-row {
-    display: flex;
+.mb-hero-pill {
+    display: inline-flex;
     align-items: center;
-    gap: 10px;
-    margin-bottom: 20px;
-}
-.mb-hero-logo-row .mb-logo { width: 36px; height: 36px; font-size: 16px; }
-.mb-hero-logo-label {
-    font-size: 13px;
+    gap: 8px;
+    padding: 6px 14px;
+    margin-bottom: 24px;
+    border-radius: 999px;
+    font-size: 11px;
     font-weight: 600;
-    color: #e4e4e7 !important;
-    letter-spacing: -0.02em;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #94a3b8 !important;
+    border: 1px solid var(--mb-line);
+    background: rgba(10, 16, 36, 0.55);
+    backdrop-filter: blur(12px);
+}
+.mb-hero-pill-dot {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: #7B61FF;
+    box-shadow: 0 0 6px rgba(123, 97, 255, 0.8);
 }
 .mb-hero-title {
-    font-size: clamp(30px, 3.6vw, 44px);
+    font-size: clamp(36px, 4.5vw, 56px);
     font-weight: 800;
     letter-spacing: -0.04em;
-    line-height: 1.12;
-    margin: 0 0 14px 0;
+    line-height: 1.08;
+    margin: 0 0 20px 0;
     color: #fafafa !important;
 }
-.mb-hero-title em {
-    font-style: normal;
-    background: linear-gradient(90deg, #e9d5ff, #a78bfa, #6366f1);
+.mb-hero-title .mb-grad {
+    display: block;
+    background: linear-gradient(135deg, #A855F7 0%, #7B61FF 45%, #5B8CFF 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
 }
 .mb-hero-sub {
-    font-size: 15px;
-    line-height: 1.65;
-    color: #a1a1aa !important;
-    margin: 0 0 24px 0;
-    max-width: 500px;
+    font-size: 16px;
+    line-height: 1.7;
+    color: #94a3b8 !important;
+    margin: 0 0 32px 0;
+    max-width: 540px;
 }
+
+/* Feature cards — 4 col glass row */
 .mb-feat-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-    margin-bottom: 20px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 28px;
 }
 .mb-feat-card {
-    padding: 16px 16px;
-    border-radius: 14px;
-    background: rgba(12, 12, 18, 0.55);
-    border: 1px solid rgba(139, 92, 246, 0.18);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    box-shadow: 0 8px 32px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.04);
-    transition: border-color 0.2s, box-shadow 0.2s;
+    padding: 18px 16px;
+    border-radius: var(--mb-radius);
+    background: rgba(10, 16, 36, 0.45);
+    border: 1px solid var(--mb-line);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: var(--mb-glow), inset 0 1px 0 rgba(255,255,255,0.04);
+    transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s;
 }
 .mb-feat-card:hover {
-    border-color: rgba(167, 139, 250, 0.35);
-    box-shadow: 0 8px 32px rgba(124, 58, 237, 0.12), inset 0 1px 0 rgba(255,255,255,0.06);
+    border-color: rgba(123, 97, 255, 0.35);
+    transform: translateY(-2px);
+    box-shadow: 0 0 48px rgba(123, 97, 255, 0.3), inset 0 1px 0 rgba(255,255,255,0.06);
 }
 .mb-feat-icon {
-    font-size: 18px;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
+    background: linear-gradient(135deg, rgba(168,85,247,0.25), rgba(91,140,255,0.15));
+    border: 1px solid rgba(123, 97, 255, 0.25);
+    font-size: 16px;
     line-height: 1;
-    margin-bottom: 10px;
-    display: block;
-    filter: drop-shadow(0 0 8px rgba(124, 58, 237, 0.4));
 }
 .mb-feat-title {
     display: block;
@@ -269,113 +308,225 @@ section.main > div > div > [data-testid="stHorizontalBlock"] {
 }
 .mb-feat-desc {
     font-size: 11px;
-    color: #71717a !important;
-    line-height: 1.4;
-}
-.mb-hero-trust {
-    font-size: 11px;
-    color: #52525b !important;
-    letter-spacing: 0.04em;
+    color: #64748b !important;
+    line-height: 1.45;
 }
 
-/* Glass login card */
+/* Stats row */
+.mb-stats-row {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    flex-wrap: nowrap;
+}
+.mb-stat {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.mb-stat-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    background: rgba(123, 97, 255, 0.12);
+    border: 1px solid rgba(123, 97, 255, 0.2);
+}
+.mb-stat-val {
+    display: block;
+    font-size: 15px;
+    font-weight: 700;
+    color: #fafafa !important;
+    letter-spacing: -0.02em;
+}
+.mb-stat-label {
+    display: block;
+    font-size: 11px;
+    color: #64748b !important;
+}
+
+/* ── Glass login card ── */
 .mb-glass-wrap {
     position: relative;
-    z-index: 1;
+    z-index: 2;
+    width: 100%;
 }
 .mb-glass-wrap::before {
     content: "";
     position: absolute;
-    inset: -16px -8px;
-    background: radial-gradient(ellipse at 50% 30%, rgba(124, 58, 237, 0.25), transparent 65%);
-    filter: blur(28px);
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 70%;
+    height: 80px;
+    background: radial-gradient(ellipse, rgba(123, 97, 255, 0.45), transparent 70%);
+    filter: blur(24px);
     z-index: -1;
     pointer-events: none;
 }
 .mb-glass-card {
-    border-radius: 20px;
+    border-radius: var(--mb-radius);
     padding: 1px;
-    background: linear-gradient(135deg, rgba(167,139,250,0.45), rgba(99,102,241,0.2), rgba(139,92,246,0.35));
-    box-shadow: 0 0 40px rgba(124, 58, 237, 0.15), 0 24px 64px rgba(0,0,0,0.45);
+    background: linear-gradient(160deg, rgba(168,85,247,0.5), rgba(91,140,255,0.15), rgba(123,97,255,0.3));
+    box-shadow: var(--mb-glow), 0 32px 80px rgba(0, 0, 0, 0.55);
+    overflow: hidden;
 }
 .mb-glass-inner {
-    border-radius: 19px;
-    padding: 28px 26px 24px 26px;
-    background: rgba(10, 10, 14, 0.82);
-    backdrop-filter: blur(24px) saturate(1.3);
-    -webkit-backdrop-filter: blur(24px) saturate(1.3);
+    position: relative;
+    border-radius: calc(var(--mb-radius) - 1px);
+    padding: 32px 32px 28px 32px;
+    background: rgba(10, 16, 36, 0.72);
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
 }
+.mb-glass-inner::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 10%;
+    right: 10%;
+    height: 2px;
+    border-radius: 0 0 4px 4px;
+    background: linear-gradient(90deg, transparent, #A855F7, #5B8CFF, transparent);
+    box-shadow: 0 0 24px rgba(168, 85, 247, 0.7);
+}
+.mb-panel-logo {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 16px auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    background: linear-gradient(135deg, #A855F7, #7B61FF, #5B8CFF);
+    box-shadow: var(--mb-glow);
+    font-size: 20px;
+    font-weight: 800;
+    color: #fff !important;
+}
 .mb-panel-title {
-    font-size: 22px;
+    font-size: 24px;
     font-weight: 700;
     letter-spacing: -0.03em;
     color: #fafafa !important;
     margin: 0 0 6px 0;
+    text-align: center;
 }
 .mb-panel-sub {
-    font-size: 13px;
-    color: #71717a !important;
-    margin: 0 0 20px 0;
+    font-size: 14px;
+    color: #64748b !important;
+    margin: 0 0 24px 0;
     line-height: 1.45;
+    text-align: center;
 }
+
+/* Google + divider */
 .mb-login-google {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 10px;
     width: 100%;
-    min-height: 46px;
+    min-height: 48px;
     padding: 0 16px;
-    margin-bottom: 10px;
+    margin-bottom: 0;
     border-radius: 12px;
-    font-size: 13px;
+    font-size: 14px;
     font-weight: 600;
     text-decoration: none !important;
     color: #fafafa !important;
     background: rgba(255, 255, 255, 0.04) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    border: 1px solid var(--mb-line) !important;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
 }
 .mb-login-google:hover {
-    border-color: rgba(167, 139, 250, 0.4) !important;
-    box-shadow: 0 0 24px rgba(124, 58, 237, 0.15);
+    border-color: rgba(123, 97, 255, 0.45) !important;
+    background: rgba(123, 97, 255, 0.08) !important;
+    box-shadow: 0 0 24px rgba(123, 97, 255, 0.2);
 }
 .mb-login-google.disabled { opacity: 0.4; pointer-events: none; }
-.mb-login-google .g-icon { width: 17px; height: 17px; }
-.mb-login-hint {
-    text-align: center;
-    font-size: 10px;
-    color: #52525b !important;
-    margin: 0 0 14px 0;
-}
+.mb-login-google .g-icon { width: 18px; height: 18px; flex-shrink: 0; }
 .mb-login-divider {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin: 0 0 14px 0;
-    font-size: 10px;
+    gap: 12px;
+    margin: 20px 0 20px 0;
+    font-size: 11px;
     font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: #52525b !important;
+    letter-spacing: 0.12em;
+    color: #475569 !important;
 }
 .mb-login-divider::before,
 .mb-login-divider::after {
     content: "";
     flex: 1;
     height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(139,92,246,0.2), transparent);
+    background: var(--mb-line);
 }
-.mb-panel-foot {
+
+/* Form extras row */
+.mb-form-extras {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 4px 0 16px 0;
+    min-height: 24px;
+}
+.mb-forgot-link {
+    font-size: 13px;
+    font-weight: 500;
+    color: #7B61FF !important;
+    text-decoration: none !important;
+    transition: color 0.2s;
+}
+.mb-forgot-link:hover { color: #A855F7 !important; }
+
+/* Panel switch + foot */
+.mb-panel-switch {
     text-align: center;
-    font-size: 10px;
-    color: #52525b !important;
-    margin-top: 18px;
-    padding-top: 14px;
-    border-top: 1px solid rgba(255,255,255,0.06);
-    line-height: 1.45;
+    margin-top: 20px;
+    font-size: 14px;
+    color: #64748b !important;
 }
+.mb-panel-switch-note {
+    display: inline;
+    margin-right: 4px;
+}
+
+/* Page footer */
+.mb-page-foot {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 16px 40px 24px 40px;
+    font-size: 12px;
+    color: #475569 !important;
+    border-top: 1px solid var(--mb-line);
+    background: rgba(5, 8, 22, 0.85);
+    backdrop-filter: blur(12px);
+}
+.mb-page-foot-links {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.mb-page-foot-links a {
+    color: #64748b !important;
+    text-decoration: none !important;
+    transition: color 0.2s;
+}
+.mb-page-foot-links a:hover { color: #94a3b8 !important; }
+.mb-page-foot-sep { color: #334155 !important; }
+
+/* Notices */
 .mb-notice {
     display: flex;
     align-items: flex-start;
@@ -384,7 +535,7 @@ section.main > div > div > [data-testid="stHorizontalBlock"] {
     border-radius: 12px;
     font-size: 13px;
     line-height: 1.45;
-    margin-bottom: 14px;
+    margin-bottom: 16px;
     backdrop-filter: blur(8px);
 }
 .mb-notice::before {
@@ -415,11 +566,10 @@ section.main > div > div > [data-testid="stHorizontalBlock"] {
 .mb-notice-info::before { background: #60a5fa; }
 .mb-captcha-label {
     font-size: 12px;
-    color: #71717a !important;
+    color: #64748b !important;
     margin: 0 0 8px 0;
 }
 """
-)
 
 
 def widget_css() -> str:
@@ -431,14 +581,13 @@ def widget_css() -> str:
 {g} [data-testid="stWidgetLabel"],
 {g} label[data-testid="stWidgetLabel"] {{ display: none !important; }}
 {g} [data-testid="stTextInput"],
-{g} [data-testid="stNumberInput"] {{ margin-bottom: 12px !important; }}
+{g} [data-testid="stNumberInput"] {{ margin-bottom: 14px !important; }}
 {g} [data-testid="stTextInput"] > div,
 {g} [data-testid="stTextInput"] > div > div,
 {g} [data-testid="stTextInput"] fieldset,
 {g} [data-testid="stNumberInput"] > div,
 {g} [data-testid="stNumberInput"] > div > div {{
     background: transparent !important;
-    background-color: transparent !important;
     border: none !important;
     padding: 0 !important;
     box-shadow: none !important;
@@ -446,169 +595,246 @@ def widget_css() -> str:
 {g} div[data-baseweb="input"],
 {g} [data-testid="stTextInput"] div[data-baseweb="input"],
 {g} [data-testid="stNumberInput"] div[data-baseweb="input"] {{
-    background: rgba(8, 8, 12, 0.9) !important;
-    background-color: rgba(8, 8, 12, 0.9) !important;
-    border: 1px solid rgba(139, 92, 246, 0.22) !important;
+    background: rgba(5, 8, 22, 0.85) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
     border-radius: 12px !important;
-    min-height: 46px !important;
-    box-shadow: inset 0 2px 8px rgba(0,0,0,0.35) !important;
+    min-height: 48px !important;
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.3) !important;
 }}
 {g} div[data-baseweb="input"]:focus-within {{
-    border-color: rgba(167, 139, 250, 0.65) !important;
-    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2), 0 0 20px rgba(124, 58, 237, 0.12) !important;
+    border-color: rgba(123, 97, 255, 0.55) !important;
+    box-shadow: 0 0 0 3px rgba(123, 97, 255, 0.15), 0 0 24px rgba(123, 97, 255, 0.12) !important;
 }}
 {g} [data-testid="stTextInput"] input,
-{g} [data-testid="stNumberInput"] input,
-{g} input[type="text"],
-{g} input[type="password"] {{
+{g} [data-testid="stNumberInput"] input {{
     background: transparent !important;
-    background-color: transparent !important;
     color: #fafafa !important;
     -webkit-text-fill-color: #fafafa !important;
     font-size: 14px !important;
     font-family: inherit !important;
-    caret-color: #c4b5fd !important;
+    caret-color: #A855F7 !important;
+    padding-left: 14px !important;
 }}
-{g} [data-testid="stTextInput"] input::placeholder {{ color: #52525b !important; opacity: 1 !important; }}
+{g} [data-testid="stTextInput"] input::placeholder {{ color: #475569 !important; opacity: 1 !important; }}
 {g} [data-testid="stTextInput"] input:-webkit-autofill,
 {g} [data-testid="stTextInput"] input:-webkit-autofill:focus {{
-    -webkit-box-shadow: 0 0 0 1000px #08080c inset !important;
+    -webkit-box-shadow: 0 0 0 1000px #050816 inset !important;
     -webkit-text-fill-color: #fafafa !important;
 }}
-{g} [data-testid="stTextInput"] button {{ color: #71717a !important; background: transparent !important; }}
+{g} [data-testid="stTextInput"] button {{ color: #64748b !important; background: transparent !important; }}
 
-/* Mode tabs */
-{g} [data-testid="column"]:last-child > [data-testid="stVerticalBlock"] > [data-testid="stHorizontalBlock"]:first-of-type {{
-    gap: 4px !important;
-    padding: 4px !important;
-    margin-bottom: 18px !important;
-    background: rgba(0,0,0,0.35) !important;
-    border: 1px solid rgba(139, 92, 246, 0.2) !important;
-    border-radius: 12px !important;
-    backdrop-filter: blur(8px);
+/* Remember me checkbox */
+{g} [data-testid="stCheckbox"] {{
+    margin: 0 !important;
+    padding: 0 !important;
 }}
-{g} [data-testid="column"]:last-child > [data-testid="stVerticalBlock"] > [data-testid="stHorizontalBlock"]:first-of-type .stButton > button,
-{g} [data-testid="column"]:last-child > [data-testid="stVerticalBlock"] > [data-testid="stHorizontalBlock"]:first-of-type .stButton > button[kind="tertiary"] {{
-    min-height: 38px !important;
-    border-radius: 9px !important;
+{g} [data-testid="stCheckbox"] label {{
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
     font-size: 13px !important;
-    font-weight: 600 !important;
-    border: none !important;
-    box-shadow: none !important;
-    background: transparent !important;
-    color: #71717a !important;
+    color: #94a3b8 !important;
+    cursor: pointer !important;
 }}
-{g} [data-testid="column"]:last-child > [data-testid="stVerticalBlock"] > [data-testid="stHorizontalBlock"]:first-of-type .stButton > button p {{
-    color: inherit !important; font-weight: 600 !important;
+{g} [data-testid="stCheckbox"] label span,
+{g} [data-testid="stCheckbox"] label p {{
+    color: #94a3b8 !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
 }}
-{g}:has(.mb-auth-page.mb-mode-login) [data-testid="column"]:last-child > [data-testid="stVerticalBlock"] > [data-testid="stHorizontalBlock"]:first-of-type .stButton:first-child > button,
-{g}:has(.mb-auth-page.mb-mode-register) [data-testid="column"]:last-child > [data-testid="stVerticalBlock"] > [data-testid="stHorizontalBlock"]:first-of-type .stButton:last-child > button {{
-    background: linear-gradient(135deg, rgba(124,58,237,0.35), rgba(99,102,241,0.25)) !important;
-    color: #fafafa !important;
-    box-shadow: 0 0 16px rgba(124, 58, 237, 0.25), inset 0 1px 0 rgba(255,255,255,0.08) !important;
+{g} [data-testid="stCheckbox"] [data-baseweb="checkbox"] {{
+    background: rgba(5, 8, 22, 0.85) !important;
+    border-color: rgba(255,255,255,0.12) !important;
 }}
-{g}:has(.mb-auth-page.mb-mode-login) [data-testid="column"]:last-child > [data-testid="stVerticalBlock"] > [data-testid="stHorizontalBlock"]:first-of-type .stButton:first-child > button p,
-{g}:has(.mb-auth-page.mb-mode-register) [data-testid="column"]:last-child > [data-testid="stVerticalBlock"] > [data-testid="stHorizontalBlock"]:first-of-type .stButton:last-child > button p {{
-    color: #fafafa !important;
+{g} [data-testid="stCheckbox"] [data-baseweb="checkbox"]:hover {{
+    border-color: rgba(123, 97, 255, 0.45) !important;
 }}
 
-/* CTA */
+/* Extras row layout */
+{g} .mb-form-extras-wrap [data-testid="stHorizontalBlock"] {{
+    align-items: center !important;
+    gap: 0 !important;
+}}
+{g} .mb-form-extras-wrap [data-testid="column"]:first-child {{
+    flex: 1 !important; max-width: none !important; padding: 0 !important;
+}}
+{g} .mb-form-extras-wrap [data-testid="column"]:last-child {{
+    flex: 0 0 auto !important; max-width: none !important; padding: 0 !important;
+    justify-content: flex-end !important;
+}}
+
+/* Primary CTA */
 {g} form button,
 {g} .stFormSubmitButton button {{
     width: 100% !important;
-    min-height: 46px !important;
-    margin-top: 4px !important;
+    min-height: 48px !important;
+    margin-top: 0 !important;
     border-radius: 12px !important;
-    border: 1px solid rgba(167, 139, 250, 0.35) !important;
-    background: linear-gradient(135deg, #9333ea, #7c3aed, #6366f1) !important;
+    border: none !important;
+    background: linear-gradient(135deg, #A855F7 0%, #7B61FF 50%, #5B8CFF 100%) !important;
     color: #fff !important;
     font-weight: 700 !important;
-    font-size: 14px !important;
+    font-size: 15px !important;
     font-family: inherit !important;
-    box-shadow: 0 8px 28px rgba(124, 58, 237, 0.4), inset 0 1px 0 rgba(255,255,255,0.12) !important;
-    transition: box-shadow 0.2s !important;
+    box-shadow: var(--mb-glow), inset 0 1px 0 rgba(255,255,255,0.15) !important;
+    transition: box-shadow 0.2s, transform 0.15s !important;
 }}
 {g} form button:hover {{
-    box-shadow: 0 10px 36px rgba(124, 58, 237, 0.5), inset 0 1px 0 rgba(255,255,255,0.15) !important;
+    box-shadow: 0 0 48px rgba(123, 97, 255, 0.4), inset 0 1px 0 rgba(255,255,255,0.2) !important;
+    transform: translateY(-1px) !important;
 }}
 {g} form button p {{ color: #fff !important; font-weight: 700 !important; }}
+
+/* Mode switch link button */
+{g} .mb-panel-switch .stButton > button,
+{g} .mb-panel-switch .stButton > button[kind="tertiary"] {{
+    display: inline !important;
+    width: auto !important;
+    min-height: auto !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: #7B61FF !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+}}
+{g} .mb-panel-switch .stButton > button:hover {{
+    color: #A855F7 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    transform: none !important;
+}}
+{g} .mb-panel-switch .stButton > button p {{
+    color: #7B61FF !important;
+    font-weight: 600 !important;
+}}
+
 {g} [data-testid="stAlert"] {{ display: none !important; }}
 {g} [data-testid="stVerticalBlock"] {{ gap: 0 !important; }}
+
+/* Captcha refresh — small icon button */
+{g} [data-testid="stForm"] [data-testid="stHorizontalBlock"] .stButton:last-child button {{
+    min-height: 48px !important;
+    width: 100% !important;
+    background: rgba(5, 8, 22, 0.85) !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+    color: #94a3b8 !important;
+    box-shadow: none !important;
+}}
 """
 
 
-def _logo(initial: str) -> str:
-    return f'<div class="mb-logo" aria-hidden="true">{html.escape(initial)}</div>'
+def _logo_mark(initial: str) -> str:
+    return f'<div class="mb-logo-mark" aria-hidden="true">{html.escape(initial)}</div>'
 
 
-def header_html(mode_class: str = "") -> str:
+def _hex_logo(initial: str) -> str:
+    return f'<div class="mb-panel-logo" aria-hidden="true">{html.escape(initial)}</div>'
+
+
+def page_open_html(mode_class: str = "") -> str:
     name = html.escape(APP_NAME)
     initial = html.escape(APP_NAME[:1] if APP_NAME else "M")
     extra = html.escape(mode_class)
     return (
         f'<div class="mb-auth-page {extra}">'
         f'<div class="mb-auth-bg" aria-hidden="true"></div>'
-        f'<div class="mb-auth-grid" aria-hidden="true"></div>'
-        f'<header class="mb-header"><div class="mb-header-inner">'
-        f'<div class="mb-header-brand">'
-        f'{_logo(initial)}'
-        f'<div class="mb-header-text">'
-        f'<span class="mb-header-name">{name}</span>'
-        f'<span class="mb-header-tagline">One system. Infinite intelligence.</span>'
-        f'</div></div>'
-        f'<span class="mb-header-status">'
-        f'<span class="mb-header-status-dot"></span>Live</span>'
-        f'</div></header>'
+        f'<div class="mb-auth-stars" aria-hidden="true"></div>'
+        f'<div class="mb-topbar">'
+        f'<div class="mb-topbar-brand">{_logo_mark(initial)}'
+        f'<span class="mb-topbar-name">{name}</span></div>'
+        f'<span class="mb-topbar-lang">🌐 DE</span>'
+        f'</div>'
     )
 
 
 def hero_html() -> str:
-    name = html.escape(APP_NAME)
-    initial = html.escape(APP_NAME[:1] if APP_NAME else "M")
     return (
-        f'<div class="mb-hero">'
-        f'<div class="mb-hero-logo-row">{_logo(initial)}'
-        f'<span class="mb-hero-logo-label">{name}</span></div>'
-        f'<h1 class="mb-hero-title">Ein System für <em>Creator, Football &amp; Automation.</em></h1>'
-        f'<p class="mb-hero-sub">Erstelle Videos, analysiere Fußball, automatisiere Content '
-        f'und veröffentliche auf allen Plattformen.</p>'
-        f'<div class="mb-feat-grid">'
-        f'<div class="mb-feat-card"><span class="mb-feat-icon" aria-hidden="true">▶</span>'
-        f'<span class="mb-feat-title">AI Reels Studio</span>'
-        f'<span class="mb-feat-desc">Shorts &amp; Video mit KI-Power</span></div>'
-        f'<div class="mb-feat-card"><span class="mb-feat-icon" aria-hidden="true">⚽</span>'
-        f'<span class="mb-feat-title">Football Intelligence</span>'
-        f'<span class="mb-feat-desc">Analyse, Insights &amp; Predictions</span></div>'
-        f'<div class="mb-feat-card"><span class="mb-feat-icon" aria-hidden="true">↗</span>'
-        f'<span class="mb-feat-title">Auto Publishing</span>'
-        f'<span class="mb-feat-desc">Multi-Plattform in einem Flow</span></div>'
-        f'<div class="mb-feat-card"><span class="mb-feat-icon" aria-hidden="true">◈</span>'
-        f'<span class="mb-feat-title">Team Workspaces</span>'
-        f'<span class="mb-feat-desc">Collaboration für Agenturen</span></div>'
-        f'</div>'
-        f'<p class="mb-hero-trust">Verschlüsselt · DSGVO-konform · Enterprise-ready</p>'
-        f'</div>'
+        '<div class="mb-hero">'
+        '<div class="mb-hero-pill">'
+        '<span class="mb-hero-pill-dot"></span>'
+        'Creator · Football · Automation'
+        '</div>'
+        '<h1 class="mb-hero-title">'
+        'One system.<br>'
+        '<span class="mb-grad">Infinite intelligence.</span>'
+        '</h1>'
+        '<p class="mb-hero-sub">'
+        'MaByte vereint Creator AI, Football Intelligence, '
+        'Automatisierung und Publishing in einer Plattform.'
+        '</p>'
+        '<div class="mb-feat-grid">'
+        '<div class="mb-feat-card">'
+        '<div class="mb-feat-icon" aria-hidden="true">🎬</div>'
+        '<span class="mb-feat-title">AI Reels Studio</span>'
+        '<span class="mb-feat-desc">Shorts &amp; Video mit KI-Power</span>'
+        '</div>'
+        '<div class="mb-feat-card">'
+        '<div class="mb-feat-icon" aria-hidden="true">⚽</div>'
+        '<span class="mb-feat-title">Football Intelligence</span>'
+        '<span class="mb-feat-desc">Analyse, Insights &amp; Predictions</span>'
+        '</div>'
+        '<div class="mb-feat-card">'
+        '<div class="mb-feat-icon" aria-hidden="true">🚀</div>'
+        '<span class="mb-feat-title">Auto Publishing</span>'
+        '<span class="mb-feat-desc">Multi-Plattform in einem Flow</span>'
+        '</div>'
+        '<div class="mb-feat-card">'
+        '<div class="mb-feat-icon" aria-hidden="true">👥</div>'
+        '<span class="mb-feat-title">Team Workspaces</span>'
+        '<span class="mb-feat-desc">Collaboration für Agenturen</span>'
+        '</div>'
+        '</div>'
+        '<div class="mb-stats-row">'
+        '<div class="mb-stat">'
+        '<div class="mb-stat-icon" aria-hidden="true">👤</div>'
+        '<div><span class="mb-stat-val">10.000+</span>'
+        '<span class="mb-stat-label">Creator</span></div>'
+        '</div>'
+        '<div class="mb-stat">'
+        '<div class="mb-stat-icon" aria-hidden="true">▶</div>'
+        '<div><span class="mb-stat-val">1 Mio+</span>'
+        '<span class="mb-stat-label">Videos</span></div>'
+        '</div>'
+        '<div class="mb-stat">'
+        '<div class="mb-stat-icon" aria-hidden="true">🏢</div>'
+        '<div><span class="mb-stat-val">500+</span>'
+        '<span class="mb-stat-label">Teams</span></div>'
+        '</div>'
+        '</div>'
+        '</div>'
     )
 
 
 def panel_shell_html(*, register: bool) -> str:
+    initial = html.escape(APP_NAME[:1] if APP_NAME else "M")
     if register:
         return (
             '<div class="mb-glass-wrap"><div class="mb-glass-card"><div class="mb-glass-inner">'
+            f'{_hex_logo(initial)}'
             '<h2 class="mb-panel-title">Workspace anlegen</h2>'
             '<p class="mb-panel-sub">Erstelle dein Konto und starte in Minuten.</p>'
         )
     return (
         '<div class="mb-glass-wrap"><div class="mb-glass-card"><div class="mb-glass-inner">'
+        f'{_hex_logo(initial)}'
         '<h2 class="mb-panel-title">Willkommen zurück</h2>'
         '<p class="mb-panel-sub">Melde dich an, um fortzufahren.</p>'
     )
 
 
 def panel_close_html() -> str:
+    return '</div></div></div>'
+
+
+def forgot_password_html() -> str:
     return (
-        '<div class="mb-panel-foot">256-bit TLS · Keine Passwörter bei Google · DSGVO-konform</div>'
-        '</div></div></div>'
+        '<a class="mb-forgot-link" href="#" '
+        'onclick="return false;" title="Passwort-Reset folgt">'
+        'Passwort vergessen?'
+        '</a>'
     )
 
 
@@ -618,7 +844,20 @@ def notice_html(level: str, message: str) -> str:
 
 
 def page_close_html() -> str:
-    return "</div>"
+    year = "2026"
+    return (
+        '<footer class="mb-page-foot">'
+        f'<span>© {year} MaByte GmbH · Alle Rechte vorbehalten.</span>'
+        '<div class="mb-page-foot-links">'
+        '<a href="#">Datenschutz</a>'
+        '<span class="mb-page-foot-sep">|</span>'
+        '<a href="#">AGB</a>'
+        '<span class="mb-page-foot-sep">|</span>'
+        '<a href="#">Impressum</a>'
+        '</div>'
+        '</footer>'
+        '</div>'
+    )
 
 
 def auth_styles_bundle() -> str:
