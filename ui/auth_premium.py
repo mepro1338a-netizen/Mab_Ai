@@ -5,7 +5,7 @@ import html
 
 from config import APP_NAME
 
-_G = ".stApp:has(.mb-auth-page)"
+_G = ".stApp"
 
 
 def _s(css: str) -> str:
@@ -31,27 +31,30 @@ html { color-scheme: dark !important; }
     --background-color: #050816 !important;
     --text-color: #fafafa !important;
 }
-.stApp:has(.mb-auth-page),
-.stApp:has(.mb-auth-page) [data-testid="stAppViewContainer"],
-.stApp:has(.mb-auth-page) [data-testid="stAppViewContainer"] > section {
+.stApp,
+.stApp [data-testid="stAppViewContainer"],
+.stApp [data-testid="stAppViewContainer"] > section,
+.stApp [data-testid="stMainBlockContainer"],
+.stApp [data-testid="stAppViewBlockContainer"] {
     background: var(--mb-bg) !important;
+    color: #fafafa !important;
 }
-.stApp:has(.mb-auth-page) #MainMenu,
-.stApp:has(.mb-auth-page) footer,
-.stApp:has(.mb-auth-page) [data-testid="stToolbar"],
-.stApp:has(.mb-auth-page) [data-testid="stDecoration"],
-.stApp:has(.mb-auth-page) [data-testid="stSidebar"],
-.stApp:has(.mb-auth-page) [data-testid="stStatusWidget"],
-.stApp:has(.mb-auth-page) [data-testid="stDeployButton"],
-.stApp:has(.mb-auth-page) [data-testid="stElementToolbar"],
-.stApp:has(.mb-auth-page) [data-testid="stHeader"] {
+.stApp #MainMenu,
+.stApp footer,
+.stApp [data-testid="stToolbar"],
+.stApp [data-testid="stDecoration"],
+.stApp [data-testid="stSidebar"],
+.stApp [data-testid="stStatusWidget"],
+.stApp [data-testid="stDeployButton"],
+.stApp [data-testid="stElementToolbar"],
+.stApp [data-testid="stHeader"] {
     display: none !important;
     height: 0 !important;
 }
-.stApp:has(.mb-auth-page) [data-testid="stAppViewContainer"],
-.stApp:has(.mb-auth-page) [data-testid="stAppViewContainer"] > section,
-.stApp:has(.mb-auth-page) [data-testid="stMainBlockContainer"],
-.stApp:has(.mb-auth-page) [data-testid="stAppViewBlockContainer"] {
+.stApp [data-testid="stAppViewContainer"],
+.stApp [data-testid="stAppViewContainer"] > section,
+.stApp [data-testid="stMainBlockContainer"],
+.stApp [data-testid="stAppViewBlockContainer"] {
     padding-top: 0 !important;
 }
 """
@@ -65,19 +68,10 @@ section.main > div > div > [data-testid="stVerticalBlock"] {
     padding-top: 52px !important;
     padding-bottom: 44px !important;
 }
-section.main > div > div > [data-testid="stVerticalBlock"] > [data-testid="stMarkdownContainer"]:first-child {
-    height: 0 !important;
-    min-height: 0 !important;
+.stApp [data-testid="stMarkdownContainer"]:has(.mb-topbar),
+.stApp [data-testid="stMarkdownContainer"]:has(.mb-page-foot) {
     margin: 0 !important;
     padding: 0 !important;
-    overflow: visible !important;
-}
-section.main > div > div > [data-testid="stVerticalBlock"] > [data-testid="stMarkdownContainer"]:last-child {
-    height: 0 !important;
-    min-height: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    overflow: visible !important;
 }
 section.main > div > div > [data-testid="stHorizontalBlock"] {
     align-items: flex-start !important;
@@ -159,18 +153,14 @@ section.main > div > div > [data-testid="stHorizontalBlock"] {
 + """
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
-.stApp:has(.mb-auth-page) {
+.stApp {
     font-family: "Inter", system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
     color: #fafafa;
 }
 
 .mb-auth-page {
-    position: absolute;
-    width: 0;
-    height: 0;
-    overflow: hidden;
-    pointer-events: none;
+    display: none !important;
 }
 
 /* ── Background: stadium + space ── */
@@ -1080,4 +1070,12 @@ def page_close_html() -> str:
 
 
 def auth_styles_bundle() -> str:
-    return GATE_CSS + widget_css()
+    return (
+        "@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');"
+        + GATE_CSS.replace(
+            "@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');",
+            "",
+            1,
+        )
+        + widget_css()
+    )
