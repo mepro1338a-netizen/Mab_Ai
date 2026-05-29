@@ -586,7 +586,7 @@ section.main > div > div > [data-testid="stHorizontalBlock"] {
     display: flex;
     align-items: center;
     gap: 12px;
-    margin: 14px 0 14px 0;
+    margin: 16px 0 14px 0;
     font-size: 11px;
     font-weight: 600;
     letter-spacing: 0.12em;
@@ -776,6 +776,11 @@ def widget_css() -> str:
     font-size: 13px !important;
     color: #94a3b8 !important;
     cursor: pointer !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
 }}
 {g} [data-testid="stCheckbox"] label span,
 {g} [data-testid="stCheckbox"] label p {{
@@ -814,13 +819,17 @@ def widget_css() -> str:
 }}
 
 /* Primary CTA */
-{g} form .stFormSubmitButton button {{
+{g} form .stFormSubmitButton button,
+{g} form .stFormSubmitButton button[kind="primary"],
+{g} form .stFormSubmitButton button[data-testid="stBaseButton-primary"] {{
     width: 100% !important;
     min-height: 46px !important;
     margin-top: 2px !important;
     border-radius: 12px !important;
     border: none !important;
     background: linear-gradient(90deg, #A855F7 0%, #7B61FF 40%, #5B8CFF 100%) !important;
+    background-color: transparent !important;
+    background-image: linear-gradient(90deg, #A855F7 0%, #7B61FF 40%, #5B8CFF 100%) !important;
     color: #fff !important;
     font-weight: 700 !important;
     font-size: 15px !important;
@@ -829,7 +838,8 @@ def widget_css() -> str:
     box-shadow: 0 0 40px rgba(123, 97, 255, 0.35), inset 0 1px 0 rgba(255,255,255,0.18) !important;
     transition: box-shadow 0.2s, transform 0.15s, filter 0.2s !important;
 }}
-{g} form .stFormSubmitButton button:hover {{
+{g} form .stFormSubmitButton button:hover,
+{g} form .stFormSubmitButton button[kind="primary"]:hover {{
     box-shadow: 0 0 52px rgba(123, 97, 255, 0.48), inset 0 1px 0 rgba(255,255,255,0.22) !important;
     transform: translateY(-1px) !important;
     filter: brightness(1.05) !important;
