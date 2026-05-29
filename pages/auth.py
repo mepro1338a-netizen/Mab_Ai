@@ -275,13 +275,7 @@ def render_google_login() -> None:
     st.markdown('<div class="mb-login-divider">oder mit Zugangsdaten</div>', unsafe_allow_html=True)
 
     if not provider_configured("google"):
-        st.caption("Google-Anmeldung ist gerade nicht verfügbar. Nutze Benutzername und Passwort.")
-
-    st.markdown(
-        '<p class="mb-login-help">Probleme mit Google? '
-        "Versuche es erneut oder melde dich mit Benutzername und Passwort an.</p>",
-        unsafe_allow_html=True,
-    )
+        st.caption("Google-Anmeldung derzeit nicht verfügbar — nutze Benutzername und Passwort.")
 
 
 def render_login_form() -> None:
@@ -331,9 +325,9 @@ def render_pitch_column() -> None:
 
 
 def render_login_column() -> None:
-    st.markdown(login_card_head_html(), unsafe_allow_html=True)
-
     with st.container(border=True):
+        st.markdown(login_card_head_html(), unsafe_allow_html=True)
+
         tab_login, tab_register = st.tabs(["Anmelden", "Registrieren"])
 
         with tab_login:
@@ -341,22 +335,22 @@ def render_login_column() -> None:
             render_login_form()
 
         with tab_register:
-            st.caption("Kostenlos · unter 1 Min.")
+            st.caption("Kostenlos registrieren — dauert unter einer Minute.")
             render_register_form()
 
-    st.markdown(login_footer_html(), unsafe_allow_html=True)
+        st.markdown(login_footer_html(), unsafe_allow_html=True)
 
 
 def render_auth() -> None:
     ensure_captcha()
     auth_css()
     handle_oauth_callback()
-    _show_oauth_notice()
 
-    pitch_col, login_col = st.columns([1.2, 0.8], gap="large")
+    pitch_col, login_col = st.columns([1.15, 0.85], gap="large")
 
     with pitch_col:
         render_pitch_column()
 
     with login_col:
+        _show_oauth_notice()
         render_login_column()
