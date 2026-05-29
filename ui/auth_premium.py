@@ -13,7 +13,8 @@ def _s(css: str) -> str:
 
 
 # Design tokens — #050816 #0A1024 #7B61FF #A855F7 #5B8CFF
-GATE_CSS = """
+GATE_CSS = (
+    """
 :root {
     --mb-bg: #050816;
     --mb-bg-2: #0A1024;
@@ -570,6 +571,7 @@ section.main > div > div > [data-testid="stHorizontalBlock"] {
     margin: 0 0 8px 0;
 }
 """
+)
 
 
 def widget_css() -> str:
