@@ -305,7 +305,6 @@ def render_auth() -> None:
     if "gate_mode" not in st.session_state:
         st.session_state.gate_mode = "login"
 
-    st.markdown('<div class="mb-gate" aria-hidden="true"></div>', unsafe_allow_html=True)
     inject_css(auth_styles_bundle())
     handle_oauth_callback()
 

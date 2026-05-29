@@ -43,40 +43,66 @@ html { color-scheme: dark !important; }
     background: transparent !important;
 }
 
+.stApp:has(.mb-gate) [data-testid="stAppViewBlockContainer"],
+.stApp:has(.mb-gate) [data-testid="stMainBlockContainer"] {
+    padding-top: 0 !important;
+}
+
 """
     + _s("""
 [data-testid="stMainBlockContainer"] {
-    padding-top: 0.75rem !important;
-    padding-bottom: 1.5rem !important;
+    padding-top: 0 !important;
+    padding-bottom: 1.25rem !important;
 }
 
 .block-container {
     max-width: 1180px !important;
-    padding: 12px 24px 20px 24px !important;
+    padding: 0 24px 20px 24px !important;
+    padding-top: 0 !important;
     min-height: auto !important;
-}
-
-[data-testid="column"]:first-child [data-testid="stMarkdownContainer"] {
-    margin: 0 !important;
-    padding: 0 !important;
 }
 
 > div > div > [data-testid="stVerticalBlock"] {
     gap: 0 !important;
 }
 
+/* Marker div for :has() — must not consume layout space */
+[data-testid="stMarkdown"]:has(> .mb-gate),
+[data-testid="stMarkdownContainer"]:has(.mb-gate),
+[data-testid="stElementContainer"]:has(.mb-gate) {
+    margin: 0 !important;
+    padding: 0 !important;
+    min-height: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+}
+.mb-gate {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+
 > div > div > [data-testid="stHorizontalBlock"] {
-    align-items: center !important;
+    align-items: flex-start !important;
     gap: 2.5rem !important;
     min-height: auto !important;
+    margin-top: 0 !important;
+    padding-top: 0 !important;
 }
 
 [data-testid="column"]:first-child {
-    padding: 8px 24px 16px 8px !important;
+    padding: 0 24px 16px 8px !important;
     display: flex !important;
     flex-direction: column !important;
-    justify-content: center !important;
-    align-self: center !important;
+    justify-content: flex-start !important;
+    align-self: flex-start !important;
+    align-items: flex-start !important;
 }
 
 [data-testid="column"]:first-child > [data-testid="stVerticalBlock"] {
@@ -84,27 +110,30 @@ html { color-scheme: dark !important; }
     align-items: flex-start !important;
     gap: 0 !important;
     width: 100% !important;
-    margin-top: 0 !important;
-    padding-top: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
-[data-testid="column"]:first-child [data-testid="stMarkdown"] {
+[data-testid="column"]:first-child [data-testid="stMarkdown"],
+[data-testid="column"]:first-child [data-testid="stMarkdownContainer"] {
     width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
 [data-testid="column"]:last-child {
-    padding: 8px 8px 16px 16px !important;
+    padding: 0 8px 16px 16px !important;
     display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    align-self: center !important;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+    align-self: flex-start !important;
 }
 
 [data-testid="column"]:last-child > [data-testid="stVerticalBlock"] {
     width: 100% !important;
     max-width: 400px !important;
-    margin-left: auto !important;
-    margin-right: 0 !important;
+    margin: 0 0 0 auto !important;
+    padding: 0 !important;
 }
 """)
     + """
@@ -114,7 +143,7 @@ html { color-scheme: dark !important; }
 }
 .mb-gate-glow {
     position: absolute;
-    top: -80px;
+    top: -40px;
     left: -60px;
     width: 320px;
     height: 320px;
@@ -537,6 +566,7 @@ def login_widget_css() -> str:
 def hero_html() -> str:
     name = html.escape(APP_NAME)
     return f"""
+<div class="mb-gate" aria-hidden="true"></div>
 <div class="mb-gate-hero">
     <div class="mb-gate-glow"></div>
     <div class="mb-gate-badge">
