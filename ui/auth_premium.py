@@ -251,25 +251,32 @@ html { color-scheme: dark !important; }
     gap: 2px;
 }
 .mb-topbar-claim { display: none !important; }
-.mb-topbar-live { display: none !important; }
 .mb-logo-mark {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 15px;
+    font-size: 17px;
     font-weight: 800;
     color: #fff !important;
     background: linear-gradient(135deg, #A855F7 0%, #7B61FF 50%, #5B8CFF 100%);
     box-shadow: var(--mb-glow), inset 0 1px 0 rgba(255,255,255,0.2);
 }
 .mb-topbar-name {
-    font-size: 15px;
-    font-weight: 700;
+    font-size: 18px;
+    font-weight: 800;
     color: #fafafa !important;
-    letter-spacing: -0.03em;
+    letter-spacing: -0.04em;
+}
+.mb-topbar-tagline {
+    display: block;
+    font-size: 11px;
+    font-weight: 500;
+    color: #64748b !important;
+    letter-spacing: 0.04em;
+    margin-top: 1px;
 }
 .mb-topbar-lang {
     display: flex;
@@ -320,6 +327,18 @@ html { color-scheme: dark !important; }
     max-width: 100%;
     width: 100%;
 }
+.mb-hero-brand {
+    display: block;
+    font-size: clamp(32px, 3.2vw, 44px);
+    font-weight: 900;
+    letter-spacing: -0.045em;
+    line-height: 1;
+    margin: 0 0 12px 0;
+    background: linear-gradient(135deg, #fafafa 0%, #c4b5fd 45%, #93c5fd 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
 .mb-hero-pill {
     display: inline-flex;
     align-items: center;
@@ -344,11 +363,11 @@ html { color-scheme: dark !important; }
     box-shadow: 0 0 6px rgba(123, 97, 255, 0.8);
 }
 .mb-hero-title {
-    font-size: clamp(24px, 2.5vw, 32px);
+    font-size: clamp(26px, 2.6vw, 36px);
     font-weight: 800;
     letter-spacing: -0.035em;
-    line-height: 1.12;
-    margin: 0 0 10px 0;
+    line-height: 1.15;
+    margin: 0 0 14px 0;
     color: #fafafa !important;
 }
 .mb-hero-title .mb-grad {
@@ -359,48 +378,49 @@ html { color-scheme: dark !important; }
     background-clip: text;
 }
 .mb-hero-sub {
-    font-size: 13px;
-    line-height: 1.55;
+    font-size: 14px;
+    line-height: 1.65;
     color: #94a3b8 !important;
-    margin: 0 0 14px 0;
-    max-width: 480px;
+    margin: 0 0 22px 0;
+    max-width: 520px;
 }
 
-/* Feature cards — 4 col glass row */
+/* Feature cards — 2×2 grid, larger touch */
 .mb-feat-grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 8px;
-    margin-bottom: 16px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 22px;
 }
 .mb-feat-card {
-    padding: 12px 10px;
-    border-radius: 14px;
-    background: rgba(10, 16, 36, 0.52);
-    border: 1px solid var(--mb-line);
+    padding: 18px 16px;
+    min-height: 104px;
+    border-radius: 16px;
+    background: rgba(10, 16, 36, 0.58);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
-    transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+    transition: border-color 0.25s, box-shadow 0.25s;
 }
 .mb-feat-card:hover {
     border-color: rgba(123, 97, 255, 0.32);
     box-shadow: 0 8px 32px rgba(123, 97, 255, 0.14), inset 0 1px 0 rgba(255,255,255,0.06);
 }
 .mb-feat-icon {
-    width: 28px;
-    height: 28px;
-    border-radius: 7px;
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
     background: linear-gradient(135deg, rgba(168,85,247,0.3), rgba(91,140,255,0.18));
     border: 1px solid rgba(123, 97, 255, 0.22);
 }
 .mb-feat-icon svg {
-    width: 14px;
-    height: 14px;
+    width: 18px;
+    height: 18px;
     stroke: #c4b5fd;
     fill: none;
     stroke-width: 1.75;
@@ -409,17 +429,17 @@ html { color-scheme: dark !important; }
 }
 .mb-feat-title {
     display: block;
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 700;
     color: #fafafa !important;
-    margin-bottom: 3px;
-    letter-spacing: -0.01em;
-    line-height: 1.3;
+    margin-bottom: 4px;
+    letter-spacing: -0.02em;
+    line-height: 1.35;
 }
 .mb-feat-desc {
-    font-size: 9px;
+    font-size: 11px;
     color: #64748b !important;
-    line-height: 1.4;
+    line-height: 1.45;
 }
 
 /* Stats row */
@@ -497,12 +517,18 @@ html { color-scheme: dark !important; }
     color: #fff !important;
 }
 .mb-panel-title {
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 700;
     letter-spacing: -0.03em;
     color: #fafafa !important;
-    margin: 0 0 3px 0;
+    margin: 0 0 4px 0;
     text-align: center;
+}
+.mb-panel-title .mb-panel-brand {
+    background: linear-gradient(135deg, #A855F7, #5B8CFF);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 .mb-panel-sub {
     font-size: 13px;
@@ -512,10 +538,19 @@ html { color-scheme: dark !important; }
     text-align: center;
 }
 
-/* Google + divider — inside card, above form */
+/* Google OAuth — below login */
 .mb-oauth-zone {
-    margin: 0 0 0 0;
+    margin: 0;
     padding: 0;
+}
+.mb-oauth-below {
+    margin-top: 0;
+}
+.mb-oauth-below .mb-login-divider {
+    margin: 20px 0 14px 0;
+}
+.mb-oauth-below .mb-login-google {
+    margin-bottom: 0;
 }
 .mb-oauth-label { display: none !important; }
 .mb-login-google {
@@ -1049,7 +1084,10 @@ def page_open_html(mode_class: str = "") -> str:
         f'<div class="mb-auth-stars" aria-hidden="true"></div>'
         f'<header class="mb-topbar">'
         f'<div class="mb-topbar-brand">{_logo_mark(initial)}'
-        f'<span class="mb-topbar-name">{name}</span></div>'
+        f'<div class="mb-topbar-text">'
+        f'<span class="mb-topbar-name">{name}</span>'
+        f'<span class="mb-topbar-tagline">Enterprise AI Platform</span>'
+        f'</div></div>'
         f'<div class="mb-topbar-actions">'
         f'<span class="mb-topbar-lang">🌐 DE</span>'
         f'</div></header>'
@@ -1059,28 +1097,29 @@ def page_open_html(mode_class: str = "") -> str:
 def hero_html() -> str:
     return (
         '<div class="mb-hero">'
+        f'<span class="mb-hero-brand">{html.escape(APP_NAME)}</span>'
         '<div class="mb-hero-pill">'
         '<span class="mb-hero-pill-dot"></span>'
-        'CREATOR · FOOTBALL · AUTOMATION'
+        'AI · FOOTBALL · AUTOMATION'
         '</div>'
         '<h1 class="mb-hero-title">'
         'One system.<br>'
         '<span class="mb-grad">Infinite intelligence.</span>'
         '</h1>'
         '<p class="mb-hero-sub">'
-        'MaByte ist dein All-in-One System für AI-gestützte Content Creation, '
-        'Football Intelligence und Automatisierung. Für Creator, Teams und '
-        'Unternehmen, die skalieren wollen.'
+        'Die Enterprise-Plattform für AI-gestützte Content-Produktion, '
+        'Football Intelligence und skalierbare Automatisierung — '
+        'entwickelt für Creator, Teams und Unternehmen mit Anspruch.'
         '</p>'
         '<div class="mb-feat-grid">'
-        + _feat_card(_SVG_REELS, "AI Reels Studio", "Shorts &amp; Video mit KI-Power")
-        + _feat_card(_SVG_BALL, "Football Intelligence", "Analyse, Insights &amp; Predictions")
-        + _feat_card(_SVG_ROCKET, "Auto Publishing", "Multi-Plattform in einem Flow")
-        + _feat_card(_SVG_TEAM, "Team Workspaces", "Collaboration für Agenturen")
+        + _feat_card(_SVG_REELS, "AI Reels Studio", "Video &amp; Shorts — produziert mit KI")
+        + _feat_card(_SVG_BALL, "Football Intelligence", "Datengetriebene Analyse &amp; Prognosen")
+        + _feat_card(_SVG_ROCKET, "Auto Publishing", "Omnichannel-Distribution aus einem Flow")
+        + _feat_card(_SVG_TEAM, "Team Workspaces", "Zentral steuern, gemeinsam skalieren")
         + '</div>'
         '<div class="mb-stats-row">'
         + _stat_item(_SVG_USER, "10K+", "Aktive Creator")
-        + _stat_item(_SVG_PLAY, "1M+", "Videos erstellt")
+        + _stat_item(_SVG_PLAY, "1M+", "Videos produziert")
         + _stat_item(_SVG_BUILD, "500+", "Teams &amp; Unternehmen")
         + '</div>'
         '</div>'
@@ -1093,15 +1132,15 @@ def panel_shell_html(*, register: bool) -> str:
         return (
             '<div class="mb-login-head">'
             f'{_hex_logo(initial)}'
-            '<h2 class="mb-panel-title">Workspace anlegen</h2>'
-            '<p class="mb-panel-sub">Erstelle dein Konto und starte in Minuten.</p>'
+            '<h2 class="mb-panel-title">Workspace bei <span class="mb-panel-brand">MaByte</span> anlegen</h2>'
+            '<p class="mb-panel-sub">Erstellen Sie Ihr Konto und starten Sie in wenigen Minuten.</p>'
             '</div>'
         )
     return (
         '<div class="mb-login-head">'
         f'{_hex_logo(initial)}'
-        '<h2 class="mb-panel-title">Willkommen zurück</h2>'
-        '<p class="mb-panel-sub">Melde dich an, um fortzufahren.</p>'
+        '<h2 class="mb-panel-title">Willkommen bei <span class="mb-panel-brand">MaByte</span></h2>'
+        '<p class="mb-panel-sub">Melden Sie sich an, um auf Ihren Workspace zuzugreifen.</p>'
         '</div>'
     )
 

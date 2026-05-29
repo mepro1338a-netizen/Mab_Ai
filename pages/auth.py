@@ -175,14 +175,16 @@ def google_login_link() -> str:
     return f'<span class="mb-login-google disabled">{GOOGLE_ICON_SVG}{html.escape(label)}</span>'
 
 
-def render_google_block() -> None:
-    st.markdown(
-        '<div class="mb-oauth-zone">'
-        + google_login_link()
-        + '<div class="mb-login-divider">ODER</div>'
-        + '</div>',
-        unsafe_allow_html=True,
-    )
+def render_google_block(*, below_login: bool = False) -> None:
+    zone_class = "mb-oauth-zone mb-oauth-below" if below_login else "mb-oauth-zone"
+    if below_login:
+        inner = (
+            '<div class="mb-login-divider">ODER</div>'
+            + google_login_link()
+        )
+    else:
+        inner = google_login_link() + '<div class="mb-login-divider">ODER</div>'
+    st.markdown(f'<div class="{zone_class}">{inner}</div>', unsafe_allow_html=True)
 
 
 def render_login_form() -> None:
@@ -268,8 +270,8 @@ def render_gate_panel() -> None:
     if mode == "register":
         render_register_form()
     else:
-        render_google_block()
         render_login_form()
+        render_google_block(below_login=True)
     render_auth_switch()
     st.markdown(panel_close_html(), unsafe_allow_html=True)
 
