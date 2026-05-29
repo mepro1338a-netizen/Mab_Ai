@@ -175,7 +175,11 @@ def google_login_link() -> str:
 
 def render_google_block() -> None:
     st.markdown(
-        '<div class="mb-login-divider">ODER</div>' + google_login_link(),
+        '<div class="mb-oauth-zone">'
+        '<p class="mb-oauth-label">Schneller Zugang</p>'
+        '<div class="mb-login-divider">ODER</div>'
+        + google_login_link()
+        + '</div>',
         unsafe_allow_html=True,
     )
 
@@ -198,7 +202,7 @@ def render_login_form() -> None:
             st.checkbox("Angemeldet bleiben", key="gate_remember", label_visibility="visible")
         with ex2:
             st.markdown(forgot_password_html(), unsafe_allow_html=True)
-        submitted = st.form_submit_button("In MaByte einloggen", type="primary", width="stretch")
+        submitted = st.form_submit_button("In MaByte einloggen", type="secondary", width="stretch")
     if submitted:
         do_login(user, pw)
 
@@ -218,7 +222,7 @@ def render_register_form() -> None:
             captcha = st.number_input("Ergebnis", min_value=0, max_value=20, step=1, label_visibility="collapsed")
         with ref_col:
             refresh = st.form_submit_button("↻")
-        submitted = st.form_submit_button("Konto erstellen", type="primary", width="stretch")
+        submitted = st.form_submit_button("Konto erstellen", type="secondary", width="stretch")
 
     if refresh:
         refresh_captcha()

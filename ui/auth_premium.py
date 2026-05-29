@@ -23,7 +23,15 @@ GATE_CSS = (
     --mb-blue: #5B8CFF;
     --mb-line: rgba(255, 255, 255, 0.08);
     --mb-glow: 0 0 40px rgba(123, 97, 255, 0.25);
-    --mb-radius: 24px;
+    --mb-radius: 20px;
+}
+@keyframes mb-glow-pulse {
+    0%, 100% { opacity: 0.45; transform: translateX(-50%) scale(1); }
+    50% { opacity: 0.75; transform: translateX(-50%) scale(1.06); }
+}
+@keyframes mb-shimmer {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
 }
 html { color-scheme: dark !important; }
 .stApp, .stApp[data-theme="light"], .stApp[data-theme="dark"] {
@@ -99,7 +107,7 @@ section.main > div > div > [data-testid="stHorizontalBlock"] {
 }
 [data-testid="column"]:last-child > [data-testid="stVerticalBlock"] {
     width: 100% !important;
-    max-width: 440px !important;
+    max-width: 400px !important;
     gap: 0 !important;
     padding: 0 !important;
     overflow: visible !important;
@@ -335,11 +343,11 @@ section.main > div > div > [data-testid="stHorizontalBlock"] {
     box-shadow: 0 0 6px rgba(123, 97, 255, 0.8);
 }
 .mb-hero-title {
-    font-size: clamp(28px, 3.2vw, 42px);
+    font-size: clamp(24px, 2.5vw, 32px);
     font-weight: 800;
-    letter-spacing: -0.04em;
-    line-height: 1.08;
-    margin: 0 0 12px 0;
+    letter-spacing: -0.035em;
+    line-height: 1.12;
+    margin: 0 0 10px 0;
     color: #fafafa !important;
 }
 .mb-hero-title .mb-grad {
@@ -351,10 +359,10 @@ section.main > div > div > [data-testid="stHorizontalBlock"] {
 }
 .mb-hero-sub {
     font-size: 13px;
-    line-height: 1.6;
+    line-height: 1.55;
     color: #94a3b8 !important;
-    margin: 0 0 18px 0;
-    max-width: 520px;
+    margin: 0 0 14px 0;
+    max-width: 480px;
 }
 
 /* Feature cards — 4 col glass row */
@@ -470,80 +478,105 @@ section.main > div > div > [data-testid="stHorizontalBlock"] {
     line-height: 1.3;
 }
 
-/* ── Glass login card ── */
+/* ── Login portal — premium animated card ── */
+.mb-login-portal {
+    position: relative;
+    width: 100%;
+    z-index: 2;
+}
+.mb-portal-glow {
+    position: absolute;
+    top: -24px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 78%;
+    height: 64px;
+    background: radial-gradient(ellipse, rgba(168, 85, 247, 0.5), rgba(91, 140, 255, 0.12) 50%, transparent 72%);
+    filter: blur(26px);
+    z-index: 0;
+    pointer-events: none;
+    animation: mb-glow-pulse 4s ease-in-out infinite;
+}
 .mb-glass-wrap {
     position: relative;
     z-index: 2;
     width: 100%;
 }
 .mb-glass-wrap::before {
-    content: "";
-    position: absolute;
-    top: -20px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 75%;
-    height: 64px;
-    background: radial-gradient(ellipse, rgba(168, 85, 247, 0.55), rgba(123, 97, 255, 0.2) 45%, transparent 72%);
-    filter: blur(32px);
-    z-index: -1;
-    pointer-events: none;
+    display: none;
 }
 .mb-glass-card {
     border-radius: var(--mb-radius);
     padding: 1px;
-    background: linear-gradient(165deg, rgba(168,85,247,0.55) 0%, rgba(91,140,255,0.12) 45%, rgba(123,97,255,0.35) 100%);
-    box-shadow: var(--mb-glow), 0 40px 100px rgba(0, 0, 0, 0.6);
+    background: linear-gradient(120deg, #A855F7, #5B8CFF, #7B61FF, #A855F7);
+    background-size: 200% 200%;
+    animation: mb-shimmer 8s linear infinite;
+    box-shadow: 0 0 28px rgba(123, 97, 255, 0.2), 0 20px 56px rgba(0, 0, 0, 0.42);
     overflow: visible;
 }
 .mb-glass-inner {
     position: relative;
     border-radius: calc(var(--mb-radius) - 1px);
-    padding: 26px 28px 22px 28px;
-    background: rgba(8, 12, 28, 0.58);
-    backdrop-filter: blur(32px) saturate(1.5);
-    -webkit-backdrop-filter: blur(32px) saturate(1.5);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+    padding: 22px 24px 18px 24px;
+    background: rgba(6, 10, 24, 0.84);
+    backdrop-filter: blur(28px) saturate(1.45);
+    -webkit-backdrop-filter: blur(28px) saturate(1.45);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.07);
 }
 .mb-glass-inner::before {
     content: "";
     position: absolute;
     top: 0;
-    left: 8%;
-    right: 8%;
-    height: 3px;
-    border-radius: 0 0 6px 6px;
-    background: linear-gradient(90deg, transparent, #A855F7 20%, #5B8CFF 80%, transparent);
-    box-shadow: 0 0 32px rgba(168, 85, 247, 0.85);
+    left: 12%;
+    right: 12%;
+    height: 2px;
+    border-radius: 0 0 4px 4px;
+    background: linear-gradient(90deg, transparent, #A855F7 25%, #5B8CFF 75%, transparent);
+    box-shadow: 0 0 18px rgba(168, 85, 247, 0.65);
 }
 .mb-panel-logo {
-    width: 40px;
-    height: 40px;
-    margin: 0 auto 12px auto;
+    width: 36px;
+    height: 36px;
+    margin: 0 auto 10px auto;
     display: flex;
     align-items: center;
     justify-content: center;
     clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
     background: linear-gradient(135deg, #A855F7, #7B61FF, #5B8CFF);
-    box-shadow: var(--mb-glow);
-    font-size: 17px;
+    box-shadow: 0 0 24px rgba(123, 97, 255, 0.35);
+    font-size: 15px;
     font-weight: 800;
     color: #fff !important;
 }
 .mb-panel-title {
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 700;
     letter-spacing: -0.03em;
     color: #fafafa !important;
-    margin: 0 0 4px 0;
+    margin: 0 0 3px 0;
     text-align: center;
 }
 .mb-panel-sub {
-    font-size: 13px;
+    font-size: 12px;
     color: #64748b !important;
-    margin: 0 0 18px 0;
-    line-height: 1.45;
+    margin: 0 0 14px 0;
+    line-height: 1.4;
     text-align: center;
+}
+
+/* OAuth zone — below login */
+.mb-oauth-zone {
+    margin-top: 4px;
+    padding-top: 2px;
+}
+.mb-oauth-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #475569 !important;
+    text-align: center;
+    margin: 0 0 2px 0;
 }
 
 /* Google + divider */
@@ -551,13 +584,13 @@ section.main > div > div > [data-testid="stHorizontalBlock"] {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 10px;
+    gap: 8px;
     width: 100%;
-    min-height: 44px;
-    padding: 0 16px;
+    min-height: 40px;
+    padding: 0 14px;
     margin-bottom: 0;
-    border-radius: 12px;
-    font-size: 14px;
+    border-radius: 10px;
+    font-size: 13px;
     font-weight: 600;
     text-decoration: none !important;
     color: #fafafa !important;
@@ -575,9 +608,9 @@ section.main > div > div > [data-testid="stHorizontalBlock"] {
 .mb-login-divider {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin: 16px 0 14px 0;
-    font-size: 11px;
+    gap: 10px;
+    margin: 12px 0 10px 0;
+    font-size: 10px;
     font-weight: 600;
     letter-spacing: 0.12em;
     color: #475569 !important;
@@ -723,7 +756,7 @@ def widget_css() -> str:
     background: rgba(5, 8, 22, 0.88) !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
     border-radius: 12px !important;
-    min-height: 44px !important;
+    min-height: 40px !important;
     box-shadow: inset 0 2px 10px rgba(0,0,0,0.35) !important;
 }}
 {g} [data-testid="stForm"] [data-testid="stTextInput"]:first-of-type div[data-baseweb="input"] {{
@@ -741,10 +774,10 @@ def widget_css() -> str:
     background: transparent !important;
     color: #fafafa !important;
     -webkit-text-fill-color: #fafafa !important;
-    font-size: 14px !important;
+    font-size: 13px !important;
     font-family: inherit !important;
     caret-color: #A855F7 !important;
-    padding-left: 42px !important;
+    padding-left: 40px !important;
 }}
 {g} [data-testid="stTextInput"] input::placeholder {{ color: #475569 !important; opacity: 1 !important; }}
 {g} [data-testid="stTextInput"] input:-webkit-autofill,
@@ -808,33 +841,43 @@ def widget_css() -> str:
     display: inline-block !important;
 }}
 
-/* Primary CTA */
+/* Primary CTA — secondary button styled as neon gradient */
 {g} form .stFormSubmitButton button,
+{g} form .stFormSubmitButton button[kind="secondary"],
 {g} form .stFormSubmitButton button[kind="primary"],
-{g} form .stFormSubmitButton button[data-testid="stBaseButton-primary"] {{
+{g} form .stFormSubmitButton button[data-testid="stBaseButton-secondary"],
+{g} form .stFormSubmitButton button[data-testid="stBaseButton-primary"],
+{g} form .stFormSubmitButton button[data-testid="stBaseButton-primaryFormSubmit"] {{
     width: 100% !important;
-    min-height: 46px !important;
+    min-height: 42px !important;
     margin-top: 2px !important;
-    border-radius: 12px !important;
-    border: none !important;
-    background: linear-gradient(90deg, #A855F7 0%, #7B61FF 40%, #5B8CFF 100%) !important;
-    background-color: transparent !important;
-    background-image: linear-gradient(90deg, #A855F7 0%, #7B61FF 40%, #5B8CFF 100%) !important;
+    border-radius: 10px !important;
+    border: 1px solid rgba(167, 139, 250, 0.35) !important;
+    background: linear-gradient(90deg, #9333ea 0%, #7B61FF 45%, #5B8CFF 100%) !important;
+    background-color: #7B61FF !important;
+    background-image: linear-gradient(90deg, #9333ea 0%, #7B61FF 45%, #5B8CFF 100%) !important;
     color: #fff !important;
     font-weight: 700 !important;
-    font-size: 15px !important;
+    font-size: 14px !important;
     letter-spacing: -0.01em !important;
     font-family: inherit !important;
-    box-shadow: 0 0 40px rgba(123, 97, 255, 0.35), inset 0 1px 0 rgba(255,255,255,0.18) !important;
+    box-shadow: 0 4px 24px rgba(123, 97, 255, 0.4), inset 0 1px 0 rgba(255,255,255,0.15) !important;
     transition: box-shadow 0.2s, transform 0.15s, filter 0.2s !important;
 }}
 {g} form .stFormSubmitButton button:hover,
+{g} form .stFormSubmitButton button[kind="secondary"]:hover,
 {g} form .stFormSubmitButton button[kind="primary"]:hover {{
-    box-shadow: 0 0 52px rgba(123, 97, 255, 0.48), inset 0 1px 0 rgba(255,255,255,0.22) !important;
+    box-shadow: 0 6px 32px rgba(123, 97, 255, 0.52), inset 0 1px 0 rgba(255,255,255,0.2) !important;
     transform: translateY(-1px) !important;
-    filter: brightness(1.05) !important;
+    filter: brightness(1.06) !important;
+    background: linear-gradient(90deg, #a855f7 0%, #8b5cf6 45%, #60a5fa 100%) !important;
+    background-image: linear-gradient(90deg, #a855f7 0%, #8b5cf6 45%, #60a5fa 100%) !important;
 }}
-{g} form .stFormSubmitButton button p {{ color: #fff !important; font-weight: 700 !important; }}
+{g} form .stFormSubmitButton button p,
+{g} form .stFormSubmitButton button span {{
+    color: #fff !important;
+    font-weight: 700 !important;
+}}
 
 /* Mode switch link button */
 {g} [data-testid="column"]:last-child [data-testid="stHorizontalBlock"]:has(.mb-panel-switch-note) {{
@@ -1020,12 +1063,16 @@ def panel_shell_html(*, register: bool) -> str:
     initial = html.escape(APP_NAME[:1] if APP_NAME else "M")
     if register:
         return (
+            '<div class="mb-login-portal">'
+            '<div class="mb-portal-glow" aria-hidden="true"></div>'
             '<div class="mb-glass-wrap"><div class="mb-glass-card"><div class="mb-glass-inner">'
             f'{_hex_logo(initial)}'
             '<h2 class="mb-panel-title">Workspace anlegen</h2>'
             '<p class="mb-panel-sub">Erstelle dein Konto und starte in Minuten.</p>'
         )
     return (
+        '<div class="mb-login-portal">'
+        '<div class="mb-portal-glow" aria-hidden="true"></div>'
         '<div class="mb-glass-wrap"><div class="mb-glass-card"><div class="mb-glass-inner">'
         f'{_hex_logo(initial)}'
         '<h2 class="mb-panel-title">Willkommen zurück</h2>'
@@ -1034,7 +1081,7 @@ def panel_shell_html(*, register: bool) -> str:
 
 
 def panel_close_html() -> str:
-    return '</div></div></div>'
+    return '</div></div></div></div>'
 
 
 def forgot_password_html() -> str:
