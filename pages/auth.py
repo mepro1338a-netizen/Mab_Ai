@@ -3,6 +3,7 @@ import random
 
 import streamlit as st
 
+from config import APP_NAME
 from database import create_user, record_login_event, verify_login
 from security import check_login_rate, record_login_failure, is_valid_email, is_valid_username
 from services.session_auth import rotate_session_on_login
@@ -17,8 +18,9 @@ from oauth_service import (
     provider_configured,
     verify_state,
 )
-from ui.auth_premium import auth_styles_bundle, panel_header_html, render_brand_column
+from ui.auth_premium import auth_styles_bundle, login_footer_html, login_intro_html
 from ui.styles import inject_css
+from ui_core import WORDMARK
 
 
 def refresh_captcha() -> None:
@@ -236,25 +238,6 @@ def auth_css() -> None:
     inject_css(auth_styles_bundle())
 
 
-def render_mode_switch() -> str:
-    mode = st.session_state.get("auth_mode", "login")
-    st.markdown('<div class="mb-auth-segment">', unsafe_allow_html=True)
-    tab_login, tab_register = st.columns(2, gap="small")
-
-    with tab_login:
-        if st.button("Anmelden", key="auth_tab_login", width="stretch", type="primary" if mode == "login" else "tertiary"):
-            st.session_state.auth_mode = "login"
-            st.rerun()
-
-    with tab_register:
-        if st.button("Registrieren", key="auth_tab_register", width="stretch", type="primary" if mode == "register" else "tertiary"):
-            st.session_state.auth_mode = "register"
-            st.rerun()
-
-    st.markdown("</div>", unsafe_allow_html=True)
-    return mode
-
-
 GOOGLE_ICON_SVG = """
 <svg class="g-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/>
@@ -265,75 +248,57 @@ GOOGLE_ICON_SVG = """
 """
 
 
-def oauth_button(provider: str, label: str, icon: str, css_class: str) -> str:
-    if provider_configured(provider):
-        state = make_state(provider)
-        url = html.escape(auth_url(provider, state), quote=True)
-        icon_html = GOOGLE_ICON_SVG if provider == "google" else f'<span class="mb-oauth-icon">{icon}</span>'
+def google_login_link() -> str:
+    label = "Mit Google anmelden"
+    if provider_configured("google"):
+        state = make_state("google")
+        url = html.escape(auth_url("google", state), quote=True)
         return (
-            f'<a class="mb-oauth-btn {css_class}" href="{url}" rel="noopener noreferrer">'
-            f'{icon_html}{html.escape(label)}</a>'
+            f'<a class="mb-login-google" href="{url}" rel="noopener noreferrer">'
+            f"{GOOGLE_ICON_SVG}{html.escape(label)}</a>"
         )
     title = "OAuth nicht konfiguriert"
-    if provider == "google" and not oauth_state_ready():
+    if not oauth_state_ready():
         title = "OAUTH_STATE_SECRET fehlt"
-    icon_html = GOOGLE_ICON_SVG if provider == "google" else f'<span class="mb-oauth-icon">{icon}</span>'
     return (
-        f'<span class="mb-oauth-btn {css_class} disabled" title="{html.escape(title)}">'
-        f'{icon_html}{html.escape(label)}</span>'
+        f'<span class="mb-login-google disabled" title="{html.escape(title)}">'
+        f"{GOOGLE_ICON_SVG}{html.escape(label)}</span>"
     )
 
 
-def render_google_primary() -> None:
-    google_block = oauth_button("google", "Mit Google anmelden", "", "mb-oauth-google")
+def render_google_login() -> None:
+    st.markdown(google_login_link(), unsafe_allow_html=True)
     st.markdown(
-        f"""
-<div class="mb-auth-google-block">
-    <div class="mb-oauth-grid">{google_block}</div>
-    <div class="mb-auth-trust">
-        <strong>Empfohlen</strong> · OAuth 2.0 · Kein Passwort auf unseren Servern
-    </div>
-</div>
-<div class="mb-auth-divider">oder mit Zugangsdaten</div>
-""",
+        '<p class="mb-login-trust">Schnell &amp; sicher — kein Passwort auf unseren Servern</p>',
         unsafe_allow_html=True,
     )
+    st.markdown('<div class="mb-login-divider">oder mit Zugangsdaten</div>', unsafe_allow_html=True)
 
     if not provider_configured("google"):
         hints = []
         if not oauth_state_ready():
             hints.append("OAUTH_STATE_SECRET")
         hints.append("GOOGLE_CLIENT_ID/SECRET")
-        st.caption("Google Login: " + ", ".join(hints) + " in Railway setzen.")
+        st.caption("Google: " + ", ".join(hints) + " in Railway setzen.")
 
     with st.expander("Google Login funktioniert nicht?", expanded=False):
         diag = google_oauth_diagnostics()
         st.markdown(
             f"""
-**Redirect URI (exakt in Google Console eintragen):**  
+**Redirect URI (exakt in Google Console):**  
 `{diag["redirect_uri"]}`
 
-**Öffentliche Domain:** `{diag["public_origin"]}`  
-**APP_BASE_URL (ENV):** `{diag["app_base_url_env"]}`  
+**Domain:** `{diag["public_origin"]}` · **APP_BASE_URL:** `{diag["app_base_url_env"]}`  
 **Status:** {diag["issues"]}
-            """
-        )
-        st.markdown(
-            """
-1. [Google Cloud Console](https://console.cloud.google.com/apis/credentials) → OAuth Client **Web application**
-2. **Authorized redirect URIs** — exakt die URI oben
-3. **Authorized JavaScript origins:** deine Production-Domain
-4. **OAuth consent screen** → Testing → Testnutzer hinzufügen
-5. Railway: `APP_BASE_URL` auf die Production-URL setzen
             """
         )
 
 
 def render_login_form() -> None:
     with st.form("login_form", clear_on_submit=False, border=False):
-        user = st.text_input("Username", placeholder="dein-username")
-        pw = st.text_input("Passwort", type="password", placeholder="••••••••")
-        if st.form_submit_button("Einloggen", type="primary", width="stretch"):
+        user = st.text_input("Benutzername", placeholder="dein-username")
+        pw = st.text_input("Passwort", type="password", placeholder="Dein Passwort")
+        if st.form_submit_button("Anmelden", type="primary", width="stretch"):
             do_login(user, pw)
 
 
@@ -366,32 +331,24 @@ def render_register_form() -> None:
         do_register(user, email, pw, captcha)
 
 
-def render_auth_panel() -> None:
-    mode = st.session_state.get("auth_mode", "login")
-
-    st.markdown('<div class="mb-auth-panel-shell"><div class="mb-auth-panel">', unsafe_allow_html=True)
-    st.markdown(panel_header_html(mode=mode), unsafe_allow_html=True)
-
-    if mode == "login":
-        render_google_primary()
-
-    mode = render_mode_switch()
-    st.session_state.auth_mode = mode
-
-    if mode == "register":
-        render_register_form()
-    else:
-        render_login_form()
-
-    st.markdown(
-        """
-<div class="mb-auth-foot">
-    <strong>MaByte</strong> · Sichere Session · Enterprise Support
-</div>
-        """,
-        unsafe_allow_html=True,
-    )
-    st.markdown("</div></div>", unsafe_allow_html=True)
+def render_login_logo() -> None:
+    _, logo_col, _ = st.columns([1, 1.4, 1])
+    with logo_col:
+        try:
+            if WORDMARK.exists():
+                st.image(str(WORDMARK), width=152)
+            else:
+                st.markdown(
+                    f"<p style='text-align:center;font-size:32px;font-weight:800;color:#fafafa;"
+                    f"letter-spacing:-.04em;margin:0 0 8px 0;'>{html.escape(APP_NAME)}</p>",
+                    unsafe_allow_html=True,
+                )
+        except Exception:
+            st.markdown(
+                f"<p style='text-align:center;font-size:32px;font-weight:800;color:#fafafa;"
+                f"margin:0 0 8px 0;'>{html.escape(APP_NAME)}</p>",
+                unsafe_allow_html=True,
+            )
 
 
 def render_auth() -> None:
@@ -400,17 +357,18 @@ def render_auth() -> None:
     handle_oauth_callback()
     _show_oauth_notice()
 
-    if "auth_mode" not in st.session_state:
-        st.session_state.auth_mode = "login"
+    render_login_logo()
+    st.markdown(login_intro_html(), unsafe_allow_html=True)
 
-    st.markdown('<div class="mb-auth-page">', unsafe_allow_html=True)
+    with st.container(border=True):
+        tab_login, tab_register = st.tabs(["Anmelden", "Registrieren"])
 
-    brand_col, login_col = st.columns([1.05, 0.95], gap="large")
+        with tab_login:
+            render_google_login()
+            render_login_form()
 
-    with brand_col:
-        render_brand_column()
+        with tab_register:
+            st.caption("Kostenlosen Account anlegen — dauert unter einer Minute.")
+            render_register_form()
 
-    with login_col:
-        render_auth_panel()
-
-    st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown(login_footer_html(), unsafe_allow_html=True)
