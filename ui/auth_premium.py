@@ -95,12 +95,12 @@ section.main > div > div > [data-testid="stHorizontalBlock"] {
 
 [data-testid="column"]:last-child > [data-testid="stVerticalBlock"] {
     width: 100% !important;
-    max-width: 440px !important;
+    max-width: 460px !important;
 }
 
 .mb-access-wrap [data-testid="stVerticalBlockBorderWrapper"] {
     width: 100% !important;
-    max-width: 440px !important;
+    max-width: 460px !important;
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
@@ -113,25 +113,26 @@ section.main > div > div > [data-testid="stHorizontalBlock"] {
 }
 
 .mb-mode-switch [data-testid="stHorizontalBlock"] {
-    gap: 4px !important;
-    background: rgba(0, 0, 0, 0.35) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    border-radius: 14px !important;
-    padding: 5px !important;
-    margin-bottom: 22px !important;
+    gap: 5px !important;
+    background: rgba(0, 0, 0, 0.5) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 16px !important;
+    padding: 6px !important;
+    margin-bottom: 24px !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3) inset !important;
 }
 
 .mb-mode-switch .stButton > button,
 .mb-mode-switch .stButton > button[kind="tertiary"] {
-    min-height: 40px !important;
-    border-radius: 10px !important;
-    font-size: 13px !important;
-    font-weight: 600 !important;
+    min-height: 44px !important;
+    border-radius: 12px !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
     border: none !important;
     box-shadow: none !important;
     width: 100% !important;
     background: transparent !important;
-    color: #71717a !important;
+    color: #52525b !important;
 }
 
 .mb-mode-switch .stButton > button p {
@@ -141,9 +142,9 @@ section.main > div > div > [data-testid="stHorizontalBlock"] {
 
 .mb-mode-login .stButton:first-of-type > button,
 .mb-mode-register .stButton:last-of-type > button {
-    background: linear-gradient(135deg, #8b5cf6, #7c3aed) !important;
+    background: linear-gradient(135deg, #a855f7, #7c3aed) !important;
     color: #fff !important;
-    box-shadow: 0 4px 16px rgba(124, 58, 237, 0.4) !important;
+    box-shadow: 0 6px 20px rgba(124, 58, 237, 0.5), 0 0 0 1px rgba(255,255,255,0.1) inset !important;
 }
 
 .mb-mode-login .stButton:first-of-type > button p,
@@ -162,16 +163,39 @@ section.main > div > div > [data-testid="stHorizontalBlock"] {
     [data-testid="column"]:first-child,
     [data-testid="column"]:last-child { flex: 1 !important; padding: 0 !important; }
     .mb-auth-hero { text-align: center; }
-    .mb-auth-lead, .mb-auth-pillars, .mb-auth-quote { margin-left: auto; margin-right: auto; }
-    .mb-auth-pillars { grid-template-columns: 1fr !important; }
+    .mb-auth-lead, .mb-auth-features, .mb-auth-quote, .mb-showcase, .mb-auth-metrics {
+        margin-left: auto; margin-right: auto;
+    }
+    .mb-auth-features { grid-template-columns: 1fr !important; }
+    .mb-showcase { height: 160px; }
 }
 """)
     + """
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
 /* —— Atmosphere —— */
 .mb-auth-page {
     position: relative;
     width: 100%;
     font-family: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+}
+
+.mb-auth-aurora {
+    position: fixed;
+    inset: -20% -10%;
+    z-index: 0;
+    pointer-events: none;
+    background:
+        radial-gradient(ellipse 42% 38% at 15% 12%, rgba(124, 58, 237, 0.35), transparent 55%),
+        radial-gradient(ellipse 35% 30% at 78% 22%, rgba(59, 130, 246, 0.18), transparent 50%),
+        radial-gradient(ellipse 50% 40% at 50% 100%, rgba(109, 40, 217, 0.15), transparent 55%);
+    animation: mb-aurora-shift 14s ease-in-out infinite alternate;
+}
+
+@keyframes mb-aurora-shift {
+    0% { transform: translate(0, 0) scale(1); opacity: 0.85; }
+    100% { transform: translate(2%, -1.5%) scale(1.03); opacity: 1; }
 }
 
 .mb-auth-page::before {
@@ -180,10 +204,7 @@ section.main > div > div > [data-testid="stHorizontalBlock"] {
     inset: 0;
     z-index: 0;
     pointer-events: none;
-    background:
-        radial-gradient(ellipse 50% 40% at 8% 0%, rgba(124, 58, 237, 0.2), transparent 50%),
-        radial-gradient(ellipse 45% 40% at 95% 90%, rgba(99, 102, 241, 0.1), transparent 45%),
-        linear-gradient(180deg, #09090b, #0a0a0e 40%, #09090b);
+    background: linear-gradient(180deg, #050506 0%, #09090b 35%, #0a0a0f 70%, #050506 100%);
 }
 
 .mb-auth-page::after {
@@ -192,24 +213,25 @@ section.main > div > div > [data-testid="stHorizontalBlock"] {
     inset: 0;
     z-index: 0;
     pointer-events: none;
-    opacity: 0.28;
+    opacity: 0.4;
     background-image:
-        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
-    background-size: 72px 72px;
-    mask-image: linear-gradient(180deg, black 0%, transparent 85%);
+        linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: radial-gradient(ellipse 80% 70% at 40% 30%, black 15%, transparent 70%);
 }
 
 /* —— Header —— */
 .mb-auth-header {
     position: relative;
     z-index: 2;
-    margin: 0 -28px 32px -28px;
-    padding: 0 28px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    background: rgba(9, 9, 11, 0.65);
-    backdrop-filter: blur(16px) saturate(1.3);
-    -webkit-backdrop-filter: blur(16px) saturate(1.3);
+    margin: 0 -32px 36px -32px;
+    padding: 0 32px;
+    border-bottom: 1px solid rgba(167, 139, 250, 0.15);
+    background: linear-gradient(180deg, rgba(12, 12, 16, 0.92), rgba(9, 9, 11, 0.75));
+    backdrop-filter: blur(20px) saturate(1.4);
+    -webkit-backdrop-filter: blur(20px) saturate(1.4);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 12px 40px rgba(0, 0, 0, 0.35);
 }
 
 .mb-auth-header-inner {
@@ -230,17 +252,20 @@ section.main > div > div > [data-testid="stHorizontalBlock"] {
 }
 
 .mb-auth-mark {
-    width: 40px;
-    height: 40px;
-    border-radius: 12px;
+    width: 44px;
+    height: 44px;
+    border-radius: 13px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 800;
     color: #fff !important;
-    background: linear-gradient(145deg, #c084fc, #7c3aed 50%, #5b21b6);
-    box-shadow: 0 0 0 1px rgba(255,255,255,0.1) inset, 0 6px 24px rgba(124,58,237,0.45);
+    background: linear-gradient(145deg, #e9d5ff, #a855f7 30%, #7c3aed 60%, #5b21b6);
+    box-shadow:
+        0 0 0 1px rgba(255,255,255,0.15) inset,
+        0 8px 28px rgba(124, 58, 237, 0.55),
+        0 0 40px rgba(124, 58, 237, 0.25);
 }
 
 .mb-auth-header-name {
@@ -294,13 +319,14 @@ section.main > div > div > [data-testid="stHorizontalBlock"] {
 
 .mb-auth-header-cta {
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 700;
     color: #fafafa !important;
-    padding: 8px 16px;
-    border-radius: 10px;
-    background: linear-gradient(135deg, #7c3aed, #6d28d9);
-    box-shadow: 0 4px 16px rgba(124, 58, 237, 0.35);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 9px 18px;
+    border-radius: 11px;
+    background: linear-gradient(135deg, #a855f7, #7c3aed 50%, #6d28d9);
+    box-shadow: 0 6px 24px rgba(124, 58, 237, 0.5), 0 0 0 1px rgba(255,255,255,0.12) inset;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    letter-spacing: -0.02em;
 }
 
 /* —— Hero (Zukunft-Narrativ) —— */
@@ -342,77 +368,237 @@ section.main > div > div > [data-testid="stHorizontalBlock"] {
 }
 
 .mb-auth-headline {
-    font-size: clamp(34px, 3.8vw, 48px);
+    font-size: clamp(38px, 4.5vw, 56px);
     font-weight: 800;
-    letter-spacing: -0.04em;
-    line-height: 1.08;
-    margin: 0 0 18px 0;
+    letter-spacing: -0.045em;
+    line-height: 1.04;
+    margin: 0 0 20px 0;
     color: #fafafa !important;
+    text-shadow: 0 2px 40px rgba(124, 58, 237, 0.25);
 }
 
 .mb-auth-headline .mb-auth-gradient {
     display: block;
-    margin-top: 4px;
-    background: linear-gradient(105deg, #fff 0%, #e9d5ff 30%, #a78bfa 60%, #7c3aed 100%);
+    margin-top: 6px;
+    background: linear-gradient(100deg, #ffffff 0%, #f0abfc 25%, #c084fc 50%, #8b5cf6 75%, #7c3aed 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 0 28px rgba(167, 139, 250, 0.35));
+}
+
+.mb-auth-lead {
+    font-size: 17px;
+    line-height: 1.7;
+    color: #d4d4d8 !important;
+    margin: 0 0 28px 0;
+    max-width: 560px;
+}
+
+.mb-auth-lead strong {
+    color: #ffffff !important;
+    font-weight: 600;
+}
+
+/* Showcase — product aura */
+.mb-showcase {
+    position: relative;
+    margin: 0 0 28px 0;
+    max-width: 560px;
+    height: 200px;
+}
+
+.mb-showcase-glow {
+    position: absolute;
+    inset: 10% 5%;
+    background: radial-gradient(ellipse at center, rgba(124, 58, 237, 0.35), transparent 65%);
+    filter: blur(24px);
+    animation: mb-glow-pulse 5s ease-in-out infinite;
+}
+
+@keyframes mb-glow-pulse {
+    0%, 100% { opacity: 0.6; transform: scale(0.98); }
+    50% { opacity: 1; transform: scale(1.02); }
+}
+
+.mb-showcase-window {
+    position: relative;
+    height: 100%;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: linear-gradient(165deg, rgba(24, 24, 30, 0.95), rgba(9, 9, 12, 0.9));
+    box-shadow:
+        0 0 0 1px rgba(124, 58, 237, 0.2) inset,
+        0 24px 60px rgba(0, 0, 0, 0.55),
+        0 0 80px rgba(124, 58, 237, 0.12);
+    overflow: hidden;
+    backdrop-filter: blur(12px);
+}
+
+.mb-showcase-bar {
+    display: flex;
+    gap: 6px;
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(0, 0, 0, 0.25);
+}
+
+.mb-showcase-bar span {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #3f3f46;
+}
+.mb-showcase-bar span:first-child { background: #ef4444; box-shadow: 0 0 8px rgba(239,68,68,0.4); }
+.mb-showcase-bar span:nth-child(2) { background: #eab308; }
+.mb-showcase-bar span:nth-child(3) { background: #22c55e; }
+
+.mb-showcase-body {
+    padding: 20px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.mb-showcase-line {
+    height: 10px;
+    border-radius: 6px;
+    background: linear-gradient(90deg, rgba(124,58,237,0.5), rgba(63,63,70,0.4));
+}
+.mb-showcase-line.w80 { width: 80%; }
+.mb-showcase-line.w55 { width: 55%; }
+.mb-showcase-line.w40 { width: 40%; opacity: 0.6; }
+
+.mb-showcase-chip {
+    align-self: flex-start;
+    margin-top: 8px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #e9d5ff !important;
+    background: linear-gradient(135deg, rgba(124,58,237,0.35), rgba(59,130,246,0.2));
+    border: 1px solid rgba(167, 139, 250, 0.4);
+    box-shadow: 0 0 24px rgba(124, 58, 237, 0.25);
+}
+
+.mb-auth-features {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+    max-width: 560px;
+}
+
+.mb-feat-card {
+    position: relative;
+    padding: 20px 18px;
+    border-radius: 18px;
+    text-align: left;
+    background: linear-gradient(160deg, rgba(30, 27, 45, 0.9), rgba(12, 12, 16, 0.95));
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+    overflow: hidden;
+    transition: transform 0.25s ease, border-color 0.25s, box-shadow 0.25s;
+}
+
+.mb-feat-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(167, 139, 250, 0.5), transparent);
+}
+
+.mb-feat-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(167, 139, 250, 0.35);
+    box-shadow: 0 16px 48px rgba(124, 58, 237, 0.2);
+}
+
+.mb-feat-card--prime {
+    border-color: rgba(124, 58, 237, 0.35);
+    background: linear-gradient(160deg, rgba(46, 16, 101, 0.5), rgba(12, 12, 18, 0.95));
+}
+
+.mb-feat-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    margin-bottom: 14px;
+    background: rgba(124, 58, 237, 0.2);
+    border: 1px solid rgba(167, 139, 250, 0.3);
+    box-shadow: 0 4px 16px rgba(124, 58, 237, 0.2);
+}
+
+.mb-feat-title {
+    display: block;
+    font-size: 15px;
+    font-weight: 700;
+    color: #fafafa !important;
+    margin-bottom: 6px;
+    letter-spacing: -0.02em;
+}
+
+.mb-feat-desc {
+    font-size: 12px;
+    line-height: 1.5;
+    color: #a1a1aa !important;
+}
+
+.mb-auth-metrics {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 24px;
+    max-width: 560px;
+    padding: 16px 20px;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(8px);
+}
+
+.mb-auth-metrics > div {
+    flex: 1;
+    text-align: center;
+}
+
+.mb-auth-metrics strong {
+    display: block;
+    font-size: 22px;
+    font-weight: 800;
+    color: #fafafa !important;
+    letter-spacing: -0.03em;
+    background: linear-gradient(135deg, #fff, #c4b5fd);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
 }
 
-.mb-auth-lead {
-    font-size: 16px;
-    line-height: 1.65;
-    color: #a1a1aa !important;
-    margin: 0 0 24px 0;
-    max-width: 540px;
-}
-
-.mb-auth-lead strong {
-    color: #f4f4f5 !important;
-    font-weight: 600;
-}
-
-.mb-auth-pillars {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    margin-bottom: 24px;
-    max-width: 540px;
-}
-
-.mb-auth-pillar {
-    padding: 14px 12px;
-    border-radius: 14px;
-    background: rgba(18, 18, 22, 0.7);
-    border: 1px solid rgba(63, 63, 70, 0.6);
-    text-align: center;
-}
-
-.mb-auth-pillar-num {
-    display: block;
-    font-size: 20px;
-    font-weight: 800;
-    color: #a78bfa !important;
-    letter-spacing: -0.03em;
-    margin-bottom: 4px;
-}
-
-.mb-auth-pillar-label {
+.mb-auth-metrics span {
     font-size: 10px;
     font-weight: 600;
-    color: #71717a !important;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
-    line-height: 1.3;
+    letter-spacing: 0.08em;
+    color: #71717a !important;
 }
 
 .mb-auth-quote {
     position: relative;
-    padding: 18px 20px 18px 22px;
-    border-radius: 16px;
-    background: linear-gradient(135deg, rgba(124,58,237,0.08), rgba(24,24,27,0.6));
-    border: 1px solid rgba(124, 58, 237, 0.2);
-    max-width: 540px;
+    padding: 22px 24px 22px 28px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.12), rgba(15, 15, 20, 0.85));
+    border: 1px solid rgba(167, 139, 250, 0.25);
+    max-width: 560px;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.3), 0 0 40px rgba(124, 58, 237, 0.08);
 }
 
 .mb-auth-quote::before {
@@ -446,29 +632,46 @@ section.main > div > div > [data-testid="stHorizontalBlock"] {
 }
 
 /* —— Access card (Login) —— */
+.mb-access-wrap {
+    position: relative;
+}
+
+.mb-access-wrap::before {
+    content: "";
+    position: absolute;
+    inset: -20px -10px -10px -10px;
+    background: radial-gradient(ellipse at 50% 30%, rgba(124, 58, 237, 0.35), transparent 60%);
+    filter: blur(32px);
+    z-index: 0;
+    pointer-events: none;
+    animation: mb-glow-pulse 6s ease-in-out infinite;
+}
+
 .mb-access-card {
     position: relative;
     z-index: 1;
-    border-radius: 24px;
+    border-radius: 26px;
     padding: 1px;
     background: linear-gradient(
         145deg,
-        rgba(167, 139, 250, 0.45),
-        rgba(124, 58, 237, 0.15) 40%,
-        rgba(63, 63, 70, 0.4)
+        rgba(196, 181, 253, 0.7),
+        rgba(124, 58, 237, 0.4) 35%,
+        rgba(59, 130, 246, 0.25) 65%,
+        rgba(63, 63, 70, 0.5)
     );
     box-shadow:
-        0 0 0 1px rgba(255, 255, 255, 0.04) inset,
-        0 32px 80px rgba(0, 0, 0, 0.5),
-        0 0 100px rgba(124, 58, 237, 0.08);
+        0 0 0 1px rgba(255, 255, 255, 0.08) inset,
+        0 40px 100px rgba(0, 0, 0, 0.6),
+        0 0 120px rgba(124, 58, 237, 0.2);
 }
 
 .mb-access-card-inner {
-    border-radius: 23px;
-    padding: 30px 28px 26px 28px;
-    background: rgba(10, 10, 12, 0.92);
-    backdrop-filter: blur(28px);
-    -webkit-backdrop-filter: blur(28px);
+    border-radius: 25px;
+    padding: 32px 30px 28px 30px;
+    background: linear-gradient(180deg, rgba(16, 16, 22, 0.97), rgba(8, 8, 10, 0.98));
+    backdrop-filter: blur(32px) saturate(1.3);
+    -webkit-backdrop-filter: blur(32px) saturate(1.3);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06) inset;
 }
 
 .mb-access-card-top {
@@ -519,27 +722,28 @@ section.main > div > div > [data-testid="stHorizontalBlock"] {
 
 .mb-panel-head h2 {
     color: #fafafa !important;
-    font-size: 24px;
-    font-weight: 700;
-    letter-spacing: -0.035em;
-    margin: 0 0 6px 0;
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    margin: 0 0 8px 0;
+    line-height: 1.1;
 }
 
 .mb-panel-head p {
-    color: #71717a !important;
-    font-size: 13px;
+    color: #a1a1aa !important;
+    font-size: 14px;
     margin: 0;
-    line-height: 1.5;
+    line-height: 1.55;
 }
 
 .mb-field-label {
     display: block;
     font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.06em;
+    font-weight: 700;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: #71717a !important;
-    margin: 0 0 6px 2px;
+    color: #a1a1aa !important;
+    margin: 0 0 8px 4px;
 }
 
 .mb-field-group {
@@ -552,23 +756,25 @@ section.main > div > div > [data-testid="stHorizontalBlock"] {
     justify-content: center;
     gap: 12px;
     width: 100%;
-    min-height: 48px;
-    padding: 0 18px;
-    margin-bottom: 12px;
-    border-radius: 14px;
+    min-height: 52px;
+    padding: 0 20px;
+    margin-bottom: 14px;
+    border-radius: 16px;
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 700;
     text-decoration: none !important;
-    color: #f4f4f5 !important;
-    background: rgba(255, 255, 255, 0.04) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #fafafa !important;
+    background: linear-gradient(180deg, rgba(39, 39, 42, 0.9), rgba(24, 24, 27, 0.95)) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35), 0 1px 0 rgba(255,255,255,0.06) inset;
     transition: all 0.2s ease;
 }
 
 .mb-login-google:hover {
-    background: rgba(124, 58, 237, 0.12) !important;
-    border-color: rgba(167, 139, 250, 0.45) !important;
-    box-shadow: 0 0 32px rgba(124, 58, 237, 0.15);
+    background: linear-gradient(180deg, rgba(124, 58, 237, 0.2), rgba(24, 24, 27, 0.95)) !important;
+    border-color: rgba(196, 181, 253, 0.5) !important;
+    box-shadow: 0 0 40px rgba(124, 58, 237, 0.25), 0 8px 24px rgba(0, 0, 0, 0.35);
+    transform: translateY(-1px);
 }
 
 .mb-login-google.disabled { opacity: 0.4; pointer-events: none; }
@@ -652,11 +858,12 @@ def login_widget_css() -> str:
 
 {g} [data-testid="stTextInput"] div[data-baseweb="input"],
 {g} [data-testid="stNumberInput"] div[data-baseweb="input"] {{
-    background: rgba(0, 0, 0, 0.45) !important;
-    background-color: rgba(0, 0, 0, 0.45) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-radius: 14px !important;
-    min-height: 48px !important;
+    background: rgba(0, 0, 0, 0.55) !important;
+    background-color: rgba(0, 0, 0, 0.55) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-radius: 16px !important;
+    min-height: 52px !important;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25) inset !important;
     transition: border-color 0.2s, box-shadow 0.2s !important;
 }}
 
@@ -694,21 +901,28 @@ def login_widget_css() -> str:
 {g} form button,
 {g} .stFormSubmitButton button {{
     width: 100% !important;
-    min-height: 50px !important;
-    margin-top: 8px !important;
-    border-radius: 14px !important;
-    border: 1px solid rgba(255, 255, 255, 0.12) !important;
-    background: linear-gradient(135deg, #a855f7 0%, #7c3aed 45%, #6d28d9 100%) !important;
+    min-height: 54px !important;
+    margin-top: 10px !important;
+    border-radius: 16px !important;
+    border: 1px solid rgba(255, 255, 255, 0.18) !important;
+    background: linear-gradient(135deg, #c084fc 0%, #a855f7 25%, #7c3aed 60%, #6d28d9 100%) !important;
     color: #fff !important;
-    font-weight: 700 !important;
+    font-weight: 800 !important;
     font-size: 15px !important;
-    letter-spacing: -0.01em !important;
-    box-shadow: 0 8px 32px rgba(124, 58, 237, 0.45), 0 0 0 1px rgba(255,255,255,0.08) inset !important;
-    transition: transform 0.15s, box-shadow 0.2s !important;
+    letter-spacing: -0.02em !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2) !important;
+    box-shadow:
+        0 12px 40px rgba(124, 58, 237, 0.55),
+        0 0 0 1px rgba(255,255,255,0.1) inset,
+        0 0 60px rgba(124, 58, 237, 0.25) !important;
+    transition: transform 0.15s ease, box-shadow 0.2s ease !important;
 }}
 
 {g} form button:hover {{
-    box-shadow: 0 12px 40px rgba(124, 58, 237, 0.55) !important;
+    transform: translateY(-1px) !important;
+    box-shadow:
+        0 16px 48px rgba(124, 58, 237, 0.65),
+        0 0 80px rgba(124, 58, 237, 0.3) !important;
 }}
 
 {g} form button p {{ color: #fff !important; }}
@@ -730,6 +944,7 @@ def header_html() -> str:
     initial = html.escape(APP_NAME[:1] if APP_NAME else "M")
     return f"""
 <div class="mb-auth-page">
+<div class="mb-auth-aurora" aria-hidden="true"></div>
 <header class="mb-auth-header">
     <div class="mb-auth-header-inner">
         <div class="mb-auth-header-brand">
@@ -759,33 +974,58 @@ def hero_html() -> str:
 <div class="mb-auth-hero">
     <div class="mb-auth-eyebrow">
         <span class="mb-auth-eyebrow-dot"></span>
-        Grundstein · Neue Zukunft
+        Die Infrastruktur der nächsten Creator-Generation
     </div>
     <h1 class="mb-auth-headline">
         {name} ist der Grund
         <span class="mb-auth-gradient">für deine neue Zukunft.</span>
     </h1>
     <p class="mb-auth-lead">
-        Während andere noch zwischen Tools wechseln, bauen Creator auf <strong>{name}</strong> —
-        dem Betriebssystem, das Video, KI, Bild und Code zu einer einzigen Zukunfts-Engine vereint.
+        Nicht noch ein Tool — sondern das <strong>Betriebssystem</strong>, auf dem die nächste
+        Welle von Creatorn gebaut wird. Video, KI, Bild und Code in einer Engine.
     </p>
-    <div class="mb-auth-pillars">
-        <div class="mb-auth-pillar">
-            <span class="mb-auth-pillar-num">01</span>
-            <span class="mb-auth-pillar-label">Eine Plattform</span>
+    <div class="mb-showcase" aria-hidden="true">
+        <div class="mb-showcase-glow"></div>
+        <div class="mb-showcase-window">
+            <div class="mb-showcase-bar"><span></span><span></span><span></span></div>
+            <div class="mb-showcase-body">
+                <div class="mb-showcase-line w80"></div>
+                <div class="mb-showcase-line w55"></div>
+                <div class="mb-showcase-line w40"></div>
+                <span class="mb-showcase-chip">KI · Video · Publish · Live</span>
+            </div>
         </div>
-        <div class="mb-auth-pillar">
-            <span class="mb-auth-pillar-num">02</span>
-            <span class="mb-auth-pillar-label">Unendlicher Flow</span>
-        </div>
-        <div class="mb-auth-pillar">
-            <span class="mb-auth-pillar-num">03</span>
-            <span class="mb-auth-pillar-label">Deine Vision</span>
-        </div>
+    </div>
+    <div class="mb-auth-features">
+        <article class="mb-feat-card mb-feat-card--prime">
+            <div class="mb-feat-icon" aria-hidden="true">◆</div>
+            <span class="mb-feat-title">All-in-One Engine</span>
+            <span class="mb-feat-desc">Eine Plattform statt zehn Abos — alles verbunden.</span>
+        </article>
+        <article class="mb-feat-card">
+            <div class="mb-feat-icon" aria-hidden="true">▶</div>
+            <span class="mb-feat-title">Produktions-Flow</span>
+            <span class="mb-feat-desc">Von der Idee bis zum Post ohne Kontextwechsel.</span>
+        </article>
+        <article class="mb-feat-card">
+            <div class="mb-feat-icon" aria-hidden="true">✦</div>
+            <span class="mb-feat-title">KI-Native</span>
+            <span class="mb-feat-desc">Chat, Bild, Musik und Code — integriert, nicht angeflanscht.</span>
+        </article>
+        <article class="mb-feat-card">
+            <div class="mb-feat-icon" aria-hidden="true">◎</div>
+            <span class="mb-feat-title">Fair &amp; Skalierbar</span>
+            <span class="mb-feat-desc">Professionell für Teams, fair für Einzel-Creator.</span>
+        </article>
+    </div>
+    <div class="mb-auth-metrics">
+        <div><strong>1</strong><span>Workspace</span></div>
+        <div><strong>∞</strong><span>Produktion</span></div>
+        <div><strong>24/7</strong><span>Bereit</span></div>
     </div>
     <blockquote class="mb-auth-quote">
         <p>Die Zukunft gehört denen, die produzieren — nicht denen, die tabben.</p>
-        <cite>— MaByte Manifest</cite>
+        <cite>— {name} Manifest</cite>
     </blockquote>
 </div>
 """
