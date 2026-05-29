@@ -14,8 +14,11 @@ from config import (
     DATA_DIR,
     FOOTBALL_API_BASE_URL,
     FOOTBALL_API_CACHE_TTL,
+    FOOTBALL_API_FIXTURES_CACHE_TTL,
+    FOOTBALL_API_INJURIES_CACHE_TTL,
     FOOTBALL_API_KEY,
     FOOTBALL_API_LIVE_CACHE_TTL,
+    FOOTBALL_API_STANDINGS_CACHE_TTL,
     FOOTBALL_API_TIMEOUT,
     FOOTBALL_DEFAULT_SEASON,
 )
@@ -65,7 +68,19 @@ class FootballService:
       return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
   def _ttl_for(self, endpoint: str, live: bool, username: str = "") -> int:
-      if live or endpoint in {"fixtures", "fixtures/statistics"}:
+      if endpoint == "standings":
+          base = max(300, int(FOOTBALL_API_STANDINGS_CACHE_TTL))
+      elif endpoint == "injuries":
+          base = max(600, int(FOOTBALL_API_INJURIES_CACHE_TTL))
+      elif endpoint == "fixtures" and not live:
+          base = max(60, int(FOOTBALL_API_FIXTURES_CACHE_TTL))
+      elif live or endpoint in {
+          "fixtures",
+          "fixtures/statistics",
+          "fixtures/events",
+          "fixtures/lineups",
+          "odds",
+      }:
           base = max(15, int(FOOTBALL_API_LIVE_CACHE_TTL))
       else:
           base = max(30, int(FOOTBALL_API_CACHE_TTL))
@@ -321,6 +336,27 @@ class FootballService:
           {"live": "all"},
           feature="api_live_scores",
           live=True,
+          username=username,
+      )
+
+  def get_fixtures_by_date(
+      self,
+      date: str,
+      *,
+      league_id: int | None = None,
+      season: int | None = None,
+      username: str = "",
+  ) -> list[dict[str, Any]]:
+      """Fixtures for YYYY-MM-DD, optional league filter."""
+      params: dict[str, Any] = {"date": str(date).strip()[:10]}
+      if league_id:
+          params["league"] = int(league_id)
+          params["season"] = int(season or FOOTBALL_DEFAULT_SEASON)
+      return self._request(
+          "fixtures",
+          params,
+          feature="api_fixtures",
+          live=False,
           username=username,
       )
 

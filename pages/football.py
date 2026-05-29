@@ -53,6 +53,7 @@ from ui.premium_foundation import (
     render_upgrade_card,
 )
 from ui.football_premium import inject_football_premium_css
+from pages.football_match_center import render_tab_live_match_center
 from pages.football_hub import (
     render_tab_automation,
     render_tab_betting_ai,
@@ -792,10 +793,10 @@ def render_football_live_data(summary: dict) -> None:
 
     render_mesh_usage_bar(int(summary["api_used"]), int(summary["api_limit"]))
     render_workflow_pipeline([
-        ("Team finden", "active"),
-        ("Liga wählen", "pending"),
-        ("Spiele laden", "pending"),
-        ("Live Center", "pending"),
+        ("Team finden", "done"),
+        ("Liga wählen", "done"),
+        ("Spiele laden", "done"),
+        ("Live Center", "active"),
     ])
 
     tab_teams, tab_leagues, tab_matches, tab_live = st.tabs(
@@ -1568,8 +1569,9 @@ def render_football() -> None:
     plan = session_football_plan()
     hub_kw = dict(summary=summary, username=user, session_plan=plan, open_premium=open_premium)
 
-    tab_mesh, tab_live, tab_bet, tab_prev, tab_vir, tab_auto, tab_plan = st.tabs(
+    tab_center, tab_mesh, tab_live, tab_bet, tab_prev, tab_vir, tab_auto, tab_plan = st.tabs(
         [
+            "Live Center",
             "Data Mesh",
             "Live Intel",
             "Betting AI",
@@ -1579,6 +1581,9 @@ def render_football() -> None:
             "Dein Plan",
         ]
     )
+
+    with tab_center:
+        render_tab_live_match_center(**hub_kw)
 
     with tab_mesh:
         render_football_live_data(summary)
