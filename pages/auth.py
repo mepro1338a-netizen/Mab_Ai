@@ -194,7 +194,7 @@ def render_login_form() -> None:
     with st.form("gate_login_form", clear_on_submit=False, border=False):
         user = st.text_input("Benutzername", placeholder="Benutzername", label_visibility="collapsed")
         pw = st.text_input("Passwort", type="password", placeholder="Passwort", label_visibility="collapsed")
-        if st.form_submit_button("Zukunft starten →", type="primary", width="stretch"):
+        if st.form_submit_button("Anmelden", type="primary", width="stretch"):
             do_login(user, pw)
 
 
@@ -213,7 +213,7 @@ def render_register_form() -> None:
             captcha = st.number_input("Ergebnis", min_value=0, max_value=20, step=1, label_visibility="collapsed")
         with ref_col:
             refresh = st.form_submit_button("↻")
-        submitted = st.form_submit_button("Konto erstellen →", type="primary", width="stretch")
+        submitted = st.form_submit_button("Konto erstellen", type="primary", width="stretch")
 
     if refresh:
         refresh_captcha()
