@@ -18,7 +18,12 @@ from oauth_service import (
     provider_configured,
     verify_state,
 )
-from ui.auth_premium import auth_styles_bundle, login_footer_html, login_intro_html
+from ui.auth_premium import (
+    auth_styles_bundle,
+    login_card_head_html,
+    login_footer_html,
+    presentation_html,
+)
 from ui.styles import inject_css
 from ui_core import WORDMARK
 
@@ -125,8 +130,7 @@ def do_register(username: str, email: str, password: str, captcha: int) -> None:
     ok, msg = create_user(username=username, email=email, password=password)
 
     if ok:
-        st.success("Account erstellt. Du kannst dich jetzt einloggen.")
-        st.session_state.auth_mode = "login"
+        st.success("Account erstellt — wechsle zum Tab «Anmelden».")
         refresh_captcha()
     else:
         st.error(msg)
@@ -249,7 +253,7 @@ GOOGLE_ICON_SVG = """
 
 
 def google_login_link() -> str:
-    label = "Mit Google anmelden"
+    label = "Google"
     if provider_configured("google"):
         state = make_state("google")
         url = html.escape(auth_url("google", state), quote=True)
@@ -269,60 +273,56 @@ def google_login_link() -> str:
 def render_google_login() -> None:
     st.markdown(google_login_link(), unsafe_allow_html=True)
     st.markdown(
-        '<p class="mb-login-trust">Schnell &amp; sicher — kein Passwort auf unseren Servern</p>',
+        '<p class="mb-login-trust">OAuth 2.0 · kein Passwort auf unseren Servern</p>',
         unsafe_allow_html=True,
     )
-    st.markdown('<div class="mb-login-divider">oder mit Zugangsdaten</div>', unsafe_allow_html=True)
+    st.markdown('<div class="mb-login-divider">oder</div>', unsafe_allow_html=True)
 
     if not provider_configured("google"):
         hints = []
         if not oauth_state_ready():
             hints.append("OAUTH_STATE_SECRET")
         hints.append("GOOGLE_CLIENT_ID/SECRET")
-        st.caption("Google: " + ", ".join(hints) + " in Railway setzen.")
+        st.caption("Google: " + ", ".join(hints))
 
-    with st.expander("Google Login funktioniert nicht?", expanded=False):
+    with st.expander("Google Login Hilfe", expanded=False):
         diag = google_oauth_diagnostics()
         st.markdown(
-            f"""
-**Redirect URI (exakt in Google Console):**  
-`{diag["redirect_uri"]}`
-
-**Domain:** `{diag["public_origin"]}` · **APP_BASE_URL:** `{diag["app_base_url_env"]}`  
-**Status:** {diag["issues"]}
-            """
+            f"**Redirect URI:** `{diag['redirect_uri']}`  \n"
+            f"**Domain:** `{diag['public_origin']}` · **Status:** {diag['issues']}"
         )
 
 
 def render_login_form() -> None:
     with st.form("login_form", clear_on_submit=False, border=False):
-        user = st.text_input("Benutzername", placeholder="dein-username")
-        pw = st.text_input("Passwort", type="password", placeholder="Dein Passwort")
+        user = st.text_input("Benutzername", placeholder="username", label_visibility="visible")
+        pw = st.text_input("Passwort", type="password", placeholder="••••••••")
         if st.form_submit_button("Anmelden", type="primary", width="stretch"):
             do_login(user, pw)
 
 
 def render_register_form() -> None:
     with st.form("register_form", clear_on_submit=False, border=False):
-        user = st.text_input("Username", placeholder="z.B. creator123")
-        email = st.text_input("Email", placeholder="name@firma.de")
+        user = st.text_input("Username", placeholder="creator123")
+        email = st.text_input("E-Mail", placeholder="name@firma.de")
         pw = st.text_input("Passwort", type="password", placeholder="min. 6 Zeichen")
 
-        st.markdown('<div class="mb-auth-captcha-row">', unsafe_allow_html=True)
+        st.markdown('<div class="mb-login-captcha">', unsafe_allow_html=True)
         cap_col, ref_col = st.columns([0.84, 0.16], gap="small")
         with cap_col:
             captcha = st.number_input(
-                f"{st.session_state.captcha_a} + {st.session_state.captcha_b} = ?",
+                f"{st.session_state.captcha_a} + {st.session_state.captcha_b}",
                 min_value=0,
                 max_value=20,
                 step=1,
+                label_visibility="collapsed",
             )
         with ref_col:
-            st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
+            st.markdown("<div style='height:22px'></div>", unsafe_allow_html=True)
             refresh = st.form_submit_button("↻")
         st.markdown("</div>", unsafe_allow_html=True)
 
-        submitted = st.form_submit_button("Account erstellen", type="primary", width="stretch")
+        submitted = st.form_submit_button("Registrieren", type="primary", width="stretch")
 
     if refresh:
         refresh_captcha()
@@ -331,34 +331,17 @@ def render_register_form() -> None:
         do_register(user, email, pw, captcha)
 
 
-def render_login_logo() -> None:
-    _, logo_col, _ = st.columns([1, 1.4, 1])
-    with logo_col:
-        try:
-            if WORDMARK.exists():
-                st.image(str(WORDMARK), width=152)
-            else:
-                st.markdown(
-                    f"<p style='text-align:center;font-size:32px;font-weight:800;color:#fafafa;"
-                    f"letter-spacing:-.04em;margin:0 0 8px 0;'>{html.escape(APP_NAME)}</p>",
-                    unsafe_allow_html=True,
-                )
-        except Exception:
-            st.markdown(
-                f"<p style='text-align:center;font-size:32px;font-weight:800;color:#fafafa;"
-                f"margin:0 0 8px 0;'>{html.escape(APP_NAME)}</p>",
-                unsafe_allow_html=True,
-            )
+def render_pitch_column() -> None:
+    try:
+        if WORDMARK.exists():
+            st.image(str(WORDMARK), width=128)
+    except Exception:
+        pass
+    st.markdown(presentation_html(), unsafe_allow_html=True)
 
 
-def render_auth() -> None:
-    ensure_captcha()
-    auth_css()
-    handle_oauth_callback()
-    _show_oauth_notice()
-
-    render_login_logo()
-    st.markdown(login_intro_html(), unsafe_allow_html=True)
+def render_login_column() -> None:
+    st.markdown(login_card_head_html(), unsafe_allow_html=True)
 
     with st.container(border=True):
         tab_login, tab_register = st.tabs(["Anmelden", "Registrieren"])
@@ -368,7 +351,22 @@ def render_auth() -> None:
             render_login_form()
 
         with tab_register:
-            st.caption("Kostenlosen Account anlegen — dauert unter einer Minute.")
+            st.caption("Kostenlos · unter 1 Min.")
             render_register_form()
 
     st.markdown(login_footer_html(), unsafe_allow_html=True)
+
+
+def render_auth() -> None:
+    ensure_captcha()
+    auth_css()
+    handle_oauth_callback()
+    _show_oauth_notice()
+
+    pitch_col, login_col = st.columns([1.2, 0.8], gap="large")
+
+    with pitch_col:
+        render_pitch_column()
+
+    with login_col:
+        render_login_column()
