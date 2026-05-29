@@ -13,7 +13,7 @@ from database import (
 )
 
 from ui_core import sync_session_user
-from ui.prompt_ui import ma_chat_input, render_os_ready_hint
+from ui.prompt_ui import ma_chat_input, render_chat_quickstarts, render_os_ready_hint
 from ui.styles import inject_css, page_layout_css
 
 
@@ -108,8 +108,10 @@ Beschreibung:
         {
             "role": "system",
             "content": f"""
-Du bist MaByte.
-Antworte: modern, hochwertig, kurz, direkt, praktisch.
+Du bist MaByte AI Chat — ein professioneller Assistent für Text, Ideen,
+Zusammenfassungen, E-Mails und Erklärungen.
+Antworte klar, höflich und praxisnah. Kein Sport-, Wett- oder Nischen-Football-Content,
+außer der Nutzer fragt explizit danach.
 {project_context}
 """,
         },
@@ -194,6 +196,10 @@ def render_chat() -> None:
         unsafe_allow_html=True,
     )
     render_messages(project)
+
+    clicked = render_chat_quickstarts()
+    if clicked:
+        handle_prompt(clicked, project)
 
     pending = st.session_state.pop("chat_pending_prompt", None)
     prompt = ma_chat_input("Nachricht eingeben…")

@@ -140,20 +140,32 @@ def refund_tokens(cost, tool, prompt):
     sync_user()
 
 
-def ai_generate(prompt):
+_TOOL_SYSTEM = {
+    "coding": (
+        "Du bist MaByte Code Assistant. Antworte ausschließlich zu Programmierung: "
+        "Code schreiben, debuggen, refactoren, APIs, Architektur. "
+        "Liefere sauberen, produktionsnahen Code mit kurzen Erklärungen."
+    ),
+    "music": (
+        "Du bist MaByte Music Studio. Erstelle Song-Konzepte, Struktur, Lyrics "
+        "und Arrangement-Hinweise — kreativ und professionell."
+    ),
+}
+
+
+def ai_generate(prompt: str, *, tool: str = "media") -> str:
     if not OPENAI_API_KEY:
         raise RuntimeError("OPENAI_API_KEY fehlt.")
+
+    system = _TOOL_SYSTEM.get(
+        tool,
+        "Du bist MaByte Creator Studio. Erstelle professionelle, direkt nutzbare Outputs.",
+    )
 
     response = client.chat.completions.create(
         model=OPENAI_TEXT_MODEL,
         messages=[
-            {
-                "role": "system",
-                "content": (
-                    "Du bist MaByte Creator Studio. "
-                    "Erstelle professionelle, kurze, moderne und direkt nutzbare Outputs."
-                ),
-            },
+            {"role": "system", "content": system},
             {"role": "user", "content": prompt},
         ],
         temperature=0.7,
@@ -465,7 +477,7 @@ def render_music_ai():
     with st.container(border=True):
         topic = st.text_input(
             "Thema",
-            placeholder="z.B. Dark Trap, 140 BPM, Nachtleben",
+            placeholder="z.B. Melancholisches Piano, 90 BPM, ruhige Atmosphäre",
             key="music_topic",
         )
         genre = st.selectbox("Genre", ["Rap", "Trap", "Pop", "EDM", "Phonk", "Afro", "Rock"], key="music_genre")
@@ -486,11 +498,20 @@ def render_coding_ai():
     with st.container(border=True):
         task = st.text_area(
             "Aufgabe",
-            placeholder="Was soll gebaut, geprüft oder erklärt werden?",
+            placeholder="z.B. Python-Funktion für API-Validierung, React-Komponente refactoren, SQL-Query optimieren…",
             key="coding_task",
             height=140,
         )
-        complexity = st.selectbox("Komplexität", ["normal", "advanced", "fullstack"], key="coding_complexity")
+        complexity = st.selectbox(
+            "Komplexität",
+            ["normal", "advanced", "fullstack"],
+            key="coding_complexity",
+            format_func=lambda x: {
+                "normal": "Normal — Snippet / Einzelfunktion",
+                "advanced": "Advanced — Modul / mehrere Dateien",
+                "fullstack": "Fullstack — Architektur & Integration",
+            }.get(x, x),
+        )
         cost = get_coding_cost(complexity=complexity)
         st.metric("Kosten", f"{cost} Tokens")
 

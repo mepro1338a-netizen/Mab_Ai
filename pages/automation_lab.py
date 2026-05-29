@@ -46,7 +46,7 @@ def render_create_automation():
     with st.container(border=True):
         name = st.text_input(
             "Workflow Name",
-            placeholder="z.B. Football Match â†’ Reel Package",
+            placeholder="z.B. Wöchentlicher Content-Workflow",
         )
 
         project_label = st.selectbox("Projekt", list(options.keys()))

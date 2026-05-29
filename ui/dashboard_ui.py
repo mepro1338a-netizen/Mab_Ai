@@ -234,10 +234,11 @@ def render_stats(
     football_label: str,
     tier: str,
 ) -> None:
+    addon = "Aktiv" if football_label and football_label not in ("—", "Kein Plan", "None", "") else "—"
     cards = [
         ("Plan", plan_label, "MaByte Abo"),
         ("Tokens", format_num(tokens), "Guthaben"),
-        ("Football", football_label, "Add-on"),
+        ("Module", addon, "Erweiterungen"),
         ("Tier", tier, "Feature-Stufe"),
     ]
     inner = "".join(

@@ -152,25 +152,36 @@ def render_os_hero() -> None:
 
 def render_os_ready_hint() -> None:
     st.markdown(
-        '<div class="mb-os-ready">✦ MaByte ist bereit. Nutze einen Quick Start oder frag direkt unten.</div>',
+        '<div class="mb-os-ready">✦ MaByte Chat ist bereit. Wähle einen Vorschlag oder schreib deine Frage.</div>',
         unsafe_allow_html=True,
     )
 
 
-def render_quickstart_grid(key_prefix: str = "qs") -> str | None:
-    st.markdown('<div class="mb-quick-label">Quick Start</div>', unsafe_allow_html=True)
-    prompts = [
-        ("🚀 Wachstum", "Erstelle mir eine Growth Strategie für mein Business."),
-        ("🎯 Content", "Gib mir virale Content Ideen."),
-        ("💸 Kunden", "Wie bekomme ich mehr Kunden online?"),
-        ("⚡ Workflow", "Baue mir einen AI Workflow."),
-        ("📈 Analyse", "Analysiere mein Business."),
-        ("🔥 Hooks", "Gib mir virale Hooks."),
-    ]
+CHAT_QUICKSTARTS = [
+    ("Zusammenfassen", "Fasse diesen Text in 5 klaren Bulletpoints zusammen."),
+    ("Code erklären", "Erkläre diesen Code Schritt für Schritt und nenne Verbesserungen."),
+    ("E-Mail", "Formuliere eine professionelle E-Mail zu folgendem Anlass:"),
+    ("Brainstorm", "Gib mir 10 konkrete Ideen zu folgendem Thema:"),
+    ("Übersetzen", "Übersetze den folgenden Text ins Deutsche (natürlich, professionell):"),
+    ("Struktur", "Erstelle eine klare Gliederung für folgendes Dokument:"),
+]
+
+
+def render_chat_quickstarts(key_prefix: str = "chat_qs") -> str | None:
+    return render_quickstart_grid(key_prefix=key_prefix, prompts=CHAT_QUICKSTARTS)
+
+
+def render_quickstart_grid(
+    key_prefix: str = "qs",
+    *,
+    prompts: list[tuple[str, str]] | None = None,
+) -> str | None:
+    st.markdown('<div class="mb-quick-label">Vorschläge</div>', unsafe_allow_html=True)
+    items = prompts or CHAT_QUICKSTARTS
     st.markdown('<div class="mb-quick-grid">', unsafe_allow_html=True)
     cols = st.columns(3, gap="medium")
     clicked = None
-    for i, (label, prompt) in enumerate(prompts):
+    for i, (label, prompt) in enumerate(items):
         with cols[i % 3]:
             if st.button(label, key=f"{key_prefix}_quick_{i}", width="stretch"):
                 clicked = prompt

@@ -3,7 +3,6 @@ import random
 
 import streamlit as st
 
-from config import APP_NAME, APP_TAGLINE
 from database import create_user, record_login_event, verify_login
 from security import check_login_rate, record_login_failure, is_valid_email, is_valid_username
 from services.session_auth import rotate_session_on_login
@@ -19,8 +18,8 @@ from oauth_service import (
     provider_configured,
     verify_state,
 )
-from ui_core import WORDMARK, img_base64, sync_session_user
-from ui.b2b_theme import AUTH_EXTRA_VARS, MB_APP_BACKGROUND, MB_THEME_VARS, streamlit_force_dark_css
+from ui_core import sync_session_user
+from ui.auth_premium import auth_styles_bundle, brand_panel_html, card_hero_html
 from ui.styles import inject_css
 
 
@@ -237,150 +236,12 @@ def handle_oauth_callback() -> bool:
 
 def auth_css() -> None:
     inject_css(
-        MB_THEME_VARS
-        + AUTH_EXTRA_VARS
-        + streamlit_force_dark_css()
+        auth_styles_bundle()
         + """
-.custom-topbar,
-#MainMenu, header, footer,
-[data-testid="stToolbar"],
-[data-testid="stDecoration"],
-[data-testid="stSidebar"] {
-    display: none !important;
-}
-
-.stApp, [data-testid="stAppViewContainer"] {
-    background: """
-        + MB_APP_BACKGROUND
-        + """ !important;
-}
-
-section.main .block-container {
-    max-width: 1040px !important;
-    padding: 48px 24px 56px 24px !important;
-    min-height: 100vh !important;
-}
-
-section.main [data-testid="stVerticalBlock"] {
-    gap: .45rem !important;
-}
-
+section.main [data-testid="stVerticalBlock"] { gap: .45rem !important; }
 section.main [data-testid="stHorizontalBlock"] {
     gap: 1.25rem !important;
-    align-items: center !important;
-}
-
-/* ── Brand panel (links) ── */
-.mb-auth-brand {
-    padding: 8px 4px;
-}
-
-.mb-auth-logo img {
-    max-width: 156px;
-    display: block;
-    margin-bottom: 18px;
-}
-
-.mb-auth-logo-fallback {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #27272a;
-    border: 1px solid #3f3f46;
-    color: #fafafa;
-    font-size: 22px;
-    font-weight: 800;
-    margin-bottom: 18px;
-}
-
-.mb-auth-kicker {
-    color: #71717a !important;
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: .20em;
-    text-transform: uppercase;
-    margin: 0 0 8px 0;
-}
-
-.mb-auth-headline {
-    font-size: clamp(28px, 3vw, 38px);
-    line-height: 1.1;
-    font-weight: 800;
-    letter-spacing: -.04em;
-    margin: 0 0 12px 0;
-    color: #fafafa !important;
-}
-
-.mb-auth-headline span {
-    color: #fafafa !important;
-    -webkit-text-fill-color: #fafafa !important;
-}
-
-.mb-auth-desc {
-    color: var(--mb-muted) !important;
-    font-size: 14px;
-    line-height: 1.6;
-    font-weight: 500;
-    margin: 0 0 14px 0;
-}
-
-.mb-auth-highlight {
-    color: #d4d4d8 !important;
-    font-size: 13px;
-    line-height: 1.55;
-    font-weight: 500;
-    margin: 0 0 18px 0;
-    padding: 14px 16px;
-    border-radius: 12px;
-    background: #27272a;
-    border: 1px solid #3f3f46;
-}
-
-.mb-auth-highlight strong {
-    color: #fafafa !important;
-    font-weight: 700;
-}
-
-.mb-auth-bullets {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: grid;
-    gap: 8px;
-}
-
-.mb-auth-bullets li {
-    color: #a1a1aa !important;
-    font-size: 13px;
-    font-weight: 500;
-    padding-left: 18px;
-    position: relative;
-}
-
-.mb-auth-bullets li::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 8px;
-    width: 6px;
-    height: 6px;
-    border-radius: 999px;
-    background: #7c3aed;
-}
-
-/* ── Login card (rechts) ── */
-section.main div[data-testid="stVerticalBlockBorderWrapper"] {
-    width: 100% !important;
-    max-width: 100% !important;
-    margin: 0 !important;
-    background: #18181b !important;
-    border: 1px solid #3f3f46 !important;
-    border-radius: 16px !important;
-    padding: 28px 26px 22px 26px !important;
-    box-shadow: 0 24px 48px rgba(0, 0, 0, .45) !important;
+    align-items: stretch !important;
 }
 
 .mb-auth-card-top {
@@ -723,38 +584,6 @@ section.main div[data-testid="stVerticalBlockBorderWrapper"] .stNumberInput div[
     )
 
 
-def brand_panel_html() -> str:
-    if WORDMARK.exists():
-        src = img_base64(WORDMARK)
-        logo = f'<div class="mb-auth-logo"><img src="data:image/png;base64,{src}" alt="{html.escape(APP_NAME)}"></div>'
-    else:
-        logo = f'<div class="mb-auth-logo"><div class="mb-auth-logo-fallback">{html.escape(APP_NAME[:1])}</div></div>'
-
-    tagline = html.escape(APP_TAGLINE)
-
-    return f"""
-<div class="mb-auth-brand">
-    {logo}
-    <p class="mb-auth-kicker">Enterprise-ready · {html.escape(APP_NAME)}</p>
-    <h1 class="mb-auth-headline"><span>{tagline}</span></h1>
-    <p class="mb-auth-desc">
-        Die B2B-Plattform für Creator-Teams: Video, Bild, Chat und Automation
-        in einer konsistenten Oberfläche — ohne Tool-Chaos.
-    </p>
-    <p class="mb-auth-highlight">
-        <strong>Ein Login. Alle Workspaces.</strong>
-        Token-basiertes Billing, klare Limits, produktionsreife Workflows.
-    </p>
-    <ul class="mb-auth-bullets">
-        <li>Shorts &amp; Reels mit AI-Rendering</li>
-        <li>Image Studio &amp; Content-Pipelines</li>
-        <li>Football AI &amp; Premium Add-ons</li>
-        <li>DSGVO-konforme Session &amp; OAuth-Anbindung</li>
-    </ul>
-</div>
-"""
-
-
 def card_intro(title: str, subtitle: str) -> None:
     st.markdown(
         f"""
@@ -814,7 +643,7 @@ def oauth_button(provider: str, label: str, icon: str, css_class: str, *, primar
     )
 
 
-def render_social_row() -> None:
+def render_google_primary() -> None:
     google_block = oauth_button(
         "google",
         "Mit Google anmelden",
@@ -824,15 +653,13 @@ def render_social_row() -> None:
     )
     st.markdown(
         f"""
-<div class="mb-oauth-grid">
-    {google_block}
+<div class="mb-auth-google-block">
+    <div class="mb-oauth-grid">{google_block}</div>
+    <div class="mb-auth-trust">
+        <strong>Empfohlen</strong> · OAuth 2.0 · Kein Passwort auf unseren Servern
+    </div>
 </div>
-<div class="mb-oauth-hint">Sicherer Login · Kein Passwort nötig · Bestehende E-Mail bleibt geschützt</div>
-<div class="mb-auth-divider">oder fortfahren mit</div>
-<div class="mb-oauth-grid">
-    {oauth_button("instagram", "Weiter mit Instagram", "◎", "mb-oauth-instagram")}
-    {oauth_button("tiktok", "Weiter mit TikTok", "♪", "mb-oauth-tiktok")}
-</div>
+<div class="mb-auth-divider">oder mit Zugangsdaten</div>
 """,
         unsafe_allow_html=True,
     )
@@ -868,7 +695,7 @@ def render_social_row() -> None:
 
 
 def render_login_form() -> None:
-    card_intro("Herzlich Willkommen auf MaByte", "Melde dich an und starte deine Creator-Workflows.")
+    card_intro("Anmelden", "Zugang zu deinem Workspace.")
 
     with st.form("login_form", clear_on_submit=False, border=False):
         user = st.text_input("Username", placeholder="dein username")
@@ -915,12 +742,17 @@ def render_auth() -> None:
     if "auth_mode" not in st.session_state:
         st.session_state.auth_mode = "login"
 
-    brand_col, login_col = st.columns([1, 1], gap="medium")
+    st.markdown('<div class="mb-auth-page">', unsafe_allow_html=True)
+    brand_col, login_col = st.columns([1.15, 1], gap="large")
 
     with brand_col:
         st.markdown(brand_panel_html(), unsafe_allow_html=True)
 
     with login_col:
+        st.markdown('<div class="mb-auth-card-wrap">', unsafe_allow_html=True)
+        st.markdown(card_hero_html(), unsafe_allow_html=True)
+        render_google_primary()
+
         with st.container(border=True):
             mode = render_mode_switch()
             st.session_state.auth_mode = mode
@@ -930,16 +762,16 @@ def render_auth() -> None:
             else:
                 render_login_form()
 
-            render_social_row()
-
             st.markdown(
                 """
 <div class="mb-auth-foot">
-    <strong>MaByte</strong> · Dein Creator OS · Token-System · Support Inbox
+    <strong>MaByte</strong> · Creator Operating System · Enterprise Session · Support Inbox
 </div>
                 """,
                 unsafe_allow_html=True,
             )
+        st.markdown("</div>", unsafe_allow_html=True)
 
-    st.caption("MaByte Production Beta · Mab AI")
+    st.markdown("</div>", unsafe_allow_html=True)
+    st.caption("MaByte · Sichere Anmeldung · Production")
 

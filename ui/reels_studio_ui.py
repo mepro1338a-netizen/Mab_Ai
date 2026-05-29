@@ -36,14 +36,14 @@ DURATIONS = ((3, "3s", "Ultra-kurz"), (5, "5s", "Standard"), (7, "7s", "Max Impa
 
 STYLES = (
     ("viral", "Viral", "Schnelle Hooks, hohe Energie"),
-    ("football", "Football Hype", "Stadion, Derby, Emotion"),
+    ("action", "Action", "Dynamisch, Bewegung, starke Emotion"),
     ("cinematic", "Cinematic", "Filmisch, dramatisches Licht"),
     ("news", "News", "Klar, sachlich, Headline-Fokus"),
 )
 
 STYLE_PROMPT = {
     "viral": "Viral short-form style, punchy hook, high energy, scroll-stopping.",
-    "football": "Football hype, stadium atmosphere, dramatic sports moment.",
+    "action": "High-energy action style, dynamic motion, dramatic atmosphere.",
     "cinematic": "Cinematic lighting, shallow depth of field, premium film look.",
     "news": "News style, clear subject, professional, informative tone.",
 }
@@ -438,7 +438,7 @@ def _step_idea(username: str, tokens: int, user: dict, plan: str) -> None:
     )
     prompt = st.text_area(
         "Prompt",
-        placeholder="z.B. Derby-Highlight, Tor in der 89. Minute, euphorische Stimmung…",
+        placeholder="z.B. Produkt-Launch, schneller Hook, starke Emotion in Sekunde 1…",
         key="rs_prompt",
         height=130,
         label_visibility="collapsed",
