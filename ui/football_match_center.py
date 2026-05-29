@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import html
-from typing import Any, Callable
+from typing import Any
 
 import streamlit as st
 
@@ -70,6 +70,18 @@ MATCH_CENTER_CSS = """
     gap: 12px;
     margin-bottom: 8px;
 }
+.fb-mc-grid.featured-first .fb-mc-card.featured {
+    grid-column: span 1;
+}
+@media (min-width: 900px) {
+    .fb-mc-grid.featured-first .fb-mc-card.featured {
+        grid-column: span 2;
+        padding: 20px 22px;
+    }
+    .fb-mc-grid.featured-first .fb-mc-card.featured .fb-mc-score {
+        font-size: 22px;
+    }
+}
 .fb-mc-card {
     border-radius: 18px;
     padding: 16px 18px;
@@ -77,16 +89,37 @@ MATCH_CENTER_CSS = """
     border: 1px solid rgba(255,255,255,.08);
     cursor: default;
 }
+.fb-mc-card.featured {
+    border-color: rgba(255,231,163,.28);
+    background: linear-gradient(145deg, rgba(18,24,42,.97), rgba(10,14,28,.98));
+    box-shadow: 0 12px 40px rgba(0,0,0,.28);
+}
 .fb-mc-card.live {
     border-color: rgba(34,197,94,.5);
     box-shadow: 0 0 28px rgba(34,197,94,.15);
 }
+.fb-mc-card.live.featured {
+    border-color: rgba(34,197,94,.65);
+    box-shadow: 0 0 36px rgba(34,197,94,.22);
+}
 .fb-mc-card-head {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: center;
     gap: 8px;
     margin-bottom: 12px;
+}
+.fb-mc-league-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+.fb-mc-league-logo {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
+    flex-shrink: 0;
 }
 .fb-mc-league {
     color: #86efac !important;
@@ -94,6 +127,9 @@ MATCH_CENTER_CSS = """
     font-weight: 1000;
     letter-spacing: .1em;
     text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .fb-mc-time {
     color: #64748b !important;
@@ -105,6 +141,22 @@ MATCH_CENTER_CSS = """
     grid-template-columns: 1fr auto 1fr;
     gap: 10px;
     align-items: center;
+}
+.fb-mc-team-cell {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+.fb-mc-team-cell.away {
+    flex-direction: row-reverse;
+    text-align: right;
+}
+.fb-mc-team-logo {
+    width: 28px;
+    height: 28px;
+    object-fit: contain;
+    flex-shrink: 0;
 }
 .fb-mc-team {
     color: #f8fafc !important;
@@ -205,6 +257,19 @@ MATCH_CENTER_CSS = """
     color: #94a3b8 !important;
     font-size: 13px;
 }
+.fb-mc-empty-premium {
+    border-radius: 18px;
+    padding: 20px 22px;
+    margin: 8px 0 16px 0;
+    background: rgba(15,23,42,.75);
+    border: 1px solid rgba(100,116,139,.25);
+    color: #cbd5e1 !important;
+    font-size: 14px;
+    line-height: 1.5;
+}
+.fb-mc-card-wrap {
+    margin-bottom: 4px;
+}
 @media (max-width: 768px) {
     .fb-mc-grid { grid-template-columns: 1fr; }
     .fb-mc-title { font-size: 22px; }
@@ -214,18 +279,6 @@ MATCH_CENTER_CSS = """
 
 def inject_match_center_css() -> None:
     inject_css(MATCH_CENTER_CSS)
-
-
-def _iter_events(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """API-Football liefert Events flach oder gruppiert unter 'events'."""
-    out: list[dict[str, Any]] = []
-    for block in rows or []:
-        nested = block.get("events")
-        if nested:
-            out.extend(nested)
-        elif block.get("type") or block.get("time"):
-            out.append(block)
-    return out
 
 
 def _badge_class(status: str) -> str:
@@ -243,7 +296,7 @@ def render_mc_header(*, live_count: int, today_count: int, api_used: int, api_li
         f"""
 <div class="fb-mc-header">
     <h2 class="fb-mc-title">Live Match Center</h2>
-    <p class="fb-mc-sub">Echtzeit-Fixtures · Ligen weltweit · Trading-Terminal Ansicht</p>
+    <p class="fb-mc-sub">Premium Top-Ligen zuerst · Live · Deutschland · UEFA · Trading-Terminal</p>
     <div class="fb-mc-ticker">
         <span class="fb-mc-stat">Jetzt live<strong>{live_count}</strong></span>
         <span class="fb-mc-stat">Heute<strong>{today_count}</strong></span>
@@ -263,22 +316,40 @@ def render_category_chips(categories: dict[str, str], active: str) -> None:
     st.markdown(f'<div class="fb-mc-cat-row">{"".join(chips)}</div>', unsafe_allow_html=True)
 
 
+def _logo_img(url: str, alt: str, css_class: str) -> str:
+    if not url:
+        return ""
+    safe_url = html.escape(str(url), quote=True)
+    safe_alt = html.escape(alt)
+    return f'<img src="{safe_url}" alt="{safe_alt}" class="{css_class}" loading="lazy" />'
+
+
 def _render_match_card_html(card: dict[str, Any]) -> str:
     live_cls = " live" if card.get("live") else ""
+    featured_cls = " featured" if card.get("featured") else ""
     badge = _badge_class(str(card.get("status") or "NS"))
     venue = card.get("venue") or ""
     city = card.get("city") or ""
     venue_txt = ", ".join(x for x in (venue, city) if x)
+    league_logo = _logo_img(str(card.get("league_logo") or ""), "Liga", "fb-mc-league-logo")
+    home_logo = _logo_img(str(card.get("home_logo") or ""), "Heim", "fb-mc-team-logo")
+    away_logo = _logo_img(str(card.get("away_logo") or ""), "Auswärts", "fb-mc-team-logo")
     return f"""
-<div class="fb-mc-card{live_cls}">
+<div class="fb-mc-card{live_cls}{featured_cls}">
     <div class="fb-mc-card-head">
-        <span class="fb-mc-league">{html.escape(str(card.get('league') or 'Liga'))}</span>
+        <div class="fb-mc-league-row">{league_logo}<span class="fb-mc-league">{html.escape(str(card.get('league') or 'Liga'))}</span></div>
         <span class="fb-mc-time">{html.escape(str(card.get('time') or card.get('date') or ''))}</span>
     </div>
     <div class="fb-mc-teams">
-        <div class="fb-mc-team">{html.escape(str(card.get('home') or ''))}</div>
+        <div class="fb-mc-team-cell">
+            {home_logo}
+            <div class="fb-mc-team">{html.escape(str(card.get('home') or ''))}</div>
+        </div>
         <div class="fb-mc-score">{html.escape(str(card.get('score') or 'vs'))}</div>
-        <div class="fb-mc-team away">{html.escape(str(card.get('away') or ''))}</div>
+        <div class="fb-mc-team-cell away">
+            {away_logo}
+            <div class="fb-mc-team away">{html.escape(str(card.get('away') or ''))}</div>
+        </div>
     </div>
     <div class="fb-mc-meta">
         <span class="fb-mc-badge {badge}">{html.escape(str(card.get('status_label') or card.get('status') or 'NS'))}</span>
@@ -288,13 +359,85 @@ def _render_match_card_html(card: dict[str, Any]) -> str:
 """
 
 
-def render_match_section(title: str, fixtures: list[dict[str, Any]], *, empty: str) -> None:
+def render_premium_live_empty(*, raw_live_count: int) -> None:
+    st.markdown(
+        f"""
+<div class="fb-mc-empty-premium">
+    <strong>Heute keine Topspiele live.</strong>
+    {' Es laufen gerade ' + str(raw_live_count) + ' internationale Spiele.' if raw_live_count else ''}
+    Weitere internationale Spiele anzeigen?
+</div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_match_section(
+    title: str,
+    fixtures: list[dict[str, Any]],
+    *,
+    empty: str,
+    key_prefix: str = "mc",
+    elite_ok: bool = False,
+    selected_fixture: int | None = None,
+) -> None:
     st.markdown(f'<div class="fb-mc-section">{html.escape(title)}</div>', unsafe_allow_html=True)
     if not fixtures:
         st.markdown(f'<div class="fb-empty">{html.escape(empty)}</div>', unsafe_allow_html=True)
         return
-    cards = [_render_match_card_html(parse_match_card(fx)) for fx in fixtures]
-    st.markdown(f'<div class="fb-mc-grid">{"".join(cards)}</div>', unsafe_allow_html=True)
+
+    for fx in fixtures:
+        card = parse_match_card(fx)
+        fid = card.get("fixture_id")
+        if not fid:
+            continue
+        try:
+            fid_int = int(fid)
+        except (TypeError, ValueError):
+            continue
+        st.markdown(_render_match_card_html(card), unsafe_allow_html=True)
+        c1, c2 = st.columns(2)
+        with c1:
+            if st.button(
+                "Analyse öffnen",
+                key=f"{key_prefix}_analyse_{fid_int}",
+                width="stretch",
+                type="primary" if selected_fixture == fid_int else "secondary",
+            ):
+                st.session_state.fb_mc_selected_fixture = fid_int
+                st.session_state.fb_mc_detail_pick_idx = fid_int
+                st.rerun()
+        with c2:
+            if elite_ok:
+                if st.button(
+                    "Elite Insight",
+                    key=f"{key_prefix}_elite_{fid_int}",
+                    width="stretch",
+                ):
+                    st.session_state.fb_mc_selected_fixture = fid_int
+                    st.session_state.fb_mc_detail_pick_idx = fid_int
+                    st.session_state.fb_mc_load_elite = fid_int
+                    st.rerun()
+            else:
+                st.button(
+                    "Elite Insight",
+                    key=f"{key_prefix}_elite_{fid_int}",
+                    width="stretch",
+                    disabled=True,
+                    help="Football Elite erforderlich",
+                )
+
+
+def _iter_events(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """API-Football liefert Events flach oder gruppiert unter 'events'."""
+    out: list[dict[str, Any]] = []
+    for block in rows or []:
+        nested = block.get("events")
+        if nested:
+            out.extend(nested)
+        elif block.get("type") or block.get("time"):
+            out.append(block)
+    return out
 
 
 def fixture_select_options(fixtures: list[dict[str, Any]]) -> dict[str, int]:

@@ -155,6 +155,61 @@ FOOTBALL_API_INJURIES_CACHE_TTL = int(os.getenv("FOOTBALL_API_INJURIES_CACHE_TTL
 FOOTBALL_API_TIMEOUT = int(os.getenv("FOOTBALL_API_TIMEOUT", "20") or 20)
 FOOTBALL_DEFAULT_SEASON = int(os.getenv("FOOTBALL_DEFAULT_SEASON", "2025") or 2025)
 
+# API-Football league IDs (v3) — zentral für Live Match Center
+FOOTBALL_LEAGUE_GROUPS: dict[str, list[dict[str, str | int]]] = {
+    "deutschland": [
+        {"id": 78, "name": "1. Bundesliga", "country": "Germany"},
+        {"id": 79, "name": "2. Bundesliga", "country": "Germany"},
+        {"id": 80, "name": "3. Liga", "country": "Germany"},
+        {"id": 81, "name": "DFB Pokal", "country": "Germany"},
+    ],
+    "uefa": [
+        {"id": 2, "name": "Champions League", "country": "Europe"},
+        {"id": 3, "name": "Europa League", "country": "Europe"},
+        {"id": 848, "name": "Conference League", "country": "Europe"},
+    ],
+    "europa_top": [
+        {"id": 39, "name": "Premier League", "country": "England"},
+        {"id": 140, "name": "La Liga", "country": "Spain"},
+        {"id": 135, "name": "Serie A", "country": "Italy"},
+        {"id": 61, "name": "Ligue 1", "country": "France"},
+        {"id": 88, "name": "Eredivisie", "country": "Netherlands"},
+    ],
+    "national": [
+        {"id": 4, "name": "Euro Championship", "country": "Europe"},
+        {"id": 5, "name": "UEFA Nations League", "country": "Europe"},
+        {"id": 32, "name": "World Cup Qual. Europe", "country": "Europe"},
+        {"id": 1, "name": "World Cup", "country": "World"},
+    ],
+    "international": [
+        {"id": 307, "name": "Saudi Pro League", "country": "Saudi Arabia"},
+        {"id": 253, "name": "MLS", "country": "USA"},
+        {"id": 9, "name": "Copa America", "country": "South America"},
+    ],
+}
+
+# Tier: 0=Deutschland, 1=UEFA, 2=Topligen, 3=National, 4=International, 99=Rest
+_FOOTBALL_TIER_ORDER = ("deutschland", "uefa", "europa_top", "national", "international")
+
+FOOTBALL_LEAGUE_TIER: dict[int, int] = {}
+FOOTBALL_LEAGUE_PRIORITY: dict[int, int] = {}
+FOOTBALL_LEAGUE_META: dict[int, dict[str, str | int]] = {}
+FOOTBALL_PREMIUM_LEAGUE_IDS: frozenset[int] = frozenset()
+
+for _tier_idx, _group in enumerate(_FOOTBALL_TIER_ORDER):
+    for _prio, _lg in enumerate(FOOTBALL_LEAGUE_GROUPS.get(_group, [])):
+        _lid = int(_lg["id"])
+        FOOTBALL_LEAGUE_TIER[_lid] = _tier_idx
+        FOOTBALL_LEAGUE_PRIORITY[_lid] = _prio
+        FOOTBALL_LEAGUE_META[_lid] = dict(_lg)
+
+FOOTBALL_PREMIUM_LEAGUE_IDS = frozenset(
+    _lid
+    for _grp in ("deutschland", "uefa", "europa_top", "national")
+    for _lg in FOOTBALL_LEAGUE_GROUPS.get(_grp, [])
+    for _lid in (int(_lg["id"]),)
+)
+
 ROLE_LABELS = {
     "user": "User",
     "supporter": "Supporter",

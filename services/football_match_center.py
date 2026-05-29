@@ -9,8 +9,11 @@ from services.football_leagues import (
     FINISHED_STATUSES,
     LIVE_STATUSES,
     SCHEDULED_STATUSES,
-    all_league_ids,
+    is_featured_league,
     league_name_map,
+    league_tier,
+    premium_league_ids,
+    relevance_score,
 )
 from services.football_odds import parse_fixture_odds_payload, parse_prediction_insights
 from services.football_service import FootballAPIError, FootballService, fixture_team_names
@@ -63,6 +66,14 @@ def parse_match_card(fixture: dict[str, Any]) -> dict[str, Any]:
         status_label = status
     date_raw = str(meta.get("date") or "")
     time_show = date_raw[11:16] if "T" in date_raw else ""
+    lid = league.get("id")
+    try:
+        lid_int = int(lid) if lid is not None else None
+    except (TypeError, ValueError):
+        lid_int = None
+    live = status in LIVE_STATUSES
+    finished = status in FINISHED_STATUSES
+    rel = relevance_score(league_id=lid_int, live=live, finished=finished)
     return {
         "fixture_id": meta.get("id"),
         "home": home.get("name") or "Home",
@@ -74,14 +85,18 @@ def parse_match_card(fixture: dict[str, Any]) -> dict[str, Any]:
         "status_label": status_label,
         "minute": minute,
         "league": league.get("name") or "",
-        "league_id": league.get("id"),
+        "league_id": lid,
+        "league_logo": league.get("logo") or "",
         "country": league.get("country") or "",
         "date": _fixture_date(fixture),
         "time": time_show,
         "venue": venue.get("name") or "",
         "city": venue.get("city") or "",
-        "live": status in LIVE_STATUSES,
-        "finished": status in FINISHED_STATUSES,
+        "live": live,
+        "finished": finished,
+        "tier": league_tier(lid_int),
+        "featured": is_featured_league(lid_int),
+        "relevance_score": rel,
     }
 
 
@@ -92,14 +107,20 @@ def filter_fixtures(
     country: str = "",
 ) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
-    country_l = country.strip().lower()
+    search_l = country.strip().lower()
     for fx in fixtures or []:
         lid = _league_id(fx)
         if league_ids and lid not in league_ids:
             continue
-        if country_l:
-            c = str((fx.get("league") or {}).get("country") or "").lower()
-            if country_l not in c:
+        if search_l:
+            league = fx.get("league") or {}
+            teams = fx.get("teams") or {}
+            home = str((teams.get("home") or {}).get("name") or "").lower()
+            away = str((teams.get("away") or {}).get("name") or "").lower()
+            league_name = str(league.get("name") or "").lower()
+            league_country = str(league.get("country") or "").lower()
+            hay = f"{home} {away} {league_name} {league_country}"
+            if search_l not in hay:
                 continue
         out.append(fx)
     return out
@@ -121,6 +142,19 @@ def dedupe_fixtures(fixtures: list[dict[str, Any]]) -> list[dict[str, Any]]:
         seen.add(key)
         out.append(fx)
     return out
+
+
+def sort_fixtures_by_priority(fixtures: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    def _key(fx: dict[str, Any]) -> tuple:
+        card = parse_match_card(fx)
+        meta = fx.get("fixture") or {}
+        return (
+            -int(card.get("relevance_score") or 0),
+            str(meta.get("date") or ""),
+            str((fx.get("league") or {}).get("name") or ""),
+        )
+
+    return sorted(fixtures or [], key=_key)
 
 
 def classify_fixtures(
@@ -150,19 +184,11 @@ def classify_fixtures(
         elif st in SCHEDULED_STATUSES or st not in FINISHED_STATUSES:
             later_today.append(fx)
 
-    def _sort_key(fx: dict[str, Any]) -> tuple:
-        meta = fx.get("fixture") or {}
-        return (str(meta.get("date") or ""), str((fx.get("league") or {}).get("name") or ""))
-
-    live_now.sort(key=_sort_key)
-    later_today.sort(key=_sort_key)
-    finished_today.sort(key=_sort_key, reverse=True)
-    tomorrow_list.sort(key=_sort_key)
     return {
-        "live_now": live_now,
-        "later_today": later_today,
-        "finished_today": finished_today,
-        "tomorrow": tomorrow_list,
+        "live_now": sort_fixtures_by_priority(live_now),
+        "later_today": sort_fixtures_by_priority(later_today),
+        "finished_today": sort_fixtures_by_priority(finished_today),
+        "tomorrow": sort_fixtures_by_priority(tomorrow_list),
     }
 
 
@@ -172,6 +198,9 @@ def fetch_live_center_payload(
     username: str,
     league_filter: set[int] | None = None,
     country_filter: str = "",
+    premium_only: bool = True,
+    show_all_live: bool = False,
+    scope: str = "all",
 ) -> dict[str, Any]:
     today = date.today()
     tomorrow = today + timedelta(days=1)
@@ -191,6 +220,9 @@ def fetch_live_center_payload(
             "errors": ["API-Football ist nicht konfiguriert (FOOTBALL_API_KEY)."],
             "sections": classify_fixtures([], today=today_s, tomorrow=tomorrow_s),
             "total_fixtures": 0,
+            "premium_live_count": 0,
+            "raw_live_count": 0,
+            "show_all_live_prompt": False,
         }
 
     try:
@@ -198,24 +230,61 @@ def fetch_live_center_payload(
     except FootballAPIError as exc:
         errors.append(str(exc))
 
-    try:
-        today_rows = service.get_fixtures_by_date(today_s, username=username)
-    except FootballAPIError as exc:
-        errors.append(str(exc))
+    # Fixtures by date only when needed (Premium default: live + today + tomorrow)
+    need_today = scope in ("all", "heute", "premium", "deutschland", "uefa", "europa_top", "national", "favoriten", "alle")
+    need_tomorrow = scope in ("all", "morgen", "premium", "alle")
 
-    try:
-        tomorrow_rows = service.get_fixtures_by_date(tomorrow_s, username=username)
-    except FootballAPIError as exc:
-        errors.append(str(exc))
+    if need_today:
+        try:
+            today_rows = service.get_fixtures_by_date(today_s, username=username)
+        except FootballAPIError as exc:
+            errors.append(str(exc))
+
+    if need_tomorrow:
+        try:
+            tomorrow_rows = service.get_fixtures_by_date(tomorrow_s, username=username)
+        except FootballAPIError as exc:
+            errors.append(str(exc))
 
     merged = dedupe_fixtures(live_rows + today_rows + tomorrow_rows)
-    if league_filter:
-        filtered = filter_fixtures(merged, league_ids=league_filter, country=country_filter)
+
+    premium_ids = premium_league_ids()
+    premium_live = filter_fixtures(live_rows, league_ids=set(premium_ids))
+    raw_live_count = len(live_rows)
+    premium_live_count = len(premium_live)
+
+    if league_filter is not None:
+        effective_ids = league_filter
+    elif premium_only and not show_all_live:
+        effective_ids = set(premium_ids)
     else:
-        catalog = all_league_ids()
-        filtered = filter_fixtures(merged, league_ids=catalog, country=country_filter)
+        effective_ids = None
+
+    if scope == "live":
+        merged = live_rows
+    elif scope == "heute":
+        merged = dedupe_fixtures(live_rows + today_rows)
+    elif scope == "morgen":
+        merged = tomorrow_rows
+
+    if effective_ids is not None:
+        filtered = filter_fixtures(merged, league_ids=effective_ids, country=country_filter)
+    else:
+        filtered = filter_fixtures(merged, league_ids=None, country=country_filter)
+
+    if scope == "live" and premium_only and not show_all_live and effective_ids:
+        filtered = filter_fixtures(live_rows, league_ids=effective_ids, country=country_filter)
 
     sections = classify_fixtures(filtered, today=today_s, tomorrow=tomorrow_s)
+
+    show_prompt = (
+        premium_only
+        and not show_all_live
+        and premium_live_count == 0
+        and raw_live_count > 0
+        and scope in ("all", "live", "premium", "heute")
+    )
+
     return {
         "configured": True,
         "today": today_s,
@@ -224,6 +293,11 @@ def fetch_live_center_payload(
         "sections": sections,
         "total_fixtures": len(filtered),
         "league_names": league_name_map(),
+        "premium_live_count": premium_live_count,
+        "raw_live_count": raw_live_count,
+        "show_all_live_prompt": show_prompt,
+        "premium_only": premium_only,
+        "show_all_live": show_all_live,
     }
 
 

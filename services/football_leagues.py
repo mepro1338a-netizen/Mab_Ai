@@ -1,74 +1,121 @@
-"""Curated league catalog for Live Match Center."""
+"""Curated league catalog for Live Match Center — backed by config.py IDs."""
 from __future__ import annotations
 
 from typing import Any
 
-# API-Football league IDs (v3)
+from config import (
+    FOOTBALL_LEAGUE_GROUPS,
+    FOOTBALL_LEAGUE_META,
+    FOOTBALL_LEAGUE_PRIORITY,
+    FOOTBALL_LEAGUE_TIER,
+    FOOTBALL_PREMIUM_LEAGUE_IDS,
+)
+
 LEAGUE_CATALOG: dict[str, list[dict[str, Any]]] = {
-    "deutschland": [
-        {"id": 78, "name": "1. Bundesliga", "country": "Germany"},
-        {"id": 79, "name": "2. Bundesliga", "country": "Germany"},
-        {"id": 80, "name": "3. Liga", "country": "Germany"},
-        {"id": 81, "name": "DFB Pokal", "country": "Germany"},
-    ],
-    "europa_top": [
-        {"id": 39, "name": "Premier League", "country": "England"},
-        {"id": 140, "name": "La Liga", "country": "Spain"},
-        {"id": 135, "name": "Serie A", "country": "Italy"},
-        {"id": 61, "name": "Ligue 1", "country": "France"},
-        {"id": 88, "name": "Eredivisie", "country": "Netherlands"},
-    ],
-    "uefa": [
-        {"id": 2, "name": "Champions League", "country": "Europe"},
-        {"id": 3, "name": "Europa League", "country": "Europe"},
-        {"id": 848, "name": "Conference League", "country": "Europe"},
-    ],
-    "international": [
-        {"id": 307, "name": "Saudi Pro League", "country": "Saudi Arabia"},
-        {"id": 253, "name": "MLS", "country": "USA"},
-    ],
-    "national": [
-        {"id": 1, "name": "World Cup", "country": "World"},
-        {"id": 4, "name": "Euro Championship", "country": "Europe"},
-        {"id": 5, "name": "UEFA Nations League", "country": "Europe"},
-        {"id": 9, "name": "Copa America", "country": "South America"},
-        {"id": 32, "name": "World Cup Qual. Europe", "country": "Europe"},
-    ],
+    k: list(v) for k, v in FOOTBALL_LEAGUE_GROUPS.items()
 }
 
 CATEGORY_LABELS: dict[str, str] = {
+    "premium": "Premium",
+    "heute": "Heute",
+    "live": "Live",
+    "morgen": "Morgen",
     "deutschland": "Deutschland",
-    "europa_top": "Europa Topligen",
-    "uefa": "UEFA Wettbewerbe",
-    "international": "International",
-    "national": "Top Nationalteams",
+    "uefa": "UEFA",
+    "europa_top": "Topligen",
+    "national": "Nationalteams",
     "favoriten": "Favoriten",
+    "alle": "Alle Ligen",
 }
 
 LIVE_STATUSES = frozenset({"1H", "HT", "2H", "ET", "P", "BT", "LIVE", "INT"})
 FINISHED_STATUSES = frozenset({"FT", "AET", "PEN", "AWD", "WO"})
 SCHEDULED_STATUSES = frozenset({"NS", "TBD", "PST", "SUSP"})
 
+# Featured cards: Deutschland + UEFA + Top-3 Topligen
+FEATURED_LEAGUE_IDS = frozenset(
+    lid
+    for grp in ("deutschland", "uefa")
+    for lid in (int(lg["id"]) for lg in LEAGUE_CATALOG.get(grp, []))
+) | frozenset(
+    int(lg["id"]) for lg in LEAGUE_CATALOG.get("europa_top", [])[:3]
+)
+
+
+def premium_league_ids() -> frozenset[int]:
+    return FOOTBALL_PREMIUM_LEAGUE_IDS
+
 
 def all_league_ids() -> set[int]:
-    ids: set[int] = set()
-    for group in LEAGUE_CATALOG.values():
-        for lg in group:
-            ids.add(int(lg["id"]))
-    return ids
+    return set(FOOTBALL_LEAGUE_META.keys())
 
 
 def league_name_map() -> dict[int, str]:
-    out: dict[int, str] = {}
-    for group in LEAGUE_CATALOG.values():
-        for lg in group:
-            out[int(lg["id"])] = str(lg["name"])
-    return out
+    return {lid: str(meta.get("name") or "") for lid, meta in FOOTBALL_LEAGUE_META.items()}
+
+
+def league_ids_for_category(category: str, favorites: list[int] | None = None) -> set[int] | None:
+    """Return league ID set for filter. None = no league restriction (alle live)."""
+    if category == "premium":
+        return set(FOOTBALL_PREMIUM_LEAGUE_IDS)
+    if category == "alle":
+        return None
+    if category == "favoriten":
+        fav = favorites or []
+        return {int(i) for i in fav if int(i) in FOOTBALL_LEAGUE_META}
+    if category in LEAGUE_CATALOG:
+        return {int(lg["id"]) for lg in LEAGUE_CATALOG[category]}
+    return set(FOOTBALL_PREMIUM_LEAGUE_IDS)
 
 
 def leagues_for_category(category: str, favorites: list[int] | None = None) -> list[dict[str, Any]]:
+    if category == "premium":
+        out: list[dict[str, Any]] = []
+        seen: set[int] = set()
+        for grp in ("deutschland", "uefa", "europa_top", "national"):
+            for lg in LEAGUE_CATALOG.get(grp, []):
+                lid = int(lg["id"])
+                if lid not in seen:
+                    seen.add(lid)
+                    out.append(lg)
+        return out
     if category == "favoriten":
         fav = favorites or []
         lookup = {int(lg["id"]): lg for g in LEAGUE_CATALOG.values() for lg in g}
         return [lookup[i] for i in fav if i in lookup]
+    if category in ("heute", "live", "morgen", "alle"):
+        return []
     return list(LEAGUE_CATALOG.get(category, []))
+
+
+def league_tier(league_id: int | None) -> int:
+    if league_id is None:
+        return 99
+    return int(FOOTBALL_LEAGUE_TIER.get(int(league_id), 99))
+
+
+def relevance_score(
+    *,
+    league_id: int | None,
+    live: bool = False,
+    finished: bool = False,
+) -> int:
+    """Higher = more important. Internal sort key only."""
+    tier = league_tier(league_id)
+    prio = int(FOOTBALL_LEAGUE_PRIORITY.get(int(league_id or 0), 99))
+    score = 10_000
+    if live:
+        score += 50_000
+    elif finished:
+        score += 5_000
+    score -= tier * 1_000
+    score -= prio * 10
+    if league_id and int(league_id) in FEATURED_LEAGUE_IDS:
+        score += 500
+    return score
+
+
+def is_featured_league(league_id: int | None) -> bool:
+    if not league_id:
+        return False
+    return int(league_id) in FEATURED_LEAGUE_IDS

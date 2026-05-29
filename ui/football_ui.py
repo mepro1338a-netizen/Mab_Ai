@@ -9,22 +9,16 @@ import streamlit as st
 
 from ui.styles import inject_css
 
-POPULAR_LEAGUES: list[dict[str, Any]] = [
-    {"id": 78, "name": "1. Bundesliga", "country": "Germany"},
-    {"id": 79, "name": "2. Bundesliga", "country": "Germany"},
-    {"id": 80, "name": "3. Liga", "country": "Germany"},
-    {"id": 81, "name": "DFB Pokal", "country": "Germany"},
-    {"id": 39, "name": "Premier League", "country": "England"},
-    {"id": 140, "name": "La Liga", "country": "Spain"},
-    {"id": 135, "name": "Serie A", "country": "Italy"},
-    {"id": 61, "name": "Ligue 1", "country": "France"},
-    {"id": 88, "name": "Eredivisie", "country": "Netherlands"},
-    {"id": 2, "name": "Champions League", "country": "Europe"},
-    {"id": 3, "name": "Europa League", "country": "Europe"},
-    {"id": 848, "name": "Conference League", "country": "Europe"},
-    {"id": 307, "name": "Saudi Pro League", "country": "Saudi Arabia"},
-    {"id": 253, "name": "MLS", "country": "USA"},
-]
+from config import FOOTBALL_LEAGUE_GROUPS
+
+POPULAR_LEAGUES: list[dict[str, Any]] = []
+_seen_pop: set[int] = set()
+for _grp in ("deutschland", "uefa", "europa_top", "national", "international"):
+    for _lg in FOOTBALL_LEAGUE_GROUPS.get(_grp, []):
+        _lid = int(_lg["id"])
+        if _lid not in _seen_pop:
+            _seen_pop.add(_lid)
+            POPULAR_LEAGUES.append(dict(_lg))
 
 FOOTBALL_UI_CSS = """
 .fb-command-hero {
