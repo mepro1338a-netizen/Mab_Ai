@@ -221,28 +221,19 @@ def google_login_link() -> str:
 
 def render_mode_switch() -> str:
     mode = st.session_state.get("gate_mode", "login")
-    st.markdown('<div class="mb-mode-switch">', unsafe_allow_html=True)
+    css_class = "mb-mode-register" if mode == "register" else "mb-mode-login"
+    st.markdown(f'<div class="mb-mode-switch {css_class}">', unsafe_allow_html=True)
     c1, c2 = st.columns(2, gap="small")
     with c1:
-        if st.button(
-            "Anmelden",
-            key="gate_login",
-            width="stretch",
-            type="primary" if mode == "login" else "secondary",
-        ):
+        if st.button("Anmelden", key="gate_login", width="stretch", type="tertiary"):
             st.session_state.gate_mode = "login"
             st.rerun()
     with c2:
-        if st.button(
-            "Registrieren",
-            key="gate_register",
-            width="stretch",
-            type="primary" if mode == "register" else "secondary",
-        ):
+        if st.button("Registrieren", key="gate_register", width="stretch", type="tertiary"):
             st.session_state.gate_mode = "register"
             st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
-    return st.session_state.get("gate_mode", "login")
+    return mode
 
 
 def render_google_block() -> None:
@@ -252,12 +243,13 @@ def render_google_block() -> None:
 
 
 def render_login_form() -> None:
+    st.markdown('<div class="mb-login-form">', unsafe_allow_html=True)
     with st.form("gate_login_form", clear_on_submit=False, border=False):
         user = st.text_input("Benutzername", placeholder="dein-benutzername", label_visibility="collapsed")
-        pw = st.text_input("Passwort", type="password", placeholder="Passwort", label_visibility="collapsed")
-        st.markdown('<p style="height:4px;margin:0"></p>', unsafe_allow_html=True)
-        if st.form_submit_button("In MaByte einsteigen →", type="secondary", width="stretch"):
+        pw = st.text_input("Passwort", type="password", placeholder="Dein Passwort", label_visibility="collapsed")
+        if st.form_submit_button("In MaByte einsteigen →", type="primary", width="stretch"):
             do_login(user, pw)
+    st.markdown("</div>", unsafe_allow_html=True)
 
 
 def render_register_form() -> None:
@@ -284,7 +276,7 @@ def render_register_form() -> None:
             st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
             refresh = st.form_submit_button("↻")
         st.markdown("</div>", unsafe_allow_html=True)
-        submitted = st.form_submit_button("Konto erstellen →", type="secondary", width="stretch")
+        submitted = st.form_submit_button("Konto erstellen →", type="primary", width="stretch")
 
     if refresh:
         refresh_captcha()
@@ -317,12 +309,10 @@ def render_auth() -> None:
     inject_css(auth_styles_bundle())
     handle_oauth_callback()
 
-    hero_col, panel_col = st.columns([1.25, 0.75], gap="small")
+    hero_col, panel_col = st.columns([1.2, 0.8], gap="large")
 
     with hero_col:
         st.markdown(hero_html(), unsafe_allow_html=True)
 
     with panel_col:
         render_gate_panel()
-
-    inject_css(auth_styles_bundle())

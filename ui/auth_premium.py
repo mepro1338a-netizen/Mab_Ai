@@ -45,30 +45,66 @@ html { color-scheme: dark !important; }
 
 """
     + _s("""
+[data-testid="stMainBlockContainer"] {
+    padding-top: 0.75rem !important;
+    padding-bottom: 1.5rem !important;
+}
+
 .block-container {
-    max-width: 1200px !important;
-    padding: 24px 28px 40px 28px !important;
-    min-height: calc(100vh - 2rem) !important;
+    max-width: 1180px !important;
+    padding: 12px 24px 20px 24px !important;
+    min-height: auto !important;
+}
+
+[data-testid="column"]:first-child [data-testid="stMarkdownContainer"] {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+> div > div > [data-testid="stVerticalBlock"] {
+    gap: 0 !important;
 }
 
 > div > div > [data-testid="stHorizontalBlock"] {
-    align-items: stretch !important;
-    gap: 0 !important;
-    min-height: min(780px, calc(100vh - 5rem)) !important;
+    align-items: center !important;
+    gap: 2.5rem !important;
+    min-height: auto !important;
 }
 
 [data-testid="column"]:first-child {
-    padding: 48px 48px 48px 12px !important;
+    padding: 8px 24px 16px 8px !important;
     display: flex !important;
     flex-direction: column !important;
     justify-content: center !important;
+    align-self: center !important;
+}
+
+[data-testid="column"]:first-child > [data-testid="stVerticalBlock"] {
+    justify-content: flex-start !important;
+    align-items: flex-start !important;
+    gap: 0 !important;
+    width: 100% !important;
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+
+[data-testid="column"]:first-child [data-testid="stMarkdown"] {
+    width: 100% !important;
 }
 
 [data-testid="column"]:last-child {
-    padding: 32px 12px 32px 32px !important;
+    padding: 8px 8px 16px 16px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
+    align-self: center !important;
+}
+
+[data-testid="column"]:last-child > [data-testid="stVerticalBlock"] {
+    width: 100% !important;
+    max-width: 400px !important;
+    margin-left: auto !important;
+    margin-right: 0 !important;
 }
 """)
     + """
@@ -117,11 +153,11 @@ html { color-scheme: dark !important; }
 }
 
 .mb-gate-title {
-    font-size: clamp(52px, 6vw, 72px);
+    font-size: clamp(44px, 5vw, 58px);
     font-weight: 800;
     letter-spacing: -0.05em;
     line-height: 0.95;
-    margin: 0 0 16px 0;
+    margin: 0 0 14px 0;
     background: linear-gradient(135deg, #ffffff 0%, #e9d5ff 40%, #7c3aed 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -140,10 +176,10 @@ html { color-scheme: dark !important; }
 
 .mb-gate-story {
     color: #a1a1aa !important;
-    font-size: 15px;
-    line-height: 1.75;
-    margin: 0 0 28px 0;
-    max-width: 500px;
+    font-size: 14px;
+    line-height: 1.65;
+    margin: 0 0 20px 0;
+    max-width: 480px;
 }
 .mb-gate-story strong {
     color: #e4e4e7 !important;
@@ -153,9 +189,9 @@ html { color-scheme: dark !important; }
 .mb-gate-stats {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-    max-width: 520px;
-    margin-bottom: 24px;
+    gap: 10px;
+    max-width: 480px;
+    margin-bottom: 16px;
 }
 .mb-gate-stat {
     padding: 16px 14px;
@@ -210,8 +246,9 @@ html { color-scheme: dark !important; }
 }
 
 [data-testid="stVerticalBlockBorderWrapper"] > [data-testid="stVerticalBlock"] {
-    padding: 28px 26px 24px 26px !important;
+    padding: 22px 22px 20px 22px !important;
     gap: 0 !important;
+    overflow: visible !important;
 }
 """)
     + """
@@ -232,14 +269,20 @@ html { color-scheme: dark !important; }
 """
     + _s("""
 .mb-mode-switch [data-testid="stHorizontalBlock"] {
-    gap: 6px !important;
+    gap: 5px !important;
     background: #09090b !important;
     border: 1px solid #3f3f46 !important;
     border-radius: 10px !important;
     padding: 4px !important;
-    margin-bottom: 20px !important;
+    margin-bottom: 18px !important;
 }
-.mb-mode-switch .stButton > button {
+.mb-mode-switch .stButton > button,
+.mb-mode-switch .stButton > button[kind="primary"],
+.mb-mode-switch .stButton > button[kind="secondary"],
+.mb-mode-switch .stButton > button[kind="tertiary"],
+.mb-mode-switch .stButton > button[data-testid="stBaseButton-primary"],
+.mb-mode-switch .stButton > button[data-testid="stBaseButton-secondary"],
+.mb-mode-switch .stButton > button[data-testid="stBaseButton-tertiary"] {
     min-height: 36px !important;
     border-radius: 8px !important;
     font-size: 13px !important;
@@ -248,18 +291,26 @@ html { color-scheme: dark !important; }
     box-shadow: none !important;
     width: 100% !important;
     background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
     color: #71717a !important;
 }
-.mb-mode-switch .stButton > button p { color: inherit !important; font-weight: 600 !important; }
-.mb-mode-switch .stButton > button[kind="primary"],
-.mb-mode-switch .stButton > button[data-testid="stBaseButton-primary"] {
-    background: #27272a !important;
-    color: #fafafa !important;
+.mb-mode-switch .stButton > button p,
+.mb-mode-switch .stButton > button[kind="primary"] p,
+.mb-mode-switch .stButton > button[kind="secondary"] p,
+.mb-mode-switch .stButton > button[kind="tertiary"] p {
+    color: inherit !important;
+    font-weight: 600 !important;
 }
-.mb-mode-switch .stButton > button[kind="secondary"],
-.mb-mode-switch .stButton > button[data-testid="stBaseButton-secondary"] {
-    background: transparent !important;
-    color: #71717a !important;
+.mb-mode-login .stButton:first-of-type > button,
+.mb-mode-register .stButton:last-of-type > button {
+    background: #7c3aed !important;
+    background-color: #7c3aed !important;
+    color: #ffffff !important;
+}
+.mb-mode-login .stButton:first-of-type > button p,
+.mb-mode-register .stButton:last-of-type > button p {
+    color: #ffffff !important;
 }
 """)
     + """
@@ -368,103 +419,117 @@ html { color-scheme: dark !important; }
 
 def login_widget_css() -> str:
     """Overrides for Streamlit widgets on the gate page."""
+    gate = ".stApp:has(.mb-gate)"
     return (
-        """
-"""
-        + _SCOPE
-        + """
-[data-testid="stWidgetLabel"], [data-testid="stWidgetLabel"] p,
-label[data-testid="stWidgetLabel"] p {
-    color: #a1a1aa !important;
-    font-size: 12px !important;
-    font-weight: 500 !important;
-}
-
-[data-testid="stTextInput"], [data-testid="stNumberInput"] {
+        f"""
+{gate} [data-testid="stTextInput"],
+{gate} [data-testid="stNumberInput"] {{
     background: transparent !important;
-}
-[data-testid="stTextInput"] > div, [data-testid="stNumberInput"] > div,
-[data-testid="stTextInput"] fieldset, [data-testid="stNumberInput"] fieldset {
+}}
+{gate} [data-testid="stTextInput"] > div,
+{gate} [data-testid="stNumberInput"] > div,
+{gate} [data-testid="stTextInput"] > div > div,
+{gate} [data-testid="stTextInput"] fieldset,
+{gate} [data-testid="stNumberInput"] fieldset {{
     background: transparent !important;
+    background-color: transparent !important;
     border: none !important;
     box-shadow: none !important;
     padding: 0 !important;
-}
+}}
 
-[data-testid="stTextInput"] div[data-baseweb="input"],
-[data-testid="stNumberInput"] div[data-baseweb="input"] {
-    background: #0a0a0c !important;
-    background-color: #0a0a0c !important;
+{gate} [data-testid="stTextInput"] div[data-baseweb="input"],
+{gate} [data-testid="stNumberInput"] div[data-baseweb="input"] {{
+    background: #141416 !important;
+    background-color: #141416 !important;
     border: 1px solid #3f3f46 !important;
     border-radius: 10px !important;
-    min-height: 42px !important;
-}
-[data-testid="stTextInput"] div[data-baseweb="input"]:focus-within,
-[data-testid="stNumberInput"] div[data-baseweb="input"]:focus-within {
+    min-height: 44px !important;
+}}
+{gate} [data-testid="stTextInput"] div[data-baseweb="input"]:focus-within,
+{gate} [data-testid="stNumberInput"] div[data-baseweb="input"]:focus-within {{
     border-color: #8b5cf6 !important;
-    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.25) !important;
-}
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.28) !important;
+}}
 
-[data-testid="stTextInput"] input,
-[data-testid="stNumberInput"] input {
+{gate} [data-testid="stTextInput"] input,
+{gate} [data-testid="stNumberInput"] input {{
     background: transparent !important;
-    color: #fafafa !important;
-    -webkit-text-fill-color: #fafafa !important;
+    background-color: transparent !important;
+    color: #f4f4f5 !important;
+    -webkit-text-fill-color: #f4f4f5 !important;
+    caret-color: #f4f4f5 !important;
     font-size: 14px !important;
-    caret-color: #fafafa !important;
-}
-[data-testid="stTextInput"] input::placeholder { color: #52525b !important; }
-[data-testid="stTextInput"] input:-webkit-autofill {
-    -webkit-box-shadow: 0 0 0 1000px #0a0a0c inset !important;
-    -webkit-text-fill-color: #fafafa !important;
-}
-[data-testid="stTextInput"] button { color: #71717a !important; background: transparent !important; }
+}}
+{gate} [data-testid="stTextInput"] input::placeholder,
+{gate} [data-testid="stNumberInput"] input::placeholder {{
+    color: #71717a !important;
+    opacity: 1 !important;
+}}
+{gate} [data-testid="stTextInput"] input:-webkit-autofill,
+{gate} [data-testid="stTextInput"] input:-webkit-autofill:focus {{
+    -webkit-box-shadow: 0 0 0 1000px #141416 inset !important;
+    -webkit-text-fill-color: #f4f4f5 !important;
+}}
+{gate} [data-testid="stTextInput"] button {{
+    color: #a1a1aa !important;
+    background: transparent !important;
+}}
 
-[data-testid="stForm"] { border: none !important; padding: 0 !important; }
-[data-testid="stForm"] [data-testid="stVerticalBlock"] { gap: 12px !important; }
+{gate} [data-testid="stForm"] {{
+    border: none !important;
+    padding: 0 !important;
+}}
+{gate} .mb-login-form [data-testid="stVerticalBlock"] {{
+    gap: 12px !important;
+}}
 
-.stFormSubmitButton button,
-[data-testid="stFormSubmitButton"] button,
-form button[kind="primaryFormSubmit"],
-form button[kind="secondaryFormSubmit"],
-form button[data-testid="stBaseButton-primaryFormSubmit"],
-form button[data-testid="stBaseButton-secondaryFormSubmit"] {
+{gate} .stFormSubmitButton > button,
+{gate} .stFormSubmitButton button,
+{gate} [data-testid="stFormSubmitButton"] button,
+{gate} form button,
+{gate} form button[kind="primaryFormSubmit"],
+{gate} form button[kind="secondaryFormSubmit"],
+{gate} button[data-testid="stBaseButton-primaryFormSubmit"],
+{gate} button[data-testid="stBaseButton-secondaryFormSubmit"] {{
     width: 100% !important;
-    min-height: 42px !important;
+    min-height: 44px !important;
     border-radius: 10px !important;
-    border: 1px solid #5b21b6 !important;
-    background: linear-gradient(180deg, #9333ea 0%, #7c3aed 50%, #6d28d9 100%) !important;
+    border: 1px solid #6d28d9 !important;
+    background: linear-gradient(180deg, #9333ea, #7c3aed 55%, #6d28d9) !important;
     background-color: #7c3aed !important;
+    background-image: none !important;
     color: #ffffff !important;
     font-weight: 700 !important;
     font-size: 14px !important;
-    letter-spacing: 0.01em;
-    box-shadow: 0 4px 20px rgba(124, 58, 237, 0.4) !important;
-}
-.stFormSubmitButton button p, form button p { color: #ffffff !important; font-weight: 700 !important; }
-.stFormSubmitButton button:hover, form button:hover {
-    background: linear-gradient(180deg, #a855f7 0%, #8b5cf6 50%, #7c3aed 100%) !important;
-    box-shadow: 0 6px 28px rgba(124, 58, 237, 0.5) !important;
-}
+    box-shadow: 0 4px 18px rgba(124, 58, 237, 0.4) !important;
+}}
+{gate} .stFormSubmitButton button p,
+{gate} form button p,
+{gate} form button span {{
+    color: #ffffff !important;
+}}
 
-.mb-login-captcha .stFormSubmitButton button,
-.mb-login-captcha form button {
-    min-height: 42px !important;
+{gate} .mb-login-captcha .stFormSubmitButton button,
+{gate} .mb-login-captcha form button {{
     width: auto !important;
+    min-height: 44px !important;
     background: #27272a !important;
     background-image: none !important;
     border: 1px solid #3f3f46 !important;
-    color: #a1a1aa !important;
+    color: #d4d4d8 !important;
     box-shadow: none !important;
-    font-weight: 600 !important;
-}
+}}
 
-.stCaption, [data-testid="stCaptionContainer"], [data-testid="stCaptionContainer"] p {
-    color: #52525b !important;
-    font-size: 11px !important;
-}
+{gate} [data-testid="stAlert"] {{
+    display: none !important;
+}}
 
-[data-testid="stAlert"] { display: none !important; }
+@media (max-height: 800px) {{
+    .mb-gate-stats {{ display: none; }}
+    .mb-gate-tags {{ display: none; }}
+    .mb-gate-story {{ margin-bottom: 14px; }}
+}}
 """
     )
 
