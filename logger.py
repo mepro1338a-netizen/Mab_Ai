@@ -169,7 +169,7 @@ def user_friendly_error(category: str, technical: str = "") -> str:
     """Safe UI messages — never expose stack traces."""
     messages = {
         "auth": "Anmeldung fehlgeschlagen. Bitte Zugangsdaten prüfen.",
-        "oauth": "Social Login vorübergehend nicht verfügbar. Bitte erneut versuchen.",
+        "oauth": "Anmeldung mit Google vorübergehend nicht verfügbar. Bitte erneut versuchen.",
         "stripe": "Zahlung konnte nicht gestartet werden. Bitte später erneut versuchen.",
         "api": "Externer Dienst antwortet nicht. Bitte kurz warten.",
         "football": "Football-Daten temporär nicht verfügbar.",

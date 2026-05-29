@@ -12,7 +12,6 @@ from oauth_service import (
     auth_url,
     complete_oauth,
     friendly_oauth_error,
-    google_oauth_diagnostics,
     make_state,
     oauth_state_ready,
     provider_configured,
@@ -111,26 +110,26 @@ def do_register(username: str, email: str, password: str, captcha: int) -> None:
     result = int(st.session_state.captcha_a) + int(st.session_state.captcha_b)
 
     if not is_valid_username(username):
-        st.error("Ungültiger Username.")
+        st.error("Bitte einen gültigen Benutzernamen wählen (3–20 Zeichen, Buchstaben/Zahlen).")
         return
 
     if not is_valid_email(email):
-        st.error("Ungültige Email.")
+        st.error("Bitte eine gültige E-Mail-Adresse eingeben.")
         return
 
     if len(password or "") < 6:
-        st.error("Passwort muss mindestens 6 Zeichen haben.")
+        st.error("Das Passwort muss mindestens 6 Zeichen lang sein.")
         return
 
     if int(captcha or 0) != result:
-        st.error("Captcha falsch.")
+        st.error("Die Rechenaufgabe war leider falsch — bitte erneut versuchen.")
         refresh_captcha()
         return
 
     ok, msg = create_user(username=username, email=email, password=password)
 
     if ok:
-        st.success("Account erstellt — wechsle zum Tab «Anmelden».")
+        st.success("Dein Konto wurde erstellt. Wechsle zum Tab «Anmelden» und logge dich ein.")
         refresh_captcha()
     else:
         st.error(msg)
@@ -171,7 +170,7 @@ def finish_oauth_login(user: dict, *, provider: str) -> None:
 
     if resume_pending_social_connect():
         return
-    _set_oauth_notice("success", f"Willkommen zurück — eingeloggt via {provider.title()}.")
+    _set_oauth_notice("success", "Willkommen zurück — du bist angemeldet.")
     st.session_state.page = "home"
     st.rerun()
 
@@ -201,7 +200,7 @@ def handle_oauth_callback() -> bool:
         return False
 
     if not code or not state:
-        _set_oauth_notice("error", "OAuth-Antwort unvollständig. Bitte erneut anmelden.")
+        _set_oauth_notice("error", "Die Anmeldung konnte nicht abgeschlossen werden. Bitte versuche es erneut.")
         st.query_params.clear()
         return False
 
@@ -253,7 +252,7 @@ GOOGLE_ICON_SVG = """
 
 
 def google_login_link() -> str:
-    label = "Google"
+    label = "Mit Google anmelden"
     if provider_configured("google"):
         state = make_state("google")
         url = html.escape(auth_url("google", state), quote=True)
@@ -261,11 +260,8 @@ def google_login_link() -> str:
             f'<a class="mb-login-google" href="{url}" rel="noopener noreferrer">'
             f"{GOOGLE_ICON_SVG}{html.escape(label)}</a>"
         )
-    title = "OAuth nicht konfiguriert"
-    if not oauth_state_ready():
-        title = "OAUTH_STATE_SECRET fehlt"
     return (
-        f'<span class="mb-login-google disabled" title="{html.escape(title)}">'
+        f'<span class="mb-login-google disabled" title="Derzeit nicht verfügbar">'
         f"{GOOGLE_ICON_SVG}{html.escape(label)}</span>"
     )
 
@@ -273,56 +269,50 @@ def google_login_link() -> str:
 def render_google_login() -> None:
     st.markdown(google_login_link(), unsafe_allow_html=True)
     st.markdown(
-        '<p class="mb-login-trust">OAuth 2.0 · kein Passwort auf unseren Servern</p>',
+        '<p class="mb-login-trust">Sicher über Google — wir speichern kein Google-Passwort.</p>',
         unsafe_allow_html=True,
     )
-    st.markdown('<div class="mb-login-divider">oder</div>', unsafe_allow_html=True)
+    st.markdown('<div class="mb-login-divider">oder mit Zugangsdaten</div>', unsafe_allow_html=True)
 
     if not provider_configured("google"):
-        hints = []
-        if not oauth_state_ready():
-            hints.append("OAUTH_STATE_SECRET")
-        hints.append("GOOGLE_CLIENT_ID/SECRET")
-        st.caption("Google: " + ", ".join(hints))
+        st.caption("Google-Anmeldung ist gerade nicht verfügbar. Nutze Benutzername und Passwort.")
 
-    with st.expander("Google Login Hilfe", expanded=False):
-        diag = google_oauth_diagnostics()
-        st.markdown(
-            f"**Redirect URI:** `{diag['redirect_uri']}`  \n"
-            f"**Domain:** `{diag['public_origin']}` · **Status:** {diag['issues']}"
-        )
+    st.markdown(
+        '<p class="mb-login-help">Probleme mit Google? '
+        "Versuche es erneut oder melde dich mit Benutzername und Passwort an.</p>",
+        unsafe_allow_html=True,
+    )
 
 
 def render_login_form() -> None:
     with st.form("login_form", clear_on_submit=False, border=False):
-        user = st.text_input("Benutzername", placeholder="username", label_visibility="visible")
-        pw = st.text_input("Passwort", type="password", placeholder="••••••••")
+        user = st.text_input("Benutzername", placeholder="dein-benutzername")
+        pw = st.text_input("Passwort", type="password", placeholder="Dein Passwort")
         if st.form_submit_button("Anmelden", type="primary", width="stretch"):
             do_login(user, pw)
 
 
 def render_register_form() -> None:
     with st.form("register_form", clear_on_submit=False, border=False):
-        user = st.text_input("Username", placeholder="creator123")
+        user = st.text_input("Benutzername", placeholder="z. B. creator123")
         email = st.text_input("E-Mail", placeholder="name@firma.de")
-        pw = st.text_input("Passwort", type="password", placeholder="min. 6 Zeichen")
+        pw = st.text_input("Passwort", type="password", placeholder="Mindestens 6 Zeichen")
 
         st.markdown('<div class="mb-login-captcha">', unsafe_allow_html=True)
         cap_col, ref_col = st.columns([0.84, 0.16], gap="small")
         with cap_col:
             captcha = st.number_input(
-                f"{st.session_state.captcha_a} + {st.session_state.captcha_b}",
+                f"Rechenaufgabe: {st.session_state.captcha_a} + {st.session_state.captcha_b} = ?",
                 min_value=0,
                 max_value=20,
                 step=1,
-                label_visibility="collapsed",
             )
         with ref_col:
-            st.markdown("<div style='height:22px'></div>", unsafe_allow_html=True)
-            refresh = st.form_submit_button("↻")
+            st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
+            refresh = st.form_submit_button("Neu")
         st.markdown("</div>", unsafe_allow_html=True)
 
-        submitted = st.form_submit_button("Registrieren", type="primary", width="stretch")
+        submitted = st.form_submit_button("Konto erstellen", type="primary", width="stretch")
 
     if refresh:
         refresh_captcha()

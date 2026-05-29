@@ -375,11 +375,11 @@ def friendly_oauth_error(error_code: str, description: str = "") -> str:
     desc = (description or "").strip()
     messages = {
         "access_denied": "Google-Anmeldung abgebrochen.",
-        "invalid_scope": "OAuth-Berechtigung ungültig. Bitte Admin kontaktieren.",
-        "server_error": "Google ist vorübergehend nicht erreichbar.",
-        "temporarily_unavailable": "Google ist vorübergehend nicht erreichbar.",
+        "invalid_scope": "Die Google-Anmeldung ist derzeit nicht möglich. Bitte Support kontaktieren.",
+        "server_error": "Google ist vorübergehend nicht erreichbar. Bitte später erneut versuchen.",
+        "temporarily_unavailable": "Google ist vorübergehend nicht erreichbar. Bitte später erneut versuchen.",
     }
-    msg = messages.get(code, "OAuth-Anmeldung fehlgeschlagen.")
+    msg = messages.get(code, "Die Anmeldung mit Google ist fehlgeschlagen. Bitte erneut versuchen.")
     if desc and code not in messages:
-        return f"{msg} ({desc[:120]})"
+        return msg
     return msg
