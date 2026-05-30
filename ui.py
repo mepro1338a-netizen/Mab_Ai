@@ -85,20 +85,6 @@ def _is_social_oauth_callback() -> bool:
     return False
 
 
-def _oauth_callback_pending() -> bool:
-    """Google login redirects with ?code=&state= (not social connect)."""
-    if _is_social_oauth_callback():
-        return False
-    params = st.query_params
-    code = params.get("code")
-    state = params.get("state")
-    if isinstance(code, list):
-        code = code[0] if code else None
-    if isinstance(state, list):
-        state = state[0] if state else None
-    return bool(code and state) or bool(params.get("error"))
-
-
 # =========================================================
 # SESSION DEFAULTS
 # =========================================================
@@ -143,16 +129,11 @@ logged_in = bool(
     and st.session_state.get("user")
 )
 
-# Social platform OAuth before login OAuth (same ?code=&state= query shape)
+# Social platform OAuth (YouTube/IG/TikTok — not login)
 if _is_social_oauth_callback():
     from pages.social_oauth import render_social_oauth_callback
 
     render_social_oauth_callback()
-    st.stop()
-
-if _oauth_callback_pending():
-    st.session_state.page = "auth"
-    render_auth()
     st.stop()
 
 if not logged_in:

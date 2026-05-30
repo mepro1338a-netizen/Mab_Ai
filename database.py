@@ -7,7 +7,8 @@ from db.support import *  # noqa: F403
 from db.billing import *  # noqa: F403
 from db.projects import *  # noqa: F403
 from db.automations import *  # noqa: F403
-from db.users import *  # noqa: F403  # includes secure_set_football_plan
+from db.users import *  # noqa: F403  # includes secure_set_football_plan, register_account
+from db.leads import *  # noqa: F403
 from db.memory import *  # noqa: F403
 from db.errors import *  # noqa: F403
 from db.bootstrap import force_owner_account

@@ -164,12 +164,12 @@ def football_api_season() -> int:
     now = datetime.now(ZoneInfo("Europe/Berlin"))
     return now.year if now.month >= 7 else now.year - 1
 
-# API-Football league IDs (v3) — zentral für Live Match Center
+# API-Football league IDs (v3) — Premium-first Live Match Center
+# Tier 0=DE · 1=UEFA · 2=Topligen · 3=National · 4=Secondary · 5=International
 FOOTBALL_LEAGUE_GROUPS: dict[str, list[dict[str, str | int]]] = {
     "deutschland": [
         {"id": 78, "name": "1. Bundesliga", "country": "Germany"},
         {"id": 79, "name": "2. Bundesliga", "country": "Germany"},
-        {"id": 80, "name": "3. Liga", "country": "Germany"},
         {"id": 81, "name": "DFB Pokal", "country": "Germany"},
     ],
     "uefa": [
@@ -183,12 +183,16 @@ FOOTBALL_LEAGUE_GROUPS: dict[str, list[dict[str, str | int]]] = {
         {"id": 135, "name": "Serie A", "country": "Italy"},
         {"id": 61, "name": "Ligue 1", "country": "France"},
         {"id": 88, "name": "Eredivisie", "country": "Netherlands"},
+        {"id": 94, "name": "Primeira Liga", "country": "Portugal"},
     ],
     "national": [
         {"id": 4, "name": "Euro Championship", "country": "Europe"},
         {"id": 5, "name": "UEFA Nations League", "country": "Europe"},
         {"id": 32, "name": "World Cup Qual. Europe", "country": "Europe"},
         {"id": 1, "name": "World Cup", "country": "World"},
+    ],
+    "secondary": [
+        {"id": 80, "name": "3. Liga", "country": "Germany"},
     ],
     "international": [
         {"id": 307, "name": "Saudi Pro League", "country": "Saudi Arabia"},
@@ -197,8 +201,14 @@ FOOTBALL_LEAGUE_GROUPS: dict[str, list[dict[str, str | int]]] = {
     ],
 }
 
-# Tier: 0=Deutschland, 1=UEFA, 2=Topligen, 3=National, 4=International, 99=Rest
-_FOOTBALL_TIER_ORDER = ("deutschland", "uefa", "europa_top", "national", "international")
+_FOOTBALL_TIER_ORDER = (
+    "deutschland",
+    "uefa",
+    "europa_top",
+    "national",
+    "secondary",
+    "international",
+)
 
 FOOTBALL_LEAGUE_TIER: dict[int, int] = {}
 FOOTBALL_LEAGUE_PRIORITY: dict[int, int] = {}

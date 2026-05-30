@@ -22,8 +22,8 @@ def validate_password(password):
     if not password:
         return False, "Bitte Passwort eingeben."
 
-    if len(password) < 6:
-        return False, "Passwort muss mindestens 6 Zeichen haben."
+    if len(password) < 8:
+        return False, "Passwort muss mindestens 8 Zeichen haben."
 
     if len(password.encode("utf-8")) > 72:
         return False, "Passwort maximal 72 Zeichen."
@@ -86,6 +86,150 @@ def create_user(username, email, password):
 
     except Exception as e:
         return False, f"Datenbankfehler: {e}"
+
+    finally:
+        conn.close()
+
+
+def register_account(
+    *,
+    username: str,
+    email: str,
+    password: str,
+    full_name: str,
+    company: str = "",
+    phone: str = "",
+    country: str = "",
+    use_case: str = "",
+    marketing_opt_in: bool = False,
+    terms_accepted: bool = False,
+    ip_address: str = "",
+    user_agent: str = "",
+    utm: dict | None = None,
+) -> tuple[bool, str, dict | None]:
+    """
+    Full registration: user account + lead record (CRM snapshot).
+    Returns (ok, message, user_dict).
+    """
+    import json
+
+    username = normalize_username(username)
+    email = (email or "").strip().lower()
+    full_name = (full_name or "").strip()
+    company = (company or "").strip()
+    phone = (phone or "").strip()
+    country = (country or "").strip()
+    use_case = (use_case or "").strip()
+
+    if not terms_accepted:
+        return False, "Bitte AGB und Datenschutz bestätigen.", None
+
+    if not full_name or len(full_name) < 2:
+        return False, "Bitte deinen vollständigen Namen eingeben.", None
+
+    if not username or not email or not password:
+        return False, "Bitte alle Pflichtfelder ausfüllen.", None
+
+    if not use_case:
+        return False, "Bitte wähle, wofür du MaByte nutzen möchtest.", None
+
+    valid, msg = validate_password(password)
+    if not valid:
+        return False, msg, None
+
+    conn = get_connection()
+    cur = conn.cursor()
+    created_at = now()
+
+    try:
+        password_hash = bcrypt.hashpw(
+            password.encode("utf-8"),
+            bcrypt.gensalt(),
+        ).decode("utf-8")
+
+        cur.execute(
+            """
+            INSERT INTO users (
+                username, email, password_hash, plan, tokens,
+                automation_unlocked, role, admin_level, is_banned,
+                created_at, display_name, company, phone, country,
+                use_case, marketing_opt_in
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                username,
+                email,
+                password_hash,
+                "free",
+                int(PLANS["free"]["tokens"]),
+                0,
+                "user",
+                0,
+                0,
+                created_at,
+                full_name,
+                company,
+                phone,
+                country,
+                use_case,
+                1 if marketing_opt_in else 0,
+            ),
+        )
+
+        cur.execute(
+            """
+            INSERT INTO leads (
+                username, email, full_name, company, phone, country,
+                use_case, marketing_opt_in, terms_accepted, status, source,
+                ip_address, user_agent, referrer, utm_json, meta_json,
+                created_at, converted_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                username,
+                email,
+                full_name,
+                company,
+                phone,
+                country,
+                use_case,
+                1 if marketing_opt_in else 0,
+                1,
+                "registered",
+                "web_register",
+                (ip_address or "")[:120],
+                (user_agent or "")[:500],
+                "",
+                json.dumps(utm or {}, ensure_ascii=False),
+                json.dumps({"registration": "email_password"}, ensure_ascii=False),
+                created_at,
+                created_at,
+            ),
+        )
+
+        conn.commit()
+
+        user = cur.execute(
+            "SELECT * FROM users WHERE username = ?",
+            (username,),
+        ).fetchone()
+
+        add_audit_log(
+            "system",
+            "lead_registered",
+            username,
+            f"{full_name} · {email} · {use_case}",
+        )
+
+        return True, "Konto erfolgreich erstellt.", row_to_dict(user)
+
+    except sqlite3.IntegrityError:
+        conn.rollback()
+        return False, "Benutzername oder E-Mail ist bereits registriert.", None
+
+    except Exception as e:
+        conn.rollback()
+        return False, f"Registrierung fehlgeschlagen: {e}", None
 
     finally:
         conn.close()

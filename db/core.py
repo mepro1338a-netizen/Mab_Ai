@@ -69,6 +69,12 @@ def init_db():
         ("oauth_provider", "TEXT"),
         ("oauth_sub", "TEXT"),
         ("football_plan", "TEXT DEFAULT 'none'"),
+        ("display_name", "TEXT"),
+        ("company", "TEXT"),
+        ("phone", "TEXT"),
+        ("country", "TEXT"),
+        ("use_case", "TEXT"),
+        ("marketing_opt_in", "INTEGER DEFAULT 0"),
     ):
         try:
             cur.execute(f"ALTER TABLE users ADD COLUMN {column} {definition}")
@@ -196,6 +202,13 @@ def init_db():
         created_at TEXT
     )
     """)
+
+    try:
+        from db.leads import init_leads_table
+
+        init_leads_table()
+    except Exception:
+        pass
 
     try:
         from db.video_engine import init_video_engine_tables

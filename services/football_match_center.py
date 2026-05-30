@@ -10,7 +10,9 @@ from services.football_leagues import (
     FINISHED_STATUSES,
     LIVE_STATUSES,
     SCHEDULED_STATUSES,
+    extended_league_ids,
     is_featured_league,
+    is_premium_league,
     league_name_map,
     league_tier,
     premium_league_ids,
@@ -101,6 +103,7 @@ def parse_match_card(fixture: dict[str, Any]) -> dict[str, Any]:
         "finished": finished,
         "tier": league_tier(lid_int),
         "featured": is_featured_league(lid_int),
+        "premium": is_premium_league(lid_int),
         "relevance_score": relevance_score(league_id=lid_int, live=live, finished=finished),
     }
 
@@ -356,6 +359,106 @@ def fetch_live_center_payload(
         "premium_live_count": premium_live_count,
         "raw_live_count": raw_live_count,
         "show_all_live_prompt": show_prompt,
+        "today_local": today_s,
+    }
+
+
+def fetch_premium_dashboard(
+    service: FootballService,
+    *,
+    username: str,
+    include_all_leagues: bool = False,
+) -> dict[str, Any]:
+    """
+    Premium-first dashboard payload — no low-tier leagues unless include_all_leagues.
+    Sections: top_matches (max 5), live_now, all_premium_today, extended_fixtures.
+    """
+    today_s, tomorrow_s = _local_today_tomorrow()
+    errors: list[str] = []
+    premium_ids = set(premium_league_ids())
+
+    if not service.is_configured():
+        return {
+            "configured": False,
+            "today": today_s,
+            "errors": ["API-Football ist nicht konfiguriert (FOOTBALL_API_KEY)."],
+            "top_matches": [],
+            "live_now": [],
+            "all_premium": [],
+            "extended": [],
+            "premium_count": 0,
+            "raw_live_count": 0,
+            "show_international_prompt": False,
+            "include_all_leagues": include_all_leagues,
+        }
+
+    live_rows: list[dict[str, Any]] = []
+    try:
+        live_rows = service.get_live_fixtures(username=username)
+    except FootballAPIError as exc:
+        errors.append(str(exc))
+
+    today_premium = _fetch_by_leagues(
+        service, today_s, premium_ids, username=username, max_leagues=24
+    )
+    merged = dedupe_fixtures(live_rows + today_premium)
+    premium_fixtures = filter_fixtures(merged, league_ids=premium_ids)
+    premium_live = filter_fixtures(live_rows, league_ids=premium_ids)
+
+    sections = classify_fixtures(premium_fixtures, today=today_s, tomorrow=tomorrow_s)
+    live_now = list(sections.get("live_now") or premium_live)
+    if not live_now and premium_live:
+        live_now = sort_fixtures_by_priority(premium_live)
+
+    today_pool: list[dict[str, Any]] = []
+    today_pool.extend(sections.get("live_now") or [])
+    today_pool.extend(sections.get("later_today") or [])
+    today_pool.extend(sections.get("finished_today") or [])
+    today_pool = dedupe_fixtures(today_pool)
+    today_sorted = sort_fixtures_by_priority(today_pool)
+
+    top_matches = today_sorted[:5]
+    all_premium = sort_fixtures_by_priority(premium_fixtures)
+
+    extended: list[dict[str, Any]] = []
+    if include_all_leagues:
+        ext_ids = set(extended_league_ids())
+        try:
+            global_today = service.get_fixtures_by_date(today_s, username=username)
+        except FootballAPIError as exc:
+            errors.append(str(exc))
+            global_today = []
+        for fx in global_today or []:
+            lid = _league_id(fx)
+            if lid is None:
+                continue
+            if int(lid) in premium_ids:
+                continue
+            if int(lid) in ext_ids or league_tier(lid) >= 4:
+                extended.append(fx)
+        extended = sort_fixtures_by_priority(dedupe_fixtures(extended))
+
+    raw_live_count = len(live_rows)
+    premium_count = len(all_premium)
+    show_intl = (
+        not include_all_leagues
+        and premium_count == 0
+        and raw_live_count > 0
+    )
+
+    return {
+        "configured": True,
+        "today": today_s,
+        "tomorrow": tomorrow_s,
+        "errors": errors,
+        "top_matches": top_matches,
+        "live_now": live_now,
+        "all_premium": all_premium,
+        "extended": extended,
+        "premium_count": premium_count,
+        "raw_live_count": raw_live_count,
+        "show_international_prompt": show_intl,
+        "include_all_leagues": include_all_leagues,
         "today_local": today_s,
     }
 

@@ -1,4 +1,4 @@
-"""Curated league catalog for Live Match Center — backed by config.py IDs."""
+"""Curated league catalog — premium-first, no low-tier noise by default."""
 from __future__ import annotations
 
 from typing import Any
@@ -15,33 +15,35 @@ LEAGUE_CATALOG: dict[str, list[dict[str, Any]]] = {
     k: list(v) for k, v in FOOTBALL_LEAGUE_GROUPS.items()
 }
 
-VIEW_LABELS: dict[str, str] = {
-    "top": "Top-Spiele",
-    "live": "Live",
-    "heute": "Heute",
-    "deutschland": "Deutschland",
-    "europa": "Europa",
-}
-
-# Legacy alias
-CATEGORY_LABELS = VIEW_LABELS
-
 LIVE_STATUSES = frozenset({"1H", "HT", "2H", "ET", "P", "BT", "LIVE", "INT"})
 FINISHED_STATUSES = frozenset({"FT", "AET", "PEN", "AWD", "WO"})
 SCHEDULED_STATUSES = frozenset({"NS", "TBD", "PST", "SUSP"})
 
-# Featured cards: Deutschland + UEFA + Top-3 Topligen
-FEATURED_LEAGUE_IDS = frozenset(
-    lid
-    for grp in ("deutschland", "uefa")
-    for lid in (int(lg["id"]) for lg in LEAGUE_CATALOG.get(grp, []))
-) | frozenset(
-    int(lg["id"]) for lg in LEAGUE_CATALOG.get("europa_top", [])[:3]
-)
+# Tier weights for sort — higher = shown first
+_TIER_SCORE = {
+    0: 50_000,  # Deutschland
+    1: 40_000,  # UEFA
+    2: 30_000,  # Topligen
+    3: 20_000,  # National
+    4: 5_000,   # Secondary (3. Liga etc.)
+    5: 1_000,   # International low-tier
+}
 
 
 def premium_league_ids() -> frozenset[int]:
     return FOOTBALL_PREMIUM_LEAGUE_IDS
+
+
+def extended_league_ids() -> frozenset[int]:
+    """Secondary + international — only on explicit user action."""
+    ids: set[int] = set()
+    for grp in ("secondary", "international"):
+        ids.update(int(lg["id"]) for lg in LEAGUE_CATALOG.get(grp, []))
+    return frozenset(ids)
+
+
+def all_curated_league_ids() -> frozenset[int]:
+    return frozenset(FOOTBALL_LEAGUE_META.keys())
 
 
 def all_league_ids() -> set[int]:
@@ -52,9 +54,46 @@ def league_name_map() -> dict[int, str]:
     return {lid: str(meta.get("name") or "") for lid, meta in FOOTBALL_LEAGUE_META.items()}
 
 
+def league_tier(league_id: int | None) -> int:
+    if league_id is None:
+        return 99
+    return int(FOOTBALL_LEAGUE_TIER.get(int(league_id), 99))
+
+
+def is_premium_league(league_id: int | None) -> bool:
+    if not league_id:
+        return False
+    return int(league_id) in FOOTBALL_PREMIUM_LEAGUE_IDS
+
+
+def relevance_score(
+    *,
+    league_id: int | None,
+    live: bool = False,
+    finished: bool = False,
+) -> int:
+    """Higher = more important. Drives Top Matches & tip selection."""
+    tier = league_tier(league_id)
+    prio = int(FOOTBALL_LEAGUE_PRIORITY.get(int(league_id or 0), 99))
+    score = _TIER_SCORE.get(tier, 0)
+    if live:
+        score += 60_000
+    elif not finished:
+        score += 8_000
+    score -= prio * 50
+    score -= tier * 10
+    return score
+
+
+def is_featured_league(league_id: int | None) -> bool:
+    """Top-tier highlight (DE + UEFA + Top-5 leagues)."""
+    if not league_id:
+        return False
+    return league_tier(league_id) <= 2
+
+
 def league_ids_for_view(view: str, favorites: list[int] | None = None) -> set[int] | None:
-    """Return league ID set for filter. None = all leagues worldwide."""
-    if view == "alle":
+    if view in ("alle", "international", "extended"):
         return None
     if view == "deutschland":
         return {int(lg["id"]) for lg in LEAGUE_CATALOG.get("deutschland", [])}
@@ -67,60 +106,3 @@ def league_ids_for_view(view: str, favorites: list[int] | None = None) -> set[in
         fav = favorites or []
         return {int(i) for i in fav if int(i) in FOOTBALL_LEAGUE_META}
     return set(FOOTBALL_PREMIUM_LEAGUE_IDS)
-
-
-def league_ids_for_category(category: str, favorites: list[int] | None = None) -> set[int] | None:
-    return league_ids_for_view(category, favorites=favorites)
-
-
-def leagues_for_category(category: str, favorites: list[int] | None = None) -> list[dict[str, Any]]:
-    if category == "premium":
-        out: list[dict[str, Any]] = []
-        seen: set[int] = set()
-        for grp in ("deutschland", "uefa", "europa_top", "national"):
-            for lg in LEAGUE_CATALOG.get(grp, []):
-                lid = int(lg["id"])
-                if lid not in seen:
-                    seen.add(lid)
-                    out.append(lg)
-        return out
-    if category == "favoriten":
-        fav = favorites or []
-        lookup = {int(lg["id"]): lg for g in LEAGUE_CATALOG.values() for lg in g}
-        return [lookup[i] for i in fav if i in lookup]
-    if category in ("heute", "live", "morgen", "alle"):
-        return []
-    return list(LEAGUE_CATALOG.get(category, []))
-
-
-def league_tier(league_id: int | None) -> int:
-    if league_id is None:
-        return 99
-    return int(FOOTBALL_LEAGUE_TIER.get(int(league_id), 99))
-
-
-def relevance_score(
-    *,
-    league_id: int | None,
-    live: bool = False,
-    finished: bool = False,
-) -> int:
-    """Higher = more important. Internal sort key only."""
-    tier = league_tier(league_id)
-    prio = int(FOOTBALL_LEAGUE_PRIORITY.get(int(league_id or 0), 99))
-    score = 10_000
-    if live:
-        score += 50_000
-    elif finished:
-        score += 5_000
-    score -= tier * 1_000
-    score -= prio * 10
-    if league_id and int(league_id) in FEATURED_LEAGUE_IDS:
-        score += 500
-    return score
-
-
-def is_featured_league(league_id: int | None) -> bool:
-    if not league_id:
-        return False
-    return int(league_id) in FEATURED_LEAGUE_IDS

@@ -693,6 +693,13 @@ html { color-scheme: dark !important; }
     border: 1px solid rgba(96, 165, 250, 0.3);
 }
 .mb-notice-info::before { background: #60a5fa; }
+.mb-field-label {
+    color: rgba(148, 163, 184, 0.95) !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.04em;
+    margin: 10px 0 4px 0 !important;
+}
 .mb-captcha-label {
     font-size: 12px;
     color: #64748b !important;
@@ -1132,8 +1139,8 @@ def panel_shell_html(*, register: bool) -> str:
         return (
             '<div class="mb-login-head">'
             f'{_hex_logo(initial)}'
-            '<h2 class="mb-panel-title">Workspace bei <span class="mb-panel-brand">MaByte</span> anlegen</h2>'
-            '<p class="mb-panel-sub">Erstellen Sie Ihr Konto und starten Sie in wenigen Minuten.</p>'
+            '<h2 class="mb-panel-title">Konto bei <span class="mb-panel-brand">MaByte</span> erstellen</h2>'
+            '<p class="mb-panel-sub">Registrierung mit E-Mail — deine Daten werden als Lead gespeichert.</p>'
             '</div>'
         )
     return (

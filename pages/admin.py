@@ -54,6 +54,8 @@ from database import (
     list_login_logs,
     list_audit_logs,
     usage_summary,
+    list_leads,
+    lead_count,
 )
 
 try:
@@ -253,6 +255,47 @@ def render_analytics():
         if fb_rows:
             st.markdown('<div class="adm-section-title" style="margin-top:16px">Football API (7 Tage)</div>', unsafe_allow_html=True)
             safe_df(fb_rows, height=220)
+
+
+def render_leads():
+    if not is_moderator():
+        st.warning("Kein Zugriff.")
+        return
+
+    total = lead_count()
+    render_section("Lead CRM", f"{total} Leads · vollständige Registrierungsdaten")
+
+    rows = list_leads(limit=500)
+    if not rows:
+        render_empty_state("Noch keine Leads", "Neue Registrierungen erscheinen hier automatisch.")
+        return
+
+    export_rows = []
+    for r in rows:
+        export_rows.append({
+            "id": r.get("id"),
+            "username": r.get("username"),
+            "email": r.get("email"),
+            "name": r.get("full_name"),
+            "company": r.get("company"),
+            "phone": r.get("phone"),
+            "country": r.get("country"),
+            "use_case": r.get("use_case"),
+            "marketing": r.get("marketing_opt_in"),
+            "status": r.get("status"),
+            "ip": r.get("ip_address"),
+            "created": str(r.get("created_at", ""))[:19],
+        })
+
+    st.metric("Leads gesamt", total)
+    safe_df(export_rows, height=420)
+    st.download_button(
+        "CSV Export",
+        data=pd.DataFrame(export_rows).to_csv(index=False).encode("utf-8"),
+        file_name=f"mabyte_leads_{datetime.utcnow().strftime('%Y%m%d')}.csv",
+        mime="text/csv",
+        key="adm_leads_csv",
+    )
 
 
 def render_tickets():
@@ -621,7 +664,7 @@ def render_admin():
         render_tickets()
         return
 
-    tabs = ["Command Center", "Users", "Tickets", "Revenue", "Codes", "Analytics"]
+    tabs = ["Command Center", "Users", "Leads", "Tickets", "Revenue", "Codes", "Analytics"]
     if is_admin():
         tabs.extend(["Security", "Team"])
     if is_owner():
@@ -635,6 +678,9 @@ def render_admin():
     idx += 1
     with tab_objs[idx]:
         render_users()
+    idx += 1
+    with tab_objs[idx]:
+        render_leads()
     idx += 1
     with tab_objs[idx]:
         render_tickets()

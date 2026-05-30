@@ -13,21 +13,25 @@ from ui.styles import inject_css
 MATCH_CENTER_CSS = """
 .fb-mc-header {
     border-radius: 16px;
-    padding: 16px 20px;
-    margin-bottom: 14px;
-    background: linear-gradient(135deg, rgba(8,16,12,.95), rgba(12,14,28,.98));
-    border: 1px solid rgba(34,197,94,.2);
+    padding: 18px 22px;
+    margin-bottom: 16px;
+    background:
+        radial-gradient(ellipse 70% 80% at 100% 0%, rgba(139,92,246,.18), transparent 55%),
+        linear-gradient(135deg, rgba(8,14,24,.98), rgba(6,10,18,.99));
+    border: 1px solid rgba(255,255,255,.08);
 }
 .fb-mc-title {
-    color: #f0fdf4 !important;
-    font-size: 22px;
+    color: #fafafa !important;
+    font-size: 24px;
     font-weight: 900;
     margin: 0;
+    letter-spacing: -0.02em;
 }
 .fb-mc-sub {
-    color: #64748b !important;
+    color: #71717a !important;
     font-size: 12px;
-    margin: 4px 0 0 0;
+    margin: 6px 0 0 0;
+    line-height: 1.45;
 }
 .fb-mc-ticker {
     display: flex;
@@ -55,12 +59,91 @@ MATCH_CENTER_CSS = """
     text-transform: none;
 }
 .fb-mc-section {
-    margin: 20px 0 8px 0;
-    color: #86efac !important;
-    font-size: 11px;
-    font-weight: 1000;
-    letter-spacing: .18em;
+    margin: 24px 0 10px 0;
+    color: #a1a1aa !important;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .16em;
     text-transform: uppercase;
+}
+.fb-mc-top-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 10px;
+    margin-bottom: 8px;
+}
+.fb-mc-top-row .fb-mc-card {
+    border-color: rgba(139,92,246,.25);
+    background: linear-gradient(145deg, rgba(18,16,32,.97), rgba(10,10,18,.98));
+}
+.fb-mc-top-row .fb-mc-card.featured {
+    border-color: rgba(255,231,163,.35);
+    box-shadow: 0 16px 48px rgba(0,0,0,.32);
+}
+.fb-mc-tip-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 8px;
+}
+@media (max-width: 960px) {
+    .fb-mc-tip-grid { grid-template-columns: 1fr; }
+}
+.fb-mc-tip-mini {
+    border-radius: 16px;
+    padding: 16px;
+    background: linear-gradient(160deg, rgba(14,18,32,.96), rgba(8,10,20,.98));
+    border: 1px solid rgba(139,92,246,.22);
+    min-height: 180px;
+}
+.fb-mc-tip-mini .match {
+    color: #f4f4f5 !important;
+    font-size: 14px;
+    font-weight: 800;
+    margin: 0 0 4px 0;
+    line-height: 1.3;
+}
+.fb-mc-tip-mini .liga {
+    color: #71717a !important;
+    font-size: 10px;
+    margin: 0 0 10px 0;
+}
+.fb-mc-tip-mini .pick {
+    color: #fde68a !important;
+    font-size: 15px;
+    font-weight: 900;
+    margin: 0 0 8px 0;
+}
+.fb-mc-tip-mini .metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 8px 0;
+}
+.fb-mc-tip-mini .chip {
+    padding: 4px 8px;
+    border-radius: 6px;
+    background: rgba(0,0,0,.35);
+    border: 1px solid rgba(255,255,255,.06);
+    color: #d4d4d8 !important;
+    font-size: 10px;
+    font-weight: 700;
+}
+.fb-mc-empty-state {
+    border-radius: 16px;
+    padding: 22px 24px;
+    margin: 8px 0 12px 0;
+    background: rgba(18,18,24,.85);
+    border: 1px solid rgba(255,255,255,.08);
+    color: #a1a1aa !important;
+    font-size: 14px;
+    line-height: 1.5;
+}
+.fb-mc-empty-state strong {
+    color: #fafafa !important;
+    display: block;
+    margin-bottom: 6px;
+    font-size: 15px;
 }
 .fb-mc-grid {
     display: grid;
@@ -293,17 +376,67 @@ def render_mc_header(*, live_count: int, today_count: int, api_used: int, api_li
     st.markdown(
         f"""
 <div class="fb-mc-header">
-    <h2 class="fb-mc-title">Live Match Center</h2>
-    <p class="fb-mc-sub">Bundesliga · UEFA · Topligen — kuratiert, ohne Kleinligen-Rauschen</p>
+    <h2 class="fb-mc-title">Football AI Intelligence</h2>
+    <p class="fb-mc-sub">Premium-first · Bundesliga · UEFA · Topligen · Kein Low-Tier-Rauschen</p>
     <div class="fb-mc-ticker">
-        <span class="fb-mc-stat">Jetzt live<strong>{live_count}</strong></span>
-        <span class="fb-mc-stat">Heute<strong>{today_count}</strong></span>
-        <span class="fb-mc-stat">API heute<strong>{api_used:,}/{api_limit:,}</strong></span>
+        <span class="fb-mc-stat">Live<strong>{live_count}</strong></span>
+        <span class="fb-mc-stat">Premium heute<strong>{today_count}</strong></span>
+        <span class="fb-mc-stat">API<strong>{api_used:,}/{api_limit:,}</strong></span>
     </div>
 </div>
         """.replace(",", "."),
         unsafe_allow_html=True,
     )
+
+
+def render_section_title(title: str) -> None:
+    st.markdown(f'<p class="fb-mc-section">{html.escape(title)}</p>', unsafe_allow_html=True)
+
+
+def render_empty_top_matches(*, show_intl_hint: bool = False, raw_live: int = 0) -> None:
+    extra = ""
+    if show_intl_hint and raw_live:
+        extra = f" Es laufen {raw_live} Spiele in kleineren Ligen."
+    st.markdown(
+        f"""
+<div class="fb-mc-empty-state">
+    <strong>Heute keine Topspiele verfügbar</strong>
+    In Premium-Ligen (Bundesliga, UEFA, Topligen) sind heute keine Partien gelistet.{extra}
+</div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_top_matches_row(
+    fixtures: list[dict[str, Any]],
+    *,
+    key_prefix: str = "top",
+    selected_fixture: int | None = None,
+) -> None:
+    if not fixtures:
+        return
+    cards_html = []
+    for fx in fixtures[:5]:
+        card = parse_match_card(fx)
+        card["featured"] = True
+        cards_html.append(_render_match_card_html(card))
+    st.markdown(f'<div class="fb-mc-top-row">{"".join(cards_html)}</div>', unsafe_allow_html=True)
+    cols = st.columns(min(len(fixtures[:5]), 5))
+    for i, fx in enumerate(fixtures[:5]):
+        fid = (fx.get("fixture") or {}).get("id")
+        if not fid:
+            continue
+        try:
+            fid_int = int(fid)
+        except (TypeError, ValueError):
+            continue
+        with cols[i]:
+            btn_type = "primary" if selected_fixture == fid_int else "secondary"
+            if st.button("Analyse", key=f"{key_prefix}_sel_{fid_int}", type=btn_type, width="stretch"):
+                st.session_state.fb_mc_selected_fixture = fid_int
+                st.session_state.pop(f"fb_bet_details_{fid_int}", None)
+                st.rerun()
 
 
 def render_category_chips(categories: dict[str, str], active: str) -> None:
@@ -361,13 +494,60 @@ def render_premium_live_empty(*, raw_live_count: int) -> None:
     st.markdown(
         f"""
 <div class="fb-mc-empty-premium">
-    <strong>Heute keine Topspiele live.</strong>
-    {' Es laufen gerade ' + str(raw_live_count) + ' internationale Spiele.' if raw_live_count else ''}
-    Weitere internationale Spiele anzeigen?
+    <strong>Keine Premium-Ligen live.</strong>
+    {' ' + str(raw_live_count) + ' Spiele in kleineren Ligen laufen gerade.' if raw_live_count else ''}
 </div>
         """,
         unsafe_allow_html=True,
     )
+
+
+def render_dashboard_tip_mini(intel: dict[str, Any], *, fixture_id: int) -> None:
+    h = intel.get("header") or {}
+    rec = intel.get("recommendation") or {}
+    inj = intel.get("injuries") or {}
+    pred = intel.get("prediction") or {}
+    val = intel.get("value_quote") or {}
+    home_f = pred.get("home_pct")
+    away_f = pred.get("away_pct")
+    form_line = ""
+    for r in intel.get("reasons_short") or []:
+        if "Form" in r:
+            form_line = r
+            break
+    inj_line = ""
+    if inj.get("available"):
+        inj_line = f"Verletzungen: H {inj.get('home_impact')} · A {inj.get('away_impact')}"
+    val_line = ""
+    if val:
+        val_line = f"Value: {val.get('verdict', '—')}"
+    pick = rec.get("main_pick") or "—"
+    conf = rec.get("confidence")
+    risk = rec.get("risk") or "—"
+    conf_chip = f"Conf {float(conf):.0f}%" if conf is not None else "Conf —"
+    st.markdown(
+        f"""
+<div class="fb-mc-tip-mini">
+    <p class="match">{html.escape(str(h.get('home')))} vs {html.escape(str(h.get('away')))}</p>
+    <p class="liga">{html.escape(str(h.get('league')))}</p>
+    <p class="pick">{html.escape(str(pick))}</p>
+    <div class="metrics">
+        <span class="chip">{html.escape(conf_chip)}</span>
+        <span class="chip">Risiko {html.escape(str(risk))}</span>
+        {f'<span class="chip">H {home_f:.0f}%</span>' if home_f is not None else ''}
+        {f'<span class="chip">A {away_f:.0f}%</span>' if away_f is not None else ''}
+    </div>
+    {f'<p style="color:#94a3b8;font-size:11px;margin:6px 0 0 0;">{html.escape(form_line)}</p>' if form_line else ''}
+    {f'<p style="color:#fca5a5;font-size:11px;margin:4px 0 0 0;">{html.escape(inj_line)}</p>' if inj_line else ''}
+    {f'<p style="color:#86efac;font-size:11px;margin:4px 0 0 0;">{html.escape(val_line)}</p>' if val_line else ''}
+</div>
+        """,
+        unsafe_allow_html=True,
+    )
+    if st.button("Details", key=f"tip_detail_{fixture_id}", width="stretch"):
+        st.session_state.fb_mc_selected_fixture = fixture_id
+        st.session_state[f"fb_bet_details_{fixture_id}"] = True
+        st.rerun()
 
 
 def render_match_grid(
