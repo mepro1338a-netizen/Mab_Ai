@@ -1,7 +1,5 @@
 """
-MaByte sidebar — single render_sidebar(active_page) for ALL pages (via ui.py only).
-
-Do not use st.sidebar in page modules.
+MaByte sidebar — B2B SaaS navigation (single entry via ui.py).
 """
 from __future__ import annotations
 
@@ -10,9 +8,9 @@ from pathlib import Path
 
 import streamlit as st
 
-from ui.sidebar_nav import SIDEBAR_SECTIONS
+from config import APP_NAME, APP_TAGLINE
+from ui.sidebar_nav import LEGACY_PAGE_ALIASES, SIDEBAR_SECTIONS
 from ui.styles import inject_css
-
 
 ASSET_DIR = Path("assets")
 WORDMARK = ASSET_DIR / "wordmark.png"
@@ -36,49 +34,54 @@ ICON_MAP = {
     "admin": "settings-sliders",
 }
 
+PLAN_BADGE_CLASS = {
+    "elite": "plan-elite",
+    "pro": "plan-pro",
+    "premium": "plan-pro",
+    "starter": "plan-starter",
+    "football_elite": "plan-elite",
+    "football_pro": "plan-pro",
+    "football_starter": "plan-starter",
+}
+
 
 def sidebar_master_css() -> str:
-    """Futuristic MaByte sidebar — glass, neon accents, command-deck feel."""
+    """Enterprise B2B sidebar — Linear/Vercel-inspiriert, ruhig & präzise."""
     return """
-section[data-testid="stSidebar"] {
-    min-width: 15rem !important;
-    width: 15rem !important;
-    background:
-        radial-gradient(120% 80% at 0% 0%, rgba(168,85,247,.14) 0%, transparent 55%),
-        radial-gradient(90% 60% at 100% 100%, rgba(34,197,94,.08) 0%, transparent 50%),
-        linear-gradient(180deg, #0a0a12 0%, #0f1018 45%, #12121c 100%) !important;
-    border-right: 1px solid rgba(168,85,247,.22) !important;
-    box-shadow: 4px 0 32px rgba(0,0,0,.45), inset -1px 0 0 rgba(255,255,255,.04) !important;
+:root {
+    --sb-width: 16.75rem;
+    --sb-bg: #0b0b0f;
+    --sb-surface: #131318;
+    --sb-border: rgba(255,255,255,.08);
+    --sb-text: #e4e4e7;
+    --sb-muted: #71717a;
+    --sb-accent: #8b5cf6;
+    --sb-accent-soft: rgba(139,92,246,.14);
 }
-section[data-testid="stSidebar"]::before {
-    content: "";
-    position: fixed;
-    left: 0;
-    top: 0;
-    width: 15rem;
-    height: 100%;
-    pointer-events: none;
-    background: repeating-linear-gradient(
-        0deg,
-        transparent,
-        transparent 2px,
-        rgba(255,255,255,.012) 2px,
-        rgba(255,255,255,.012) 4px
-    );
-    z-index: 0;
+
+section[data-testid="stSidebar"] {
+    min-width: var(--sb-width) !important;
+    max-width: var(--sb-width) !important;
+    width: var(--sb-width) !important;
+    background: var(--sb-bg) !important;
+    border-right: 1px solid var(--sb-border) !important;
+    box-shadow: 1px 0 0 rgba(255,255,255,.03), 8px 0 40px rgba(0,0,0,.25) !important;
 }
 section[data-testid="stSidebar"] > div {
-    padding: 16px 11px 20px 11px !important;
+    padding: 0 !important;
     overflow-x: hidden !important;
     overflow-y: auto !important;
-    position: relative;
-    z-index: 1;
+    height: 100% !important;
 }
 section[data-testid="stSidebar"] [data-testid="stSidebarContent"] {
-    padding-top: 0 !important;
+    padding: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 100% !important;
 }
 section[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
     gap: 0 !important;
+    padding: 0 !important;
 }
 section[data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"] {
     background: transparent !important;
@@ -87,234 +90,285 @@ section[data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"] {
     margin: 0 !important;
     box-shadow: none !important;
 }
+section[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"],
+section[data-testid="stSidebar"] button[kind="header"] {
+    color: var(--sb-muted) !important;
+}
 
-.sidebar-logo-wrap {
-    padding: 4px 8px 18px 8px;
-    margin-bottom: 8px;
-    border-bottom: 1px solid rgba(168,85,247,.2);
-    position: relative;
+.sidebar-shell {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    padding: 0 0 12px 0;
 }
-.sidebar-logo-wrap::after {
-    content: "";
-    position: absolute;
-    left: 8px;
-    right: 8px;
-    bottom: -1px;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(255,231,163,.45), rgba(168,85,247,.6), transparent);
+
+.sidebar-brand {
+    padding: 20px 16px 16px 16px;
+    border-bottom: 1px solid var(--sb-border);
+    margin-bottom: 4px;
 }
-.sidebar-logo-wrap img {
+.sidebar-brand img {
     width: 100%;
-    max-height: 46px;
+    max-height: 40px;
     object-fit: contain;
     object-position: left center;
-    border-radius: 0;
-    filter: drop-shadow(0 0 12px rgba(168,85,247,.35)) brightness(1.08);
+}
+.sidebar-brand-text {
+    margin: 0;
+    color: #fafafa !important;
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+}
+.sidebar-brand-tag {
+    margin: 4px 0 0 0;
+    color: var(--sb-muted) !important;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.35;
+}
+
+.sidebar-nav {
+    flex: 1;
+    padding: 8px 10px 12px 10px;
 }
 
 .mb-nav-section {
-    margin-bottom: 6px;
-    padding-bottom: 4px;
+    margin-bottom: 2px;
 }
-.mb-nav-section:last-of-type {
-    margin-bottom: 4px;
+.mb-nav-section + .mb-nav-section {
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid rgba(255,255,255,.04);
 }
 
 .mb-section-label {
-    margin: 14px 0 4px 8px;
-    color: #52525b !important;
-    font-size: 9px;
+    margin: 10px 8px 6px 10px;
+    color: var(--sb-muted) !important;
+    font-size: 10px;
     font-weight: 700;
-    letter-spacing: .16em;
+    letter-spacing: .14em;
     text-transform: uppercase;
-    line-height: 1.2;
-}
-.mb-nav-section:first-of-type .mb-section-label {
-    margin-top: 4px;
+    line-height: 1;
 }
 
 .mb-nav-item {
-    margin: 0 !important;
+    margin: 2px 0 !important;
     padding: 0 !important;
 }
 
-/* Inactive nav — flat, no white pill */
-section[data-testid="stSidebar"] .mb-nav-item:not(.mb-nav-active) .stButton > button,
-section[data-testid="stSidebar"] .mb-nav-item:not(.mb-nav-active) button {
+section[data-testid="stSidebar"] .mb-nav-item .stButton,
+section[data-testid="stSidebar"] .mb-nav-item .stButton > button,
+section[data-testid="stSidebar"] .mb-nav-item button {
     width: 100% !important;
-    min-height: 38px !important;
-    height: 38px !important;
-    padding: 0 10px 0 38px !important;
+    min-height: 40px !important;
+    height: 40px !important;
+    padding: 0 12px 0 44px !important;
     border-radius: 10px !important;
     border: 1px solid transparent !important;
-    background: rgba(15,23,42,.35) !important;
-    background-color: rgba(15,23,42,.35) !important;
+    background: transparent !important;
+    background-color: transparent !important;
     background-image: none !important;
-    color: #94a3b8 !important;
-    font-weight: 500 !important;
-    font-size: 13px !important;
-    text-align: left !important;
-    box-shadow: none !important;
-    position: relative !important;
-    transition: border-color .15s ease, background .15s ease, color .15s ease, box-shadow .15s ease !important;
-}
-section[data-testid="stSidebar"] .mb-nav-item:not(.mb-nav-active) button p {
     color: #a1a1aa !important;
     font-weight: 500 !important;
     font-size: 13px !important;
-}
-section[data-testid="stSidebar"] .mb-nav-item:not(.mb-nav-active) .stButton > button:hover,
-section[data-testid="stSidebar"] .mb-nav-item:not(.mb-nav-active) button:hover {
-    background: rgba(30,27,75,.55) !important;
-    background-color: rgba(30,27,75,.55) !important;
-    border-color: rgba(168,85,247,.28) !important;
-    color: #f8fafc !important;
-    box-shadow: 0 0 18px rgba(168,85,247,.12) !important;
-}
-section[data-testid="stSidebar"] .mb-nav-item:not(.mb-nav-active) button:hover p {
-    color: #fafafa !important;
-}
-
-/* Active nav — subtle zinc + accent bar */
-section[data-testid="stSidebar"] .mb-nav-active .stButton > button,
-section[data-testid="stSidebar"] .mb-nav-active button {
-    width: 100% !important;
-    min-height: 36px !important;
-    height: 36px !important;
-    padding: 0 10px 0 36px !important;
-    border-radius: 8px !important;
-    border: none !important;
-    background: #27272a !important;
-    background-color: #27272a !important;
-    background-image: none !important;
-    color: #fafafa !important;
-    font-weight: 600 !important;
-    font-size: 13px !important;
     text-align: left !important;
     box-shadow: none !important;
     position: relative !important;
+    transition: background .12s ease, border-color .12s ease, color .12s ease !important;
 }
-section[data-testid="stSidebar"] .mb-nav-active button p {
-    color: #fafafa !important;
+section[data-testid="stSidebar"] .mb-nav-item button p,
+section[data-testid="stSidebar"] .mb-nav-item button span {
+    color: inherit !important;
+    font-weight: inherit !important;
+    font-size: 13px !important;
+}
+
+section[data-testid="stSidebar"] .mb-nav-item:not(.mb-nav-active) button:hover {
+    background: var(--sb-surface) !important;
+    background-color: var(--sb-surface) !important;
+    border-color: var(--sb-border) !important;
+    color: var(--sb-text) !important;
+}
+
+section[data-testid="stSidebar"] .mb-nav-active button {
+    background: var(--sb-accent-soft) !important;
+    background-color: var(--sb-accent-soft) !important;
+    border-color: rgba(139,92,246,.35) !important;
+    color: #f4f4f5 !important;
     font-weight: 600 !important;
 }
-section[data-testid="stSidebar"] .mb-nav-active .stButton > button::before,
 section[data-testid="stSidebar"] .mb-nav-active button::before {
     content: "";
     position: absolute;
     left: 0;
-    top: 5px;
-    bottom: 5px;
+    top: 8px;
+    bottom: 8px;
     width: 3px;
-    border-radius: 0 3px 3px 0;
-    background: linear-gradient(180deg, #ffe7a3, #a855f7);
-    box-shadow: 0 0 10px rgba(168,85,247,.8);
+    border-radius: 0 4px 4px 0;
+    background: linear-gradient(180deg, #c4b5fd, var(--sb-accent));
 }
 
-/* Nav icon — minimal */
-section[data-testid="stSidebar"] .mb-nav-item .stButton > button::after,
 section[data-testid="stSidebar"] .mb-nav-item button::after {
     content: "";
     position: absolute;
-    left: 8px;
+    left: 10px;
     top: 50%;
     transform: translateY(-50%);
-    width: 20px;
-    height: 20px;
-    border-radius: 6px;
-    background-color: transparent;
-    border: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 7px;
+    background-color: rgba(255,255,255,.04);
+    border: 1px solid rgba(255,255,255,.06);
     background-image: var(--mb-nav-icon);
     background-repeat: no-repeat;
     background-position: center;
-    background-size: 14px 14px;
-    opacity: .85;
+    background-size: 13px 13px;
+    opacity: .9;
     pointer-events: none;
 }
 section[data-testid="stSidebar"] .mb-nav-active button::after {
+    background-color: rgba(139,92,246,.2);
+    border-color: rgba(139,92,246,.35);
     opacity: 1;
 }
 
-.mb-nav-item [data-testid="column"] {
-    display: none !important;
+.sidebar-footer {
+    margin-top: auto;
+    padding: 12px 10px 4px 10px;
+    border-top: 1px solid var(--sb-border);
+    background: linear-gradient(180deg, transparent, rgba(0,0,0,.35));
 }
 
 .sidebar-user-card {
-    margin-top: 16px;
-    padding: 14px 14px;
-    border-radius: 14px;
-    background: linear-gradient(145deg, rgba(20,18,40,.9), rgba(10,12,22,.95));
-    border: 1px solid rgba(168,85,247,.28);
-    box-shadow: 0 8px 28px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.05);
+    padding: 14px 12px;
+    border-radius: 12px;
+    background: var(--sb-surface);
+    border: 1px solid var(--sb-border);
 }
-.sidebar-user-row {
+.sidebar-user-top {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 8px;
+    gap: 10px;
+}
+.sidebar-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #4c1d95, #7c3aed);
+    color: #fafafa !important;
+    font-size: 14px;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border: 1px solid rgba(255,255,255,.1);
+}
+.sidebar-user-meta {
+    min-width: 0;
+    flex: 1;
 }
 .sidebar-user-name {
     font-size: 13px;
     font-weight: 600;
-    color: #fafafa !important;
+    color: var(--sb-text) !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    line-height: 1.2;
+}
+.sidebar-user-email {
+    font-size: 10px;
+    color: var(--sb-muted) !important;
+    margin-top: 2px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
-.sidebar-user-plan {
+.sidebar-user-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+}
+.sidebar-plan-badge {
     padding: 3px 8px;
     border-radius: 6px;
-    background: rgba(168,85,247,.2);
-    border: 1px solid rgba(168,85,247,.35);
-    color: #e9d5ff !important;
     font-size: 9px;
     font-weight: 800;
-    letter-spacing: .08em;
+    letter-spacing: .06em;
     text-transform: uppercase;
+    border: 1px solid transparent;
 }
-.sidebar-user-tokens {
-    color: #ffe7a3 !important;
-    font-size: 22px;
+.sidebar-plan-badge.plan-free {
+    background: rgba(63,63,70,.5);
+    color: #d4d4d8 !important;
+    border-color: rgba(255,255,255,.08);
+}
+.sidebar-plan-badge.plan-starter {
+    background: rgba(34,197,94,.12);
+    color: #86efac !important;
+    border-color: rgba(34,197,94,.25);
+}
+.sidebar-plan-badge.plan-pro {
+    background: rgba(139,92,246,.15);
+    color: #ddd6fe !important;
+    border-color: rgba(139,92,246,.3);
+}
+.sidebar-plan-badge.plan-elite {
+    background: rgba(255,231,163,.12);
+    color: #fde68a !important;
+    border-color: rgba(255,231,163,.28);
+}
+.sidebar-tokens-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255,255,255,.06);
+}
+.sidebar-tokens-val {
+    color: #fafafa !important;
+    font-size: 20px;
     font-weight: 800;
     letter-spacing: -0.02em;
-    margin-top: 8px;
     line-height: 1;
-    text-shadow: 0 0 24px rgba(255,231,163,.25);
 }
-.sidebar-user-caption {
-    color: #71717a !important;
+.sidebar-tokens-lbl {
+    color: var(--sb-muted) !important;
     font-size: 10px;
-    margin-top: 2px;
+    font-weight: 600;
 }
 
 section[data-testid="stSidebar"] .sidebar-logout-wrap .stButton > button,
 section[data-testid="stSidebar"] .sidebar-logout-wrap button {
-    min-height: 36px !important;
-    height: 36px !important;
-    margin-top: 12px !important;
+    min-height: 38px !important;
+    height: 38px !important;
+    margin-top: 10px !important;
     border-radius: 10px !important;
-    background: rgba(15,23,42,.5) !important;
-    background-color: rgba(15,23,42,.5) !important;
-    border: 1px solid rgba(100,116,139,.35) !important;
-    color: #94a3b8 !important;
+    background: transparent !important;
+    border: 1px solid var(--sb-border) !important;
+    color: var(--sb-muted) !important;
     font-size: 12px !important;
     font-weight: 600 !important;
-    box-shadow: none !important;
 }
 section[data-testid="stSidebar"] .sidebar-logout-wrap button:hover {
-    background: rgba(127,29,29,.35) !important;
-    border-color: rgba(248,113,113,.4) !important;
+    background: rgba(127,29,29,.2) !important;
+    border-color: rgba(248,113,113,.35) !important;
     color: #fecaca !important;
 }
 section[data-testid="stSidebar"] .sidebar-logout-wrap button p {
     color: inherit !important;
-    font-size: 12px !important;
 }
 
 @media (max-width: 768px) {
     section[data-testid="stSidebar"] {
         min-width: 100% !important;
         width: 100% !important;
+        max-width: 100% !important;
     }
 }
 """
@@ -336,12 +390,46 @@ def _icon_src(page: str) -> str:
     path = ASSET_DIR / f"{icon_name}.png"
     if not path.exists():
         return ""
-    return f"data:image/png;base64,{_img_base64(path)}"
+    return f"url(data:image/png;base64,{_img_base64(path)})"
 
 
 def _is_admin_user() -> bool:
     from services.session_auth import server_is_admin
     return server_is_admin()
+
+
+def _plan_badge_class(plan: str) -> str:
+    key = (plan or "free").strip().lower()
+    return PLAN_BADGE_CLASS.get(key, "plan-free")
+
+
+def _user_initial(username: str) -> str:
+    u = (username or "U").strip()
+    return (u[0] or "U").upper()
+
+
+def _render_brand() -> None:
+    if WORDMARK.exists():
+        src = _img_base64(WORDMARK)
+        st.markdown(
+            f"""
+<div class="sidebar-brand">
+    <img src="data:image/png;base64,{src}" alt="{html.escape(APP_NAME)}">
+    <p class="sidebar-brand-tag">{html.escape(APP_TAGLINE)}</p>
+</div>
+            """,
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown(
+            f"""
+<div class="sidebar-brand">
+    <p class="sidebar-brand-text">{html.escape(APP_NAME)}</p>
+    <p class="sidebar-brand-tag">{html.escape(APP_TAGLINE)}</p>
+</div>
+            """,
+            unsafe_allow_html=True,
+        )
 
 
 def _section_label(label: str) -> None:
@@ -352,10 +440,9 @@ def _section_label(label: str) -> None:
 
 
 def _nav_item(label: str, page: str, active_page: str) -> None:
-    src = _icon_src(page)
     is_active = active_page == page
     active_class = "mb-nav-active" if is_active else ""
-    icon_var = f"url({src})" if src else "none"
+    icon_var = _icon_src(page) or "none"
 
     st.markdown(
         f'<div class="mb-nav-item {active_class}" style="--mb-nav-icon:{icon_var};">',
@@ -375,62 +462,68 @@ def _nav_section(title: str, items: list[tuple[str, str]], active_page: str) -> 
     st.markdown("</div>", unsafe_allow_html=True)
 
 
+def _render_user_footer() -> None:
+    user = str(st.session_state.get("user", "User"))
+    plan = str(st.session_state.get("plan", "free"))
+    fb_plan = str(st.session_state.get("football_plan", "none"))
+    tokens = int(st.session_state.get("tokens", 0) or 0)
+    plan_cls = _plan_badge_class(plan)
+    plan_label = plan.replace("_", " ").upper() if plan else "FREE"
+
+    badges = [f'<span class="sidebar-plan-badge {plan_cls}">{html.escape(plan_label)}</span>']
+    if fb_plan and fb_plan not in ("none", "", "free"):
+        fb_cls = _plan_badge_class(fb_plan)
+        fb_lbl = fb_plan.replace("football_", "").upper()
+        badges.append(f'<span class="sidebar-plan-badge {fb_cls}">FB {html.escape(fb_lbl)}</span>')
+
+    st.markdown(
+        f"""
+<div class="sidebar-user-card">
+    <div class="sidebar-user-top">
+        <div class="sidebar-avatar">{html.escape(_user_initial(user))}</div>
+        <div class="sidebar-user-meta">
+            <div class="sidebar-user-name">{html.escape(user)}</div>
+            <div class="sidebar-user-email">Angemeldet</div>
+        </div>
+    </div>
+    <div class="sidebar-user-badges">{"".join(badges)}</div>
+    <div class="sidebar-tokens-row">
+        <span class="sidebar-tokens-val">{f"{tokens:,}".replace(",", ".")}</span>
+        <span class="sidebar-tokens-lbl">Tokens</span>
+    </div>
+</div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def render_sidebar(active_page: str | None = None) -> None:
-    """
-    Central sidebar — only entry point. Call from ui.py with current page key.
-    Example: render_sidebar(st.session_state.get("page", "home"))
-    """
     active = (active_page or st.session_state.get("page") or "home").strip()
+    if active in LEGACY_PAGE_ALIASES:
+        active = LEGACY_PAGE_ALIASES[active]
     if active in ("reels", "video"):
         active = "creator"
 
     with st.sidebar:
-        if WORDMARK.exists():
-            wordmark_src = _img_base64(WORDMARK)
-            st.markdown(
-                f"""
-<div class="sidebar-logo-wrap">
-    <img src="data:image/png;base64,{wordmark_src}" alt="MaByte">
-</div>
-""",
-                unsafe_allow_html=True,
-            )
-        else:
-            st.markdown("### MaByte")
+        st.markdown('<div class="sidebar-shell">', unsafe_allow_html=True)
+        _render_brand()
+        st.markdown('<div class="sidebar-nav">', unsafe_allow_html=True)
 
         for section_title, items in SIDEBAR_SECTIONS:
             _nav_section(section_title, items, active)
+
         if _is_admin_user():
             _nav_section("System", [("Admin Panel", "admin")], active)
 
-        user = html.escape(str(st.session_state.get("user", "User")))
-        plan = html.escape(str(st.session_state.get("plan", "free")))
-        fb_plan = html.escape(str(st.session_state.get("football_plan", "none")))
-        tokens = int(st.session_state.get("tokens", 0) or 0)
-        fb_line = ""
-        if fb_plan and fb_plan not in ("none", "", "free"):
-            fb_line = f'<div class="sidebar-user-caption">Football · {fb_plan}</div>'
+        st.markdown("</div>", unsafe_allow_html=True)
 
-        st.markdown(
-            f"""
-<div class="sidebar-user-card">
-    <div class="sidebar-user-row">
-        <div class="sidebar-user-name">{user}</div>
-        <div class="sidebar-user-plan">{plan.upper()}</div>
-    </div>
-    <div class="sidebar-user-tokens">{tokens:,}</div>
-    <div class="sidebar-user-caption">Tokens verfügbar</div>
-    {fb_line}
-</div>
-""",
-            unsafe_allow_html=True,
-        )
-
+        st.markdown('<div class="sidebar-footer">', unsafe_allow_html=True)
+        _render_user_footer()
         st.markdown('<div class="sidebar-logout-wrap">', unsafe_allow_html=True)
         if st.button("Abmelden", key="nav_logout", width="stretch", type="secondary"):
             from services.session_auth import logout_session
             logout_session()
             st.rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown("</div></div></div>", unsafe_allow_html=True)
 
     inject_sidebar_styles()

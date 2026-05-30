@@ -3,28 +3,28 @@ MaByte SaaS OS — zentrale Sidebar-Navigation (via ui.py → render_sidebar).
 """
 from __future__ import annotations
 
-# (Sektion, [(Label, page_key), ...])
+# (Sektion, [(Label, page_key), ...]) — Reihenfolge = Priorität für B2B-Nutzer
 SIDEBAR_SECTIONS: list[tuple[str, list[tuple[str, str]]]] = [
     (
-        "MaByte OS",
+        "Platform",
         [
             ("Home", "home"),
             ("AI Chat", "chat"),
         ],
     ),
     (
-        "Creator",
-        [
-            ("Image", "image"),
-            ("Shorts & Video", "creator"),
-            ("Music", "music"),
-            ("Code", "coding"),
-        ],
-    ),
-    (
         "Intelligence",
         [
             ("Football AI", "football"),
+        ],
+    ),
+    (
+        "Create",
+        [
+            ("Image", "image"),
+            ("Video & Reels", "creator"),
+            ("Music", "music"),
+            ("Code", "coding"),
         ],
     ),
     (
@@ -45,7 +45,6 @@ SIDEBAR_SECTIONS: list[tuple[str, list[tuple[str, str]]]] = [
     ),
 ]
 
-# Legacy page keys → Creator Studio (Bookmarks / alte Links)
 LEGACY_PAGE_ALIASES: dict[str, str] = {
     "reels": "creator",
     "video": "creator",
