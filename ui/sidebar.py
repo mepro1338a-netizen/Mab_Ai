@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import html
 from pathlib import Path
+from urllib.parse import quote
 
 import streamlit as st
 
@@ -22,8 +23,6 @@ ICON_MAP = {
     "automation_lab": "automations",
     "football": "football",
     "image": "image",
-    "video": "video",
-    "reels": "reels",
     "creator": "reels",
     "music": "music",
     "coding": "code",
@@ -32,6 +31,24 @@ ICON_MAP = {
     "redeem": "redeem",
     "support": "tools",
     "admin": "settings-sliders",
+}
+
+# Minimal stroke icons (always available — no PNG dependency)
+_NAV_SVG: dict[str, str] = {
+    "home": '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="{c}" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/><path d="M9 21V12h6v9"/></svg>',
+    "chat": '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="{c}" stroke-width="1.75"><path d="M21 11.5a8.38 8.38 0 0 1-1.9 5.4 8.5 8.5 0 0 1-13.6 0A8.38 8.38 0 0 1 3 11.5 8.5 8.5 0 0 1 12 3a8.5 8.5 0 0 1 9 8.5z"/><path d="M8 14h.01M12 14h.01M16 14h.01"/></svg>',
+    "football": '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="{c}" stroke-width="1.75"><circle cx="12" cy="12" r="9"/><path d="M12 3c2 3 2 15 0 18M3 12h18M5 7.5h14M5 16.5h14"/></svg>',
+    "image": '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="{c}" stroke-width="1.75"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.5"/><path d="m21 17-5-5L8 20"/></svg>',
+    "reels": '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="{c}" stroke-width="1.75"><rect x="2" y="4" width="15" height="16" rx="2"/><path d="M17 8.5 22 6v12l-5-2.5"/></svg>',
+    "music": '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="{c}" stroke-width="1.75"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>',
+    "code": '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="{c}" stroke-width="1.75"><path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/></svg>',
+    "projects": '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="{c}" stroke-width="1.75"><path d="M3 7h7V3H3zm11 0h7V3h-7zM3 21h7v-4H3zm11 0h7v-4h-7z"/></svg>',
+    "automations": '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="{c}" stroke-width="1.75"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/><circle cx="12" cy="12" r="3"/></svg>',
+    "dashboard": '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="{c}" stroke-width="1.75"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>',
+    "premium": '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="{c}" stroke-width="1.75"><path d="M12 2l2.4 7.4H22l-6 4.6 2.3 7-6.3-4.6L5.7 21l2.3-7-6-4.6h7.6z"/></svg>',
+    "redeem": '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="{c}" stroke-width="1.75"><path d="M20 12v8H4V12M2 7h20v5H2zM12 22V7M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7s1-5 4.5-5a2.5 2.5 0 0 1 0 5H12z"/></svg>',
+    "tools": '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="{c}" stroke-width="1.75"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>',
+    "settings-sliders": '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="{c}" stroke-width="1.75"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M2 14h4M10 10h4M18 16h4"/></svg>',
 }
 
 PLAN_BADGE_CLASS = {
@@ -44,127 +61,201 @@ PLAN_BADGE_CLASS = {
     "football_starter": "plan-starter",
 }
 
+_SB = 'section[data-testid="stSidebar"]'
 
-def sidebar_master_css() -> str:
-    """Enterprise B2B sidebar — Linear/Vercel-inspiriert, ruhig & präzise."""
-    return """
-:root {
-    --sb-width: 16.75rem;
+
+def _all_nav_pages() -> list[str]:
+    pages: list[str] = []
+    for _, items in SIDEBAR_SECTIONS:
+        for _, page in items:
+            if page not in pages:
+                pages.append(page)
+    return pages
+
+
+def _svg_data_uri(page: str, *, active: bool = False) -> str:
+    icon_name = ICON_MAP.get(page, page)
+    path = ASSET_DIR / f"{icon_name}.png"
+    if path.exists():
+        import base64
+        b64 = base64.b64encode(path.read_bytes()).decode("utf-8")
+        return f"url(data:image/png;base64,{b64})"
+    color = "%23ddd6fe" if active else "%23a1a1aa"
+    tpl = _NAV_SVG.get(icon_name) or _NAV_SVG["tools"]
+    svg = tpl.format(c=color)
+    return f'url("data:image/svg+xml,{quote(svg)}")'
+
+
+def _nav_key(page: str) -> str:
+    return f"nav_{page}"
+
+
+def _icon_css_rules() -> str:
+    rules: list[str] = []
+    for page in _all_nav_pages():
+        key = _nav_key(page)
+        icon = _svg_data_uri(page)
+        rules.append(
+            f"""
+{_SB} .st-key-{key} .stButton > button::before {{
+    content: "";
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
+    background-image: {icon};
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 18px 18px;
+    opacity: .92;
+    pointer-events: none;
+}}
+"""
+        )
+    return "\n".join(rules)
+
+
+def _active_nav_css(active_page: str) -> str:
+    key = _nav_key(active_page)
+    icon = _svg_data_uri(active_page, active=True)
+    return f"""
+{_SB} .st-key-{key} .stButton > button,
+{_SB} .st-key-{key} button {{
+    background: rgba(139,92,246,.16) !important;
+    background-color: rgba(139,92,246,.16) !important;
+    border-color: rgba(139,92,246,.38) !important;
+    color: #f4f4f5 !important;
+    font-weight: 600 !important;
+    box-shadow: none !important;
+}}
+{_SB} .st-key-{key} .stButton > button::after {{
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 8px;
+    bottom: 8px;
+    width: 3px;
+    border-radius: 0 4px 4px 0;
+    background: linear-gradient(180deg, #c4b5fd, #8b5cf6);
+    pointer-events: none;
+}}
+{_SB} .st-key-{key} .stButton > button::before {{
+    background-image: {icon} !important;
+    opacity: 1 !important;
+}}
+{_SB} .st-key-{key} .stButton > button p {{
+    color: #f4f4f5 !important;
+    font-weight: 600 !important;
+}}
+{_SB} .st-key-{key} .stButton > button:focus,
+{_SB} .st-key-{key} .stButton > button:active,
+{_SB} .st-key-{key} .stButton > button:focus-visible,
+{_SB} .st-key-{key} .stButton > button:hover {{
+    background: rgba(139,92,246,.16) !important;
+    background-color: rgba(139,92,246,.16) !important;
+    border-color: rgba(139,92,246,.38) !important;
+    color: #f4f4f5 !important;
+}}
+"""
+
+
+def sidebar_master_css(active_page: str = "home") -> str:
+    """Enterprise B2B sidebar — Streamlit-safe (st-key selectors, no fake HTML wrappers)."""
+    active = active_page or "home"
+    return f"""
+:root {{
+    --sb-width: 17rem;
     --sb-bg: #0b0b0f;
-    --sb-surface: #131318;
+    --sb-surface: #16161c;
     --sb-border: rgba(255,255,255,.08);
     --sb-text: #e4e4e7;
     --sb-muted: #71717a;
     --sb-accent: #8b5cf6;
-    --sb-accent-soft: rgba(139,92,246,.14);
-}
+}}
 
-section[data-testid="stSidebar"] {
+{_SB} {{
     min-width: var(--sb-width) !important;
     max-width: var(--sb-width) !important;
     width: var(--sb-width) !important;
     background: var(--sb-bg) !important;
     border-right: 1px solid var(--sb-border) !important;
-    box-shadow: 1px 0 0 rgba(255,255,255,.03), 8px 0 40px rgba(0,0,0,.25) !important;
-}
-section[data-testid="stSidebar"] > div {
-    padding: 0 !important;
+    box-shadow: 8px 0 32px rgba(0,0,0,.28) !important;
+}}
+{_SB} > div {{
+    padding: 0 10px 16px 10px !important;
     overflow-x: hidden !important;
     overflow-y: auto !important;
-    height: 100% !important;
-}
-section[data-testid="stSidebar"] [data-testid="stSidebarContent"] {
+}}
+{_SB} [data-testid="stSidebarContent"],
+{_SB} [data-testid="stSidebarUserContent"] {{
     padding: 0 !important;
-    display: flex !important;
-    flex-direction: column !important;
-    min-height: 100% !important;
-}
-section[data-testid="stSidebar"] [data-testid="stVerticalBlock"] {
-    gap: 0 !important;
+    background: var(--sb-bg) !important;
+}}
+{_SB} [data-testid="stVerticalBlock"] {{
+    gap: 2px !important;
     padding: 0 !important;
-}
-section[data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"] {
+}}
+{_SB} [data-testid="stVerticalBlockBorderWrapper"] {{
     background: transparent !important;
     border: none !important;
+    box-shadow: none !important;
     padding: 0 !important;
     margin: 0 !important;
-    box-shadow: none !important;
-}
-section[data-testid="stSidebar"] [data-testid="stSidebarCollapseButton"],
-section[data-testid="stSidebar"] button[kind="header"] {
-    color: var(--sb-muted) !important;
-}
+}}
 
-.sidebar-shell {
-    display: flex;
-    flex-direction: column;
-    min-height: 100vh;
-    padding: 0 0 12px 0;
-}
-
-.sidebar-brand {
-    padding: 20px 16px 16px 16px;
+.mb-sidebar-brand {{
+    padding: 18px 6px 14px 6px;
+    margin-bottom: 6px;
     border-bottom: 1px solid var(--sb-border);
-    margin-bottom: 4px;
-}
-.sidebar-brand img {
+}}
+.mb-sidebar-brand img {{
     width: 100%;
-    max-height: 40px;
+    max-height: 36px;
     object-fit: contain;
     object-position: left center;
-}
-.sidebar-brand-text {
+    display: block;
+}}
+.mb-sidebar-brand-name {{
     margin: 0;
     color: #fafafa !important;
-    font-size: 18px;
+    font-size: 17px;
     font-weight: 800;
     letter-spacing: -0.03em;
-    line-height: 1.1;
-}
-.sidebar-brand-tag {
-    margin: 4px 0 0 0;
+}}
+.mb-sidebar-brand-tag {{
+    margin: 5px 0 0 0;
     color: var(--sb-muted) !important;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 500;
     line-height: 1.35;
-}
+}}
 
-.sidebar-nav {
-    flex: 1;
-    padding: 8px 10px 12px 10px;
-}
-
-.mb-nav-section {
-    margin-bottom: 2px;
-}
-.mb-nav-section + .mb-nav-section {
-    margin-top: 6px;
-    padding-top: 6px;
+.mb-nav-section-gap {{
+    height: 8px;
     border-top: 1px solid rgba(255,255,255,.04);
-}
+    margin: 8px 0 4px 0;
+}}
 
-.mb-section-label {
-    margin: 10px 8px 6px 10px;
+.mb-section-label {{
+    margin: 12px 4px 6px 6px;
     color: var(--sb-muted) !important;
     font-size: 10px;
     font-weight: 700;
-    letter-spacing: .14em;
+    letter-spacing: .12em;
     text-transform: uppercase;
     line-height: 1;
-}
+}}
 
-.mb-nav-item {
-    margin: 2px 0 !important;
-    padding: 0 !important;
-}
-
-section[data-testid="stSidebar"] .mb-nav-item .stButton,
-section[data-testid="stSidebar"] .mb-nav-item .stButton > button,
-section[data-testid="stSidebar"] .mb-nav-item button {
+/* All nav buttons (st-key-nav_*) */
+{_SB} div[class*="st-key-nav_"]:not(.st-key-nav_logout) .stButton > button,
+{_SB} div[class*="st-key-nav_"]:not(.st-key-nav_logout) button {{
     width: 100% !important;
     min-height: 40px !important;
     height: 40px !important;
-    padding: 0 12px 0 44px !important;
+    padding: 0 12px 0 42px !important;
+    margin: 1px 0 !important;
     border-radius: 10px !important;
     border: 1px solid transparent !important;
     background: transparent !important;
@@ -177,123 +268,86 @@ section[data-testid="stSidebar"] .mb-nav-item button {
     box-shadow: none !important;
     position: relative !important;
     transition: background .12s ease, border-color .12s ease, color .12s ease !important;
-}
-section[data-testid="stSidebar"] .mb-nav-item button p,
-section[data-testid="stSidebar"] .mb-nav-item button span {
-    color: inherit !important;
-    font-weight: inherit !important;
-    font-size: 13px !important;
-}
-
-section[data-testid="stSidebar"] .mb-nav-item:not(.mb-nav-active) button:hover {
+}}
+{_SB} div[class*="st-key-nav_"]:not(.st-key-nav_logout) .stButton > button:focus,
+{_SB} div[class*="st-key-nav_"]:not(.st-key-nav_logout) .stButton > button:active,
+{_SB} div[class*="st-key-nav_"]:not(.st-key-nav_logout) .stButton > button:focus-visible {{
     background: var(--sb-surface) !important;
     background-color: var(--sb-surface) !important;
     border-color: var(--sb-border) !important;
     color: var(--sb-text) !important;
-}
+    outline: none !important;
+    box-shadow: none !important;
+}}
+{_SB} div[class*="st-key-nav_"]:not(.st-key-nav_logout) .stButton > button:hover {{
+    background: var(--sb-surface) !important;
+    background-color: var(--sb-surface) !important;
+    border-color: var(--sb-border) !important;
+    color: var(--sb-text) !important;
+}}
+{_SB} div[class*="st-key-nav_"]:not(.st-key-nav_logout) .stButton > button p {{
+    color: inherit !important;
+    font-weight: inherit !important;
+    font-size: 13px !important;
+    margin: 0 !important;
+}}
 
-section[data-testid="stSidebar"] .mb-nav-active button {
-    background: var(--sb-accent-soft) !important;
-    background-color: var(--sb-accent-soft) !important;
-    border-color: rgba(139,92,246,.35) !important;
-    color: #f4f4f5 !important;
-    font-weight: 600 !important;
-}
-section[data-testid="stSidebar"] .mb-nav-active button::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 8px;
-    bottom: 8px;
-    width: 3px;
-    border-radius: 0 4px 4px 0;
-    background: linear-gradient(180deg, #c4b5fd, var(--sb-accent));
-}
+{_icon_css_rules()}
 
-section[data-testid="stSidebar"] .mb-nav-item button::after {
-    content: "";
-    position: absolute;
-    left: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 22px;
-    height: 22px;
-    border-radius: 7px;
-    background-color: rgba(255,255,255,.04);
-    border: 1px solid rgba(255,255,255,.06);
-    background-image: var(--mb-nav-icon);
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: 13px 13px;
-    opacity: .9;
-    pointer-events: none;
-}
-section[data-testid="stSidebar"] .mb-nav-active button::after {
-    background-color: rgba(139,92,246,.2);
-    border-color: rgba(139,92,246,.35);
-    opacity: 1;
-}
+{_active_nav_css(active)}
 
-.sidebar-footer {
-    margin-top: auto;
-    padding: 12px 10px 4px 10px;
+.mb-sidebar-footer {{
+    margin-top: 14px;
+    padding-top: 12px;
     border-top: 1px solid var(--sb-border);
-    background: linear-gradient(180deg, transparent, rgba(0,0,0,.35));
-}
+}}
 
-.sidebar-user-card {
-    padding: 14px 12px;
+.sidebar-user-card {{
+    padding: 12px;
     border-radius: 12px;
     background: var(--sb-surface);
     border: 1px solid var(--sb-border);
-}
-.sidebar-user-top {
+}}
+.sidebar-user-top {{
     display: flex;
     align-items: center;
     gap: 10px;
-}
-.sidebar-avatar {
-    width: 36px;
-    height: 36px;
-    border-radius: 10px;
+}}
+.sidebar-avatar {{
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
     background: linear-gradient(135deg, #4c1d95, #7c3aed);
     color: #fafafa !important;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 800;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
     border: 1px solid rgba(255,255,255,.1);
-}
-.sidebar-user-meta {
-    min-width: 0;
-    flex: 1;
-}
-.sidebar-user-name {
+}}
+.sidebar-user-meta {{ min-width: 0; flex: 1; }}
+.sidebar-user-name {{
     font-size: 13px;
     font-weight: 600;
     color: var(--sb-text) !important;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    line-height: 1.2;
-}
-.sidebar-user-email {
+}}
+.sidebar-user-email {{
     font-size: 10px;
     color: var(--sb-muted) !important;
     margin-top: 2px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-.sidebar-user-badges {
+}}
+.sidebar-user-badges {{
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
-    margin-top: 10px;
-}
-.sidebar-plan-badge {
+    margin-top: 8px;
+}}
+.sidebar-plan-badge {{
     padding: 3px 8px;
     border-radius: 6px;
     font-size: 9px;
@@ -301,81 +355,78 @@ section[data-testid="stSidebar"] .mb-nav-active button::after {
     letter-spacing: .06em;
     text-transform: uppercase;
     border: 1px solid transparent;
-}
-.sidebar-plan-badge.plan-free {
+}}
+.sidebar-plan-badge.plan-free {{
     background: rgba(63,63,70,.5);
     color: #d4d4d8 !important;
     border-color: rgba(255,255,255,.08);
-}
-.sidebar-plan-badge.plan-starter {
+}}
+.sidebar-plan-badge.plan-starter {{
     background: rgba(34,197,94,.12);
     color: #86efac !important;
     border-color: rgba(34,197,94,.25);
-}
-.sidebar-plan-badge.plan-pro {
+}}
+.sidebar-plan-badge.plan-pro {{
     background: rgba(139,92,246,.15);
     color: #ddd6fe !important;
     border-color: rgba(139,92,246,.3);
-}
-.sidebar-plan-badge.plan-elite {
+}}
+.sidebar-plan-badge.plan-elite {{
     background: rgba(255,231,163,.12);
     color: #fde68a !important;
     border-color: rgba(255,231,163,.28);
-}
-.sidebar-tokens-row {
+}}
+.sidebar-tokens-row {{
     display: flex;
     align-items: baseline;
     justify-content: space-between;
-    margin-top: 12px;
-    padding-top: 10px;
+    margin-top: 10px;
+    padding-top: 8px;
     border-top: 1px solid rgba(255,255,255,.06);
-}
-.sidebar-tokens-val {
+}}
+.sidebar-tokens-val {{
     color: #fafafa !important;
-    font-size: 20px;
+    font-size: 18px;
     font-weight: 800;
-    letter-spacing: -0.02em;
-    line-height: 1;
-}
-.sidebar-tokens-lbl {
+}}
+.sidebar-tokens-lbl {{
     color: var(--sb-muted) !important;
     font-size: 10px;
     font-weight: 600;
-}
+}}
 
-section[data-testid="stSidebar"] .sidebar-logout-wrap .stButton > button,
-section[data-testid="stSidebar"] .sidebar-logout-wrap button {
-    min-height: 38px !important;
-    height: 38px !important;
-    margin-top: 10px !important;
+{_SB} .st-key-nav_logout .stButton > button {{
+    min-height: 36px !important;
+    height: 36px !important;
+    margin-top: 8px !important;
     border-radius: 10px !important;
     background: transparent !important;
     border: 1px solid var(--sb-border) !important;
     color: var(--sb-muted) !important;
     font-size: 12px !important;
     font-weight: 600 !important;
-}
-section[data-testid="stSidebar"] .sidebar-logout-wrap button:hover {
-    background: rgba(127,29,29,.2) !important;
+}}
+{_SB} .st-key-nav_logout .stButton > button:hover {{
+    background: rgba(127,29,29,.22) !important;
     border-color: rgba(248,113,113,.35) !important;
     color: #fecaca !important;
-}
-section[data-testid="stSidebar"] .sidebar-logout-wrap button p {
+}}
+{_SB} .st-key-nav_logout .stButton > button p {{
     color: inherit !important;
-}
+}}
 
-@media (max-width: 768px) {
-    section[data-testid="stSidebar"] {
+@media (max-width: 768px) {{
+    {_SB} {{
         min-width: 100% !important;
         width: 100% !important;
         max-width: 100% !important;
-    }
-}
+    }}
+}}
 """
 
 
-def inject_sidebar_styles() -> None:
-    inject_css(sidebar_master_css())
+def inject_sidebar_styles(active_page: str = "home") -> None:
+    inject_css(sidebar_master_css(active_page))
 
 
 def _img_base64(path: Path) -> str:
@@ -383,14 +434,6 @@ def _img_base64(path: Path) -> str:
         return ""
     import base64
     return base64.b64encode(path.read_bytes()).decode("utf-8")
-
-
-def _icon_src(page: str) -> str:
-    icon_name = ICON_MAP.get(page, page)
-    path = ASSET_DIR / f"{icon_name}.png"
-    if not path.exists():
-        return ""
-    return f"url(data:image/png;base64,{_img_base64(path)})"
 
 
 def _is_admin_user() -> bool:
@@ -408,14 +451,23 @@ def _user_initial(username: str) -> str:
     return (u[0] or "U").upper()
 
 
+def _resolve_active(active_page: str | None) -> str:
+    active = (active_page or st.session_state.get("page") or "home").strip()
+    if active in LEGACY_PAGE_ALIASES:
+        active = LEGACY_PAGE_ALIASES[active]
+    if active in ("reels", "video"):
+        active = "creator"
+    return active
+
+
 def _render_brand() -> None:
     if WORDMARK.exists():
         src = _img_base64(WORDMARK)
         st.markdown(
             f"""
-<div class="sidebar-brand">
+<div class="mb-sidebar-brand">
     <img src="data:image/png;base64,{src}" alt="{html.escape(APP_NAME)}">
-    <p class="sidebar-brand-tag">{html.escape(APP_TAGLINE)}</p>
+    <p class="mb-sidebar-brand-tag">{html.escape(APP_TAGLINE)}</p>
 </div>
             """,
             unsafe_allow_html=True,
@@ -423,9 +475,9 @@ def _render_brand() -> None:
     else:
         st.markdown(
             f"""
-<div class="sidebar-brand">
-    <p class="sidebar-brand-text">{html.escape(APP_NAME)}</p>
-    <p class="sidebar-brand-tag">{html.escape(APP_TAGLINE)}</p>
+<div class="mb-sidebar-brand">
+    <p class="mb-sidebar-brand-name">{html.escape(APP_NAME)}</p>
+    <p class="mb-sidebar-brand-tag">{html.escape(APP_TAGLINE)}</p>
 </div>
             """,
             unsafe_allow_html=True,
@@ -434,32 +486,23 @@ def _render_brand() -> None:
 
 def _section_label(label: str) -> None:
     st.markdown(
-        f'<div class="mb-section-label">{html.escape(label)}</div>',
+        f'<p class="mb-section-label">{html.escape(label)}</p>',
         unsafe_allow_html=True,
     )
 
 
-def _nav_item(label: str, page: str, active_page: str) -> None:
-    is_active = active_page == page
-    active_class = "mb-nav-active" if is_active else ""
-    icon_var = _icon_src(page) or "none"
-
-    st.markdown(
-        f'<div class="mb-nav-item {active_class}" style="--mb-nav-icon:{icon_var};">',
-        unsafe_allow_html=True,
-    )
-    if st.button(label, key=f"nav_{page}", width="stretch", type="secondary"):
+def _nav_button(label: str, page: str) -> None:
+    if st.button(label, key=_nav_key(page), width="stretch", type="secondary"):
         st.session_state.page = page
         st.rerun()
-    st.markdown("</div>", unsafe_allow_html=True)
 
 
-def _nav_section(title: str, items: list[tuple[str, str]], active_page: str) -> None:
-    st.markdown('<div class="mb-nav-section">', unsafe_allow_html=True)
+def _nav_section(title: str, items: list[tuple[str, str]], *, first: bool = False) -> None:
+    if not first:
+        st.markdown('<div class="mb-nav-section-gap"></div>', unsafe_allow_html=True)
     _section_label(title)
-    for label, page in items:
-        _nav_item(label, page, active_page)
-    st.markdown("</div>", unsafe_allow_html=True)
+    for nav_label, page in items:
+        _nav_button(nav_label, page)
 
 
 def _render_user_footer() -> None:
@@ -469,6 +512,7 @@ def _render_user_footer() -> None:
     tokens = int(st.session_state.get("tokens", 0) or 0)
     plan_cls = _plan_badge_class(plan)
     plan_label = plan.replace("_", " ").upper() if plan else "FREE"
+    token_txt = f"{tokens:,}".replace(",", ".")
 
     badges = [f'<span class="sidebar-plan-badge {plan_cls}">{html.escape(plan_label)}</span>']
     if fb_plan and fb_plan not in ("none", "", "free"):
@@ -488,7 +532,7 @@ def _render_user_footer() -> None:
     </div>
     <div class="sidebar-user-badges">{"".join(badges)}</div>
     <div class="sidebar-tokens-row">
-        <span class="sidebar-tokens-val">{f"{tokens:,}".replace(",", ".")}</span>
+        <span class="sidebar-tokens-val">{token_txt}</span>
         <span class="sidebar-tokens-lbl">Tokens</span>
     </div>
 </div>
@@ -498,32 +542,22 @@ def _render_user_footer() -> None:
 
 
 def render_sidebar(active_page: str | None = None) -> None:
-    active = (active_page or st.session_state.get("page") or "home").strip()
-    if active in LEGACY_PAGE_ALIASES:
-        active = LEGACY_PAGE_ALIASES[active]
-    if active in ("reels", "video"):
-        active = "creator"
+    active = _resolve_active(active_page)
+    inject_sidebar_styles(active)
 
     with st.sidebar:
-        st.markdown('<div class="sidebar-shell">', unsafe_allow_html=True)
         _render_brand()
-        st.markdown('<div class="sidebar-nav">', unsafe_allow_html=True)
 
-        for section_title, items in SIDEBAR_SECTIONS:
-            _nav_section(section_title, items, active)
+        for idx, (section_title, items) in enumerate(SIDEBAR_SECTIONS):
+            _nav_section(section_title, items, first=idx == 0)
 
         if _is_admin_user():
-            _nav_section("System", [("Admin Panel", "admin")], active)
+            _nav_section("System", [("Admin Panel", "admin")])
 
-        st.markdown("</div>", unsafe_allow_html=True)
-
-        st.markdown('<div class="sidebar-footer">', unsafe_allow_html=True)
+        st.markdown('<div class="mb-sidebar-footer">', unsafe_allow_html=True)
         _render_user_footer()
-        st.markdown('<div class="sidebar-logout-wrap">', unsafe_allow_html=True)
         if st.button("Abmelden", key="nav_logout", width="stretch", type="secondary"):
             from services.session_auth import logout_session
             logout_session()
             st.rerun()
-        st.markdown("</div></div></div>", unsafe_allow_html=True)
-
-    inject_sidebar_styles()
+        st.markdown("</div>", unsafe_allow_html=True)

@@ -115,6 +115,12 @@ section[data-testid="stSidebar"] button[data-testid="stBaseButton-primary"] {
     box-shadow: none !important;
     color: #a1a1aa !important;
 }
+section[data-testid="stSidebar"] .stButton > button:focus,
+section[data-testid="stSidebar"] .stButton > button:active,
+section[data-testid="stSidebar"] .stButton > button:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+}
 
 section[data-testid="stSidebar"] .stButton > button p,
 section[data-testid="stSidebar"] button p {
@@ -159,9 +165,14 @@ div[data-baseweb="textarea"] {
     border-color: #3f3f46 !important;
 }
 
-div[data-testid="stVerticalBlockBorderWrapper"] {
+section.main div[data-testid="stVerticalBlockBorderWrapper"] {
     background: #18181b !important;
     border-color: #3f3f46 !important;
+}
+section[data-testid="stSidebar"] div[data-testid="stVerticalBlockBorderWrapper"] {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
 }
 
 /* Streamlit chrome */

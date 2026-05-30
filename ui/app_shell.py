@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import streamlit as st
 
-_UI_VERSION = 5
+_UI_VERSION = 6
 
 
 def inject_global_ui(*, force: bool = False) -> None:
@@ -17,6 +17,10 @@ def inject_global_ui(*, force: bool = False) -> None:
     from ui.styles import inject_css, page_layout_css
     from ui_core import core_app_css
 
+    _page = str(st.session_state.get("page") or "home").strip()
+    if _page in ("reels", "video"):
+        _page = "creator"
+
     inject_css(
         f"/* mb-ui-v{_UI_VERSION} */\n"
         + MB_THEME_VARS
@@ -26,7 +30,7 @@ def inject_global_ui(*, force: bool = False) -> None:
         + GLOBAL_DESIGN_CSS
         + core_app_css()
         + master_button_css()
-        + sidebar_master_css()
+        + sidebar_master_css(_page)
         + MABYTE_PROMPT_CSS
     )
     st.markdown('<div class="custom-topbar"></div>', unsafe_allow_html=True)
