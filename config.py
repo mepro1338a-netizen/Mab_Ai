@@ -699,6 +699,12 @@ FOOTBALL_FEATURES = {
         "description": "Vollstaendige Live AI Match Intelligence",
         "action": "deep_match_analysis",
     },
+    "ai_elite_betting_card": {
+        "min_plan": "football_elite",
+        "label": "Elite Betting Intelligence Card",
+        "category": "analysis",
+        "description": "Kompakte Tippempfehlung mit Confidence, Risiko & Value",
+    },
     "elite_odds_calculator": {
         "min_plan": "football_pro",
         "label": "Odds / Quote Calculator",
