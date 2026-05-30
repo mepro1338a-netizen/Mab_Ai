@@ -400,7 +400,7 @@ def render_empty_top_matches(*, show_intl_hint: bool = False, raw_live: int = 0)
     st.markdown(
         f"""
 <div class="fb-mc-empty-state">
-    <strong>Heute keine Topspiele verfügbar</strong>
+    <strong>Heute keine Topspiele verfügbar.</strong>
     In Premium-Ligen (Bundesliga, UEFA, Topligen) sind heute keine Partien gelistet.{extra}
 </div>
         """,

@@ -160,10 +160,116 @@ def _risk_class(risk: str) -> str:
 def _disclaimer() -> None:
     st.markdown(
         '<p class="fb-bet-disclaimer">'
-        "Keine Finanzberatung. Tipps sind datenbasierte Einschätzungen, keine Garantie."
+        "Keine Finanzberatung. Datenbasierte Einschätzung, keine Garantie."
         "</p>",
         unsafe_allow_html=True,
     )
+
+
+def _render_live_events(detail: dict[str, Any], bundle: dict[str, Any] | None) -> None:
+    card = detail.get("card") or {}
+    if not card.get("live"):
+        return
+
+    lines: list[str] = []
+    if bundle:
+        mom = (bundle.get("overview") or {}).get("momentum") or {}
+        label = mom.get("label") or ""
+        leader = mom.get("leader") or ""
+        if label:
+            lines.append(f"Momentum: {label}" + (f" ({leader})" if leader else ""))
+
+    events = detail.get("events") or []
+    shown = 0
+    for block in events:
+        nested = block.get("events")
+        ev_list = nested if nested else ([block] if block.get("type") or block.get("time") else [])
+        for ev in ev_list:
+            if shown >= 5:
+                break
+            minute = (ev.get("time") or {}).get("elapsed")
+            typ = str(ev.get("type") or "")
+            player = (ev.get("player") or {}).get("name") or ""
+            detail_txt = ev.get("detail") or ""
+            if typ.lower() in ("goal", "card", "subst"):
+                lines.append(f"{minute}' {typ} {player} {detail_txt}".strip())
+                shown += 1
+
+    if lines:
+        st.markdown(
+            '<div class="fb-bet-inj" style="border-color:rgba(34,197,94,.25);background:rgba(22,101,52,.12);">'
+            '<h4 style="color:#86efac!important;">Live Intelligence</h4>'
+            + "".join(f"<p>{html.escape(l)}</p>" for l in lines)
+            + "</div>",
+            unsafe_allow_html=True,
+        )
+    elif card.get("live"):
+        st.caption("Live-Details für dieses Spiel aktuell nicht verfügbar.")
+
+
+def render_compact_intelligence_card(
+    intel: dict[str, Any],
+    detail: dict[str, Any],
+    *,
+    bundle: dict[str, Any] | None = None,
+) -> None:
+    """Premium compact card — decision-first, minimal text."""
+    inject_betting_card_css()
+    h = intel.get("header") or {}
+    rec = intel.get("recommendation") or {}
+    no_bet = bool(rec.get("no_bet"))
+    pick_cls = "fb-bet-pick no-bet" if no_bet else "fb-bet-pick"
+    card_cls = "fb-bet-card no-bet" if no_bet else "fb-bet-card"
+    status = html.escape(str(h.get("status") or "NS"))
+    form = intel.get("form") or {}
+    h2h = intel.get("h2h") or ""
+
+    st.markdown(
+        f"""
+<div class="{card_cls}">
+    <p class="fb-bet-match">{html.escape(str(h.get('home')))} vs {html.escape(str(h.get('away')))}</p>
+    <p class="fb-bet-meta">{html.escape(str(h.get('league')))} · <strong>{html.escape(str(h.get('score')))}</strong> · {html.escape(str(h.get('time') or h.get('date')))} · {status}</p>
+    <p class="{pick_cls}">{html.escape(str(rec.get('main_pick', '—')))}</p>
+    <div class="fb-bet-metrics">
+        <div class="fb-bet-metric"><div class="k">Confidence</div><div class="v">{rec.get('confidence', 0):.0f}%</div></div>
+        <div class="fb-bet-metric {_risk_class(str(rec.get('risk', 'Mittel')))}"><div class="k">Risiko</div><div class="v">{html.escape(str(rec.get('risk', '—')))}</div></div>
+    </div>
+</div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    reasons = intel.get("reasons_short") or []
+    if reasons:
+        items = "".join(f"<li>{html.escape(r)}</li>" for r in reasons[:3])
+        st.markdown(f'<ul class="fb-bet-reasons">{items}</ul>', unsafe_allow_html=True)
+
+    meta_lines = []
+    if form.get("home") or form.get("away"):
+        meta_lines.append(
+            f"Form (5): {html.escape(str(form.get('home', '—')))} · {html.escape(str(form.get('away', '—')))}"
+        )
+    if h2h:
+        meta_lines.append(f"H2H: {html.escape(h2h)}")
+    if meta_lines:
+        st.markdown(
+            f'<p style="color:#94a3b8;font-size:12px;margin:8px 0 0 0;">{" · ".join(meta_lines)}</p>',
+            unsafe_allow_html=True,
+        )
+
+    inj = intel.get("injuries") or {}
+    if inj.get("available"):
+        st.markdown(
+            f'<p style="color:#fca5a5;font-size:12px;margin:6px 0 0 0;">'
+            f"Verletzungen: Heim {html.escape(str(inj.get('home_impact')))} · "
+            f"Auswärts {html.escape(str(inj.get('away_impact')))}</p>",
+            unsafe_allow_html=True,
+        )
+    elif inj.get("missing"):
+        st.caption("Verletzungsdaten derzeit nicht verfügbar.")
+
+    _render_live_events(detail, bundle)
+    _disclaimer()
 
 
 def render_starter_fixture_card(detail: dict[str, Any]) -> None:
@@ -340,6 +446,8 @@ def render_match_intelligence_section(
     elite_ok: bool,
     pro_ok: bool,
     open_premium,
+    username: str = "",
+    session_plan: str = "none",
 ) -> None:
     """Plan-gated betting intelligence for Live Match Center."""
     if rank < 1:
@@ -347,9 +455,15 @@ def render_match_intelligence_section(
 
     if rank == 1:
         render_starter_fixture_card(detail)
+        hs = detail.get("home_standing") or {}
+        aws = detail.get("away_standing") or {}
+        if hs or aws:
+            st.caption(
+                f"Tabellen: Heim #{hs.get('rank', '—')} · Ausw. #{aws.get('rank', '—')}"
+            )
         render_upgrade_card(
-            "Elite Betting Intelligence",
-            "Tippempfehlung, Confidence, Value-Rechner & Verletzungsimpact ab Football Pro.",
+            "Pro Match Intelligence",
+            "H2H, Form, AI Preview & Predictions ab Football Pro.",
             "football_pro",
             button_key=f"fb_bet_up_{fixture_id}",
             on_upgrade=open_premium,
@@ -358,28 +472,61 @@ def render_match_intelligence_section(
 
     from services.football_elite_betting_card import build_betting_intelligence_card, build_pro_preview_card
 
-    show_details = st.session_state.get(f"fb_bet_details_{fixture_id}", False)
+    bundle = st.session_state.get(f"fb_mc_elite_{fixture_id}")
 
     if elite_ok:
-        bundle = st.session_state.get(f"fb_mc_elite_{fixture_id}")
         intel = build_betting_intelligence_card(detail, bundle=bundle)
-        render_elite_betting_card(intel, fixture_id=fixture_id, show_details=show_details)
+        render_compact_intelligence_card(intel, detail, bundle=bundle)
+        render_value_quote_input(intel, key_prefix=f"fb_vq_{fixture_id}")
 
-        if not show_details:
-            if st.button("Details anzeigen", key=f"fb_bet_det_{fixture_id}", width="stretch"):
-                st.session_state[f"fb_bet_details_{fixture_id}"] = True
-                st.rerun()
-        else:
-            if st.button("Weniger anzeigen", key=f"fb_bet_less_{fixture_id}", width="stretch"):
-                st.session_state[f"fb_bet_details_{fixture_id}"] = False
-                st.rerun()
-            render_value_quote_input(intel, key_prefix=f"fb_vq_{fixture_id}")
+        if detail.get("card", {}).get("live") and not bundle:
+            if st.button("Live Momentum laden", key=f"fb_mc_elite_load_{fixture_id}", width="stretch"):
+                from services.football_access import can_run_action, consume_action
+                from services.football_elite_live import EliteLiveIntelEngine
+                from services.football_service import get_football_service
+
+                ok_run, msg = can_run_action(username, "deep_match_analysis", session_plan)
+                if not ok_run:
+                    st.error(msg)
+                else:
+                    try:
+                        consume_action(username, "deep_match_analysis", session_plan)
+                        bundle = EliteLiveIntelEngine(get_football_service()).fetch_bundle(
+                            fixture_id,
+                            username=username,
+                        )
+                        st.session_state[f"fb_mc_elite_{fixture_id}"] = bundle
+                        st.rerun()
+                    except Exception as exc:
+                        st.error(str(exc))
+
+        plat = st.selectbox(
+            "Plattform",
+            ["TikTok", "YouTube Shorts", "Instagram Reels"],
+            key=f"fb_reel_plat_{fixture_id}",
+            label_visibility="collapsed",
+        )
+        if st.button("Aus Analyse Reel erzeugen", key=f"fb_reel_{fixture_id}", width="stretch"):
+            from services.football_creator_bridge import build_reel_template_from_intel
+
+            tpl = build_reel_template_from_intel(detail, intel, platform=plat)
+            st.session_state[f"fb_reel_tpl_{fixture_id}"] = tpl
+            st.session_state.reel_topic = f"{tpl['home']} vs {tpl['away']}"
+            st.session_state.page = "reels"
+            st.success(tpl["status_note"])
+
+        tpl = st.session_state.get(f"fb_reel_tpl_{fixture_id}")
+        if tpl:
+            with st.expander("Reel-Vorlage", expanded=False):
+                st.markdown(tpl.get("package", ""))
+
     elif pro_ok:
         preview = build_pro_preview_card(detail)
         render_pro_preview_card(preview)
+        _render_live_events(detail, None)
         render_upgrade_card(
             "Elite Betting Intelligence",
-            "Haupttipp, No-Bet-Logik, Value-Quote & Verletzungsimpact ab Elite.",
+            "Haupttipp, Value-Quote, Live Momentum & Creator Reel Bridge ab Elite.",
             "football_elite",
             button_key=f"fb_bet_elite_{fixture_id}",
             on_upgrade=open_premium,

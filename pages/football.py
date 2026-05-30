@@ -1577,41 +1577,46 @@ def render_football() -> None:
     plan = session_football_plan()
     hub_kw = dict(summary=summary, username=user, session_plan=plan, open_premium=open_premium)
 
-    tab_center, tab_mesh, tab_live, tab_bet, tab_prev, tab_vir, tab_auto, tab_plan = st.tabs(
+    tab_center, tab_top, tab_tips, tab_analyse, tab_plan = st.tabs(
         [
             "Live Center",
-            "Data Mesh",
-            "Live Intel",
-            "Betting AI",
-            "Match Preview",
-            "Viral Studio",
-            "Automation",
+            "Top Matches",
+            "AI Tipps",
+            "Match Analyse",
             "Dein Plan",
         ]
     )
 
     with tab_center:
-        render_tab_live_match_center(**hub_kw)
+        render_tab_live_match_center(**hub_kw, section="live")
 
-    with tab_mesh:
-        render_football_live_data(summary)
+    with tab_top:
+        render_tab_live_match_center(**hub_kw, section="top")
 
-    with tab_live:
-        render_tab_live_intel(**hub_kw)
+    with tab_tips:
+        render_tab_live_match_center(**hub_kw, section="tips")
 
-    with tab_bet:
-        render_tab_betting_ai(**hub_kw)
-
-    with tab_prev:
-        render_tab_match_preview(**hub_kw)
-
-    with tab_vir:
-        render_tab_viral_studio(**hub_kw)
-
-    with tab_auto:
-        render_tab_automation(**hub_kw)
+    with tab_analyse:
+        render_tab_live_match_center(**hub_kw, section="analyse")
 
     with tab_plan:
         render_football_plans_tab(summary)
+
+    with st.expander("Erweiterte Tools (Beta)", expanded=False):
+        tab_mesh, tab_intel, tab_bet, tab_prev, tab_vir, tab_auto = st.tabs(
+            ["Data Mesh", "Live Intel", "Betting AI", "Match Preview", "Viral Studio", "Automation"]
+        )
+        with tab_mesh:
+            render_football_live_data(summary)
+        with tab_intel:
+            render_tab_live_intel(**hub_kw)
+        with tab_bet:
+            render_tab_betting_ai(**hub_kw)
+        with tab_prev:
+            render_tab_match_preview(**hub_kw)
+        with tab_vir:
+            render_tab_viral_studio(**hub_kw)
+        with tab_auto:
+            render_tab_automation(**hub_kw)
 
     st.markdown("</div>", unsafe_allow_html=True)

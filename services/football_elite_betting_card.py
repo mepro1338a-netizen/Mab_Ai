@@ -290,8 +290,14 @@ def build_betting_intelligence_card(
             "time": time_show,
             "date": card.get("date", ""),
             "score": card.get("score", "vs"),
+            "status": card.get("status_label") or card.get("status") or "NS",
             "live": bool(card.get("live")),
         },
+        "form": {
+            "home": detail.get("home_form") or pred.get("form_home") or "—",
+            "away": detail.get("away_form") or pred.get("form_away") or "—",
+        },
+        "h2h": _h2h_line(detail) or "",
         "recommendation": {
             "main_pick": main_pick,
             "confidence": round(confidence, 1),
