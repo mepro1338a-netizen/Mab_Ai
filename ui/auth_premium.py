@@ -1,44 +1,33 @@
-"""MaByte Enterprise Login — Linear / Stripe grade B2B gateway."""
+"""MaByte Auth UI — clean 2-column login (Beta)."""
 from __future__ import annotations
 
 import html
 
 from config import APP_NAME
 
-_G = ".stApp"
+_APP = html.escape(APP_NAME)
+_INITIAL = html.escape(APP_NAME[:1] if APP_NAME else "M")
 
+# ── Streamlit shell + page grid (no absolute positioning on layout) ──
+_BASE_CSS = """
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-def _s(css: str) -> str:
-    return _G + " " + css
-
-
-# Design tokens — #050816 #0A1024 #7B61FF #A855F7 #5B8CFF
-GATE_CSS = (
-    """
-:root {
-    --mb-bg: #050816;
-    --mb-bg-2: #0A1024;
-    --mb-violet: #7B61FF;
-    --mb-purple: #A855F7;
-    --mb-blue: #5B8CFF;
-    --mb-line: rgba(255, 255, 255, 0.08);
-    --mb-glow: 0 0 40px rgba(123, 97, 255, 0.25);
-    --mb-radius: 20px;
-}
 html { color-scheme: dark !important; }
-.stApp, .stApp[data-theme="light"], .stApp[data-theme="dark"] {
-    --primary-color: #7B61FF !important;
-    --background-color: #050816 !important;
-    --text-color: #fafafa !important;
-}
+
 .stApp,
 .stApp [data-testid="stAppViewContainer"],
 .stApp [data-testid="stAppViewContainer"] > section,
 .stApp [data-testid="stMainBlockContainer"],
 .stApp [data-testid="stAppViewBlockContainer"] {
-    background: var(--mb-bg) !important;
+    background: #050816 !important;
+    background-image:
+        radial-gradient(ellipse 70% 50% at 15% 10%, rgba(168, 85, 247, 0.18), transparent 55%),
+        radial-gradient(ellipse 60% 45% at 88% 8%, rgba(91, 140, 255, 0.14), transparent 50%),
+        linear-gradient(180deg, #050816 0%, #0a1024 50%, #050816 100%) !important;
     color: #fafafa !important;
+    font-family: Inter, system-ui, sans-serif !important;
 }
+
 .stApp #MainMenu,
 .stApp footer,
 .stApp [data-testid="stToolbar"],
@@ -46,1204 +35,505 @@ html { color-scheme: dark !important; }
 .stApp [data-testid="stSidebar"],
 .stApp [data-testid="stStatusWidget"],
 .stApp [data-testid="stDeployButton"],
-.stApp [data-testid="stElementToolbar"],
 .stApp [data-testid="stHeader"] {
     display: none !important;
-    height: 0 !important;
 }
-.stApp [data-testid="stAppViewContainer"],
-.stApp [data-testid="stAppViewContainer"] > section,
-.stApp [data-testid="stMainBlockContainer"],
-.stApp [data-testid="stAppViewBlockContainer"] {
-    padding-top: 0 !important;
-}
-"""
-+ """
+
 .stApp [data-testid="stMain"] .block-container,
 .stApp [data-testid="stMainBlockContainer"] {
     max-width: 100% !important;
     padding: 0 !important;
 }
-.stApp [data-testid="stMain"] [data-testid="stVerticalBlock"] {
-    gap: 0 !important;
-}
-.stApp [data-testid="stMarkdownContainer"]:has(.mb-topbar),
-.stApp [data-testid="stMarkdownContainer"]:has(.mb-page-foot) {
-    margin: 0 !important;
-    padding: 0 !important;
-}
 
-/* Auth split layout — Streamlit 1.50: hero + panel are direct stColumn children */
-.stApp [data-testid="stHorizontalBlock"]:has(.auth-grid-marker) {
-    display: grid !important;
-    grid-template-columns: minmax(0, 1fr) 480px !important;
-    gap: 48px !important;
-    align-items: start !important;
-    min-height: calc(100vh - 72px) !important;
-    max-width: 1320px !important;
-    margin: 0 auto !important;
-    padding: 72px 48px 88px 48px !important;
-    box-sizing: border-box !important;
-}
-.stApp [data-testid="stHorizontalBlock"]:has(.auth-grid-marker) > [data-testid="stColumn"]:first-child {
-    flex: unset !important;
-    max-width: none !important;
-    width: auto !important;
-    min-width: 0 !important;
-    padding: 0 !important;
-}
-.stApp [data-testid="stHorizontalBlock"]:has(.auth-grid-marker) > [data-testid="stColumn"]:last-child {
-    flex: unset !important;
-    max-width: 520px !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    padding: 0 !important;
-    justify-self: end !important;
-    align-self: center !important;
-}
-
-/* Login card — only the Streamlit block that directly wraps the marker */
-.stApp .login-card,
-.stApp [data-testid="stVerticalBlock"]:has(> [data-testid="stElementContainer"] .login-card-root),
-.stApp [data-testid="stVerticalBlockBorderWrapper"]:has(> [data-testid="stVerticalBlock"] > [data-testid="stElementContainer"] .login-card-root) {
-    box-sizing: border-box !important;
-    width: 100% !important;
-    max-width: 520px !important;
-    margin: 0 auto !important;
-    padding: 48px !important;
-    border-radius: 28px !important;
-    background: rgba(8, 12, 30, 0.86) !important;
-    border: 1px solid rgba(255, 255, 255, 0.14) !important;
-    box-shadow: 0 0 80px rgba(123, 97, 255, 0.28) !important;
-    gap: 0 !important;
-}
-.stApp [data-testid="stVerticalBlockBorderWrapper"]:has(> [data-testid="stVerticalBlock"] > [data-testid="stElementContainer"] .login-card-root) > [data-testid="stVerticalBlock"] {
-    padding: 0 !important;
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-}
-.stApp [data-testid="stVerticalBlock"]:has(> [data-testid="stElementContainer"] .login-card-root) > [data-testid="stElementContainer"],
-.stApp [data-testid="stVerticalBlock"]:has(> [data-testid="stElementContainer"] .login-card-root) > [data-testid="stMarkdownContainer"],
-.stApp [data-testid="stVerticalBlockBorderWrapper"]:has(> [data-testid="stVerticalBlock"] > [data-testid="stElementContainer"] .login-card-root) [data-testid="stElementContainer"],
-.stApp [data-testid="stVerticalBlockBorderWrapper"]:has(> [data-testid="stVerticalBlock"] > [data-testid="stElementContainer"] .login-card-root) [data-testid="stMarkdownContainer"] {
-    margin: 0 !important;
-    padding: 0 !important;
-    border: none !important;
-    box-shadow: none !important;
-}
-
-@media (max-width: 1100px) {
-    .stApp [data-testid="stHorizontalBlock"]:has(.auth-grid-marker) {
-        grid-template-columns: 1fr !important;
-        gap: 40px !important;
-        padding: 48px 32px !important;
-        min-height: auto !important;
-    }
-    .stApp [data-testid="stHorizontalBlock"]:has(.auth-grid-marker) > [data-testid="stColumn"]:last-child {
-        max-width: 520px !important;
-        justify-self: center !important;
-    }
-    .stApp .mb-feat-grid { grid-template-columns: repeat(2, 1fr) !important; }
-}
-@media (max-width: 640px) {
-    .stApp [data-testid="stHorizontalBlock"]:has(.auth-grid-marker) {
-        padding: 32px 16px !important;
-        gap: 32px !important;
-    }
-    .stApp .login-card,
-    .stApp [data-testid="stVerticalBlock"]:has(> [data-testid="stElementContainer"] .login-card-root),
-    .stApp [data-testid="stVerticalBlockBorderWrapper"]:has(> [data-testid="stVerticalBlock"] > [data-testid="stElementContainer"] .login-card-root) {
-        padding: 32px 24px !important;
-    }
-    .stApp .mb-feat-grid { grid-template-columns: 1fr !important; }
-    .stApp .mb-hero { padding: 4px 0 12px 0 !important; }
-    .stApp .mb-stats-row { flex-direction: column !important; align-items: flex-start !important; gap: 10px !important; }
-    .stApp .mb-stat { padding-right: 0 !important; margin-right: 0 !important; border-right: none !important; }
-    .stApp .mb-page-foot { flex-direction: column !important; text-align: center !important; }
-}
-@media (max-height: 860px) {
-    .stApp .mb-stats-row { display: none !important; }
-    .stApp .mb-hero-sub { margin-bottom: 14px !important; font-size: 12px !important; line-height: 1.55 !important; }
-    .stApp .mb-feat-grid { margin-bottom: 12px !important; }
-    .stApp .mb-hero-title { margin-bottom: 12px !important; font-size: clamp(26px, 3vw, 36px) !important; }
-    .stApp [data-testid="stHorizontalBlock"]:has(.auth-grid-marker) {
-        padding-top: 48px !important;
-        padding-bottom: 48px !important;
-    }
-}
-"""
-+ """
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-
-.stApp {
-    font-family: "Inter", system-ui, -apple-system, sans-serif;
-    -webkit-font-smoothing: antialiased;
-    color: #fafafa;
-}
-
-.mb-auth-page {
+.stApp [data-testid="stAlert"] {
     display: none !important;
 }
 
-/* ── Background: stadium + space ── */
-.mb-auth-bg {
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    background-color: #050816;
-    background-image:
-        radial-gradient(ellipse 80% 50% at 50% 100%, rgba(123, 97, 255, 0.18), transparent 60%),
-        radial-gradient(ellipse 60% 40% at 20% 20%, rgba(168, 85, 247, 0.22), transparent 55%),
-        radial-gradient(ellipse 50% 35% at 85% 15%, rgba(91, 140, 255, 0.16), transparent 50%),
-        radial-gradient(ellipse 100% 60% at 50% 110%, rgba(10, 16, 36, 0.9), transparent 70%),
-        linear-gradient(180deg, #050816 0%, #0A1024 45%, #050816 100%);
-}
-.mb-auth-aurora {
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    background:
-        radial-gradient(ellipse 55% 35% at 72% 8%, rgba(168, 85, 247, 0.28), transparent 60%),
-        radial-gradient(ellipse 45% 30% at 15% 12%, rgba(91, 140, 255, 0.18), transparent 55%);
-}
-.mb-auth-stars {
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    opacity: 0.4;
-    background-image:
-        radial-gradient(1px 1px at 10% 20%, rgba(255,255,255,0.5), transparent),
-        radial-gradient(1px 1px at 30% 65%, rgba(255,255,255,0.35), transparent),
-        radial-gradient(1px 1px at 55% 15%, rgba(255,255,255,0.4), transparent),
-        radial-gradient(1px 1px at 70% 45%, rgba(255,255,255,0.3), transparent),
-        radial-gradient(1px 1px at 85% 75%, rgba(255,255,255,0.45), transparent),
-        radial-gradient(1px 1px at 92% 30%, rgba(255,255,255,0.35), transparent);
-}
-
-/* ── Top bar — normal document flow ── */
-.mb-topbar {
-    position: relative;
-    z-index: 10;
-    width: 100%;
+/* Top bar — normal flow */
+.auth-topbar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    height: 52px;
-    padding: 0 28px;
+    height: 56px;
+    padding: 0 32px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(5, 8, 22, 0.92);
     box-sizing: border-box;
-    border-bottom: 1px solid var(--mb-line);
-    background: rgba(5, 8, 22, 0.88);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
 }
-.mb-topbar-brand {
+.auth-topbar-brand {
     display: flex;
     align-items: center;
-    gap: 12px;
-}
-.mb-topbar-text {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-.mb-topbar-claim { display: none !important; }
-.mb-logo-mark {
-    width: 38px;
-    height: 38px;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    gap: 10px;
     font-size: 17px;
     font-weight: 800;
-    color: #fff !important;
-    background: linear-gradient(135deg, #A855F7 0%, #7B61FF 50%, #5B8CFF 100%);
-    box-shadow: var(--mb-glow), inset 0 1px 0 rgba(255,255,255,0.2);
-}
-.mb-topbar-name {
-    font-size: 18px;
-    font-weight: 800;
     color: #fafafa !important;
-    letter-spacing: -0.04em;
+    letter-spacing: -0.03em;
 }
-.mb-topbar-tagline {
-    display: block;
-    font-size: 11px;
-    font-weight: 500;
-    color: #64748b !important;
-    letter-spacing: 0.04em;
-    margin-top: 1px;
-}
-.mb-topbar-lang {
-    display: flex;
+.auth-topbar-mark {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    display: inline-flex;
     align-items: center;
-    gap: 6px;
-    font-size: 13px;
-    font-weight: 500;
-    color: #94a3b8 !important;
-    padding: 8px 14px;
-    border-radius: 10px;
-    border: 1px solid var(--mb-line);
-    background: rgba(10, 16, 36, 0.6);
-    backdrop-filter: blur(12px);
-}
-.mb-topbar-live {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    color: #86efac !important;
-    padding: 8px 14px;
-    border-radius: 10px;
-    border: 1px solid rgba(34, 197, 94, 0.25);
-    background: rgba(34, 197, 94, 0.08);
-    margin-left: 10px;
-}
-.mb-topbar-live-dot {
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: #22c55e;
-    box-shadow: 0 0 8px rgba(34, 197, 94, 0.7);
-}
-.mb-topbar-actions {
-    display: flex;
-    align-items: center;
-    gap: 0;
+    justify-content: center;
+    font-weight: 800;
+    color: #fff !important;
+    background: linear-gradient(135deg, #a855f7, #7b61ff, #3b82f6);
 }
 
-/* ── Hero left ── */
-.mb-hero {
-    position: relative;
-    z-index: 2;
-    padding: 4px 0 8px 0;
-    max-width: 100%;
+/* 2-column auth page grid */
+.stApp [data-testid="stHorizontalBlock"]:has(.auth-page-marker) {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 520px !important;
+    align-items: center !important;
+    gap: 72px !important;
+    max-width: 1440px !important;
+    width: 100% !important;
+    margin: 0 auto !important;
+    padding: 72px 64px !important;
+    min-height: calc(100vh - 80px) !important;
+    box-sizing: border-box !important;
+}
+.stApp [data-testid="stHorizontalBlock"]:has(.auth-page-marker) > [data-testid="stColumn"]:first-child {
+    min-width: 0 !important;
+    width: auto !important;
+    max-width: none !important;
+    flex: unset !important;
+    padding: 0 !important;
+}
+.stApp [data-testid="stHorizontalBlock"]:has(.auth-page-marker) > [data-testid="stColumn"]:last-child {
+    min-width: 0 !important;
+    width: 100% !important;
+    max-width: 520px !important;
+    flex: unset !important;
+    padding: 0 !important;
+    justify-self: end !important;
+}
+
+.stApp:has(.mb-mode-register) [data-testid="stHorizontalBlock"]:has(.auth-page-marker) {
+    grid-template-columns: 1fr !important;
+    max-width: 520px !important;
+    padding: 40px 24px 64px 24px !important;
+}
+.stApp:has(.mb-mode-register) [data-testid="stHorizontalBlock"]:has(.auth-page-marker) > [data-testid="stColumn"]:first-child {
+    display: none !important;
+}
+.stApp:has(.mb-mode-register) [data-testid="stHorizontalBlock"]:has(.auth-page-marker) > [data-testid="stColumn"]:last-child {
+    max-width: 100% !important;
+    justify-self: center !important;
+}
+
+@media (max-width: 1100px) {
+    .stApp [data-testid="stHorizontalBlock"]:has(.auth-page-marker) {
+        grid-template-columns: 1fr !important;
+        gap: 40px !important;
+        padding: 48px 28px !important;
+        min-height: auto !important;
+    }
+    .stApp [data-testid="stHorizontalBlock"]:has(.auth-page-marker) > [data-testid="stColumn"]:last-child {
+        max-width: 520px !important;
+        justify-self: center !important;
+    }
+}
+"""
+
+# ── Branding (left column) ──
+_BRAND_CSS = """
+.auth-brand {
+    min-width: 0;
     width: 100%;
 }
-.mb-hero-brand {
+.auth-brand-name {
     display: block;
-    font-size: clamp(28px, 2.8vw, 38px);
+    font-size: clamp(28px, 3vw, 36px);
     font-weight: 900;
-    letter-spacing: -0.045em;
+    letter-spacing: -0.04em;
     line-height: 1.1;
-    margin: 0 0 10px 0;
-    padding-top: 4px;
+    margin: 0 0 12px 0;
+    color: #fafafa !important;
+    white-space: normal !important;
+    word-break: normal !important;
+}
+.auth-brand-name .grad {
+    display: block;
     background: linear-gradient(135deg, #fafafa 0%, #c4b5fd 45%, #93c5fd 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
 }
-.mb-hero-pill {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
+.auth-brand-kicker {
+    display: inline-block;
     padding: 5px 12px;
     margin-bottom: 14px;
     border-radius: 999px;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.1em;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
     text-transform: uppercase;
     color: #94a3b8 !important;
-    border: 1px solid var(--mb-line);
+    border: 1px solid rgba(255, 255, 255, 0.1);
     background: rgba(10, 16, 36, 0.55);
-    backdrop-filter: blur(12px);
 }
-.mb-hero-pill-dot {
-    width: 4px;
-    height: 4px;
-    border-radius: 50%;
-    background: #7B61FF;
-    box-shadow: 0 0 6px rgba(123, 97, 255, 0.8);
-}
-.mb-hero-title {
-    font-size: clamp(24px, 2.4vw, 34px);
+.auth-brand-title {
+    font-size: clamp(22px, 2.2vw, 30px);
     font-weight: 800;
-    letter-spacing: -0.035em;
     line-height: 1.2;
     margin: 0 0 12px 0;
     color: #fafafa !important;
+    white-space: normal !important;
+    word-break: normal !important;
 }
-.mb-hero-title .mb-grad {
+.auth-brand-title .accent {
     display: block;
-    background: linear-gradient(135deg, #A855F7 0%, #7B61FF 45%, #5B8CFF 100%);
+    background: linear-gradient(135deg, #a855f7, #7b61ff, #3b82f6);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
 }
-.mb-hero-sub {
+.auth-brand-sub {
     font-size: 14px;
-    line-height: 1.65;
+    line-height: 1.6;
     color: #94a3b8 !important;
     margin: 0 0 22px 0;
     max-width: 520px;
+    white-space: normal !important;
+    word-break: normal !important;
 }
-
-/* Feature cards — 2×2 grid, larger touch */
-.mb-feat-grid {
+.auth-feat-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
-    margin-bottom: 22px;
+    max-width: 560px;
 }
-.mb-feat-card {
-    padding: 18px 16px;
-    min-height: 104px;
-    border-radius: 16px;
-    background: rgba(10, 16, 36, 0.58);
+.auth-feat-card {
+    padding: 14px;
+    border-radius: 14px;
+    background: rgba(10, 16, 36, 0.55);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
-    transition: border-color 0.25s, box-shadow 0.25s;
+    box-sizing: border-box;
 }
-.mb-feat-card:hover {
-    border-color: rgba(123, 97, 255, 0.32);
-    box-shadow: 0 8px 32px rgba(123, 97, 255, 0.14), inset 0 1px 0 rgba(255,255,255,0.06);
-}
-.mb-feat-icon {
-    width: 36px;
-    height: 36px;
-    border-radius: 9px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 10px;
-    background: linear-gradient(135deg, rgba(168,85,247,0.3), rgba(91,140,255,0.18));
-    border: 1px solid rgba(123, 97, 255, 0.22);
-}
-.mb-feat-icon svg {
-    width: 18px;
-    height: 18px;
-    stroke: #c4b5fd;
-    fill: none;
-    stroke-width: 1.75;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-}
-.mb-feat-title {
+.auth-feat-card .t {
     display: block;
     font-size: 13px;
     font-weight: 700;
-    color: #fafafa !important;
+    color: #f8fafc !important;
     margin-bottom: 4px;
-    letter-spacing: -0.02em;
-    line-height: 1.35;
+    white-space: normal !important;
 }
-.mb-feat-desc {
+.auth-feat-card .d {
     font-size: 11px;
     color: #64748b !important;
-    line-height: 1.45;
+    line-height: 1.4;
+    white-space: normal !important;
 }
+@media (max-width: 640px) {
+    .auth-feat-grid { grid-template-columns: 1fr !important; }
+}
+"""
 
-/* Stats row */
-.mb-stats-row {
-    display: flex;
-    align-items: center;
-    gap: 0;
-    flex-wrap: nowrap;
-    padding-top: 4px;
+# ── Login card chrome (HTML + Streamlit wrapper) ──
+_CARD_CSS = """
+.login-card-head {
+    text-align: center;
+    margin-bottom: 20px;
 }
-.mb-stat {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding-right: 16px;
-    margin-right: 16px;
-    border-right: 1px solid var(--mb-line);
-}
-.mb-stat:last-child {
-    padding-right: 0;
-    margin-right: 0;
-    border-right: none;
-}
-.mb-stat-icon {
-    width: 30px;
-    height: 30px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(123, 97, 255, 0.1);
-    border: 1px solid rgba(123, 97, 255, 0.18);
-    flex-shrink: 0;
-}
-.mb-stat-icon svg {
-    width: 14px;
-    height: 14px;
-    stroke: #a78bfa;
-    fill: none;
-    stroke-width: 1.75;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-}
-.mb-stat-val {
-    display: block;
-    font-size: 14px;
-    font-weight: 700;
-    color: #fafafa !important;
-    letter-spacing: -0.02em;
-    line-height: 1.2;
-}
-.mb-stat-label {
-    display: block;
-    font-size: 10px;
-    color: #64748b !important;
-    line-height: 1.3;
-}
-
-/* ── Login card header (inside Streamlit column card) ── */
-.mb-login-head {
-    margin: 0 0 4px 0;
-}
-.mb-panel-logo {
+.login-card-logo {
     width: 40px;
     height: 40px;
-    margin: 0 auto 14px auto;
+    margin: 0 auto 12px auto;
     display: flex;
     align-items: center;
     justify-content: center;
     clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-    background: linear-gradient(135deg, #A855F7, #7B61FF, #5B8CFF);
-    box-shadow: 0 0 24px rgba(123, 97, 255, 0.35);
+    background: linear-gradient(135deg, #a855f7, #7b61ff, #3b82f6);
     font-size: 15px;
     font-weight: 800;
     color: #fff !important;
 }
-.mb-panel-title {
+.login-card-title {
     font-size: 20px;
     font-weight: 700;
-    letter-spacing: -0.03em;
     color: #fafafa !important;
-    margin: 0 0 4px 0;
-    text-align: center;
+    margin: 0 0 6px 0;
+    line-height: 1.25;
+    white-space: normal !important;
+    word-break: normal !important;
 }
-.mb-panel-title .mb-panel-brand {
-    background: linear-gradient(135deg, #A855F7, #5B8CFF);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-.mb-panel-sub {
+.login-card-sub {
     font-size: 13px;
     color: #94a3b8 !important;
-    margin: 0 0 16px 0;
-    line-height: 1.45;
-    text-align: center;
-}
-
-/* Register mode — centered form only, compact spacing */
-.stApp:has(.mb-mode-register) [data-testid="stHorizontalBlock"]:has(.auth-grid-marker) {
-    grid-template-columns: 1fr !important;
-    max-width: 460px !important;
-    gap: 0 !important;
-    padding: 28px 20px 72px 20px !important;
-    min-height: auto !important;
-    align-items: stretch !important;
-}
-.stApp:has(.mb-mode-register) [data-testid="stHorizontalBlock"]:has(.auth-grid-marker) > [data-testid="stColumn"]:first-child {
-    display: none !important;
-}
-.stApp:has(.mb-mode-register) [data-testid="stHorizontalBlock"]:has(.auth-grid-marker) > [data-testid="stColumn"]:last-child {
-    max-width: 100% !important;
-    width: 100% !important;
-    justify-self: center !important;
-}
-.stApp:has(.mb-mode-register) .mb-feat-grid,
-.stApp:has(.mb-mode-register) .mb-stats-row,
-.stApp:has(.mb-mode-register) .mb-hero {
-    display: none !important;
-}
-.stApp:has(.mb-mode-register) .mb-panel-logo {
-    width: 36px !important;
-    height: 36px !important;
-    margin-bottom: 10px !important;
-    font-size: 14px !important;
-}
-.stApp:has(.mb-mode-register) .mb-panel-title {
-    font-size: 18px !important;
-    margin-bottom: 2px !important;
-}
-.stApp:has(.mb-mode-register) .mb-panel-sub {
-    margin-bottom: 12px !important;
-    font-size: 12px !important;
-}
-.stApp:has(.mb-mode-register) .mb-field-label {
-    margin: 6px 0 3px 0 !important;
-    font-size: 11px !important;
-}
-.stApp:has(.mb-mode-register) [data-testid="stVerticalBlock"]:has(> [data-testid="stElementContainer"] .login-card-root),
-.stApp:has(.mb-mode-register) [data-testid="stVerticalBlockBorderWrapper"]:has(> [data-testid="stVerticalBlock"] > [data-testid="stElementContainer"] .login-card-root) {
-    max-height: none !important;
-    overflow: visible !important;
-    padding: 28px 24px !important;
-    box-shadow: 0 0 60px rgba(123, 97, 255, 0.22) !important;
-}
-.stApp:has(.mb-mode-register) [data-testid="stTextInput"],
-.stApp:has(.mb-mode-register) [data-testid="stSelectbox"],
-.stApp:has(.mb-mode-register) [data-testid="stNumberInput"] {
-    margin-bottom: 2px !important;
-}
-.stApp:has(.mb-mode-register) [data-testid="stCheckbox"] {
-    margin: 2px 0 !important;
-    padding: 0 !important;
-}
-.stApp:has(.mb-mode-register) [data-testid="stCheckbox"] label span,
-.stApp:has(.mb-mode-register) [data-testid="stCheckbox"] label p {
-    font-size: 12px !important;
-    line-height: 1.35 !important;
-}
-.stApp:has(.mb-mode-register) .mb-captcha-label {
-    margin: 8px 0 4px 0 !important;
-    font-size: 12px !important;
-}
-.stApp:has(.mb-mode-register) div[data-baseweb="input"],
-.stApp:has(.mb-mode-register) div[data-baseweb="select"] {
-    min-height: 38px !important;
-}
-.stApp:has(.mb-mode-register) [data-testid="stForm"] [data-testid="stHorizontalBlock"]:has([data-testid="stNumberInput"]) {
-    align-items: flex-end !important;
-    margin-bottom: 4px !important;
-}
-
-/* Login mode — hero with feature cards, no stats clutter */
-.stApp:has(.mb-mode-login) .mb-stats-row {
-    display: none !important;
-}
-.stApp:has(.mb-mode-login) [data-testid="stHorizontalBlock"]:has(.auth-grid-marker) {
-    align-items: center !important;
-}
-.stApp:has(.mb-mode-login) .mb-oauth-below {
-    margin-top: 4px;
-}
-
-/* Google OAuth — below login */
-.mb-oauth-zone {
     margin: 0;
-    padding: 0;
+    line-height: 1.45;
+    white-space: normal !important;
 }
-.mb-oauth-below {
-    margin-top: 0;
+.auth-field-label {
+    display: block;
+    color: #e2e8f0 !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    margin: 12px 0 6px 0 !important;
+    white-space: normal !important;
 }
-.mb-oauth-below .mb-login-divider {
-    margin: 20px 0 14px 0;
+.auth-captcha-label {
+    display: block;
+    color: #94a3b8 !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    margin: 14px 0 8px 0 !important;
+    white-space: normal !important;
 }
-.mb-oauth-below .mb-login-google {
-    margin-bottom: 0;
-}
-.mb-oauth-label { display: none !important; }
-.mb-login-google {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    width: 100%;
-    min-height: 40px;
-    padding: 0 14px;
-    margin-bottom: 0;
-    border-radius: 10px;
+.auth-forgot-link {
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 500;
+    color: #7b61ff !important;
     text-decoration: none !important;
-    color: #fafafa !important;
-    background: rgba(255, 255, 255, 0.04) !important;
-    border: 1px solid var(--mb-line) !important;
-    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    white-space: nowrap !important;
 }
-.mb-login-google:hover {
-    border-color: rgba(123, 97, 255, 0.45) !important;
-    background: rgba(123, 97, 255, 0.08) !important;
-    box-shadow: 0 0 24px rgba(123, 97, 255, 0.2);
-}
-.mb-login-google.disabled { opacity: 0.4; pointer-events: none; }
-.mb-login-google .g-icon { width: 18px; height: 18px; flex-shrink: 0; }
-.mb-login-divider {
+.auth-divider {
     display: flex;
     align-items: center;
     gap: 10px;
-    margin: 16px 0;
+    margin: 18px 0 14px 0;
     font-size: 10px;
-    font-weight: 600;
+    font-weight: 700;
     letter-spacing: 0.12em;
+    text-transform: uppercase;
     color: #475569 !important;
 }
-.mb-login-divider::before,
-.mb-login-divider::after {
+.auth-divider::before,
+.auth-divider::after {
     content: "";
     flex: 1;
     height: 1px;
-    background: var(--mb-line);
+    background: rgba(255, 255, 255, 0.1);
 }
-
-/* Form extras row */
-.mb-form-extras {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin: 4px 0 16px 0;
-    min-height: 24px;
-}
-.mb-forgot-link {
-    font-size: 13px;
-    font-weight: 500;
-    color: #7B61FF !important;
-    text-decoration: none !important;
-    transition: color 0.2s;
-}
-.mb-forgot-link:hover { color: #A855F7 !important; }
-
-/* Panel switch row */
-.mb-panel-switch-note {
-    display: block;
-    margin: 0;
-    padding-top: 8px;
+.auth-register-line {
+    text-align: center;
+    margin-top: 16px;
     font-size: 14px;
     color: #64748b !important;
-    text-align: right;
 }
-
-/* Page footer */
-.mb-page-foot {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 90;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 8px;
-    padding: 10px 28px;
-    font-size: 11px;
-    color: #475569 !important;
-    border-top: 1px solid var(--mb-line);
-    background: rgba(5, 8, 22, 0.85);
-    backdrop-filter: blur(12px);
-}
-.mb-page-foot-links {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-.mb-page-foot-links a {
-    color: #64748b !important;
-    text-decoration: none !important;
-    transition: color 0.2s;
-}
-.mb-page-foot-links a:hover { color: #94a3b8 !important; }
-.mb-page-foot-sep { color: #334155 !important; }
-
-/* Notices */
-.mb-notice {
-    display: flex;
-    align-items: flex-start;
-    gap: 10px;
+.auth-notice {
     padding: 12px 14px;
     border-radius: 12px;
     font-size: 13px;
     line-height: 1.45;
-    margin-bottom: 16px;
-    backdrop-filter: blur(8px);
+    margin-bottom: 14px;
+    white-space: normal !important;
+    word-break: normal !important;
 }
-.mb-notice::before {
-    flex-shrink: 0;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    margin-top: 5px;
-    content: "";
-}
-.mb-notice-error {
+.auth-notice-error {
     color: #fecaca !important;
     background: rgba(127, 29, 29, 0.35);
     border: 1px solid rgba(248, 113, 113, 0.3);
 }
-.mb-notice-error::before { background: #f87171; box-shadow: 0 0 8px rgba(248,113,113,0.5); }
-.mb-notice-success {
+.auth-notice-success {
     color: #bbf7d0 !important;
     background: rgba(20, 83, 45, 0.35);
     border: 1px solid rgba(74, 222, 128, 0.3);
 }
-.mb-notice-success::before { background: #4ade80; box-shadow: 0 0 8px rgba(74,222,128,0.5); }
-.mb-notice-info {
+.auth-notice-info {
     color: #bfdbfe !important;
     background: rgba(30, 58, 138, 0.35);
     border: 1px solid rgba(96, 165, 250, 0.3);
 }
-.mb-notice-info::before { background: #60a5fa; }
-.mb-field-label {
-    display: block !important;
-    color: #e2e8f0 !important;
-    font-size: 12px !important;
-    font-weight: 600 !important;
-    letter-spacing: 0.02em;
-    margin: 12px 0 6px 0 !important;
-    line-height: 1.3 !important;
+.auth-page-foot {
+    text-align: center;
+    padding: 16px 24px 24px 24px;
+    font-size: 11px;
+    color: #475569 !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
-.stApp [data-testid="stMarkdownContainer"] p.mb-field-label {
-    color: #e2e8f0 !important;
+.auth-page-foot a {
+    color: #64748b !important;
+    text-decoration: none !important;
+    margin: 0 6px;
 }
-.mb-captcha-label {
-    font-size: 13px;
-    font-weight: 600;
-    color: #94a3b8 !important;
-    margin: 14px 0 8px 0;
+
+/* Streamlit login-card wrapper */
+.stApp [data-testid="stVerticalBlock"]:has(.login-card-root),
+.stApp [data-testid="stVerticalBlock"]:has(> [data-testid="stElementContainer"] .login-card-root),
+.stApp [data-testid="stVerticalBlockBorderWrapper"]:has(.login-card-root) {
+    width: 100% !important;
+    max-width: 520px !important;
+    padding: 44px !important;
+    border-radius: 28px !important;
+    background: rgba(8, 12, 30, 0.88) !important;
+    border: 1px solid rgba(255, 255, 255, 0.14) !important;
+    box-shadow: 0 0 70px rgba(123, 97, 255, 0.25) !important;
+    box-sizing: border-box !important;
+}
+.stApp [data-testid="stVerticalBlockBorderWrapper"]:has(.login-card-root) > [data-testid="stVerticalBlock"] {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
 }
 """
-)
+
+_SVG_REELS = '<svg viewBox="0 0 24 24" width="18" height="18" stroke="#c4b5fd" fill="none" stroke-width="1.75"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M10 9l6 3-6 3V9z"/></svg>'
+_SVG_BALL = '<svg viewBox="0 0 24 24" width="18" height="18" stroke="#c4b5fd" fill="none" stroke-width="1.75"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/></svg>'
+_SVG_ROCKET = '<svg viewBox="0 0 24 24" width="18" height="18" stroke="#c4b5fd" fill="none" stroke-width="1.75"><path d="M12 15l-3-3a22 22 0 0 1 8-10"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0M12 15v5s3.03-.55 4-2"/></svg>'
+_SVG_TEAM = '<svg viewBox="0 0 24 24" width="18" height="18" stroke="#c4b5fd" fill="none" stroke-width="1.75"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>'
 
 
-def widget_css() -> str:
-    g = _G
-    card = f'{g} [data-testid="stVerticalBlock"]:has(> [data-testid="stElementContainer"] .login-card-root)'
-    card_wrap = (
-        f'{g} [data-testid="stVerticalBlockBorderWrapper"]:has('
-        f'> [data-testid="stVerticalBlock"] > [data-testid="stElementContainer"] .login-card-root)'
-    )
+def _widget_css() -> str:
+    card = '.stApp [data-testid="stVerticalBlock"]:has(.login-card-root)'
+    card_w = '.stApp [data-testid="stVerticalBlockBorderWrapper"]:has(.login-card-root)'
     return f"""
 {card} [data-testid="stForm"],
-{card_wrap} [data-testid="stForm"] {{
-    border: none !important; padding: 0 !important; background: transparent !important;
-}}
-{card} [data-testid="stTextInput"] [data-testid="stWidgetLabel"],
-{card} [data-testid="stNumberInput"] [data-testid="stWidgetLabel"],
-{card_wrap} [data-testid="stTextInput"] [data-testid="stWidgetLabel"],
-{card_wrap} [data-testid="stNumberInput"] [data-testid="stWidgetLabel"],
-{card} label[data-testid="stWidgetLabel"]:has(+ div [data-baseweb="input"]) {{ display: none !important; }}
-{card} [data-testid="stTextInput"],
-{card} [data-testid="stNumberInput"],
-{card_wrap} [data-testid="stTextInput"],
-{card_wrap} [data-testid="stNumberInput"] {{ margin-bottom: 12px !important; }}
-{card} > [data-testid="stElementContainer"],
-{card} > [data-testid="stMarkdownContainer"],
-{card_wrap} > [data-testid="stElementContainer"],
-{card_wrap} > [data-testid="stMarkdownContainer"] {{
-    margin-bottom: 0 !important;
-}}
-{card} [data-testid="stTextInput"] > div,
-{card} [data-testid="stTextInput"] > div > div,
-{card} [data-testid="stTextInput"] fieldset,
-{card} [data-testid="stNumberInput"] > div,
-{card} [data-testid="stNumberInput"] > div > div,
-{card_wrap} [data-testid="stTextInput"] > div,
-{card_wrap} [data-testid="stTextInput"] > div > div,
-{card_wrap} [data-testid="stNumberInput"] > div,
-{card_wrap} [data-testid="stNumberInput"] > div > div {{
-    background: transparent !important;
+{card_w} [data-testid="stForm"] {{
     border: none !important;
     padding: 0 !important;
-    box-shadow: none !important;
+    background: transparent !important;
 }}
-{card} div[data-baseweb="input"],
-{card} [data-testid="stTextInput"] div[data-baseweb="input"],
-{card} [data-testid="stNumberInput"] div[data-baseweb="input"],
-{card_wrap} div[data-baseweb="input"],
-{card_wrap} [data-testid="stTextInput"] div[data-baseweb="input"],
-{card_wrap} [data-testid="stNumberInput"] div[data-baseweb="input"] {{
-    background: rgba(5, 8, 22, 0.85) !important;
-    border: 1px solid rgba(255, 255, 255, 0.14) !important;
-    border-radius: 12px !important;
-    min-height: 44px !important;
-    box-shadow: inset 0 2px 8px rgba(0,0,0,0.3) !important;
-}}
-{card} [data-testid="stForm"] [data-testid="stTextInput"]:first-of-type div[data-baseweb="input"],
-{card_wrap} [data-testid="stForm"] [data-testid="stTextInput"]:first-of-type div[data-baseweb="input"] {{
-    background: rgba(5, 8, 22, 0.85) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%2364748b' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3C/svg%3E") no-repeat 14px center / 16px 16px !important;
-}}
-{card} [data-testid="stForm"] [data-testid="stTextInput"]:nth-of-type(2) div[data-baseweb="input"],
-{card_wrap} [data-testid="stForm"] [data-testid="stTextInput"]:nth-of-type(2) div[data-baseweb="input"] {{
-    background: rgba(5, 8, 22, 0.85) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%2364748b' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='11' width='18' height='11' rx='2'/%3E%3Cpath d='M7 11V7a5 5 0 0 1 10 0v4'/%3E%3C/svg%3E") no-repeat 14px center / 16px 16px !important;
-}}
-{card} div[data-baseweb="input"]:focus-within,
-{card_wrap} div[data-baseweb="input"]:focus-within {{
-    border-color: rgba(123, 97, 255, 0.55) !important;
-    box-shadow: 0 0 0 3px rgba(123, 97, 255, 0.15), 0 0 24px rgba(123, 97, 255, 0.12) !important;
-}}
-{card} [data-testid="stTextInput"] input,
-{card} [data-testid="stNumberInput"] input,
-{card_wrap} [data-testid="stTextInput"] input,
-{card_wrap} [data-testid="stNumberInput"] input {{
-    background: rgba(5, 8, 22, 0.85) !important;
-    color: white !important;
-    -webkit-text-fill-color: white !important;
-    border: 1px solid rgba(255, 255, 255, 0.14) !important;
-    font-size: 13px !important;
-    font-family: inherit !important;
-    caret-color: #A855F7 !important;
-    padding-left: 14px !important;
-}}
-.stApp:has(.mb-mode-login) {card} [data-testid="stForm"] [data-testid="stTextInput"]:first-of-type input,
-.stApp:has(.mb-mode-login) {card_wrap} [data-testid="stForm"] [data-testid="stTextInput"]:first-of-type input,
-.stApp:has(.mb-mode-login) {card} [data-testid="stForm"] [data-testid="stTextInput"]:nth-of-type(2) input,
-.stApp:has(.mb-mode-login) {card_wrap} [data-testid="stForm"] [data-testid="stTextInput"]:nth-of-type(2) input {{
-    padding-left: 40px !important;
-}}
-{card} [data-testid="stTextInput"] input::placeholder,
-{card_wrap} [data-testid="stTextInput"] input::placeholder {{ color: #475569 !important; opacity: 1 !important; }}
-{card} [data-testid="stTextInput"] input:-webkit-autofill,
-{card} [data-testid="stTextInput"] input:-webkit-autofill:focus,
-{card_wrap} [data-testid="stTextInput"] input:-webkit-autofill,
-{card_wrap} [data-testid="stTextInput"] input:-webkit-autofill:focus {{
-    -webkit-box-shadow: 0 0 0 1000px #050816 inset !important;
-    -webkit-text-fill-color: #fafafa !important;
-}}
-{card} [data-testid="stTextInput"] button,
-{card_wrap} [data-testid="stTextInput"] button {{ color: #64748b !important; background: transparent !important; }}
-
-/* Selectbox — dark theme (register) */
-{card} [data-testid="stSelectbox"],
-{card_wrap} [data-testid="stSelectbox"] {{
-    margin-bottom: 4px !important;
-}}
-{card} [data-testid="stSelectbox"] [data-testid="stWidgetLabel"],
-{card_wrap} [data-testid="stSelectbox"] [data-testid="stWidgetLabel"] {{
+{card} [data-testid="stWidgetLabel"],
+{card_w} [data-testid="stWidgetLabel"] {{
     display: none !important;
 }}
-{card} [data-testid="stSelectbox"] > div,
-{card} [data-testid="stSelectbox"] > div > div,
-{card_wrap} [data-testid="stSelectbox"] > div,
-{card_wrap} [data-testid="stSelectbox"] > div > div {{
-    background: transparent !important;
-    border: none !important;
-    padding: 0 !important;
+{card} [data-testid="stTextInput"],
+{card} [data-testid="stNumberInput"],
+{card} [data-testid="stSelectbox"],
+{card_w} [data-testid="stTextInput"],
+{card_w} [data-testid="stNumberInput"],
+{card_w} [data-testid="stSelectbox"] {{
+    margin-bottom: 10px !important;
 }}
-{card} [data-testid="stSelectbox"] div[data-baseweb="select"],
-{card_wrap} [data-testid="stSelectbox"] div[data-baseweb="select"] {{
-    background: rgba(5, 8, 22, 0.85) !important;
+{card} div[data-baseweb="input"],
+{card} div[data-baseweb="select"] > div,
+{card_w} div[data-baseweb="input"],
+{card_w} div[data-baseweb="select"] > div {{
+    background: rgba(5, 8, 22, 0.9) !important;
     border: 1px solid rgba(255, 255, 255, 0.14) !important;
     border-radius: 12px !important;
     min-height: 44px !important;
-    box-shadow: inset 0 2px 8px rgba(0,0,0,0.3) !important;
 }}
-{card} [data-testid="stSelectbox"] div[data-baseweb="select"]:focus-within,
-{card_wrap} [data-testid="stSelectbox"] div[data-baseweb="select"]:focus-within {{
-    border-color: rgba(123, 97, 255, 0.55) !important;
-    box-shadow: 0 0 0 3px rgba(123, 97, 255, 0.15) !important;
+{card} input,
+{card_w} input {{
+    background: rgba(5, 8, 22, 0.9) !important;
+    color: #fafafa !important;
+    -webkit-text-fill-color: #fafafa !important;
+    font-size: 14px !important;
 }}
-{card} [data-testid="stSelectbox"] div[data-baseweb="select"] > div,
-{card_wrap} [data-testid="stSelectbox"] div[data-baseweb="select"] > div {{
-    background: transparent !important;
-    color: #f8fafc !important;
-    font-size: 13px !important;
+{card} input::placeholder,
+{card_w} input::placeholder {{
+    color: #64748b !important;
 }}
-{card} [data-testid="stSelectbox"] div[data-baseweb="select"] svg,
-{card_wrap} [data-testid="stSelectbox"] div[data-baseweb="select"] svg {{
-    fill: #94a3b8 !important;
-}}
-{card} [data-baseweb="popover"],
-{card_wrap} [data-baseweb="popover"] {{
-    background: #0a1024 !important;
-    border: 1px solid rgba(255,255,255,0.12) !important;
-    border-radius: 12px !important;
-}}
-{card} [data-baseweb="popover"] li,
-{card_wrap} [data-baseweb="popover"] li {{
-    color: #e2e8f0 !important;
-    background: transparent !important;
-}}
-{card} [data-baseweb="popover"] li:hover,
-{card_wrap} [data-baseweb="popover"] li:hover {{
-    background: rgba(123, 97, 255, 0.15) !important;
-}}
-
-/* Number input — captcha */
-{card} [data-testid="stNumberInput"] [data-testid="stNumberInputStepUp"],
-{card} [data-testid="stNumberInput"] [data-testid="stNumberInputStepDown"],
-{card_wrap} [data-testid="stNumberInput"] [data-testid="stNumberInputStepUp"],
-{card_wrap} [data-testid="stNumberInput"] [data-testid="stNumberInputStepDown"] {{
-    background: rgba(5, 8, 22, 0.85) !important;
-    border-color: rgba(255,255,255,0.1) !important;
+{card} [data-testid="stNumberInput"] button,
+{card_w} [data-testid="stNumberInput"] button {{
+    background: rgba(5, 8, 22, 0.9) !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
     color: #94a3b8 !important;
-}}
-{card} [data-testid="stNumberInput"] input,
-{card_wrap} [data-testid="stNumberInput"] input {{
-    padding-left: 14px !important;
-    text-align: center !important;
-}}
-
-/* Remember me checkbox */
-{card} [data-testid="stCheckbox"],
-{card_wrap} [data-testid="stCheckbox"] {{
-    margin: 0 !important;
-    padding: 0 !important;
 }}
 {card} [data-testid="stCheckbox"] label,
-{card_wrap} [data-testid="stCheckbox"] label {{
-    display: flex !important;
-    align-items: center !important;
-    gap: 8px !important;
-    font-size: 13px !important;
-    color: #94a3b8 !important;
-    cursor: pointer !important;
-    background: transparent !important;
-    background-color: transparent !important;
-    padding: 0 !important;
-    border: none !important;
-    box-shadow: none !important;
-}}
-{card} [data-testid="stCheckbox"] label span,
 {card} [data-testid="stCheckbox"] label p,
-{card_wrap} [data-testid="stCheckbox"] label span,
-{card_wrap} [data-testid="stCheckbox"] label p {{
+{card} [data-testid="stCheckbox"] label span,
+{card_w} [data-testid="stCheckbox"] label,
+{card_w} [data-testid="stCheckbox"] label p {{
     color: #94a3b8 !important;
     font-size: 13px !important;
-    font-weight: 500 !important;
+    background: transparent !important;
 }}
-{card} [data-testid="stCheckbox"] [data-baseweb="checkbox"],
-{card_wrap} [data-testid="stCheckbox"] [data-baseweb="checkbox"] {{
-    background: rgba(5, 8, 22, 0.85) !important;
-    border-color: rgba(255,255,255,0.12) !important;
-}}
-{card} [data-testid="stCheckbox"] [data-baseweb="checkbox"]:hover,
-{card_wrap} [data-testid="stCheckbox"] [data-baseweb="checkbox"]:hover {{
-    border-color: rgba(123, 97, 255, 0.45) !important;
+{card} [data-baseweb="checkbox"],
+{card_w} [data-baseweb="checkbox"] {{
+    border-color: rgba(255, 255, 255, 0.14) !important;
+    background: rgba(5, 8, 22, 0.9) !important;
 }}
 
-/* Extras row layout */
-{card} [data-testid="stForm"] [data-testid="stHorizontalBlock"],
-{card_wrap} [data-testid="stForm"] [data-testid="stHorizontalBlock"] {{
-    align-items: center !important;
-    gap: 8px !important;
-    margin: 0 0 14px 0 !important;
-}}
-{card} [data-testid="stForm"] [data-testid="stHorizontalBlock"] [data-testid="stColumn"]:first-child,
-{card_wrap} [data-testid="stForm"] [data-testid="stHorizontalBlock"] [data-testid="stColumn"]:first-child {{
-    flex: 1 !important; max-width: none !important; padding: 0 !important;
-    display: flex !important; align-items: center !important;
-}}
-{card} [data-testid="stForm"] [data-testid="stHorizontalBlock"] [data-testid="stColumn"]:last-child,
-{card_wrap} [data-testid="stForm"] [data-testid="stHorizontalBlock"] [data-testid="stColumn"]:last-child {{
-    flex: 0 0 auto !important; max-width: none !important; padding: 0 !important;
-    display: flex !important; justify-content: flex-end !important; align-items: center !important;
-}}
-{card} [data-testid="stForm"] [data-testid="stHorizontalBlock"] [data-testid="stColumn"]:last-child [data-testid="stMarkdownContainer"],
-{card_wrap} [data-testid="stForm"] [data-testid="stHorizontalBlock"] [data-testid="stColumn"]:last-child [data-testid="stMarkdownContainer"] {{
-    width: auto !important;
-}}
-{g} .mb-forgot-link {{
-    white-space: nowrap !important;
-    display: inline-block !important;
-}}
-
-/* Primary CTA — login / register submit (primary only) */
-{card} [data-testid="stForm"] [data-testid="stFormSubmitButton"] button[kind="primary"],
-{card} [data-testid="stForm"] [data-testid="stFormSubmitButton"] button[data-testid="stBaseButton-primaryFormSubmit"],
+/* Primary submit */
 {card} [data-testid="stFormSubmitButton"] button[kind="primary"],
 {card} [data-testid="stFormSubmitButton"] button[data-testid="stBaseButton-primaryFormSubmit"],
-{card_wrap} [data-testid="stForm"] [data-testid="stFormSubmitButton"] button[kind="primary"],
-{card_wrap} [data-testid="stForm"] [data-testid="stFormSubmitButton"] button[data-testid="stBaseButton-primaryFormSubmit"],
-{card_wrap} [data-testid="stFormSubmitButton"] button[kind="primary"],
-{card_wrap} [data-testid="stFormSubmitButton"] button[data-testid="stBaseButton-primaryFormSubmit"] {{
+{card_w} [data-testid="stFormSubmitButton"] button[kind="primary"] {{
     width: 100% !important;
-    height: 52px !important;
-    min-height: 52px !important;
-    margin-top: 8px !important;
+    min-height: 50px !important;
+    border: none !important;
     border-radius: 14px !important;
-    border: 0 !important;
     background: linear-gradient(135deg, #a855f7, #3b82f6) !important;
-    background-color: transparent !important;
-    background-image: linear-gradient(135deg, #a855f7, #3b82f6) !important;
-    color: white !important;
+    color: #ffffff !important;
     font-weight: 700 !important;
     font-size: 14px !important;
-    font-family: inherit !important;
     box-shadow: 0 4px 20px rgba(123, 97, 255, 0.35) !important;
 }}
-{card} [data-testid="stForm"] [data-testid="stFormSubmitButton"] button[kind="primary"]:hover,
-{card} [data-testid="stFormSubmitButton"] button[kind="primary"]:hover,
-{card_wrap} [data-testid="stForm"] [data-testid="stFormSubmitButton"] button[kind="primary"]:hover,
-{card_wrap} [data-testid="stFormSubmitButton"] button[kind="primary"]:hover {{
-    filter: brightness(1.06) !important;
-    box-shadow: 0 6px 28px rgba(123, 97, 255, 0.45) !important;
-}}
-{card} [data-testid="stForm"] [data-testid="stFormSubmitButton"] button[kind="primary"] p,
-{card} [data-testid="stForm"] [data-testid="stFormSubmitButton"] button[kind="primary"] span,
 {card} [data-testid="stFormSubmitButton"] button[kind="primary"] p,
 {card} [data-testid="stFormSubmitButton"] button[kind="primary"] span,
-{card_wrap} [data-testid="stForm"] [data-testid="stFormSubmitButton"] button[kind="primary"] p,
-{card_wrap} [data-testid="stFormSubmitButton"] button[kind="primary"] p {{
-    color: white !important;
+{card_w} [data-testid="stFormSubmitButton"] button[kind="primary"] p {{
+    color: #ffffff !important;
     font-weight: 700 !important;
 }}
 
-/* Mode switch link button */
-{card} [data-testid="stHorizontalBlock"]:has(.mb-panel-switch-note),
-{card_wrap} [data-testid="stHorizontalBlock"]:has(.mb-panel-switch-note) {{
-    align-items: center !important;
-    margin-top: 16px !important;
-    gap: 4px !important;
+/* Captcha refresh (secondary in form row) */
+{card} [data-testid="stForm"] [data-testid="stHorizontalBlock"] [data-testid="stFormSubmitButton"] button,
+{card_w} [data-testid="stForm"] [data-testid="stHorizontalBlock"] [data-testid="stFormSubmitButton"] button {{
+    min-height: 44px !important;
+    background: rgba(5, 8, 22, 0.9) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    color: #94a3b8 !important;
+    box-shadow: none !important;
 }}
-{card} [data-testid="stHorizontalBlock"]:has(.mb-panel-switch-note) [data-testid="stColumn"]:first-child,
-{card_wrap} [data-testid="stHorizontalBlock"]:has(.mb-panel-switch-note) [data-testid="stColumn"]:first-child {{
-    flex: 1 !important; max-width: none !important; padding: 0 !important;
-}}
-{card} [data-testid="stHorizontalBlock"]:has(.mb-panel-switch-note) [data-testid="stColumn"]:last-child,
-{card_wrap} [data-testid="stHorizontalBlock"]:has(.mb-panel-switch-note) [data-testid="stColumn"]:last-child {{
-    flex: 0 0 auto !important; max-width: none !important; padding: 0 !important;
-}}
-{card} [data-testid="stHorizontalBlock"]:has(.mb-panel-switch-note) .stButton,
-{card_wrap} [data-testid="stHorizontalBlock"]:has(.mb-panel-switch-note) .stButton {{
+
+/* Google link — dark */
+{card} [data-testid="stLinkButton"] a,
+{card_w} [data-testid="stLinkButton"] a {{
     display: flex !important;
-    justify-content: flex-start !important;
-    margin: 0 !important;
+    align-items: center !important;
+    justify-content: center !important;
     width: 100% !important;
+    min-height: 44px !important;
+    border-radius: 12px !important;
+    background: rgba(255, 255, 255, 0.04) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    color: #fafafa !important;
+    text-decoration: none !important;
+    font-weight: 600 !important;
+    font-size: 13px !important;
 }}
-{card} [data-testid="stHorizontalBlock"]:has(.mb-panel-switch-note) .stButton > button,
-{card_wrap} [data-testid="stHorizontalBlock"]:has(.mb-panel-switch-note) .stButton > button {{
-    display: inline !important;
-    width: auto !important;
+{card} [data-testid="stLinkButton"] a:hover,
+{card_w} [data-testid="stLinkButton"] a:hover {{
+    border-color: rgba(123, 97, 255, 0.4) !important;
+    background: rgba(123, 97, 255, 0.1) !important;
+}}
+
+/* Register switch — text link style */
+{card} [data-testid="stHorizontalBlock"]:has(.auth-register-line) .stButton > button,
+{card_w} [data-testid="stHorizontalBlock"]:has(.auth-register-line) .stButton > button {{
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    color: #7b61ff !important;
     min-height: auto !important;
     height: auto !important;
     padding: 0 !important;
-    margin: 0 !important;
-    border: none !important;
-    background: transparent !important;
-    background-image: none !important;
-    box-shadow: none !important;
-    color: #7B61FF !important;
-    font-size: 14px !important;
     font-weight: 600 !important;
 }}
-{card} [data-testid="stHorizontalBlock"]:has(.mb-panel-switch-note) .stButton > button:hover,
-{card_wrap} [data-testid="stHorizontalBlock"]:has(.mb-panel-switch-note) .stButton > button:hover {{
-    color: #A855F7 !important;
-    background: transparent !important;
-    box-shadow: none !important;
-}}
-{card} [data-testid="stHorizontalBlock"]:has(.mb-panel-switch-note) .stButton > button p,
-{card_wrap} [data-testid="stHorizontalBlock"]:has(.mb-panel-switch-note) .stButton > button p {{
-    color: #7B61FF !important;
-    font-weight: 600 !important;
+{card} [data-testid="stHorizontalBlock"]:has(.auth-register-line) .stButton > button p,
+{card_w} [data-testid="stHorizontalBlock"]:has(.auth-register-line) .stButton > button p {{
+    color: #7b61ff !important;
 }}
 
-{g} [data-testid="stAlert"] {{ display: none !important; }}
-{card}, {card_wrap} {{ gap: 0 !important; }}
-
-/* Login submit fallback when kind attr missing */
-{card} [data-testid="stForm"] > div:last-of-type [data-testid="stFormSubmitButton"] button,
-{card_wrap} [data-testid="stForm"] > div:last-of-type [data-testid="stFormSubmitButton"] button {{
-    width: 100% !important;
-    height: 52px !important;
-    min-height: 52px !important;
-    margin-top: 8px !important;
-    border-radius: 14px !important;
-    border: 0 !important;
-    background: linear-gradient(135deg, #a855f7, #3b82f6) !important;
-    color: white !important;
-    font-weight: 700 !important;
-    box-shadow: 0 4px 20px rgba(123, 97, 255, 0.35) !important;
+/* Popover (register select) */
+{card} [data-baseweb="popover"],
+{card_w} [data-baseweb="popover"] {{
+    background: #0a1024 !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
 }}
-
-/* Captcha refresh — small icon button (secondary submit in horizontal block) */
-{card} [data-testid="stForm"] [data-testid="stHorizontalBlock"] [data-testid="stFormSubmitButton"] button,
-{card} [data-testid="stForm"] [data-testid="stHorizontalBlock"] .stButton > button,
-{card_wrap} [data-testid="stForm"] [data-testid="stHorizontalBlock"] [data-testid="stFormSubmitButton"] button,
-{card_wrap} [data-testid="stForm"] [data-testid="stHorizontalBlock"] .stButton > button {{
-    min-height: 44px !important;
-    height: 44px !important;
-    width: 100% !important;
-    border-radius: 12px !important;
-    background: rgba(5, 8, 22, 0.85) !important;
-    background-image: none !important;
-    border: 1px solid rgba(255,255,255,0.12) !important;
-    color: #94a3b8 !important;
-    box-shadow: none !important;
-    margin-top: 0 !important;
-}}
-{card} [data-testid="stForm"] [data-testid="stHorizontalBlock"] [data-testid="stFormSubmitButton"] button p,
-{card} [data-testid="stForm"] [data-testid="stHorizontalBlock"] .stButton > button p,
-{card_wrap} [data-testid="stForm"] [data-testid="stHorizontalBlock"] [data-testid="stFormSubmitButton"] button p,
-{card_wrap} [data-testid="stForm"] [data-testid="stHorizontalBlock"] .stButton > button p {{
-    color: #94a3b8 !important;
-    font-weight: 600 !important;
+{card} [data-baseweb="popover"] li,
+{card_w} [data-baseweb="popover"] li {{
+    color: #e2e8f0 !important;
 }}
 """
 
 
-def _logo_mark(initial: str) -> str:
-    return f'<div class="mb-logo-mark" aria-hidden="true">{html.escape(initial)}</div>'
+def auth_styles_bundle() -> str:
+    return _BASE_CSS + _BRAND_CSS + _CARD_CSS + _widget_css()
 
 
-def _hex_logo(initial: str) -> str:
-    return f'<div class="mb-panel-logo" aria-hidden="true">{html.escape(initial)}</div>'
-
-
-# Inline SVG icons — premium, no emoji
-_SVG_REELS = (
-    '<svg viewBox="0 0 24 24" aria-hidden="true">'
-    '<rect x="2" y="4" width="20" height="16" rx="2"/>'
-    '<path d="M10 9l6 3-6 3V9z"/>'
-    '</svg>'
-)
-_SVG_BALL = (
-    '<svg viewBox="0 0 24 24" aria-hidden="true">'
-    '<circle cx="12" cy="12" r="9"/>'
-    '<path d="M12 3c2 2.5 2 6.5 0 9M12 3c-2 2.5-2 6.5 0 9M3 12h18"/>'
-    '</svg>'
-)
-_SVG_ROCKET = (
-    '<svg viewBox="0 0 24 24" aria-hidden="true">'
-    '<path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/>'
-    '<path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/>'
-    '<path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>'
-    '</svg>'
-)
-_SVG_TEAM = (
-    '<svg viewBox="0 0 24 24" aria-hidden="true">'
-    '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>'
-    '<circle cx="9" cy="7" r="4"/>'
-    '<path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>'
-    '</svg>'
-)
-_SVG_USER = (
-    '<svg viewBox="0 0 24 24" aria-hidden="true">'
-    '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>'
-    '<circle cx="12" cy="7" r="4"/>'
-    '</svg>'
-)
-_SVG_PLAY = (
-    '<svg viewBox="0 0 24 24" aria-hidden="true">'
-    '<polygon points="5 3 19 12 5 21 5 3"/>'
-    '</svg>'
-)
-_SVG_BUILD = (
-    '<svg viewBox="0 0 24 24" aria-hidden="true">'
-    '<rect x="4" y="2" width="16" height="20" rx="2"/>'
-    '<path d="M9 22v-4h6v4M8 6h.01M16 6h.01M12 6h.01M12 10h.01M12 14h.01M16 10h.01M16 14h.01M8 10h.01M8 14h.01"/>'
-    '</svg>'
-)
-
-
-def _feat_card(icon: str, title: str, desc: str) -> str:
-    return (
-        f'<div class="mb-feat-card">'
-        f'<div class="mb-feat-icon">{icon}</div>'
-        f'<span class="mb-feat-title">{html.escape(title)}</span>'
-        f'<span class="mb-feat-desc">{desc}</span>'
-        f'</div>'
-    )
-
-
-def _stat_item(icon: str, val: str, label: str) -> str:
-    return (
-        f'<div class="mb-stat">'
-        f'<div class="mb-stat-icon">{icon}</div>'
-        f'<div><span class="mb-stat-val">{html.escape(val)}</span>'
-        f'<span class="mb-stat-label">{label}</span></div>'
-        f'</div>'
-    )
+def auth_page_marker_html() -> str:
+    return '<span class="auth-page-marker" hidden aria-hidden="true"></span>'
 
 
 def auth_grid_marker_html() -> str:
-    return '<span class="auth-grid-marker" hidden aria-hidden="true"></span>'
+    """Alias for layout marker (used by pages/auth.py)."""
+    return auth_page_marker_html()
 
 
 def login_card_marker_html() -> str:
@@ -1251,74 +541,26 @@ def login_card_marker_html() -> str:
 
 
 def page_open_html(mode_class: str = "") -> str:
-    name = html.escape(APP_NAME)
-    initial = html.escape(APP_NAME[:1] if APP_NAME else "M")
     extra = html.escape(mode_class)
     return (
-        f'<div class="mb-auth-page {extra}"></div>'
-        f'<div class="mb-auth-bg" aria-hidden="true"></div>'
-        f'<div class="mb-auth-aurora" aria-hidden="true"></div>'
-        f'<div class="mb-auth-stars" aria-hidden="true"></div>'
-        f'<header class="mb-topbar">'
-        f'<div class="mb-topbar-brand">{_logo_mark(initial)}'
-        f'<div class="mb-topbar-text">'
-        f'<span class="mb-topbar-name">{name}</span>'
-        f'<span class="mb-topbar-tagline">Enterprise AI Platform</span>'
-        f'</div></div>'
-        f'<div class="mb-topbar-actions">'
-        f'<span class="mb-topbar-lang">🌐 DE</span>'
-        f'</div></header>'
+        f'<div class="auth-page {extra}"></div>'
+        f'<header class="auth-topbar">'
+        f'<div class="auth-topbar-brand">'
+        f'<span class="auth-topbar-mark">{_INITIAL}</span>'
+        f'<span>{_APP}</span></div>'
+        f'<span style="color:#64748b;font-size:12px;">DE</span>'
+        f'</header>'
     )
 
 
-def hero_html() -> str:
+def page_close_html() -> str:
     return (
-        '<div class="mb-hero">'
-        f'<span class="mb-hero-brand">{html.escape(APP_NAME)}</span>'
-        '<div class="mb-hero-pill">'
-        '<span class="mb-hero-pill-dot"></span>'
-        'AI · FOOTBALL · AUTOMATION'
-        '</div>'
-        '<h1 class="mb-hero-title">'
-        'One system.<br>'
-        '<span class="mb-grad">Infinite intelligence.</span>'
-        '</h1>'
-        '<p class="mb-hero-sub">'
-        'Die Enterprise-Plattform für AI-gestützte Content-Produktion, '
-        'Football Intelligence und skalierbare Automatisierung — '
-        'entwickelt für Creator, Teams und Unternehmen mit Anspruch.'
-        '</p>'
-        '<div class="mb-feat-grid">'
-        + _feat_card(_SVG_REELS, "AI Reels Studio", "Video &amp; Shorts — produziert mit KI")
-        + _feat_card(_SVG_BALL, "Football Intelligence", "Datengetriebene Analyse &amp; Prognosen")
-        + _feat_card(_SVG_ROCKET, "Auto Publishing", "Omnichannel-Distribution aus einem Flow")
-        + _feat_card(_SVG_TEAM, "Team Workspaces", "Zentral steuern, gemeinsam skalieren")
-        + '</div>'
-        '<div class="mb-stats-row">'
-        + _stat_item(_SVG_USER, "10K+", "Aktive Creator")
-        + _stat_item(_SVG_PLAY, "1M+", "Videos produziert")
-        + _stat_item(_SVG_BUILD, "500+", "Teams &amp; Unternehmen")
-        + '</div>'
-        '</div>'
-    )
-
-
-def panel_shell_html(*, register: bool) -> str:
-    initial = html.escape(APP_NAME[:1] if APP_NAME else "M")
-    if register:
-        return (
-            '<div class="mb-login-head">'
-            f'{_hex_logo(initial)}'
-            '<h2 class="mb-panel-title">Konto bei <span class="mb-panel-brand">MaByte</span> erstellen</h2>'
-            '<p class="mb-panel-sub">E-Mail-Registrierung — Zugang zu AI, Football &amp; Creator Tools.</p>'
-            '</div>'
-        )
-    return (
-        '<div class="mb-login-head">'
-        f'{_hex_logo(initial)}'
-        '<h2 class="mb-panel-title">Anmelden</h2>'
-        '<p class="mb-panel-sub">Melden Sie sich in Ihrem MaByte Workspace an.</p>'
-        '</div>'
+        '<footer class="auth-page-foot">'
+        f'© 2026 {_APP} GmbH · '
+        '<a href="#">Datenschutz</a>'
+        '<a href="#">AGB</a>'
+        '<a href="#">Support</a>'
+        '</footer>'
     )
 
 
@@ -1326,49 +568,69 @@ def panel_close_html() -> str:
     return ""
 
 
+def _feat(title: str, desc: str, icon: str) -> str:
+    return (
+        f'<div class="auth-feat-card">'
+        f'<div style="margin-bottom:8px;">{icon}</div>'
+        f'<span class="t">{html.escape(title)}</span>'
+        f'<span class="d">{html.escape(desc)}</span>'
+        '</div>'
+    )
+
+
+def hero_html() -> str:
+    return (
+        '<div class="auth-brand">'
+        f'<span class="auth-brand-name">{_APP}</span>'
+        '<span class="auth-brand-kicker">AI · Football · Automation</span>'
+        '<h1 class="auth-brand-title">'
+        'One system.<br>'
+        '<span class="accent">Infinite intelligence.</span>'
+        '</h1>'
+        '<p class="auth-brand-sub">'
+        'Enterprise-Plattform für AI Content, Football Intelligence und Automatisierung — '
+        'für Creator, Teams und Unternehmen.'
+        '</p>'
+        '<div class="auth-feat-grid">'
+        + _feat("AI Reels Studio", "Video & Shorts mit KI", _SVG_REELS)
+        + _feat("Football Intelligence", "Analyse & Prognosen", _SVG_BALL)
+        + _feat("Auto Publishing", "Omnichannel aus einem Flow", _SVG_ROCKET)
+        + _feat("Team Workspaces", "Gemeinsam skalieren", _SVG_TEAM)
+        + '</div>'
+        '</div>'
+    )
+
+
+def panel_shell_html(*, register: bool) -> str:
+    if register:
+        return (
+            '<div class="login-card-head">'
+            f'<div class="login-card-logo">{_INITIAL}</div>'
+            '<h2 class="login-card-title">Konto erstellen</h2>'
+            '<p class="login-card-sub">Registrierung für Ihren MaByte Workspace.</p>'
+            '</div>'
+        )
+    return (
+        '<div class="login-card-head">'
+        f'<div class="login-card-logo">{_INITIAL}</div>'
+        '<h2 class="login-card-title">Anmelden</h2>'
+        '<p class="login-card-sub">Melden Sie sich in Ihrem MaByte Workspace an.</p>'
+        '</div>'
+    )
+
+
 def forgot_password_html() -> str:
     return (
-        '<a class="mb-forgot-link" href="#" '
-        'onclick="return false;" title="Passwort-Reset folgt">'
-        'Passwort vergessen?'
-        '</a>'
+        '<a class="auth-forgot-link" href="#" onclick="return false;" '
+        'title="Passwort-Reset folgt">Passwort vergessen?</a>'
     )
 
 
 def oauth_divider_html() -> str:
-    return '<div class="mb-login-divider">oder</div>'
+    return '<div class="auth-divider">oder</div>'
 
 
 def notice_html(level: str, message: str) -> str:
     safe = html.escape(message)
-    return f'<div class="mb-notice mb-notice-{html.escape(level)}" role="alert">{safe}</div>'
-
-
-def page_close_html() -> str:
-    year = "2026"
-    return (
-        '<footer class="mb-page-foot">'
-        f'<span>© {year} MaByte GmbH · Alle Rechte vorbehalten.</span>'
-        '<div class="mb-page-foot-links">'
-        '<a href="#">Datenschutz</a>'
-        '<span class="mb-page-foot-sep">|</span>'
-        '<a href="#">AGB</a>'
-        '<span class="mb-page-foot-sep">|</span>'
-        '<a href="#">Impressum</a>'
-        '<span class="mb-page-foot-sep">|</span>'
-        '<a href="#">Support</a>'
-        '</div>'
-        '</footer>'
-    )
-
-
-def auth_styles_bundle() -> str:
-    return (
-        "@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');"
-        + GATE_CSS.replace(
-            "@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');",
-            "",
-            1,
-        )
-        + widget_css()
-    )
+    lvl = html.escape(level)
+    return f'<div class="auth-notice auth-notice-{lvl}" role="alert">{safe}</div>'
