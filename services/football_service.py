@@ -305,7 +305,7 @@ class FootballService:
           "fixtures",
           {
               "league": int(league_id),
-              "season": int(season or FOOTBALL_DEFAULT_SEASON),
+              "season": int(season or football_api_season() or FOOTBALL_DEFAULT_SEASON),
               "next": max(1, min(int(next_count), 20)),
           },
           feature="api_fixtures",

@@ -29,7 +29,7 @@ from ui.football_match_center import (
 )
 from ui.premium_foundation import render_upgrade_card
 
-_FB_MC_DATA_VERSION = 6
+_FB_MC_DATA_VERSION = 7
 
 
 def _init_session() -> None:
@@ -111,17 +111,21 @@ def render_tab_live_match_center(
         st.warning(err)
 
     top_matches = list(payload.get("top_matches") or [])
+    next_matches = list(payload.get("next_matches") or [])
     live_now = list(payload.get("live_now") or [])
     all_premium = list(payload.get("all_premium") or [])
     extended = list(payload.get("extended") or [])
 
     render_mc_header(
         live_count=len(live_now),
-        today_count=len(all_premium),
+        today_count=len(all_premium) or len(next_matches),
         api_used=int(summary.get("api_used") or 0),
         api_limit=int(summary.get("api_limit") or 0),
     )
-    st.caption(f"Premium-only · {today_local} · Europe/Berlin")
+    cap = f"Premium-only · {today_local} · Europe/Berlin"
+    if not all_premium and next_matches:
+        cap += f" · {len(next_matches)} kommende Top-Spiele"
+    st.caption(cap)
 
     selected = st.session_state.get("fb_mc_selected_fixture")
     try:
@@ -135,6 +139,19 @@ def render_tab_live_match_center(
         render_top_matches_row(
             top_matches,
             key_prefix="top",
+            selected_fixture=selected,
+        )
+    elif next_matches:
+        st.markdown(
+            '<div class="fb-mc-empty-state" style="margin-bottom:12px;">'
+            "<strong>Heute keine Topspiele</strong>"
+            "Nächste Premium-Partien in den kommenden 7 Tagen.</div>",
+            unsafe_allow_html=True,
+        )
+        render_section_title("Nächste Premium-Spiele · 7 Tage")
+        render_top_matches_row(
+            next_matches,
+            key_prefix="next",
             selected_fixture=selected,
         )
     else:
@@ -183,8 +200,8 @@ def render_tab_live_match_center(
 
     # —— Sektion 3: AI Betting Insights ——
     render_section_title("AI Betting Insights · Top 3")
-    tip_pool = all_premium or top_matches
-    tips_sig = f"{len(tip_pool)}|{session_plan}|{today_local}|v6"
+    tip_pool = all_premium or top_matches or next_matches
+    tips_sig = f"{len(tip_pool)}|{session_plan}|{today_local}|v7"
     if st.session_state.get("fb_mc_tips_sig") != tips_sig:
         st.session_state.fb_mc_tips_sig = tips_sig
         st.session_state.fb_mc_tips = None
@@ -210,7 +227,7 @@ def render_tab_live_match_center(
             with tip_cols[i]:
                 render_dashboard_tip_mini(tip["intel"], fixture_id=int(tip["fixture_id"]))
     elif tip_pool:
-        st.caption("Keine ausreichenden Prognose-Daten für Tipps heute.")
+        st.caption("Keine ausreichenden Prognose-Daten für Tipps — nächste Spiele werden geladen.")
     else:
         st.caption("Tipps erscheinen, sobald Premium-Spiele verfügbar sind.")
 
@@ -223,6 +240,14 @@ def render_tab_live_match_center(
             render_match_grid(
                 all_premium,
                 key_prefix="all_prem",
+                selected_fixture=selected,
+                max_cards=36,
+            )
+        elif next_matches:
+            st.caption(f"{len(next_matches)} kommende Premium-Partien (7 Tage)")
+            render_match_grid(
+                next_matches,
+                key_prefix="all_next",
                 selected_fixture=selected,
                 max_cards=36,
             )
@@ -255,13 +280,13 @@ def render_tab_live_match_center(
 
     st.divider()
     st.markdown("### Match Intelligence")
-    detail_fixtures = all_premium + extended + live_now
+    detail_fixtures = all_premium + next_matches + extended + live_now
     opts = fixture_select_options(dedupe_fixtures_list(detail_fixtures))
     if selected not in opts.values():
-        opts = fixture_select_options(dedupe_fixtures_list(top_matches + live_now))
+        opts = fixture_select_options(dedupe_fixtures_list(top_matches + next_matches + live_now))
 
     cache_key = f"fb_mc_detail_{selected}"
-    sig_d = f"{selected}|{session_plan}|v6"
+    sig_d = f"{selected}|{session_plan}|v7"
     if st.session_state.get("fb_mc_detail_sig") != sig_d:
         st.session_state.fb_mc_detail_sig = sig_d
         st.session_state.pop(cache_key, None)

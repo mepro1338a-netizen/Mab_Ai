@@ -204,6 +204,63 @@ def _fetch_by_leagues(
     return dedupe_fixtures(rows)
 
 
+def _fetch_upcoming_premium(
+    service: FootballService,
+    league_ids: set[int],
+    *,
+    username: str,
+    horizon_days: int = 7,
+    max_leagues: int = 12,
+    per_league: int = 3,
+    max_results: int = 8,
+) -> list[dict[str, Any]]:
+    """Next premium fixtures within N days — league next=N first, then date scan fallback."""
+    today_s, _ = _local_today_tomorrow()
+    try:
+        today_dt = datetime.fromisoformat(today_s).date()
+    except ValueError:
+        return []
+    horizon = today_dt + timedelta(days=max(1, horizon_days))
+
+    def _in_window(fx: dict[str, Any]) -> bool:
+        d_raw = _fixture_date(fx)
+        if not d_raw:
+            return False
+        try:
+            fx_date = datetime.fromisoformat(d_raw).date()
+        except ValueError:
+            return False
+        if fx_date <= today_dt or fx_date > horizon:
+            return False
+        return _status_short(fx) not in FINISHED_STATUSES
+
+    rows: list[dict[str, Any]] = []
+    for lid in _sorted_league_ids(league_ids)[:max_leagues]:
+        try:
+            rows.extend(
+                service.get_league_upcoming_fixtures(
+                    int(lid),
+                    next_count=per_league,
+                    username=username,
+                )
+            )
+        except FootballAPIError:
+            continue
+
+    upcoming = [fx for fx in dedupe_fixtures(rows) if _in_window(fx)]
+    if not upcoming:
+        for offset in range(1, horizon_days + 1):
+            day_s = (today_dt + timedelta(days=offset)).isoformat()
+            try:
+                day_rows = service.get_fixtures_by_date(day_s, username=username)
+            except FootballAPIError:
+                continue
+            upcoming.extend(filter_fixtures(day_rows, league_ids=league_ids))
+        upcoming = [fx for fx in dedupe_fixtures(upcoming) if _in_window(fx)]
+
+    return sort_fixtures_by_priority(upcoming)[:max_results]
+
+
 def classify_fixtures(
     fixtures: list[dict[str, Any]],
     *,
@@ -377,6 +434,7 @@ def fetch_premium_dashboard(
             "top_matches": [],
             "live_now": [],
             "all_premium": [],
+            "next_matches": [],
             "extended": [],
             "premium_count": 0,
             "raw_live_count": 0,
@@ -412,6 +470,12 @@ def fetch_premium_dashboard(
     top_matches = today_sorted[:5]
     all_premium = sort_fixtures_by_priority(premium_fixtures)
 
+    next_matches: list[dict[str, Any]] = []
+    if not today_sorted:
+        next_matches = _fetch_upcoming_premium(
+            service, premium_ids, username=username, horizon_days=7
+        )
+
     extended: list[dict[str, Any]] = []
     if include_all_leagues:
         ext_ids = set(extended_league_ids())
@@ -444,6 +508,7 @@ def fetch_premium_dashboard(
         "top_matches": top_matches,
         "live_now": live_now,
         "all_premium": all_premium,
+        "next_matches": next_matches,
         "extended": extended,
         "premium_count": premium_count,
         "raw_live_count": raw_live_count,
