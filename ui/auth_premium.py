@@ -76,13 +76,13 @@ html { color-scheme: dark !important; }
 /* Auth split layout — Streamlit 1.50: hero + panel are direct stColumn children */
 .stApp [data-testid="stHorizontalBlock"]:has(.auth-grid-marker) {
     display: grid !important;
-    grid-template-columns: minmax(0, 1fr) 520px !important;
-    gap: 72px !important;
-    align-items: center !important;
-    min-height: calc(100vh - 80px) !important;
-    max-width: 1440px !important;
+    grid-template-columns: minmax(0, 1fr) 480px !important;
+    gap: 48px !important;
+    align-items: start !important;
+    min-height: calc(100vh - 72px) !important;
+    max-width: 1320px !important;
     margin: 0 auto !important;
-    padding: 80px 72px !important;
+    padding: 72px 48px 88px 48px !important;
     box-sizing: border-box !important;
 }
 .stApp [data-testid="stHorizontalBlock"]:has(.auth-grid-marker) > [data-testid="stColumn"]:first-child {
@@ -329,11 +329,12 @@ html { color-scheme: dark !important; }
 }
 .mb-hero-brand {
     display: block;
-    font-size: clamp(32px, 3.2vw, 44px);
+    font-size: clamp(28px, 2.8vw, 38px);
     font-weight: 900;
     letter-spacing: -0.045em;
-    line-height: 1;
-    margin: 0 0 12px 0;
+    line-height: 1.1;
+    margin: 0 0 10px 0;
+    padding-top: 4px;
     background: linear-gradient(135deg, #fafafa 0%, #c4b5fd 45%, #93c5fd 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -363,11 +364,11 @@ html { color-scheme: dark !important; }
     box-shadow: 0 0 6px rgba(123, 97, 255, 0.8);
 }
 .mb-hero-title {
-    font-size: clamp(26px, 2.6vw, 36px);
+    font-size: clamp(24px, 2.4vw, 34px);
     font-weight: 800;
     letter-spacing: -0.035em;
-    line-height: 1.15;
-    margin: 0 0 14px 0;
+    line-height: 1.2;
+    margin: 0 0 12px 0;
     color: #fafafa !important;
 }
 .mb-hero-title .mb-grad {
@@ -532,10 +533,28 @@ html { color-scheme: dark !important; }
 }
 .mb-panel-sub {
     font-size: 13px;
-    color: #64748b !important;
-    margin: 0 0 20px 0;
+    color: #94a3b8 !important;
+    margin: 0 0 16px 0;
     line-height: 1.45;
     text-align: center;
+}
+
+/* Register mode — compact hero, scrollable form card */
+.stApp:has(.mb-mode-register) .mb-feat-grid,
+.stApp:has(.mb-mode-register) .mb-stats-row {
+    display: none !important;
+}
+.stApp:has(.mb-mode-register) .mb-hero-sub {
+    margin-bottom: 0 !important;
+    font-size: 13px !important;
+}
+.stApp:has(.mb-mode-register) [data-testid="stVerticalBlock"]:has(> [data-testid="stElementContainer"] .login-card-root),
+.stApp:has(.mb-mode-register) [data-testid="stVerticalBlockBorderWrapper"]:has(> [data-testid="stVerticalBlock"] > [data-testid="stElementContainer"] .login-card-root) {
+    max-height: calc(100vh - 96px) !important;
+    overflow-y: auto !important;
+    padding: 36px 32px !important;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(123,97,255,0.35) transparent;
 }
 
 /* Google OAuth — below login */
@@ -694,16 +713,22 @@ html { color-scheme: dark !important; }
 }
 .mb-notice-info::before { background: #60a5fa; }
 .mb-field-label {
-    color: rgba(148, 163, 184, 0.95) !important;
-    font-size: 11px !important;
-    font-weight: 700 !important;
-    letter-spacing: 0.04em;
-    margin: 10px 0 4px 0 !important;
+    display: block !important;
+    color: #e2e8f0 !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.02em;
+    margin: 12px 0 6px 0 !important;
+    line-height: 1.3 !important;
+}
+.stApp [data-testid="stMarkdownContainer"] p.mb-field-label {
+    color: #e2e8f0 !important;
 }
 .mb-captcha-label {
-    font-size: 12px;
-    color: #64748b !important;
-    margin: 0 0 8px 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: #94a3b8 !important;
+    margin: 14px 0 8px 0;
 }
 """
 )
@@ -786,6 +811,12 @@ def widget_css() -> str:
     font-size: 13px !important;
     font-family: inherit !important;
     caret-color: #A855F7 !important;
+    padding-left: 14px !important;
+}}
+.stApp:has(.mb-mode-login) {card} [data-testid="stForm"] [data-testid="stTextInput"]:first-of-type input,
+.stApp:has(.mb-mode-login) {card_wrap} [data-testid="stForm"] [data-testid="stTextInput"]:first-of-type input,
+.stApp:has(.mb-mode-login) {card} [data-testid="stForm"] [data-testid="stTextInput"]:nth-of-type(2) input,
+.stApp:has(.mb-mode-login) {card_wrap} [data-testid="stForm"] [data-testid="stTextInput"]:nth-of-type(2) input {{
     padding-left: 40px !important;
 }}
 {card} [data-testid="stTextInput"] input::placeholder,
@@ -799,6 +830,77 @@ def widget_css() -> str:
 }}
 {card} [data-testid="stTextInput"] button,
 {card_wrap} [data-testid="stTextInput"] button {{ color: #64748b !important; background: transparent !important; }}
+
+/* Selectbox — dark theme (register) */
+{card} [data-testid="stSelectbox"],
+{card_wrap} [data-testid="stSelectbox"] {{
+    margin-bottom: 4px !important;
+}}
+{card} [data-testid="stSelectbox"] [data-testid="stWidgetLabel"],
+{card_wrap} [data-testid="stSelectbox"] [data-testid="stWidgetLabel"] {{
+    display: none !important;
+}}
+{card} [data-testid="stSelectbox"] > div,
+{card} [data-testid="stSelectbox"] > div > div,
+{card_wrap} [data-testid="stSelectbox"] > div,
+{card_wrap} [data-testid="stSelectbox"] > div > div {{
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+}}
+{card} [data-testid="stSelectbox"] div[data-baseweb="select"],
+{card_wrap} [data-testid="stSelectbox"] div[data-baseweb="select"] {{
+    background: rgba(5, 8, 22, 0.85) !important;
+    border: 1px solid rgba(255, 255, 255, 0.14) !important;
+    border-radius: 12px !important;
+    min-height: 44px !important;
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.3) !important;
+}}
+{card} [data-testid="stSelectbox"] div[data-baseweb="select"]:focus-within,
+{card_wrap} [data-testid="stSelectbox"] div[data-baseweb="select"]:focus-within {{
+    border-color: rgba(123, 97, 255, 0.55) !important;
+    box-shadow: 0 0 0 3px rgba(123, 97, 255, 0.15) !important;
+}}
+{card} [data-testid="stSelectbox"] div[data-baseweb="select"] > div,
+{card_wrap} [data-testid="stSelectbox"] div[data-baseweb="select"] > div {{
+    background: transparent !important;
+    color: #f8fafc !important;
+    font-size: 13px !important;
+}}
+{card} [data-testid="stSelectbox"] div[data-baseweb="select"] svg,
+{card_wrap} [data-testid="stSelectbox"] div[data-baseweb="select"] svg {{
+    fill: #94a3b8 !important;
+}}
+{card} [data-baseweb="popover"],
+{card_wrap} [data-baseweb="popover"] {{
+    background: #0a1024 !important;
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    border-radius: 12px !important;
+}}
+{card} [data-baseweb="popover"] li,
+{card_wrap} [data-baseweb="popover"] li {{
+    color: #e2e8f0 !important;
+    background: transparent !important;
+}}
+{card} [data-baseweb="popover"] li:hover,
+{card_wrap} [data-baseweb="popover"] li:hover {{
+    background: rgba(123, 97, 255, 0.15) !important;
+}}
+
+/* Number input — captcha */
+{card} [data-testid="stNumberInput"] [data-testid="stNumberInputStepUp"],
+{card} [data-testid="stNumberInput"] [data-testid="stNumberInputStepDown"],
+{card_wrap} [data-testid="stNumberInput"] [data-testid="stNumberInputStepUp"],
+{card_wrap} [data-testid="stNumberInput"] [data-testid="stNumberInputStepDown"] {{
+    background: rgba(5, 8, 22, 0.85) !important;
+    border-color: rgba(255,255,255,0.1) !important;
+    color: #94a3b8 !important;
+}}
+{card} [data-testid="stNumberInput"] input,
+{card_wrap} [data-testid="stNumberInput"] input {{
+    padding-left: 14px !important;
+    text-align: center !important;
+}}
 
 /* Remember me checkbox */
 {card} [data-testid="stCheckbox"],
@@ -864,31 +966,20 @@ def widget_css() -> str:
     display: inline-block !important;
 }}
 
-/* Primary CTA — login / register submit */
-{card} [data-testid="stForm"] [data-testid="stFormSubmitButton"] button,
-{card} [data-testid="stForm"] .stFormSubmitButton button,
-{card} [data-testid="stForm"] div.stButton > button,
-{card_wrap} [data-testid="stForm"] [data-testid="stFormSubmitButton"] button,
-{card_wrap} [data-testid="stForm"] .stFormSubmitButton button,
-{card_wrap} [data-testid="stForm"] div.stButton > button,
-{card} [data-testid="stFormSubmitButton"] button,
-{card} .stFormSubmitButton button,
-{card_wrap} [data-testid="stFormSubmitButton"] button,
-{card_wrap} .stFormSubmitButton button,
-{card} [data-testid="stForm"] [data-testid="stFormSubmitButton"] button[kind="secondary"],
-{card} [data-testid="stForm"] [data-testid="stFormSubmitButton"] button[kind="secondaryFormSubmit"],
+/* Primary CTA — login / register submit (primary only) */
 {card} [data-testid="stForm"] [data-testid="stFormSubmitButton"] button[kind="primary"],
-{card} [data-testid="stForm"] [data-testid="stFormSubmitButton"] button[data-testid="stBaseButton-secondary"],
-{card} [data-testid="stForm"] [data-testid="stFormSubmitButton"] button[data-testid="stBaseButton-primary"],
-{card} [data-testid="stForm"] [data-testid="stFormSubmitButton"] button[data-testid="stBaseButton-secondaryFormSubmit"],
 {card} [data-testid="stForm"] [data-testid="stFormSubmitButton"] button[data-testid="stBaseButton-primaryFormSubmit"],
-{card} [data-testid="stFormSubmitButton"] button[kind="secondaryFormSubmit"],
-{card} [data-testid="stFormSubmitButton"] button[data-testid="stBaseButton-secondaryFormSubmit"] {{
+{card} [data-testid="stFormSubmitButton"] button[kind="primary"],
+{card} [data-testid="stFormSubmitButton"] button[data-testid="stBaseButton-primaryFormSubmit"],
+{card_wrap} [data-testid="stForm"] [data-testid="stFormSubmitButton"] button[kind="primary"],
+{card_wrap} [data-testid="stForm"] [data-testid="stFormSubmitButton"] button[data-testid="stBaseButton-primaryFormSubmit"],
+{card_wrap} [data-testid="stFormSubmitButton"] button[kind="primary"],
+{card_wrap} [data-testid="stFormSubmitButton"] button[data-testid="stBaseButton-primaryFormSubmit"] {{
     width: 100% !important;
-    height: 58px !important;
-    min-height: 58px !important;
-    margin-top: 0 !important;
-    border-radius: 16px !important;
+    height: 52px !important;
+    min-height: 52px !important;
+    margin-top: 8px !important;
+    border-radius: 14px !important;
     border: 0 !important;
     background: linear-gradient(135deg, #a855f7, #3b82f6) !important;
     background-color: transparent !important;
@@ -899,23 +990,19 @@ def widget_css() -> str:
     font-family: inherit !important;
     box-shadow: 0 4px 20px rgba(123, 97, 255, 0.35) !important;
 }}
-{card} [data-testid="stForm"] [data-testid="stFormSubmitButton"] button:hover,
-{card} [data-testid="stForm"] .stFormSubmitButton button:hover,
-{card} [data-testid="stFormSubmitButton"] button:hover,
-{card_wrap} [data-testid="stForm"] [data-testid="stFormSubmitButton"] button:hover,
-{card_wrap} [data-testid="stForm"] .stFormSubmitButton button:hover,
-{card_wrap} [data-testid="stFormSubmitButton"] button:hover {{
+{card} [data-testid="stForm"] [data-testid="stFormSubmitButton"] button[kind="primary"]:hover,
+{card} [data-testid="stFormSubmitButton"] button[kind="primary"]:hover,
+{card_wrap} [data-testid="stForm"] [data-testid="stFormSubmitButton"] button[kind="primary"]:hover,
+{card_wrap} [data-testid="stFormSubmitButton"] button[kind="primary"]:hover {{
     filter: brightness(1.06) !important;
     box-shadow: 0 6px 28px rgba(123, 97, 255, 0.45) !important;
 }}
-{card} [data-testid="stForm"] [data-testid="stFormSubmitButton"] button p,
-{card} [data-testid="stForm"] [data-testid="stFormSubmitButton"] button span,
-{card} [data-testid="stForm"] .stFormSubmitButton button p,
-{card} [data-testid="stForm"] .stFormSubmitButton button span,
-{card} [data-testid="stFormSubmitButton"] button p,
-{card} [data-testid="stFormSubmitButton"] button span,
-{card_wrap} [data-testid="stForm"] [data-testid="stFormSubmitButton"] button p,
-{card_wrap} [data-testid="stForm"] [data-testid="stFormSubmitButton"] button span {{
+{card} [data-testid="stForm"] [data-testid="stFormSubmitButton"] button[kind="primary"] p,
+{card} [data-testid="stForm"] [data-testid="stFormSubmitButton"] button[kind="primary"] span,
+{card} [data-testid="stFormSubmitButton"] button[kind="primary"] p,
+{card} [data-testid="stFormSubmitButton"] button[kind="primary"] span,
+{card_wrap} [data-testid="stForm"] [data-testid="stFormSubmitButton"] button[kind="primary"] p,
+{card_wrap} [data-testid="stFormSubmitButton"] button[kind="primary"] p {{
     color: white !important;
     font-weight: 700 !important;
 }}
@@ -973,20 +1060,36 @@ def widget_css() -> str:
 {g} [data-testid="stAlert"] {{ display: none !important; }}
 {card}, {card_wrap} {{ gap: 0 !important; }}
 
-/* Captcha refresh — small icon button */
+/* Login submit fallback when kind attr missing */
+{card} [data-testid="stForm"] > div:last-of-type [data-testid="stFormSubmitButton"] button,
+{card_wrap} [data-testid="stForm"] > div:last-of-type [data-testid="stFormSubmitButton"] button {{
+    width: 100% !important;
+    height: 52px !important;
+    min-height: 52px !important;
+    margin-top: 8px !important;
+    border-radius: 14px !important;
+    border: 0 !important;
+    background: linear-gradient(135deg, #a855f7, #3b82f6) !important;
+    color: white !important;
+    font-weight: 700 !important;
+    box-shadow: 0 4px 20px rgba(123, 97, 255, 0.35) !important;
+}}
+
+/* Captcha refresh — small icon button (secondary submit in horizontal block) */
 {card} [data-testid="stForm"] [data-testid="stHorizontalBlock"] [data-testid="stFormSubmitButton"] button,
 {card} [data-testid="stForm"] [data-testid="stHorizontalBlock"] .stButton > button,
 {card_wrap} [data-testid="stForm"] [data-testid="stHorizontalBlock"] [data-testid="stFormSubmitButton"] button,
 {card_wrap} [data-testid="stForm"] [data-testid="stHorizontalBlock"] .stButton > button {{
-    min-height: 48px !important;
-    height: 48px !important;
+    min-height: 44px !important;
+    height: 44px !important;
     width: 100% !important;
     border-radius: 12px !important;
     background: rgba(5, 8, 22, 0.85) !important;
     background-image: none !important;
-    border: 1px solid rgba(255,255,255,0.08) !important;
+    border: 1px solid rgba(255,255,255,0.12) !important;
     color: #94a3b8 !important;
     box-shadow: none !important;
+    margin-top: 0 !important;
 }}
 {card} [data-testid="stForm"] [data-testid="stHorizontalBlock"] [data-testid="stFormSubmitButton"] button p,
 {card} [data-testid="stForm"] [data-testid="stHorizontalBlock"] .stButton > button p,
@@ -1140,7 +1243,7 @@ def panel_shell_html(*, register: bool) -> str:
             '<div class="mb-login-head">'
             f'{_hex_logo(initial)}'
             '<h2 class="mb-panel-title">Konto bei <span class="mb-panel-brand">MaByte</span> erstellen</h2>'
-            '<p class="mb-panel-sub">Registrierung mit E-Mail — deine Daten werden als Lead gespeichert.</p>'
+            '<p class="mb-panel-sub">E-Mail-Registrierung — Zugang zu AI, Football &amp; Creator Tools.</p>'
             '</div>'
         )
     return (

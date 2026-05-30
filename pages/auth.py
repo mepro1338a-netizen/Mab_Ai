@@ -232,28 +232,31 @@ def render_register_form() -> None:
             st.markdown('<p class="mb-field-label">Unternehmen</p>', unsafe_allow_html=True)
             company = st.text_input(
                 "Unternehmen",
-                placeholder="Optional",
+                placeholder="Firma GmbH",
                 label_visibility="collapsed",
             )
         with c4:
             st.markdown('<p class="mb-field-label">Telefon</p>', unsafe_allow_html=True)
             phone = st.text_input(
                 "Telefon",
-                placeholder="Optional",
+                placeholder="+49 …",
                 label_visibility="collapsed",
             )
-        st.markdown('<p class="mb-field-label">Land *</p>', unsafe_allow_html=True)
-        country = st.selectbox(
-            "Land",
-            COUNTRY_OPTIONS,
-            label_visibility="collapsed",
-        )
-        st.markdown('<p class="mb-field-label">Nutzungszweck *</p>', unsafe_allow_html=True)
-        use_case = st.selectbox(
-            "Nutzungszweck",
-            USE_CASE_OPTIONS,
-            label_visibility="collapsed",
-        )
+        c5, c6 = st.columns(2, gap="small")
+        with c5:
+            st.markdown('<p class="mb-field-label">Land *</p>', unsafe_allow_html=True)
+            country = st.selectbox(
+                "Land",
+                COUNTRY_OPTIONS,
+                label_visibility="collapsed",
+            )
+        with c6:
+            st.markdown('<p class="mb-field-label">Nutzungszweck *</p>', unsafe_allow_html=True)
+            use_case = st.selectbox(
+                "Nutzungszweck",
+                USE_CASE_OPTIONS,
+                label_visibility="collapsed",
+            )
         p1, p2 = st.columns(2, gap="small")
         with p1:
             st.markdown('<p class="mb-field-label">Passwort * (min. 8)</p>', unsafe_allow_html=True)
@@ -276,7 +279,7 @@ def render_register_form() -> None:
             value=False,
         )
         marketing = st.checkbox(
-            "Ich möchte Updates und Produktnews per E-Mail erhalten (optional).",
+            "Produktnews per E-Mail (optional).",
             value=False,
         )
         a, b = st.session_state.captcha_a, st.session_state.captcha_b
@@ -284,17 +287,19 @@ def render_register_form() -> None:
             f'<p class="mb-captcha-label">Sicherheitsfrage: {a} + {b} = ?</p>',
             unsafe_allow_html=True,
         )
-        cap_col, ref_col = st.columns([0.82, 0.18], gap="small")
+        cap_col, ref_col = st.columns([5, 1], gap="small")
         with cap_col:
             captcha = st.number_input(
                 "Ergebnis",
                 min_value=0,
                 max_value=30,
                 step=1,
+                value=0,
                 label_visibility="collapsed",
             )
         with ref_col:
-            refresh = st.form_submit_button("↻")
+            st.markdown('<div style="height:22px"></div>', unsafe_allow_html=True)
+            refresh = st.form_submit_button("↻", help="Neue Aufgabe")
         submitted = st.form_submit_button("Konto erstellen", type="primary", width="stretch")
 
     if refresh:
