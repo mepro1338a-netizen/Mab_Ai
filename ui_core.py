@@ -166,6 +166,67 @@ div[data-testid="stRadio"] div[role="radiogroup"] label:has(input:checked) {{
     padding: 14px !important;
 }}
 
+section.main [data-testid="stExpander"] {{
+    background: rgba(10, 14, 28, 0.92) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 14px !important;
+    overflow: hidden !important;
+}}
+section.main [data-testid="stExpander"] summary {{
+    background: rgba(15, 23, 42, 0.85) !important;
+    color: #e2e8f0 !important;
+    font-weight: 700 !important;
+}}
+section.main [data-testid="stExpander"] summary:hover {{
+    background: rgba(30, 41, 59, 0.9) !important;
+    color: #f8fafc !important;
+}}
+section.main [data-testid="stExpander"] summary svg {{
+    fill: #94a3b8 !important;
+}}
+section.main [data-testid="stExpander"] [data-testid="stExpanderDetails"] {{
+    background: rgba(8, 12, 24, 0.95) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+}}
+
+section.main [data-testid="stNumberInput"] div[data-baseweb="input"] {{
+    background: #27272a !important;
+    border: 1px solid #3f3f46 !important;
+    border-radius: var(--mb-radius-md) !important;
+}}
+section.main [data-testid="stNumberInput"] button {{
+    background: #27272a !important;
+    border-color: #3f3f46 !important;
+    color: #e2e8f0 !important;
+}}
+
+section.main .stButton > button,
+section.main button[data-testid="stBaseButton-secondary"],
+section.main button[data-testid="stBaseButton-tertiary"] {{
+    background-color: rgba(39, 39, 42, 0.98) !important;
+    color: #fafafa !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}}
+section.main .stButton > button p,
+section.main .stButton > button span {{
+    color: #fafafa !important;
+}}
+
+section.main [data-testid="stTabs"] [data-baseweb="tab-list"] {{
+    background: rgba(10, 12, 24, 0.6) !important;
+    border-radius: 12px !important;
+    gap: 4px !important;
+    padding: 4px !important;
+}}
+section.main [data-testid="stTabs"] button {{
+    background: transparent !important;
+    color: #94a3b8 !important;
+}}
+section.main [data-testid="stTabs"] button[aria-selected="true"] {{
+    background: rgba(124, 58, 237, 0.25) !important;
+    color: #f8fafc !important;
+}}
+
 @media (max-width: 900px) {{
     .custom-topbar {{ height: 64px !important; min-height: 64px !important; }}
 }}

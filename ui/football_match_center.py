@@ -164,8 +164,8 @@ MATCH_CENTER_CSS = """
     }
 }
 .fb-mc-card {
-    border-radius: 18px;
-    padding: 16px 18px;
+    border-radius: 16px;
+    padding: 12px 14px;
     background: linear-gradient(145deg, rgba(12,18,32,.95), rgba(6,10,22,.98));
     border: 1px solid rgba(255,255,255,.08);
     cursor: default;
@@ -348,6 +348,17 @@ MATCH_CENTER_CSS = """
     font-size: 14px;
     line-height: 1.5;
 }
+.fb-mc-empty-few {
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin: 10px 0 4px 0;
+    background: rgba(15, 23, 42, 0.65);
+    border: 1px dashed rgba(148, 163, 184, 0.28);
+    color: #94a3b8 !important;
+    font-size: 13px;
+    line-height: 1.45;
+}
+.fb-mc-empty-few strong { color: #cbd5e1 !important; }
 .fb-mc-card-wrap {
     margin-bottom: 4px;
 }
@@ -391,6 +402,14 @@ def render_mc_header(*, live_count: int, today_count: int, api_used: int, api_li
 
 def render_section_title(title: str) -> None:
     st.markdown(f'<p class="fb-mc-section">{html.escape(title)}</p>', unsafe_allow_html=True)
+
+
+def render_few_top_matches_note() -> None:
+    st.markdown(
+        '<div class="fb-mc-empty-few"><strong>Keine weiteren Topspiele heute.</strong> '
+        "Nur ein Premium-Match gelistet — weitere Ligen per Button unten.</div>",
+        unsafe_allow_html=True,
+    )
 
 
 def render_empty_top_matches(*, show_intl_hint: bool = False, raw_live: int = 0) -> None:

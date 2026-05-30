@@ -18,6 +18,7 @@ from ui.football_match_center import (
     render_match_grid,
     render_mc_header,
     render_section_title,
+    render_few_top_matches_note,
     render_top_matches_row,
 )
 from ui.premium_foundation import render_upgrade_card
@@ -99,6 +100,8 @@ def _render_top_section(payload: dict, *, selected: int | None) -> None:
     next_matches = list(payload.get("next_matches") or [])
     if top_matches:
         render_top_matches_row(top_matches, key_prefix="top", selected_fixture=selected)
+        if len(top_matches) == 1:
+            render_few_top_matches_note()
     elif next_matches:
         st.markdown(
             '<div class="fb-mc-empty-state" style="margin-bottom:12px;">'
@@ -252,12 +255,22 @@ def render_tab_live_match_center(
     extended = list(payload.get("extended") or [])
     selected = _selected_fixture()
 
-    render_mc_header(
-        live_count=len(live_now),
-        today_count=len(all_premium) or len(next_matches),
-        api_used=int(summary.get("api_used") or 0),
-        api_limit=int(summary.get("api_limit") or 0),
-    )
+    if section:
+        st.markdown(
+            f'<p class="fb-mc-section" style="margin-top:0;">Football Intelligence · '
+            f"Live {len(live_now)} · Premium {len(all_premium) or len(next_matches)} · "
+            f"API {int(summary.get('api_used') or 0):,}/{int(summary.get('api_limit') or 0):,}</p>".replace(
+                ",", "."
+            ),
+            unsafe_allow_html=True,
+        )
+    else:
+        render_mc_header(
+            live_count=len(live_now),
+            today_count=len(all_premium) or len(next_matches),
+            api_used=int(summary.get("api_used") or 0),
+            api_limit=int(summary.get("api_limit") or 0),
+        )
     cap = f"Premium-only · {today_local} · Europe/Berlin"
     if not all_premium and next_matches:
         cap += f" · {len(next_matches)} kommende Top-Spiele"

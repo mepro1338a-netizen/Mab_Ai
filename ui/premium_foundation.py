@@ -19,8 +19,36 @@ div[data-testid="stAppViewContainer"] > section > div {
 div[data-testid="stVerticalBlockBorderWrapper"] > div {
     background: transparent !important;
 }
+div[data-testid="stVerticalBlockBorderWrapper"] {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
 .stDataFrame, [data-testid="stDataFrame"] {
     border-radius: 16px !important;
+}
+section.main [data-testid="stExpander"] {
+    background: rgba(10, 14, 28, 0.92) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 14px !important;
+}
+section.main [data-testid="stExpander"] summary {
+    background: rgba(15, 23, 42, 0.88) !important;
+    color: #e2e8f0 !important;
+}
+section.main [data-testid="stExpander"] [data-testid="stExpanderDetails"] {
+    background: rgba(8, 12, 24, 0.96) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+section.main [data-testid="stNumberInput"] div[data-baseweb="input"],
+section.main [data-testid="stSelectbox"] div[data-baseweb="select"] > div {
+    background: rgba(39, 39, 42, 0.95) !important;
+    color: #f8fafc !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+section.main .stButton > button:not([kind="primary"]) {
+    background: rgba(39, 39, 42, 0.98) !important;
+    color: #fafafa !important;
 }
 /* Sidebar nav styled in ui_core.py */
 @media (max-width: 768px) {

@@ -22,9 +22,9 @@ for _grp in ("deutschland", "uefa", "europa_top", "national", "international"):
 
 FOOTBALL_UI_CSS = """
 .fb-command-hero {
-    border-radius: 32px;
-    padding: 32px 36px;
-    margin-bottom: 24px;
+    border-radius: 22px;
+    padding: 18px 22px;
+    margin-bottom: 14px;
     position: relative;
     overflow: hidden;
     background:
@@ -56,10 +56,10 @@ FOOTBALL_UI_CSS = """
 }
 .fb-command-title {
     color: #f0fdf4 !important;
-    font-size: 42px;
+    font-size: 26px;
     font-weight: 1000;
-    letter-spacing: -2px;
-    line-height: 1;
+    letter-spacing: -1px;
+    line-height: 1.1;
     margin-top: 10px;
 }
 .fb-command-sub {

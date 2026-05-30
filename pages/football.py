@@ -292,8 +292,92 @@ def football_css() -> None:
 
     inject_football_ui_css()
     inject_football_premium_css()
-    inject_css(MB_THEME_VARS + page_layout_css(1280, 88, 48) + BETA_GLOBAL_CSS + """
+    inject_css(MB_THEME_VARS + page_layout_css(1280, 108, 48) + BETA_GLOBAL_CSS + """
 .fb-page-marker { display: none; }
+.fb-page {
+    scroll-margin-top: 88px;
+    padding-top: 4px;
+}
+.fb-command-hero {
+    padding: 18px 22px !important;
+    margin-bottom: 14px !important;
+    border-radius: 20px !important;
+}
+.fb-command-hero .fb-command-title {
+    font-size: 22px !important;
+    line-height: 1.15 !important;
+}
+.fb-command-hero .fb-command-sub {
+    font-size: 13px !important;
+    margin-top: 6px !important;
+}
+.fb-command-hero .fb-scanline {
+    margin-bottom: 6px !important;
+}
+.fb-page [data-testid="stTabs"] {
+    margin-top: 8px;
+}
+.fb-page [data-testid="stExpander"] {
+    background: rgba(10, 14, 28, 0.92) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 14px !important;
+    margin-top: 12px !important;
+}
+.fb-page [data-testid="stExpander"] summary {
+    background: rgba(15, 23, 42, 0.9) !important;
+    color: #cbd5e1 !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+}
+.fb-page [data-testid="stExpander"] summary:hover {
+    color: #f8fafc !important;
+}
+.fb-page [data-testid="stExpander"] [data-testid="stExpanderDetails"] {
+    background: rgba(8, 12, 24, 0.96) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+.fb-page .fb-mc-header {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+.fb-page .fb-mc-card {
+    padding: 12px 14px !important;
+}
+.fb-page .fb-mc-score {
+    font-size: 18px !important;
+}
+.fb-page .fb-mc-top-row .fb-mc-card {
+    padding: 14px 16px !important;
+}
+.fb-page .fb-mc-grid .stButton > button,
+.fb-page .fb-mc-top-row + div .stButton > button {
+    min-height: 32px !important;
+    height: 32px !important;
+    padding: 0 10px !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.04em !important;
+    border-radius: 9px !important;
+    border: 1px solid rgba(123, 97, 255, 0.35) !important;
+    background: rgba(30, 41, 59, 0.85) !important;
+    color: #e2e8f0 !important;
+    box-shadow: none !important;
+}
+.fb-page .fb-mc-grid .stButton > button[kind="primary"],
+.fb-page .fb-mc-top-row ~ [data-testid="stHorizontalBlock"] .stButton > button[kind="primary"] {
+    background: linear-gradient(135deg, rgba(123, 97, 255, 0.5), rgba(59, 130, 246, 0.4)) !important;
+    border-color: rgba(168, 85, 247, 0.45) !important;
+    color: #fafafa !important;
+}
+.fb-page .fb-mc-empty-few {
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin: 10px 0 4px 0;
+    background: rgba(15, 23, 42, 0.65);
+    border: 1px dashed rgba(148, 163, 184, 0.25);
+    color: #94a3b8 !important;
+    font-size: 13px;
+}
 .fb-title {
     font-size: 38px;
     font-weight: 1000;
