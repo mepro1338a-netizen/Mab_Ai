@@ -298,7 +298,6 @@ def render_register_form() -> None:
                 label_visibility="collapsed",
             )
         with ref_col:
-            st.markdown('<div style="height:22px"></div>', unsafe_allow_html=True)
             refresh = st.form_submit_button("↻", help="Neue Aufgabe")
         submitted = st.form_submit_button("Konto erstellen", type="primary", width="stretch")
 

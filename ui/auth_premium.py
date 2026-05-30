@@ -539,22 +539,78 @@ html { color-scheme: dark !important; }
     text-align: center;
 }
 
-/* Register mode — compact hero, scrollable form card */
-.stApp:has(.mb-mode-register) .mb-feat-grid,
-.stApp:has(.mb-mode-register) .mb-stats-row {
+/* Register mode — centered form only, compact spacing */
+.stApp:has(.mb-mode-register) [data-testid="stHorizontalBlock"]:has(.auth-grid-marker) {
+    grid-template-columns: 1fr !important;
+    max-width: 460px !important;
+    gap: 0 !important;
+    padding: 28px 20px 72px 20px !important;
+    min-height: auto !important;
+    align-items: stretch !important;
+}
+.stApp:has(.mb-mode-register) [data-testid="stHorizontalBlock"]:has(.auth-grid-marker) > [data-testid="stColumn"]:first-child {
     display: none !important;
 }
-.stApp:has(.mb-mode-register) .mb-hero-sub {
-    margin-bottom: 0 !important;
-    font-size: 13px !important;
+.stApp:has(.mb-mode-register) [data-testid="stHorizontalBlock"]:has(.auth-grid-marker) > [data-testid="stColumn"]:last-child {
+    max-width: 100% !important;
+    width: 100% !important;
+    justify-self: center !important;
+}
+.stApp:has(.mb-mode-register) .mb-feat-grid,
+.stApp:has(.mb-mode-register) .mb-stats-row,
+.stApp:has(.mb-mode-register) .mb-hero {
+    display: none !important;
+}
+.stApp:has(.mb-mode-register) .mb-panel-logo {
+    width: 36px !important;
+    height: 36px !important;
+    margin-bottom: 10px !important;
+    font-size: 14px !important;
+}
+.stApp:has(.mb-mode-register) .mb-panel-title {
+    font-size: 18px !important;
+    margin-bottom: 2px !important;
+}
+.stApp:has(.mb-mode-register) .mb-panel-sub {
+    margin-bottom: 12px !important;
+    font-size: 12px !important;
+}
+.stApp:has(.mb-mode-register) .mb-field-label {
+    margin: 6px 0 3px 0 !important;
+    font-size: 11px !important;
 }
 .stApp:has(.mb-mode-register) [data-testid="stVerticalBlock"]:has(> [data-testid="stElementContainer"] .login-card-root),
 .stApp:has(.mb-mode-register) [data-testid="stVerticalBlockBorderWrapper"]:has(> [data-testid="stVerticalBlock"] > [data-testid="stElementContainer"] .login-card-root) {
-    max-height: calc(100vh - 96px) !important;
-    overflow-y: auto !important;
-    padding: 36px 32px !important;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(123,97,255,0.35) transparent;
+    max-height: none !important;
+    overflow: visible !important;
+    padding: 28px 24px !important;
+    box-shadow: 0 0 60px rgba(123, 97, 255, 0.22) !important;
+}
+.stApp:has(.mb-mode-register) [data-testid="stTextInput"],
+.stApp:has(.mb-mode-register) [data-testid="stSelectbox"],
+.stApp:has(.mb-mode-register) [data-testid="stNumberInput"] {
+    margin-bottom: 2px !important;
+}
+.stApp:has(.mb-mode-register) [data-testid="stCheckbox"] {
+    margin: 2px 0 !important;
+    padding: 0 !important;
+}
+.stApp:has(.mb-mode-register) [data-testid="stCheckbox"] label span,
+.stApp:has(.mb-mode-register) [data-testid="stCheckbox"] label p {
+    font-size: 12px !important;
+    line-height: 1.35 !important;
+}
+.stApp:has(.mb-mode-register) .mb-captcha-label {
+    margin: 8px 0 4px 0 !important;
+    font-size: 12px !important;
+}
+.stApp:has(.mb-mode-register) div[data-baseweb="input"],
+.stApp:has(.mb-mode-register) div[data-baseweb="select"] {
+    min-height: 38px !important;
+}
+.stApp:has(.mb-mode-register) [data-testid="stForm"] [data-testid="stHorizontalBlock"]:has([data-testid="stNumberInput"]) {
+    align-items: flex-end !important;
+    margin-bottom: 4px !important;
 }
 
 /* Google OAuth — below login */
