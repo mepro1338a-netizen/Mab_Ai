@@ -417,7 +417,7 @@ def render_auth_switch() -> None:
     mode = st.session_state.get("gate_mode", "login")
     if mode == "register":
         st.markdown(
-            '<p class="auth-register-line">Bereits registriert?</p>',
+            '<p class="mb-panel-switch-note">Bereits registriert?</p>',
             unsafe_allow_html=True,
         )
         if st.button("Zum Login", key="switch_login", type="tertiary"):
@@ -426,10 +426,10 @@ def render_auth_switch() -> None:
             st.rerun()
     else:
         st.markdown(
-            '<p class="auth-register-line">Noch kein Konto?</p>',
+            '<p class="mb-panel-switch-note">Noch kein Konto? Jetzt registrieren</p>',
             unsafe_allow_html=True,
         )
-        if st.button("Jetzt registrieren", key="switch_register", type="tertiary"):
+        if st.button("Registrieren", key="switch_register", type="tertiary"):
             st.session_state.gate_mode = "register"
             refresh_captcha()
             st.rerun()
