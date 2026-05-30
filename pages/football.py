@@ -753,7 +753,9 @@ def _league_options() -> dict[str, int]:
 
 
 def _fixture_pick_options() -> dict[str, int]:
-    """Merge loaded fixtures for Elite Odds Lab picker."""
+    """Merge loaded fixtures for Elite Odds Lab picker (live = premium only)."""
+    from services.football_leagues import filter_premium_fixtures
+
     combined: list = []
     for key in (
         "football_upcoming_fixtures",
@@ -761,7 +763,10 @@ def _fixture_pick_options() -> dict[str, int]:
         "football_live_fixtures",
         "football_recent_fixtures",
     ):
-        combined.extend(st.session_state.get(key) or [])
+        rows = st.session_state.get(key) or []
+        if key == "football_live_fixtures":
+            rows = filter_premium_fixtures(rows)
+        combined.extend(rows)
     return fixture_options_from_list(combined)
 
 
@@ -1048,11 +1053,8 @@ def render_football_live_data(summary: dict) -> None:
             if st.button("Top-Ligen live laden", key="football_refresh_live", width="stretch"):
                 try:
                     with st.spinner("Live-Spiele werden geladen…"):
-                        raw = service.get_live_fixtures(username=username)
-                        st.session_state.football_live_fixtures = filter_fixtures(
-                            raw,
-                            league_ids=set(premium_league_ids()),
-                        )
+                        raw = service.get_live_fixtures(username=username, premium_only=True)
+                        st.session_state.football_live_fixtures = raw
                 except FootballAPIError as exc:
                     st.error(str(exc))
             live_rows = st.session_state.get("football_live_fixtures") or []

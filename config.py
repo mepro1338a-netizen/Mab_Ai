@@ -149,9 +149,9 @@ FOOTBALL_API_BASE_URL = os.getenv(
 )
 FOOTBALL_API_CACHE_TTL = int(os.getenv("FOOTBALL_API_CACHE_TTL", "600") or 600)
 FOOTBALL_API_LIVE_CACHE_TTL = int(os.getenv("FOOTBALL_API_LIVE_CACHE_TTL", "60") or 60)
-FOOTBALL_API_FIXTURES_CACHE_TTL = int(os.getenv("FOOTBALL_API_FIXTURES_CACHE_TTL", "600") or 600)
-FOOTBALL_API_STANDINGS_CACHE_TTL = int(os.getenv("FOOTBALL_API_STANDINGS_CACHE_TTL", "3600") or 3600)
-FOOTBALL_API_INJURIES_CACHE_TTL = int(os.getenv("FOOTBALL_API_INJURIES_CACHE_TTL", "21600") or 21600)
+FOOTBALL_API_FIXTURES_CACHE_TTL = int(os.getenv("FOOTBALL_API_FIXTURES_CACHE_TTL", "600") or 600)  # 10 min
+FOOTBALL_API_STANDINGS_CACHE_TTL = int(os.getenv("FOOTBALL_API_STANDINGS_CACHE_TTL", "3600") or 3600)  # 1 h
+FOOTBALL_API_INJURIES_CACHE_TTL = int(os.getenv("FOOTBALL_API_INJURIES_CACHE_TTL", "21600") or 21600)  # 6 h
 FOOTBALL_API_TIMEOUT = int(os.getenv("FOOTBALL_API_TIMEOUT", "20") or 20)
 FOOTBALL_DEFAULT_SEASON = int(os.getenv("FOOTBALL_DEFAULT_SEASON", "2025") or 2025)
 
@@ -187,6 +187,7 @@ FOOTBALL_LEAGUE_GROUPS: dict[str, list[dict[str, str | int]]] = {
     ],
     "national": [
         {"id": 4, "name": "Euro Championship", "country": "Europe"},
+        {"id": 960, "name": "Euro Qualification", "country": "Europe"},
         {"id": 5, "name": "UEFA Nations League", "country": "Europe"},
         {"id": 32, "name": "World Cup Qual. Europe", "country": "Europe"},
         {"id": 1, "name": "World Cup", "country": "World"},

@@ -331,14 +331,23 @@ class FootballService:
           username=username,
       )
 
-  def get_live_fixtures(self, *, username: str = "") -> list[dict[str, Any]]:
-      return self._request(
+  def get_live_fixtures(
+      self,
+      *,
+      username: str = "",
+      premium_only: bool = False,
+  ) -> list[dict[str, Any]]:
+      rows = self._request(
           "fixtures",
           {"live": "all"},
           feature="api_live_scores",
           live=True,
           username=username,
       )
+      if premium_only:
+          from services.football_leagues import filter_premium_fixtures
+          return filter_premium_fixtures(rows)
+      return rows
 
   def get_fixtures_by_date(
       self,

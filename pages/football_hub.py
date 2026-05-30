@@ -37,6 +37,8 @@ from ui.prompt_ui import prompt_text_input
 
 
 def _fixture_pick_options() -> dict[str, int]:
+    from services.football_leagues import filter_premium_fixtures
+
     combined = []
     for key in (
         "football_upcoming_fixtures",
@@ -44,7 +46,10 @@ def _fixture_pick_options() -> dict[str, int]:
         "football_live_fixtures",
         "football_recent_fixtures",
     ):
-        combined.extend(st.session_state.get(key) or [])
+        rows = st.session_state.get(key) or []
+        if key == "football_live_fixtures":
+            rows = filter_premium_fixtures(rows)
+        combined.extend(rows)
     return fixture_options_from_list(combined)
 
 
@@ -82,7 +87,10 @@ def render_tab_live_intel(summary: dict, *, username: str, session_plan: str, op
         if st.button("Live-Spiele aktualisieren", key="fb_intel_refresh", width="stretch"):
             if service.is_configured():
                 try:
-                    st.session_state.football_live_fixtures = service.get_live_fixtures(username=username)
+                    st.session_state.football_live_fixtures = service.get_live_fixtures(
+                        username=username,
+                        premium_only=True,
+                    )
                 except FootballAPIError as exc:
                     st.error(str(exc))
             else:

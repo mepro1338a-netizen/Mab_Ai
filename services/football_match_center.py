@@ -166,16 +166,8 @@ def dedupe_fixtures(fixtures: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 def sort_fixtures_by_priority(fixtures: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    def _key(fx: dict[str, Any]) -> tuple:
-        card = parse_match_card(fx)
-        meta = fx.get("fixture") or {}
-        return (
-            -int(card.get("relevance_score") or 0),
-            str(meta.get("date") or ""),
-            str((fx.get("league") or {}).get("name") or ""),
-        )
-
-    return sorted(fixtures or [], key=_key)
+    from services.football_leagues import sort_fixtures_priority
+    return sort_fixtures_priority(fixtures)
 
 
 def _sorted_league_ids(league_ids: set[int]) -> list[int]:
@@ -423,27 +415,25 @@ def fetch_premium_dashboard(
     extended: list[dict[str, Any]] = []
     if include_all_leagues:
         ext_ids = set(extended_league_ids())
-        try:
-            global_today = service.get_fixtures_by_date(today_s, username=username)
-        except FootballAPIError as exc:
-            errors.append(str(exc))
-            global_today = []
-        for fx in global_today or []:
+        # Curated non-premium leagues only — per-league fetch (no global API dump)
+        extended = _fetch_by_leagues(
+            service, today_s, ext_ids, username=username, max_leagues=12
+        )
+        # Non-premium live spillover (e.g. MLS live while user opted in)
+        for fx in live_rows:
             lid = _league_id(fx)
-            if lid is None:
+            if lid is None or int(lid) in premium_ids:
                 continue
-            if int(lid) in premium_ids:
-                continue
-            if int(lid) in ext_ids or league_tier(lid) >= 4:
+            if int(lid) in ext_ids:
                 extended.append(fx)
         extended = sort_fixtures_by_priority(dedupe_fixtures(extended))
 
     raw_live_count = len(live_rows)
+    non_premium_live_count = raw_live_count - len(premium_live)
     premium_count = len(all_premium)
-    show_intl = (
-        not include_all_leagues
-        and premium_count == 0
-        and raw_live_count > 0
+    show_intl = not include_all_leagues and (
+        (premium_count == 0 and raw_live_count > 0)
+        or (len(live_now) == 0 and non_premium_live_count > 0)
     )
 
     return {
@@ -458,6 +448,8 @@ def fetch_premium_dashboard(
         "premium_count": premium_count,
         "raw_live_count": raw_live_count,
         "show_international_prompt": show_intl,
+        "show_live_intl_prompt": show_intl and len(live_now) == 0,
+        "non_premium_live_count": non_premium_live_count,
         "include_all_leagues": include_all_leagues,
         "today_local": today_s,
     }

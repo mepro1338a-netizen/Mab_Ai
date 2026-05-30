@@ -491,11 +491,13 @@ def _render_match_card_html(card: dict[str, Any]) -> str:
 
 
 def render_premium_live_empty(*, raw_live_count: int) -> None:
+    extra = ""
+    if raw_live_count:
+        extra = f" ({raw_live_count} Spiele in kleineren Ligen laufen gerade.)"
     st.markdown(
         f"""
 <div class="fb-mc-empty-premium">
-    <strong>Keine Premium-Ligen live.</strong>
-    {' ' + str(raw_live_count) + ' Spiele in kleineren Ligen laufen gerade.' if raw_live_count else ''}
+    <strong>Heute keine Topspiele live.</strong>{extra}
 </div>
         """,
         unsafe_allow_html=True,

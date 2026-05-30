@@ -92,6 +92,65 @@ def is_featured_league(league_id: int | None) -> bool:
     return league_tier(league_id) <= 2
 
 
+def filter_premium_fixtures(fixtures: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Keep only curated premium leagues — default for all Football AI views."""
+    pids = premium_league_ids()
+    out: list[dict[str, Any]] = []
+    for fx in fixtures or []:
+        try:
+            lid = int((fx.get("league") or {}).get("id") or 0)
+        except (TypeError, ValueError):
+            continue
+        if lid in pids:
+            out.append(fx)
+    return out
+
+
+def filter_extended_fixtures(fixtures: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Non-premium curated leagues only (3. Liga, MLS, …) — never random API dump."""
+    ext = extended_league_ids()
+    out: list[dict[str, Any]] = []
+    for fx in fixtures or []:
+        try:
+            lid = int((fx.get("league") or {}).get("id") or 0)
+        except (TypeError, ValueError):
+            continue
+        if lid in ext:
+            out.append(fx)
+    return out
+
+
+def fixture_league_id(fixture: dict[str, Any]) -> int | None:
+    try:
+        lid = int((fixture.get("league") or {}).get("id") or 0)
+        return lid or None
+    except (TypeError, ValueError):
+        return None
+
+
+def sort_fixtures_priority(fixtures: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Sort: live → DE → UEFA → Top → National → rest."""
+
+    def _status(fx: dict[str, Any]) -> str:
+        return str(((fx.get("fixture") or {}).get("status") or {}).get("short") or "NS")
+
+    def _key(fx: dict[str, Any]) -> tuple:
+        lid = fixture_league_id(fx)
+        tier = league_tier(lid)
+        live = _status(fx) in LIVE_STATUSES
+        finished = _status(fx) in FINISHED_STATUSES
+        meta = fx.get("fixture") or {}
+        return (
+            0 if live else 1,
+            tier,
+            int(FOOTBALL_LEAGUE_PRIORITY.get(lid or 0, 99)),
+            -relevance_score(league_id=lid, live=live, finished=finished),
+            str(meta.get("date") or ""),
+        )
+
+    return sorted(fixtures or [], key=_key)
+
+
 def league_ids_for_view(view: str, favorites: list[int] | None = None) -> set[int] | None:
     if view in ("alle", "international", "extended"):
         return None

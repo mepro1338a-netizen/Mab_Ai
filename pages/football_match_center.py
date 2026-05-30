@@ -24,13 +24,12 @@ from ui.football_match_center import (
     render_empty_top_matches,
     render_match_grid,
     render_mc_header,
-    render_premium_live_empty,
     render_section_title,
     render_top_matches_row,
 )
 from ui.premium_foundation import render_upgrade_card
 
-_FB_MC_DATA_VERSION = 5
+_FB_MC_DATA_VERSION = 6
 
 
 def _init_session() -> None:
@@ -153,7 +152,7 @@ def render_tab_live_match_center(
             st.rerun()
 
     # —— Sektion 2: Live Now ——
-    render_section_title("Live Now · Premium")
+    render_section_title("Live Now")
     if live_now:
         render_match_grid(
             live_now,
@@ -161,21 +160,31 @@ def render_tab_live_match_center(
             selected_fixture=selected,
             max_cards=12,
         )
+    elif payload.get("show_live_intl_prompt"):
+        st.markdown(
+            '<div class="fb-mc-empty-state"><strong>Heute keine Topspiele live.</strong>'
+            "In Premium-Ligen läuft gerade nichts.</div>",
+            unsafe_allow_html=True,
+        )
+        if st.button(
+            "Internationale Spiele anzeigen",
+            key="fb_mc_intl_live",
+            width="stretch",
+        ):
+            st.session_state.fb_mc_include_all = True
+            st.session_state.fb_mc_payload = None
+            st.rerun()
     else:
-        raw = int(payload.get("raw_live_count") or 0)
-        if raw:
-            render_premium_live_empty(raw_live_count=raw)
-        else:
-            st.markdown(
-                '<div class="fb-mc-empty-state"><strong>Keine Live-Spiele</strong>'
-                "In Premium-Ligen läuft gerade nichts.</div>",
-                unsafe_allow_html=True,
-            )
+        st.markdown(
+            '<div class="fb-mc-empty-state"><strong>Heute keine Topspiele live.</strong>'
+            "In Premium-Ligen läuft gerade nichts.</div>",
+            unsafe_allow_html=True,
+        )
 
     # —— Sektion 3: AI Betting Insights ——
     render_section_title("AI Betting Insights · Top 3")
     tip_pool = all_premium or top_matches
-    tips_sig = f"{len(tip_pool)}|{session_plan}|{today_local}|v5"
+    tips_sig = f"{len(tip_pool)}|{session_plan}|{today_local}|v6"
     if st.session_state.get("fb_mc_tips_sig") != tips_sig:
         st.session_state.fb_mc_tips_sig = tips_sig
         st.session_state.fb_mc_tips = None
@@ -252,7 +261,7 @@ def render_tab_live_match_center(
         opts = fixture_select_options(dedupe_fixtures_list(top_matches + live_now))
 
     cache_key = f"fb_mc_detail_{selected}"
-    sig_d = f"{selected}|{session_plan}|v5"
+    sig_d = f"{selected}|{session_plan}|v6"
     if st.session_state.get("fb_mc_detail_sig") != sig_d:
         st.session_state.fb_mc_detail_sig = sig_d
         st.session_state.pop(cache_key, None)
