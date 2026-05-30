@@ -85,6 +85,21 @@ def _is_social_oauth_callback() -> bool:
     return False
 
 
+def _is_google_login_oauth_callback() -> bool:
+    """Google account login — not social publishing OAuth."""
+    if _is_social_oauth_callback():
+        return False
+    code = _qp_first(st.query_params.get("code"))
+    state = _qp_first(st.query_params.get("state"))
+    if not code and not _qp_first(st.query_params.get("error")):
+        return False
+    if not state:
+        return bool(_qp_first(st.query_params.get("error")))
+    from oauth_service import verify_state
+
+    return verify_state(state) == "google"
+
+
 # =========================================================
 # SESSION DEFAULTS
 # =========================================================
@@ -134,6 +149,13 @@ if _is_social_oauth_callback():
     from pages.social_oauth import render_social_oauth_callback
 
     render_social_oauth_callback()
+    st.stop()
+
+# Google login OAuth callback
+if not logged_in and _is_google_login_oauth_callback():
+    from pages.auth import handle_google_oauth_callback
+
+    handle_google_oauth_callback()
     st.stop()
 
 if not logged_in:

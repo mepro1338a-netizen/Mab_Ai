@@ -1,13 +1,13 @@
-﻿"""MaByte Auth — E-Mail-Registrierung mit vollständiger Lead-Erfassung (kein Google-Login)."""
+﻿"""MaByte Auth — Login default, Registrierung on demand, optional Google OAuth."""
 from __future__ import annotations
 
-import html
 import random
 
 import streamlit as st
 
-from database import record_login_event, register_account, verify_login
-from security import check_login_rate, record_login_failure, is_valid_email, is_valid_username
+from database import record_login_event, register_account, verify_login_identifier
+from oauth_service import auth_url, complete_oauth, friendly_oauth_error, make_state, provider_configured, verify_state
+from security import check_login_rate, is_valid_email, is_valid_username, record_login_failure
 from services.session_auth import rotate_session_on_login
 from logger import log_auth
 from ui.auth_premium import (
@@ -17,6 +17,7 @@ from ui.auth_premium import (
     hero_html,
     login_card_marker_html,
     notice_html,
+    oauth_divider_html,
     page_close_html,
     page_open_html,
     panel_close_html,
@@ -82,31 +83,42 @@ def _show_gate_notice() -> None:
         st.markdown(notice_html(notice["level"], notice["message"]), unsafe_allow_html=True)
 
 
-def do_login(username: str, password: str) -> None:
-    username = (username or "").strip()
-    password = password or ""
-    if not username or not password:
-        _set_gate_notice("error", "Bitte Benutzername und Passwort eingeben.")
+def _check_captcha(captcha: int) -> bool:
+    expected = int(st.session_state.captcha_a) + int(st.session_state.captcha_b)
+    if int(captcha) != expected:
+        _set_gate_notice("error", "Rechenaufgabe falsch — bitte erneut versuchen.")
+        refresh_captcha()
+        return False
+    return True
+
+
+def do_login(identifier: str, password: str, *, captcha: int) -> None:
+    if not _check_captcha(captcha):
         return
-    allowed, msg = check_login_rate(username)
+
+    identifier = (identifier or "").strip()
+    password = password or ""
+    if not identifier or not password:
+        _set_gate_notice("error", "Bitte Benutzername/E-Mail und Passwort eingeben.")
+        return
+
+    allowed, msg = check_login_rate(identifier)
     if not allowed:
         _set_gate_notice("error", msg)
         return
-    result = verify_login(username, password)
-    if len(result) >= 3:
-        ok, login_msg, user = result[0], result[1], result[2]
-    else:
-        ok, user = result[0], result[1]
-        login_msg = ""
+
+    ok, login_msg, user = verify_login_identifier(identifier, password)
     if ok and user:
         ip_address, user_agent = client_meta()
-        record_login_event(user.get("username") or username, ip_address, user_agent, success=True)
+        record_login_event(user.get("username") or identifier, ip_address, user_agent, success=True)
         rotate_session_on_login(user)
-        log_auth(f"Login: {username}")
+        log_auth(f"Login: {identifier}")
         st.rerun()
         return
-    record_login_failure(username)
-    _set_gate_notice("error", login_msg or "Benutzername oder Passwort falsch.")
+
+    record_login_failure(identifier)
+    _set_gate_notice("error", login_msg or "Benutzername/E-Mail oder Passwort falsch.")
+    refresh_captcha()
 
 
 def do_register(
@@ -124,10 +136,7 @@ def do_register(
     marketing: bool,
     captcha: int,
 ) -> None:
-    expected = st.session_state.captcha_a + st.session_state.captcha_b
-    if captcha != expected:
-        _set_gate_notice("error", "Rechenaufgabe falsch — bitte erneut versuchen.")
-        refresh_captcha()
+    if not _check_captcha(captcha):
         return
 
     username = (username or "").strip()
@@ -183,29 +192,128 @@ def do_register(
     refresh_captcha()
 
 
+def handle_google_oauth_callback() -> None:
+    """Complete Google login OAuth redirect (called from ui.py before auth gate)."""
+    params = st.query_params
+    code = str(params.get("code") or "").strip()
+    state = str(params.get("state") or "").strip()
+    error = str(params.get("error") or "").strip()
+    error_desc = str(params.get("error_description") or "").strip()
+
+    st.session_state.gate_mode = "login"
+    inject_css(auth_styles_bundle())
+    st.markdown(page_open_html("mb-mode-login"), unsafe_allow_html=True)
+
+    if error:
+        st.markdown(
+            notice_html("error", friendly_oauth_error(error, error_desc)),
+            unsafe_allow_html=True,
+        )
+        st.query_params.clear()
+        if st.button("Zurück zum Login", type="primary", key="oauth_err_back"):
+            st.rerun()
+        st.markdown(page_close_html(), unsafe_allow_html=True)
+        return
+
+    provider = verify_state(state)
+    if provider != "google" or not code:
+        st.markdown(notice_html("error", "OAuth-Session ungültig oder abgelaufen."), unsafe_allow_html=True)
+        st.query_params.clear()
+        if st.button("Zurück zum Login", type="primary", key="oauth_invalid_back"):
+            st.rerun()
+        st.markdown(page_close_html(), unsafe_allow_html=True)
+        return
+
+    ok, msg, user = complete_oauth("google", code)
+    st.query_params.clear()
+
+    if ok and user:
+        ip_address, user_agent = client_meta()
+        record_login_event(user.get("username") or "", ip_address, user_agent, success=True)
+        rotate_session_on_login(user)
+        log_auth("Login: google_oauth")
+        st.rerun()
+        return
+
+    st.markdown(notice_html("error", msg), unsafe_allow_html=True)
+    if st.button("Zurück zum Login", type="primary", key="oauth_fail_back"):
+        st.rerun()
+    st.markdown(page_close_html(), unsafe_allow_html=True)
+
+
+def _render_captcha_fields(*, refresh_key: str) -> tuple[int, bool]:
+    a, b = st.session_state.captcha_a, st.session_state.captcha_b
+    st.markdown(
+        f'<p class="mb-captcha-label">Sicherheitsfrage: {a} + {b} = ?</p>',
+        unsafe_allow_html=True,
+    )
+    cap_col, ref_col = st.columns([5, 1], gap="small")
+    with cap_col:
+        captcha = st.number_input(
+            "Ergebnis",
+            min_value=0,
+            max_value=30,
+            step=1,
+            value=0,
+            label_visibility="collapsed",
+        )
+    with ref_col:
+        refresh = st.form_submit_button("↻", help="Neue Aufgabe", key=refresh_key)
+    return int(captcha), refresh
+
+
+def render_google_login() -> None:
+    st.markdown(oauth_divider_html(), unsafe_allow_html=True)
+    if provider_configured("google"):
+        url = auth_url("google", make_state("google"))
+        if url:
+            st.link_button(
+                "Mit Google anmelden",
+                url,
+                width="stretch",
+                type="secondary",
+            )
+            return
+    st.markdown(
+        '<a class="mb-login-google disabled" href="#" onclick="return false;">'
+        "Mit Google anmelden (nicht konfiguriert)</a>",
+        unsafe_allow_html=True,
+    )
+
+
 def render_login_form() -> None:
     with st.form("gate_login_form", clear_on_submit=False, border=False):
-        st.markdown('<p class="mb-field-label">Benutzername</p>', unsafe_allow_html=True)
-        user = st.text_input(
-            "Benutzername",
-            placeholder="Dein Benutzername",
+        st.markdown(
+            '<p class="mb-field-label">Benutzername oder E-Mail</p>',
+            unsafe_allow_html=True,
+        )
+        identifier = st.text_input(
+            "Benutzername oder E-Mail",
+            placeholder="name@firma.de oder dein_name",
             label_visibility="collapsed",
         )
         st.markdown('<p class="mb-field-label">Passwort</p>', unsafe_allow_html=True)
-        pw = st.text_input(
+        password = st.text_input(
             "Passwort",
             type="password",
             placeholder="Passwort",
             label_visibility="collapsed",
         )
+        captcha, refresh = _render_captcha_fields(refresh_key="gate_login_cap_refresh")
         ex1, ex2 = st.columns([1.2, 0.8], gap="small")
         with ex1:
             st.checkbox("Angemeldet bleiben", key="gate_remember", label_visibility="visible")
         with ex2:
             st.markdown(forgot_password_html(), unsafe_allow_html=True)
         submitted = st.form_submit_button("Anmelden", type="primary", width="stretch")
+
+    if refresh:
+        refresh_captcha()
+        st.rerun()
     if submitted:
-        do_login(user, pw)
+        do_login(identifier, password, captcha=captcha)
+
+    render_google_login()
 
 
 def render_register_form() -> None:
@@ -282,23 +390,7 @@ def render_register_form() -> None:
             "Produktnews per E-Mail (optional).",
             value=False,
         )
-        a, b = st.session_state.captcha_a, st.session_state.captcha_b
-        st.markdown(
-            f'<p class="mb-captcha-label">Sicherheitsfrage: {a} + {b} = ?</p>',
-            unsafe_allow_html=True,
-        )
-        cap_col, ref_col = st.columns([5, 1], gap="small")
-        with cap_col:
-            captcha = st.number_input(
-                "Ergebnis",
-                min_value=0,
-                max_value=30,
-                step=1,
-                value=0,
-                label_visibility="collapsed",
-            )
-        with ref_col:
-            refresh = st.form_submit_button("↻", help="Neue Aufgabe")
+        captcha, refresh = _render_captcha_fields(refresh_key="gate_reg_cap_refresh")
         submitted = st.form_submit_button("Konto erstellen", type="primary", width="stretch")
 
     if refresh:
@@ -322,35 +414,35 @@ def render_register_form() -> None:
 
 
 def render_auth_switch() -> None:
-    mode = st.session_state.get("gate_mode", "register")
-    _, center, _ = st.columns([0.08, 0.84, 0.08])
-    with center:
-        if mode == "register":
-            note_col, btn_col = st.columns([0.52, 0.48], gap="small")
-            with note_col:
-                st.markdown(
-                    '<p class="mb-panel-switch-note">Bereits registriert?</p>',
-                    unsafe_allow_html=True,
-                )
-            with btn_col:
-                if st.button("Zum Login →", key="switch_login", type="tertiary"):
-                    st.session_state.gate_mode = "login"
-                    st.rerun()
-        else:
-            note_col, btn_col = st.columns([0.52, 0.48], gap="small")
-            with note_col:
-                st.markdown(
-                    '<p class="mb-panel-switch-note">Noch kein Konto?</p>',
-                    unsafe_allow_html=True,
-                )
-            with btn_col:
-                if st.button("Jetzt registrieren →", key="switch_register", type="tertiary"):
-                    st.session_state.gate_mode = "register"
-                    st.rerun()
+    mode = st.session_state.get("gate_mode", "login")
+    if mode == "register":
+        note_col, btn_col = st.columns([0.55, 0.45], gap="small")
+        with note_col:
+            st.markdown(
+                '<p class="mb-panel-switch-note">Bereits registriert?</p>',
+                unsafe_allow_html=True,
+            )
+        with btn_col:
+            if st.button("Zum Login →", key="switch_login", type="tertiary"):
+                st.session_state.gate_mode = "login"
+                refresh_captcha()
+                st.rerun()
+    else:
+        note_col, btn_col = st.columns([0.55, 0.45], gap="small")
+        with note_col:
+            st.markdown(
+                '<p class="mb-panel-switch-note">Noch kein Konto?</p>',
+                unsafe_allow_html=True,
+            )
+        with btn_col:
+            if st.button("Registrieren →", key="switch_register", type="tertiary"):
+                st.session_state.gate_mode = "register"
+                refresh_captcha()
+                st.rerun()
 
 
 def render_gate_panel() -> None:
-    mode = st.session_state.get("gate_mode", "register")
+    mode = st.session_state.get("gate_mode", "login")
     st.markdown(login_card_marker_html(), unsafe_allow_html=True)
     st.markdown(panel_shell_html(register=(mode == "register")), unsafe_allow_html=True)
     _show_gate_notice()
@@ -365,7 +457,7 @@ def render_gate_panel() -> None:
 def render_auth() -> None:
     ensure_captcha()
     if "gate_mode" not in st.session_state:
-        st.session_state.gate_mode = "register"
+        st.session_state.gate_mode = "login"
 
     inject_css(auth_styles_bundle())
 

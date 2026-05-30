@@ -285,6 +285,31 @@ def verify_login(username, password):
     return True, "Login erfolgreich.", row_to_dict(updated_user)
 
 
+def verify_login_identifier(identifier: str, password: str):
+    """Login via username or email address."""
+    identifier = (identifier or "").strip()
+    if not identifier or not password:
+        return False, "Bitte Benutzername/E-Mail und Passwort eingeben.", None
+
+    if "@" in identifier:
+        from security import is_valid_email
+
+        if not is_valid_email(identifier):
+            return False, "Ungültige E-Mail-Adresse.", None
+        conn = get_connection()
+        cur = conn.cursor()
+        row = cur.execute(
+            "SELECT username FROM users WHERE lower(email) = ?",
+            (identifier.lower(),),
+        ).fetchone()
+        conn.close()
+        if not row:
+            return False, "Kein Konto mit dieser E-Mail.", None
+        return verify_login(row["username"], password)
+
+    return verify_login(identifier, password)
+
+
 def _username_from_email(email: str) -> str:
     local = (email or "").split("@")[0].lower()
     local = re.sub(r"[^a-z0-9_]", "_", local)

@@ -613,6 +613,17 @@ html { color-scheme: dark !important; }
     margin-bottom: 4px !important;
 }
 
+/* Login mode — hero with feature cards, no stats clutter */
+.stApp:has(.mb-mode-login) .mb-stats-row {
+    display: none !important;
+}
+.stApp:has(.mb-mode-login) [data-testid="stHorizontalBlock"]:has(.auth-grid-marker) {
+    align-items: center !important;
+}
+.stApp:has(.mb-mode-login) .mb-oauth-below {
+    margin-top: 4px;
+}
+
 /* Google OAuth — below login */
 .mb-oauth-zone {
     margin: 0;
@@ -1305,8 +1316,8 @@ def panel_shell_html(*, register: bool) -> str:
     return (
         '<div class="mb-login-head">'
         f'{_hex_logo(initial)}'
-        '<h2 class="mb-panel-title">Willkommen bei <span class="mb-panel-brand">MaByte</span></h2>'
-        '<p class="mb-panel-sub">Melden Sie sich an, um auf Ihren Workspace zuzugreifen.</p>'
+        '<h2 class="mb-panel-title">Anmelden</h2>'
+        '<p class="mb-panel-sub">Melden Sie sich in Ihrem MaByte Workspace an.</p>'
         '</div>'
     )
 
@@ -1322,6 +1333,10 @@ def forgot_password_html() -> str:
         'Passwort vergessen?'
         '</a>'
     )
+
+
+def oauth_divider_html() -> str:
+    return '<div class="mb-login-divider">oder</div>'
 
 
 def notice_html(level: str, message: str) -> str:
