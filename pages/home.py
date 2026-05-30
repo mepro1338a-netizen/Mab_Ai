@@ -1,21 +1,10 @@
-﻿"""MaByte Home — minimal pro dashboard."""
+﻿"""MaByte Home — AI Command Center Dashboard."""
 from __future__ import annotations
 
 import streamlit as st
 
 from config import PLANS
-from database import successful_jobs_count, workspace_activity_score
-from ui.dashboard_ui import (
-    format_num,
-    inject_dashboard_css,
-    nav,
-    render_daily_limits,
-    render_header,
-    render_quick_actions,
-    render_recent_activity,
-    render_stats,
-    render_workspace_matrix,
-)
+from ui.ai_dashboard import inject_ai_dashboard_css, render_ai_dashboard
 
 
 def render_home() -> None:
@@ -33,37 +22,20 @@ def render_home() -> None:
     fb_label = (
         fb_plan.replace("football_", "").title()
         if fb_plan not in ("none", "", "free")
-        else "—"
+        else "Kein Plan"
     )
     tier = str(plan.get("badge", "Starter"))
 
-    st.markdown('<div class="mb-dash" aria-hidden="true"></div>', unsafe_allow_html=True)
+    st.markdown('<div class="mb-ai-dash" aria-hidden="true"></div>', unsafe_allow_html=True)
 
-    render_header(user=user)
-    render_stats(
+    render_ai_dashboard(
+        user=user,
+        plan_key=plan_key,
+        plan=plan,
         plan_label=plan_label,
         tokens=tokens,
-        football_label=fb_label,
+        fb_label=fb_label,
         tier=tier,
     )
-    render_quick_actions()
 
-    col_ws, col_lim = st.columns([1.4, 1], gap="medium")
-    with col_ws:
-        with st.container(border=True):
-            render_workspace_matrix(plan)
-    with col_lim:
-        with st.container(border=True):
-            render_daily_limits(plan_key)
-
-    with st.container(border=True):
-        render_recent_activity(user)
-
-    jobs = successful_jobs_count(user)
-    score = workspace_activity_score(user)
-    st.markdown(
-        f'<p class="mb-dash-foot">Erfolgreiche Jobs: {format_num(jobs)} · Workspace-Score: {score}/100</p>',
-        unsafe_allow_html=True,
-    )
-
-    inject_dashboard_css()
+    inject_ai_dashboard_css()

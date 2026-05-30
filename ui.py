@@ -225,7 +225,7 @@ render_sidebar(page)
 
 PAGE_HANDLERS = {
     "social_oauth": ("Social Connect", lambda: None),
-    "home": ("Mission Control", render_home),
+    "home": ("AI Dashboard", render_home),
     "chat": ("AI Assistant", render_chat),
     "projects": ("Projects", render_projects),
     "football": ("Football AI", render_football),

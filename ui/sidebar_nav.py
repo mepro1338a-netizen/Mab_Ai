@@ -8,7 +8,7 @@ SIDEBAR_SECTIONS: list[tuple[str, list[tuple[str, str]]]] = [
     (
         "Platform",
         [
-            ("Home", "home"),
+            ("AI Dashboard", "home"),
             ("AI Chat", "chat"),
         ],
     ),
