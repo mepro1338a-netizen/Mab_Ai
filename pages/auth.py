@@ -244,10 +244,9 @@ def handle_google_oauth_callback() -> None:
 def _render_captcha_fields(*, refresh_key: str) -> tuple[int, bool]:
     a, b = st.session_state.captcha_a, st.session_state.captcha_b
     st.markdown(
-        f'<p class="mb-captcha-label">Sicherheitsfrage: <span class="mb-captcha-expr">{a} + {b} = ?</span></p>',
+        f'<p class="mb-captcha-label">Sicherheitsfrage: {a} + {b} = ?</p>',
         unsafe_allow_html=True,
     )
-    st.markdown('<div class="mb-captcha-row" aria-hidden="true"></div>', unsafe_allow_html=True)
     cap_col, ref_col = st.columns([5, 1], gap="small")
     with cap_col:
         captcha = st.number_input(
@@ -264,7 +263,6 @@ def _render_captcha_fields(*, refresh_key: str) -> tuple[int, bool]:
 
 
 def render_google_login() -> None:
-    st.markdown('<div class="mb-oauth-below">', unsafe_allow_html=True)
     st.markdown(oauth_divider_html(), unsafe_allow_html=True)
     if provider_configured("google"):
         url = auth_url("google", make_state("google"))
@@ -275,14 +273,12 @@ def render_google_login() -> None:
                 width="stretch",
                 type="secondary",
             )
-            st.markdown("</div>", unsafe_allow_html=True)
             return
     st.markdown(
         '<a class="mb-login-google disabled" href="#" onclick="return false;">'
         "Mit Google anmelden (nicht konfiguriert)</a>",
         unsafe_allow_html=True,
     )
-    st.markdown("</div>", unsafe_allow_html=True)
 
 
 def render_login_form() -> None:
@@ -465,21 +461,15 @@ def render_auth() -> None:
 
     inject_css(auth_styles_bundle())
 
-    mode = st.session_state.gate_mode
-    mode_class = "mb-mode-register" if mode == "register" else "mb-mode-login"
+    mode_class = "mb-mode-register" if st.session_state.gate_mode == "register" else "mb-mode-login"
     st.markdown(page_open_html(mode_class), unsafe_allow_html=True)
 
-    if mode == "register":
-        _, center, _ = st.columns([1, 1.15, 1], gap="small")
-        with center:
-            st.markdown('<span class="auth-register-only-marker" hidden aria-hidden="true"></span>', unsafe_allow_html=True)
-            st.markdown(auth_grid_marker_html(), unsafe_allow_html=True)
-            render_gate_panel()
-    else:
-        _, center, _ = st.columns([1, 1.1, 1], gap="small")
-        with center:
-            st.markdown('<span class="auth-login-only-marker" hidden aria-hidden="true"></span>', unsafe_allow_html=True)
-            st.markdown(auth_grid_marker_html(), unsafe_allow_html=True)
+    hero_col, panel_col = st.columns([11, 9], gap="small")
+    with hero_col:
+        st.markdown(auth_grid_marker_html(), unsafe_allow_html=True)
+        st.markdown(hero_html(), unsafe_allow_html=True)
+    with panel_col:
+        with st.container():
             render_gate_panel()
 
     st.markdown(page_close_html(), unsafe_allow_html=True)

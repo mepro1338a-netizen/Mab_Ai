@@ -613,82 +613,15 @@ html { color-scheme: dark !important; }
     margin-bottom: 4px !important;
 }
 
-/* Login / Register — centered card only, no hero, no footer overlap */
-.stApp:has(.mb-mode-login) .mb-page-foot,
-.stApp:has(.mb-mode-register) .mb-page-foot {
+/* Login mode — hero with feature cards, no stats clutter */
+.stApp:has(.mb-mode-login) .mb-stats-row {
     display: none !important;
 }
-.stApp:has(.auth-login-only-marker) [data-testid="stColumn"]:has(.auth-grid-marker),
-.stApp:has(.auth-register-only-marker) [data-testid="stColumn"]:has(.auth-grid-marker) {
-    max-width: 440px !important;
-    margin: 0 auto !important;
-    padding: 8px 0 24px 0 !important;
-}
-.stApp:has(.auth-login-only-marker) [data-testid="stHorizontalBlock"]:has(.auth-login-only-marker),
-.stApp:has(.auth-register-only-marker) [data-testid="stHorizontalBlock"]:has(.auth-register-only-marker) {
-    max-width: 520px !important;
-    margin: 0 auto !important;
-    padding-top: 20px !important;
-    padding-bottom: 24px !important;
-    min-height: calc(100vh - 56px) !important;
+.stApp:has(.mb-mode-login) [data-testid="stHorizontalBlock"]:has(.auth-grid-marker) {
     align-items: center !important;
 }
-.stApp:has(.auth-login-only-marker) [data-testid="stHorizontalBlock"]:has(.auth-login-only-marker) > [data-testid="stColumn"]:first-child,
-.stApp:has(.auth-login-only-marker) [data-testid="stHorizontalBlock"]:has(.auth-login-only-marker) > [data-testid="stColumn"]:last-child,
-.stApp:has(.auth-register-only-marker) [data-testid="stHorizontalBlock"]:has(.auth-register-only-marker) > [data-testid="stColumn"]:first-child,
-.stApp:has(.auth-register-only-marker) [data-testid="stHorizontalBlock"]:has(.auth-register-only-marker) > [data-testid="stColumn"]:last-child {
-    display: none !important;
-}
-.stApp:has(.auth-login-only-marker) [data-testid="stHorizontalBlock"]:has(.auth-login-only-marker) > [data-testid="stColumn"]:nth-child(2),
-.stApp:has(.auth-register-only-marker) [data-testid="stHorizontalBlock"]:has(.auth-register-only-marker) > [data-testid="stColumn"]:nth-child(2) {
-    width: 100% !important;
-    max-width: 440px !important;
-    flex: 1 1 auto !important;
-    padding: 0 !important;
-}
-.stApp:has(.mb-mode-login) [data-testid="stVerticalBlock"]:has(> [data-testid="stElementContainer"] .login-card-root),
-.stApp:has(.mb-mode-login) [data-testid="stVerticalBlockBorderWrapper"]:has(> [data-testid="stVerticalBlock"] > [data-testid="stElementContainer"] .login-card-root),
-.stApp:has(.mb-mode-register) [data-testid="stVerticalBlock"]:has(> [data-testid="stElementContainer"] .login-card-root),
-.stApp:has(.mb-mode-register) [data-testid="stVerticalBlockBorderWrapper"]:has(> [data-testid="stVerticalBlock"] > [data-testid="stElementContainer"] .login-card-root) {
-    max-height: none !important;
-    overflow: visible !important;
-    padding: 28px 26px !important;
-}
-.stApp:has(.mb-mode-login) .mb-panel-logo,
-.stApp:has(.mb-mode-register) .mb-panel-logo {
-    width: 34px !important;
-    height: 34px !important;
-    margin-bottom: 10px !important;
-}
-.stApp:has(.mb-mode-login) .mb-panel-title { font-size: 19px !important; margin-bottom: 2px !important; }
-.stApp:has(.mb-mode-login) .mb-panel-sub { margin-bottom: 14px !important; font-size: 12px !important; }
-.stApp:has(.mb-mode-login) .mb-field-label { margin: 8px 0 4px 0 !important; }
-.stApp:has(.mb-mode-login) .mb-captcha-label { margin: 10px 0 6px 0 !important; }
-.stApp:has(.mb-mode-login) .mb-oauth-below { margin-top: 2px; }
-.stApp:has(.mb-mode-login) .mb-oauth-below .mb-login-divider { margin: 14px 0 10px 0; }
-
-/* Captcha row — dark number field */
-.stApp:has(.mb-captcha-row) [data-testid="stForm"] [data-testid="stHorizontalBlock"]:has([data-testid="stNumberInput"]) {
-    align-items: stretch !important;
-    margin-bottom: 10px !important;
-}
-.stApp:has(.mb-captcha-row) [data-testid="stNumberInput"] div[data-baseweb="input"] {
-    background: rgba(5, 8, 22, 0.92) !important;
-    border: 1px solid rgba(123, 97, 255, 0.28) !important;
-    border-radius: 12px !important;
-    min-height: 42px !important;
-    box-shadow: inset 0 2px 10px rgba(0,0,0,0.35) !important;
-}
-.stApp:has(.mb-captcha-row) [data-testid="stNumberInput"] input {
-    background: transparent !important;
-    color: #f8fafc !important;
-    -webkit-text-fill-color: #f8fafc !important;
-    font-weight: 700 !important;
-    font-size: 15px !important;
-}
-.stApp:has(.mb-captcha-row) .mb-captcha-expr {
-    color: #c4b5fd !important;
-    font-weight: 800 !important;
+.stApp:has(.mb-mode-login) .mb-oauth-below {
+    margin-top: 4px;
 }
 
 /* Google OAuth — below login */
@@ -731,24 +664,6 @@ html { color-scheme: dark !important; }
 }
 .mb-login-google.disabled { opacity: 0.4; pointer-events: none; }
 .mb-login-google .g-icon { width: 18px; height: 18px; flex-shrink: 0; }
-.stApp:has(.mb-oauth-below) [data-testid="stLinkButton"] a {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    width: 100% !important;
-    min-height: 40px !important;
-    border-radius: 10px !important;
-    background: rgba(255, 255, 255, 0.04) !important;
-    border: 1px solid var(--mb-line) !important;
-    color: #fafafa !important;
-    text-decoration: none !important;
-    font-weight: 600 !important;
-    font-size: 13px !important;
-}
-.stApp:has(.mb-oauth-below) [data-testid="stLinkButton"] a:hover {
-    border-color: rgba(123, 97, 255, 0.45) !important;
-    background: rgba(123, 97, 255, 0.08) !important;
-}
 .mb-login-divider {
     display: flex;
     align-items: center;
