@@ -4,6 +4,7 @@ from __future__ import annotations
 import os
 from typing import Any
 
+from services.football_betting_quality import filter_bettable_fixtures
 from services.football_betting_board import collect_fixtures_for_filters, league_group_ids
 from services.football_leagues import filter_premium_fixtures
 from services.football_match_center import _local_today_tomorrow, dedupe_fixtures, parse_match_card
@@ -11,6 +12,8 @@ from services.football_service import FootballAPIError, FootballService
 
 
 def football_debug_enabled() -> bool:
+    if os.getenv("ADMIN_DEBUG", "").strip().lower() in ("1", "true", "yes", "on"):
+        return True
     return os.getenv("FOOTBALL_DEBUG", "").strip().lower() in ("1", "true", "yes", "on")
 
 
@@ -66,7 +69,7 @@ def diagnose_filter_pipeline(
 ) -> dict[str, Any]:
     """Count fixtures at each filter stage."""
     before = len(raw_fixtures or [])
-    premium = filter_premium_fixtures(raw_fixtures or [])
+    premium = filter_bettable_fixtures(filter_premium_fixtures(raw_fixtures or []))
     after_premium = len(premium)
 
     de_ids = league_group_ids("deutschland") or frozenset()

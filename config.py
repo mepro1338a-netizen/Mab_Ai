@@ -171,6 +171,7 @@ FOOTBALL_LEAGUE_GROUPS: dict[str, list[dict[str, str | int]]] = {
         {"id": 2, "name": "Champions League", "country": "Europe"},
         {"id": 3, "name": "Europa League", "country": "Europe"},
         {"id": 848, "name": "Conference League", "country": "Europe"},
+        {"id": 32, "name": "World Cup - Qualification Europe", "country": "Europe"},
     ],
     "deutschland": [
         {"id": 78, "name": "1. Bundesliga", "country": "Germany"},
@@ -179,13 +180,13 @@ FOOTBALL_LEAGUE_GROUPS: dict[str, list[dict[str, str | int]]] = {
     ],
     "england": [
         {"id": 39, "name": "Premier League", "country": "England"},
-        {"id": 40, "name": "Championship", "country": "England"},
-        {"id": 45, "name": "FA Cup", "country": "England"},
     ],
     "europa_top": [
         {"id": 140, "name": "La Liga", "country": "Spain"},
         {"id": 135, "name": "Serie A", "country": "Italy"},
         {"id": 61, "name": "Ligue 1", "country": "France"},
+        {"id": 88, "name": "Eredivisie", "country": "Netherlands"},
+        {"id": 94, "name": "Primeira Liga", "country": "Portugal"},
     ],
     "national": [
         {"id": 1, "name": "World Cup", "country": "World"},
@@ -211,20 +212,20 @@ FOOTBALL_LIVE_SORT_PRIORITY: dict[int, int] = {
     39: 50,
     79: 55,
     81: 56,
-    40: 57,
-    45: 58,
     140: 60,
     135: 61,
     61: 62,
+    88: 63,
+    94: 64,
     1: 70,
     4: 71,
     5: 72,
+    32: 73,
 }
 
 FOOTBALL_LEAGUE_TIER: dict[int, int] = {}
 FOOTBALL_LEAGUE_PRIORITY: dict[int, int] = {}
 FOOTBALL_LEAGUE_META: dict[int, dict[str, str | int]] = {}
-FOOTBALL_PREMIUM_LEAGUE_IDS: frozenset[int] = frozenset()
 
 for _tier_idx, _group in enumerate(_FOOTBALL_TIER_ORDER):
     for _prio, _lg in enumerate(FOOTBALL_LEAGUE_GROUPS.get(_group, [])):

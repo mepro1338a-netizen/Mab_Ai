@@ -613,7 +613,7 @@ class FootballService:
       *,
       username: str = "",
   ) -> list[dict[str, Any]]:
-      """Live bookmaker odds — Football Elite (Odds Lab)."""
+      """Bookmaker odds — separate /odds endpoint (not in fixtures)."""
       return self._request(
           "odds",
           {"fixture": int(fixture_id)},
@@ -621,6 +621,17 @@ class FootballService:
           live=True,
           username=username,
       )
+
+  def get_odds_for_fixture(
+      self,
+      fixture_id: int,
+      *,
+      username: str = "",
+  ) -> dict[str, float | None]:
+      """Convenience: 1X2 decimal odds for a fixture."""
+      from services.football_odds import get_odds_for_fixture as _get
+
+      return _get(self, int(fixture_id), username=username)
 
   def get_fixture_events(
       self,

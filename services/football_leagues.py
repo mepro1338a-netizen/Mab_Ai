@@ -37,19 +37,35 @@ def premium_league_ids() -> frozenset[int]:
 
 # Block youth / reserve / amateur leagues even if API returns them in live=all
 _BLOCKED_LEAGUE_NAME_PARTS = (
+    "u17",
+    "u-17",
+    " u17",
     "u19",
     "u21",
     "u23",
     "u20",
     "u18",
     "youth",
+    "women",
+    "woman",
+    "feminin",
+    "frauen",
     "reserve",
+    " ii",
     "amateur",
+    " usl",
+    "canadian premier",
+    "canada premier",
+    "sudan",
+    "queensland",
+    "tasmania",
     "regionalliga",
     "3. liga",
     "tercera",
     "fourth",
     "fourth division",
+    "development league",
+    "premier league 2",
 )
 
 
@@ -162,16 +178,18 @@ def is_featured_league(league_id: int | None) -> bool:
 
 
 def filter_premium_fixtures(fixtures: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Keep only curated premium leagues — ID match with name fallback."""
+    """Keep only curated premium leagues — strict league ID whitelist."""
     out: list[dict[str, Any]] = []
     for fx in fixtures or []:
         league = fx.get("league") or {}
-        try:
-            lid = int(league.get("id") or 0) or None
-        except (TypeError, ValueError):
-            lid = None
         league_name = str(league.get("name") or "")
-        if is_premium_league_match(lid, league_name):
+        if is_blocked_league_name(league_name):
+            continue
+        try:
+            lid = int(league.get("id") or 0)
+        except (TypeError, ValueError):
+            continue
+        if lid in FOOTBALL_PREMIUM_LEAGUE_IDS:
             out.append(fx)
     return out
 

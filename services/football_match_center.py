@@ -6,6 +6,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from config import FOOTBALL_DEFAULT_SEASON, FOOTBALL_LEAGUE_PRIORITY, FOOTBALL_LEAGUE_TIER, football_plan_rank
+from services.football_betting_quality import filter_bettable_fixtures
 from services.football_leagues import (
     FINISHED_STATUSES,
     LIVE_STATUSES,
@@ -346,11 +347,11 @@ def fetch_premium_dashboard(
     except FootballAPIError as exc:
         errors.append(str(exc))
 
-    today_premium = filter_premium_fixtures(today_rows)
-    tomorrow_premium = filter_premium_fixtures(tomorrow_rows)
+    today_premium = filter_bettable_fixtures(filter_premium_fixtures(today_rows))
+    tomorrow_premium = filter_bettable_fixtures(filter_premium_fixtures(tomorrow_rows))
     merged = dedupe_fixtures(live_rows + today_premium + tomorrow_premium)
-    premium_fixtures = filter_premium_fixtures(merged)
-    premium_live = filter_premium_fixtures(live_rows)
+    premium_fixtures = filter_bettable_fixtures(filter_premium_fixtures(merged))
+    premium_live = filter_bettable_fixtures(filter_premium_fixtures(live_rows))
 
     sections = classify_fixtures(premium_fixtures, today=today_s, tomorrow=tomorrow_s)
     live_now = list(sections.get("live_now") or premium_live)

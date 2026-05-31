@@ -67,6 +67,67 @@ def calculate_tip_odds(
     }
 
 
+def extract_1x2_odds(markets: list[dict[str, Any]]) -> dict[str, float | None]:
+    """Best available 1X2 decimal odds from normalized market rows."""
+    home_odd = draw_odd = away_odd = None
+    for m in markets or []:
+        market = str(m.get("market") or "").lower()
+        sel = str(m.get("selection") or "").lower()
+        if "match winner" not in market and "1x2" not in market and "winner" not in market:
+            continue
+        try:
+            odd = float(m.get("odd") or 0)
+        except (TypeError, ValueError):
+            continue
+        if odd < 1.01:
+            continue
+        if sel in ("home", "1"):
+            home_odd = home_odd or odd
+        elif sel in ("draw", "x"):
+            draw_odd = draw_odd or odd
+        elif sel in ("away", "2"):
+            away_odd = away_odd or odd
+    return {"home": home_odd, "draw": draw_odd, "away": away_odd}
+
+
+def get_odds_for_fixture(
+    service: Any,
+    fixture_id: int,
+    *,
+    username: str,
+) -> dict[str, float | None]:
+    """Fetch 1X2 odds via API-Football GET /odds?fixture=ID."""
+    from services.football_service import FootballAPIError
+
+    try:
+        raw = service.get_fixture_odds(int(fixture_id), username=username)
+        markets = parse_fixture_odds_payload(raw)
+        return extract_1x2_odds(markets)
+    except FootballAPIError:
+        return {"home": None, "draw": None, "away": None}
+
+
+def win_pcts_from_odds(
+    home_odd: float | None,
+    draw_odd: float | None,
+    away_odd: float | None,
+) -> tuple[float | None, float | None, float | None]:
+    """Normalized implied win % from decimal odds."""
+    try:
+        h = float(home_odd) if home_odd else None
+        d = float(draw_odd) if draw_odd else None
+        a = float(away_odd) if away_odd else None
+    except (TypeError, ValueError):
+        return None, None, None
+    if not h or not d or not a or h < 1.01 or d < 1.01 or a < 1.01:
+        return None, None, None
+    hp, dp, ap = 1.0 / h, 1.0 / d, 1.0 / a
+    total = hp + dp + ap
+    if total <= 0:
+        return None, None, None
+    return round(hp / total * 100, 1), round(dp / total * 100, 1), round(ap / total * 100, 1)
+
+
 def parse_fixture_odds_payload(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Normalize API-Football odds into flat market rows."""
     markets: list[dict[str, Any]] = []

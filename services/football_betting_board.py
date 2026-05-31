@@ -4,11 +4,14 @@ from __future__ import annotations
 from typing import Any
 
 from config import FOOTBALL_LEAGUE_GROUPS, football_plan_rank
-from services.football_leagues import (
-    LIVE_STATUSES,
-    filter_blocked_fixtures,
-    filter_premium_fixtures,
+from services.football_betting_quality import (
+    build_betting_signal,
+    filter_bettable_fixtures,
+    filter_rows_with_odds,
+    has_complete_odds,
+    log_fixture_data_sample,
 )
+from services.football_leagues import LIVE_STATUSES, filter_premium_fixtures
 from services.football_match_center import (
     _local_today_tomorrow,
     dedupe_fixtures,
@@ -16,13 +19,15 @@ from services.football_match_center import (
     parse_match_card,
     sort_fixtures_by_priority,
 )
-from services.football_odds import parse_fixture_odds_payload, parse_prediction_insights
-from services.football_prediction_engine import build_match_prediction
+from services.football_odds import (
+    get_odds_for_fixture,
+    parse_prediction_insights,
+)
 from services.football_service import FootballAPIError, FootballService
 
 _REGION_IDS: dict[str, frozenset[int]] = {
     "deutschland": frozenset(int(x["id"]) for x in FOOTBALL_LEAGUE_GROUPS.get("deutschland", [])),
-    "uefa": frozenset({2, 3, 848, 5, 14}),
+    "uefa": frozenset({2, 3, 848, 5, 4, 32}),
     "topligen": frozenset(
         int(x["id"])
         for grp in ("europa_top",)
@@ -31,23 +36,26 @@ _REGION_IDS: dict[str, frozenset[int]] = {
     | frozenset({39}),
 }
 
-
-# Strict UEFA competitions (API-Football league IDs)
-UEFA_COMPETITION_IDS: frozenset[int] = frozenset({2, 3, 848, 5, 14})
-# 2=UCL, 3=UEL, 848=Conference, 5=Nations League, 14=UEFA Youth League
+# Strict UEFA: club + national team competitions only (no youth/reserve)
+UEFA_COMPETITION_IDS: frozenset[int] = frozenset({2, 3, 848, 5, 4, 32})
 
 _UEFA_NAME_KEYWORDS = (
     "uefa champions league",
     "uefa europa league",
     "uefa conference league",
-    "uefa youth league",
     "uefa nations league",
+    "euro championship",
+    "world cup - qualification europe",
 )
 
 
 def is_uefa_competition(league: dict[str, Any] | None) -> bool:
-    """Only official UEFA club/national team competitions."""
+    """Only official UEFA competitions — exclude youth, local cups, non-EU."""
     if not league:
+        return False
+    name = str(league.get("name") or "").lower().strip()
+    country = str(league.get("country") or "").lower().strip()
+    if any(x in name for x in ("u17", "u19", "u21", "youth", "women", "frauen")):
         return False
     try:
         lid = int(league.get("id") or 0)
@@ -55,8 +63,6 @@ def is_uefa_competition(league: dict[str, Any] | None) -> bool:
         lid = 0
     if lid in UEFA_COMPETITION_IDS:
         return True
-    name = str(league.get("name") or "").lower().strip()
-    country = str(league.get("country") or "").lower().strip()
     if not name:
         return False
     if "uefa" in name:
@@ -65,13 +71,14 @@ def is_uefa_competition(league: dict[str, Any] | None) -> bool:
             or "europa league" in name
             or "conference league" in name
             or "nations league" in name
-            or "youth league" in name
         )
     if country == "europe" and name in (
         "champions league",
         "europa league",
         "conference league",
     ):
+        return True
+    if "world cup" in name and "qualification" in name and country in ("europe", "world"):
         return True
     return False
 
@@ -80,7 +87,6 @@ def filter_fixtures_by_region(
     fixtures: list[dict[str, Any]],
     region_filter: str,
 ) -> list[dict[str, Any]]:
-    """Apply region filter — always runs (premium + show-all modes)."""
     region = (region_filter or "alle").lower().strip()
     if region in ("alle", "all", ""):
         return list(fixtures or [])
@@ -102,13 +108,13 @@ def filter_fixtures_by_region(
     return list(fixtures or [])
 
 
-def region_filter_label(region_filter: str, *, premium_only: bool) -> str:
+def region_filter_label(region_filter: str) -> str:
     region = (region_filter or "alle").lower().strip()
     labels = {
         "uefa": "UEFA Wettbewerbe",
         "deutschland": "Deutsche Wettbewerbe",
-        "topligen": "Top 5 Ligen",
-        "alle": "Alle verfügbaren Spiele" if not premium_only else "Premium-Ligen · Bundesliga · UEFA · Top 5",
+        "topligen": "Topligen",
+        "alle": "Premium-Spiele",
     }
     return labels.get(region, labels["alle"])
 
@@ -130,19 +136,13 @@ def log_displayed_fixtures(
     fixtures: list[dict[str, Any]],
     *,
     region_filter: str,
-    premium_only: bool,
 ) -> None:
-    """Debug: log league metadata for each displayed match."""
     region = (region_filter or "alle").lower()
-    logic = (
-        f"region={region}, premium_only={premium_only}, "
-        f"uefa_strict={'is_uefa_competition()' if region == 'uefa' else 'league_id in region_ids'}"
-    )
     print(
         {
-            "uefa_filter_debug": {
+            "board_fixtures_debug": {
                 "count": len(fixtures or []),
-                "filter_logic": logic,
+                "region": region,
                 "league_names": [
                     str((fx.get("league") or {}).get("name") or "?")
                     for fx in (fixtures or [])
@@ -174,7 +174,9 @@ def fetch_board_payload(
         try:
             tomorrow_rows = service.get_fixtures_by_date(tomorrow_s, username=username)
             payload["tomorrow_fixtures"] = sort_fixtures_by_priority(
-                filter_premium_fixtures(dedupe_fixtures(tomorrow_rows))
+                filter_bettable_fixtures(
+                    filter_premium_fixtures(dedupe_fixtures(tomorrow_rows))
+                )
             )
         except FootballAPIError:
             payload["tomorrow_fixtures"] = []
@@ -195,32 +197,9 @@ def collect_fixtures_for_filters(
     *,
     time_filter: str,
     region_filter: str,
-    premium_only: bool = True,
 ) -> list[dict[str, Any]]:
+    """Premium fixtures only — strict ID whitelist + region filter."""
     today_s = str(payload.get("today") or payload.get("today_local") or "")
-    tomorrow_s = str(payload.get("tomorrow") or "")
-
-    if not premium_only:
-        if time_filter == "live":
-            pool = filter_blocked_fixtures(list(payload.get("raw_live") or []))
-        elif time_filter == "morgen":
-            pool = filter_blocked_fixtures(list(payload.get("raw_tomorrow") or []))
-        else:
-            pool = filter_blocked_fixtures(
-                dedupe_fixtures(
-                    list(payload.get("raw_live") or [])
-                    + list(payload.get("raw_today") or [])
-                    + list(payload.get("raw_tomorrow") or [])
-                )
-            )
-            if time_filter == "heute":
-                pool = [
-                    fx
-                    for fx in pool
-                    if _is_live(fx) or _fixture_date(fx) == today_s
-                ]
-        pool = filter_fixtures_by_region(pool, region_filter)
-        return sort_fixtures_by_priority(pool)
 
     if time_filter == "live":
         pool = list(payload.get("live_now") or [])
@@ -246,41 +225,9 @@ def collect_fixtures_for_filters(
                 if _is_live(fx) or _fixture_date(fx) == today_s
             ]
 
+    pool = filter_bettable_fixtures(pool)
     pool = filter_fixtures_by_region(pool, region_filter)
     return sort_fixtures_by_priority(pool)
-
-
-def extract_1x2_odds(markets: list[dict[str, Any]]) -> dict[str, float | None]:
-    home_odd = draw_odd = away_odd = None
-    for m in markets or []:
-        market = str(m.get("market") or "").lower()
-        sel = str(m.get("selection") or "").lower()
-        if "match winner" not in market and "1x2" not in market and "winner" not in market:
-            continue
-        try:
-            odd = float(m.get("odd") or 0)
-        except (TypeError, ValueError):
-            continue
-        if odd < 1.01:
-            continue
-        if sel in ("home", "1"):
-            home_odd = home_odd or odd
-        elif sel in ("draw", "x"):
-            draw_odd = draw_odd or odd
-        elif sel in ("away", "2"):
-            away_odd = away_odd or odd
-    return {"home": home_odd, "draw": draw_odd, "away": away_odd}
-
-
-def _risk_label(pred: dict[str, Any]) -> str:
-    if pred.get("no_bet"):
-        return "Hoch"
-    conf = float(pred.get("best_bet_confidence") or 0)
-    if conf >= 72:
-        return "Niedrig"
-    if conf >= 55:
-        return "Mittel"
-    return "Hoch"
 
 
 def enrich_fixture_row(
@@ -310,17 +257,18 @@ def enrich_fixture_row(
         "home_pct": None,
         "draw_pct": None,
         "away_pct": None,
-        "ai_pick": "—",
+        "ai_pick": "No Bet",
         "confidence": None,
-        "risk": "Mittel",
-        "no_bet": False,
+        "risk": "Hoch",
+        "no_bet": True,
+        "value": False,
         "live_event": "",
         "momentum": "",
         "reasons": [],
+        "has_odds": False,
     }
 
     pred_insights: dict[str, Any] = {}
-    odds_markets: list[dict[str, Any]] = []
 
     if rank >= 2 and fid_int:
         try:
@@ -329,36 +277,23 @@ def enrich_fixture_row(
                 pred_insights = parse_prediction_insights(pred_rows[0])
         except FootballAPIError:
             pass
-        try:
-            odds_markets = parse_fixture_odds_payload(
-                service.get_fixture_odds(fid_int, username=username)
-            )
-        except FootballAPIError:
-            pass
 
-    o1x2 = extract_1x2_odds(odds_markets)
-    row["home_odd"] = o1x2["home"]
-    row["draw_odd"] = o1x2["draw"]
-    row["away_odd"] = o1x2["away"]
-    row["home_pct"] = pred_insights.get("home_pct")
-    row["draw_pct"] = pred_insights.get("draw_pct")
-    row["away_pct"] = pred_insights.get("away_pct")
+        o1x2 = get_odds_for_fixture(service, fid_int, username=username)
+        row["home_odd"] = o1x2["home"]
+        row["draw_odd"] = o1x2["draw"]
+        row["away_odd"] = o1x2["away"]
+        row["has_odds"] = has_complete_odds(row)
 
-    detail = {
-        "card": card,
-        "prediction_insights": pred_insights,
-        "injuries_parsed": {"available": False},
-        "suspensions_parsed": {"available": False},
-    }
-    try:
-        prediction = build_match_prediction(detail)
-        row["ai_pick"] = prediction.get("best_bet") or "—"
-        row["confidence"] = prediction.get("best_bet_confidence")
-        row["no_bet"] = bool(prediction.get("no_bet"))
-        row["risk"] = _risk_label(prediction)
-        row["reasons"] = list(prediction.get("reasons") or [])[:3]
-    except Exception:
-        pass
+    signal = build_betting_signal(
+        home=str(card.get("home") or "Heim"),
+        away=str(card.get("away") or "Auswärts"),
+        home_odd=row["home_odd"],
+        draw_odd=row["draw_odd"],
+        away_odd=row["away_odd"],
+        pred_insights=pred_insights,
+        is_live=bool(card.get("live")),
+    )
+    row.update(signal)
 
     if card.get("live"):
         rc = card.get("red_cards") or {}
@@ -379,36 +314,18 @@ def build_board_rows(
     username: str,
     session_plan: str,
     cache: dict[int, dict[str, Any]],
-    max_enrich: int = 15,
+    max_enrich: int = 24,
+    allow_no_odds: bool = False,
 ) -> list[dict[str, Any]]:
     rank = football_plan_rank(session_plan or "none")
+    if rank < 2:
+        return []
+
     rows: list[dict[str, Any]] = []
-    for i, fx in enumerate(fixtures):
-        if i < max_enrich and rank >= 2:
-            rows.append(
-                enrich_fixture_row(
-                    service, fx, username=username, rank=rank, cache=cache
-                )
+    for fx in fixtures[:max_enrich]:
+        rows.append(
+            enrich_fixture_row(
+                service, fx, username=username, rank=rank, cache=cache
             )
-        else:
-            card = parse_match_card(fx)
-            rows.append(
-                {
-                    "fixture_id": card.get("fixture_id"),
-                    "card": card,
-                    "home_odd": None,
-                    "draw_odd": None,
-                    "away_odd": None,
-                    "home_pct": None,
-                    "draw_pct": None,
-                    "away_pct": None,
-                    "ai_pick": "—",
-                    "confidence": None,
-                    "risk": "Mittel",
-                    "no_bet": False,
-                    "reasons": [],
-                    "live_event": "",
-                    "momentum": "",
-                }
-            )
-    return rows
+        )
+    return filter_rows_with_odds(rows, allow_no_odds=allow_no_odds)
