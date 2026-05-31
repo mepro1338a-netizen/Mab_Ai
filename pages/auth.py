@@ -1,11 +1,11 @@
-﻿"""MaByte Auth — stable minimal Streamlit layout with scoped polish CSS."""
+﻿"""MaByte Auth — final beta SaaS login (stable Streamlit, scoped CSS)."""
 from __future__ import annotations
 
 import html
-import random
 
 import streamlit as st
 
+from config import APP_NAME
 from database import record_login_event, register_account, verify_login_identifier
 from logger import log_auth
 from oauth_service import (
@@ -22,8 +22,9 @@ from ui.styles import inject_css
 
 _DEFAULT_USE_CASE = "Sonstiges"
 _DEFAULT_COUNTRY = "Deutschland"
+_APP = html.escape(APP_NAME)
+_INITIAL = html.escape(APP_NAME[:1] if APP_NAME else "M")
 
-# Scoped polish CSS — no grid / column-width hacks on Streamlit blocks.
 _AUTH_MIN_CSS = """
 html, body, .stApp,
 [data-testid="stAppViewContainer"],
@@ -41,21 +42,76 @@ html, body, .stApp,
 }
 [data-testid="stMain"] .block-container,
 [data-testid="stMainBlockContainer"] {
-    max-width: 1200px !important;
-    padding: 2.5rem 1.75rem 2.75rem !important;
+    max-width: 1180px !important;
+    padding: 1.25rem 1.5rem 2.5rem !important;
     overflow-x: hidden !important;
 }
 
-/* Left branding feature cards */
+.auth-topbar {
+    display: flex;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+.auth-topbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.auth-logo-mark {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 17px;
+    color: #fff;
+    background: linear-gradient(135deg, #8b5cf6, #6366f1);
+    flex-shrink: 0;
+}
+.auth-topbar-name {
+    display: block;
+    font-size: 18px;
+    font-weight: 800;
+    color: #fafafa;
+    line-height: 1.2;
+}
+.auth-topbar-tag {
+    display: block;
+    font-size: 11px;
+    font-weight: 500;
+    color: #a1a1aa;
+    line-height: 1.3;
+}
+
+[data-testid="stColumn"]:has(.auth-brand-marker) .auth-hero-title {
+    font-size: 1.85rem;
+    font-weight: 800;
+    color: #fafafa;
+    margin: 0 0 0.75rem 0;
+    line-height: 1.2;
+}
+[data-testid="stColumn"]:has(.auth-brand-marker) .auth-hero-title span {
+    color: #8b5cf6;
+}
+[data-testid="stColumn"]:has(.auth-brand-marker) .auth-hero-desc {
+    font-size: 0.95rem;
+    color: #a1a1aa;
+    margin: 0 0 1.5rem 0;
+    line-height: 1.55;
+    max-width: 520px;
+}
 [data-testid="stColumn"]:has(.auth-brand-marker) .auth-feat-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 12px;
-    margin-top: 1.5rem;
     max-width: 560px;
 }
 [data-testid="stColumn"]:has(.auth-brand-marker) .auth-feat-card {
-    padding: 14px 14px 12px 14px;
+    padding: 14px;
     border-radius: 14px;
     background: rgba(39, 39, 42, 0.65);
     border: 1px solid rgba(63, 63, 70, 0.8);
@@ -65,48 +121,38 @@ html, body, .stApp,
     display: block;
     color: #fafafa;
     font-size: 13px;
-    margin-bottom: 4px;
-}
-[data-testid="stColumn"]:has(.auth-brand-marker) .auth-feat-card span {
-    display: block;
-    color: #a1a1aa;
-    font-size: 12px;
-    line-height: 1.45;
 }
 
-/* Glass login card — right column */
 [data-testid="stColumn"]:has(.auth-glass-marker) {
-    max-width: 520px !important;
+    max-width: 480px !important;
     width: 100% !important;
     margin-left: auto !important;
-    background: rgba(24, 24, 27, 0.78) !important;
+    background: rgba(24, 24, 27, 0.75) !important;
     border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-radius: 22px !important;
+    border-radius: 20px !important;
     box-shadow:
-        0 0 0 1px rgba(124, 58, 237, 0.12),
-        0 8px 32px rgba(124, 58, 237, 0.18),
-        0 24px 48px rgba(0, 0, 0, 0.4) !important;
-    padding: 2.5rem 2.25rem 2.25rem 2.25rem !important;
+        0 0 0 1px rgba(139, 92, 246, 0.15),
+        0 8px 28px rgba(139, 92, 246, 0.2),
+        0 20px 40px rgba(0, 0, 0, 0.35) !important;
+    padding: 2.25rem 2rem !important;
     box-sizing: border-box !important;
 }
 [data-testid="stColumn"]:has(.auth-glass-marker) [data-testid="stVerticalBlock"] {
-    gap: 0.85rem !important;
+    gap: 0.8rem !important;
 }
 .auth-card-title {
     color: #fafafa !important;
-    font-size: 1.65rem !important;
+    font-size: 1.6rem !important;
     font-weight: 700 !important;
-    margin: 0 0 0.4rem 0 !important;
-    line-height: 1.25 !important;
+    margin: 0 0 0.35rem 0 !important;
 }
 .auth-card-sub {
     color: #a1a1aa !important;
-    font-size: 0.92rem !important;
-    margin: 0 0 1.25rem 0 !important;
+    font-size: 0.9rem !important;
+    margin: 0 0 1.1rem 0 !important;
     line-height: 1.5 !important;
 }
 
-/* Inputs */
 [data-testid="stColumn"]:has(.auth-glass-marker) [data-testid="stTextInput"] input {
     background: #27272a !important;
     color: #fafafa !important;
@@ -129,16 +175,15 @@ html, body, .stApp,
     color: #d4d4d8 !important;
 }
 
-/* Primary — violet/blue gradient */
 [data-testid="stColumn"]:has(.auth-glass-marker) [data-testid="stFormSubmitButton"] button[kind="primary"],
 [data-testid="stColumn"]:has(.auth-glass-marker) [data-testid="stFormSubmitButton"] button[data-testid="stBaseButton-primaryFormSubmit"],
 [data-testid="stColumn"]:has(.auth-glass-marker) .stButton > button[kind="primary"] {
-    background: linear-gradient(135deg, #a855f7 0%, #7c3aed 45%, #4f46e5 100%) !important;
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 50%, #6366f1 100%) !important;
     color: #ffffff !important;
     border: none !important;
     border-radius: 12px !important;
     min-height: 48px !important;
-    box-shadow: 0 4px 20px rgba(124, 58, 237, 0.38) !important;
+    box-shadow: 0 4px 18px rgba(139, 92, 246, 0.4) !important;
 }
 [data-testid="stColumn"]:has(.auth-glass-marker) [data-testid="stFormSubmitButton"] button[kind="primary"] p,
 [data-testid="stColumn"]:has(.auth-glass-marker) .stButton > button[kind="primary"] p {
@@ -146,7 +191,6 @@ html, body, .stApp,
     font-weight: 700 !important;
 }
 
-/* Google button */
 [data-testid="stColumn"]:has(.auth-glass-marker) a.auth-google-btn {
     display: flex !important;
     align-items: center !important;
@@ -154,7 +198,7 @@ html, body, .stApp,
     gap: 10px !important;
     width: 100% !important;
     min-height: 46px !important;
-    margin-top: 0.75rem !important;
+    margin-top: 0.65rem !important;
     padding: 0 16px !important;
     border-radius: 10px !important;
     background: #27272a !important;
@@ -169,56 +213,53 @@ html, body, .stApp,
     border-color: #52525b !important;
     background: #3f3f46 !important;
 }
-[data-testid="stColumn"]:has(.auth-glass-marker) .auth-google-icon {
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    width: 20px !important;
-    height: 20px !important;
-    flex-shrink: 0 !important;
+
+[data-testid="stColumn"]:has(.auth-glass-marker) .auth-forgot-btn button {
+    color: #8b5cf6 !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    min-height: auto !important;
+    height: auto !important;
+    font-size: 0.85rem !important;
+}
+[data-testid="stColumn"]:has(.auth-glass-marker) .auth-forgot-btn button p {
+    color: #8b5cf6 !important;
 }
 
-/* Register link area */
 [data-testid="stColumn"]:has(.auth-glass-marker) .auth-register-line {
     text-align: center !important;
-    margin: 1.35rem 0 0.5rem 0 !important;
+    margin: 1.25rem 0 0.4rem 0 !important;
     color: #a1a1aa !important;
     font-size: 0.9rem !important;
-    line-height: 1.5 !important;
 }
 [data-testid="stColumn"]:has(.auth-glass-marker) .stButton > button[kind="tertiary"] {
-    color: #c4b5fd !important;
+    color: #8b5cf6 !important;
     background: transparent !important;
     border: none !important;
     width: 100% !important;
     font-weight: 600 !important;
 }
 [data-testid="stColumn"]:has(.auth-glass-marker) .stButton > button[kind="tertiary"] p {
-    color: #c4b5fd !important;
+    color: #8b5cf6 !important;
 }
 [data-testid="stColumn"]:has(.auth-glass-marker) .stButton > button[kind="secondary"] {
-    background: rgba(124, 58, 237, 0.14) !important;
-    border: 1px solid rgba(167, 139, 250, 0.45) !important;
+    background: rgba(139, 92, 246, 0.12) !important;
+    border: 1px solid rgba(139, 92, 246, 0.4) !important;
     color: #c4b5fd !important;
     border-radius: 10px !important;
-    min-height: 42px !important;
     width: 100% !important;
-}
-[data-testid="stColumn"]:has(.auth-glass-marker) .stButton > button[kind="secondary"] p {
-    color: #c4b5fd !important;
-    font-weight: 600 !important;
 }
 
 @media (max-width: 900px) {
     [data-testid="stColumn"]:has(.auth-glass-marker) {
         max-width: 100% !important;
         margin-left: 0 !important;
-        margin-right: 0 !important;
-        padding: 2rem 1.5rem !important;
+        padding: 1.75rem 1.25rem !important;
     }
     [data-testid="stColumn"]:has(.auth-brand-marker) .auth-feat-grid {
         grid-template-columns: 1fr;
-        max-width: 100%;
     }
 }
 """
@@ -232,15 +273,31 @@ _GOOGLE_ICON_SVG = (
     "</svg>"
 )
 
-_BRAND_FEATURES_HTML = """
-<span class="auth-brand-marker" hidden aria-hidden="true"></span>
-<div class="auth-feat-grid">
-  <div class="auth-feat-card"><strong>AI Reels Studio</strong><span>Automatisierte Shorts &amp; Videos</span></div>
-  <div class="auth-feat-card"><strong>Football Intelligence</strong><span>Datenbasierte Analysen &amp; Prognosen</span></div>
-  <div class="auth-feat-card"><strong>Publishing Engine</strong><span>Omnichannel Distribution</span></div>
-  <div class="auth-feat-card"><strong>Team Workspace</strong><span>Zusammenarbeit &amp; Verwaltung</span></div>
-</div>
-"""
+
+def _topbar_html() -> str:
+    return (
+        '<header class="auth-topbar">'
+        '<div class="auth-topbar-brand">'
+        f'<span class="auth-logo-mark">{_INITIAL}</span>'
+        "<div>"
+        f'<span class="auth-topbar-name">{_APP}</span>'
+        '<span class="auth-topbar-tag">Enterprise AI Platform</span>'
+        "</div></div></header>"
+    )
+
+
+def _brand_column_html() -> str:
+    return (
+        '<span class="auth-brand-marker" hidden aria-hidden="true"></span>'
+        '<h1 class="auth-hero-title">One System. <span>Infinite Intelligence.</span></h1>'
+        '<p class="auth-hero-desc">Enterprise platform for AI Content, Football Intelligence and Automation.</p>'
+        '<div class="auth-feat-grid">'
+        '<div class="auth-feat-card"><strong>AI Reels Studio</strong></div>'
+        '<div class="auth-feat-card"><strong>Football Intelligence</strong></div>'
+        '<div class="auth-feat-card"><strong>Publishing Engine</strong></div>'
+        '<div class="auth-feat-card"><strong>Team Workspace</strong></div>'
+        "</div>"
+    )
 
 
 def _get_mode() -> str:
@@ -251,16 +308,6 @@ def _get_mode() -> str:
 def _set_mode(mode: str) -> None:
     st.session_state.gate_mode = mode
     st.session_state.auth_mode = mode
-
-
-def refresh_captcha() -> None:
-    st.session_state.captcha_a = random.randint(1, 9)
-    st.session_state.captcha_b = random.randint(1, 9)
-
-
-def ensure_captcha() -> None:
-    if "captcha_a" not in st.session_state or "captcha_b" not in st.session_state:
-        refresh_captcha()
 
 
 def client_meta() -> tuple[str, str]:
@@ -303,27 +350,7 @@ def _show_notice() -> None:
         st.info(message)
 
 
-def _parse_captcha_answer(raw: str) -> int | None:
-    text = (raw or "").strip()
-    if not text or not text.isdigit():
-        return None
-    return int(text)
-
-
-def _check_captcha(captcha_raw: str) -> bool:
-    expected = int(st.session_state.captcha_a) + int(st.session_state.captcha_b)
-    answer = _parse_captcha_answer(captcha_raw)
-    if answer is None or answer != expected:
-        _set_notice("error", "Rechenaufgabe falsch — bitte erneut versuchen.")
-        refresh_captcha()
-        return False
-    return True
-
-
-def do_login(identifier: str, password: str, *, captcha: str) -> None:
-    if not _check_captcha(captcha):
-        return
-
+def do_login(identifier: str, password: str) -> None:
     identifier = (identifier or "").strip()
     password = password or ""
     if not identifier or not password:
@@ -346,7 +373,6 @@ def do_login(identifier: str, password: str, *, captcha: str) -> None:
 
     record_login_failure(identifier)
     _set_notice("error", login_msg or "Benutzername/E-Mail oder Passwort falsch.")
-    refresh_captcha()
 
 
 def do_register(
@@ -356,11 +382,7 @@ def do_register(
     password: str,
     password2: str,
     terms: bool,
-    captcha: str,
 ) -> None:
-    if not _check_captcha(captcha):
-        return
-
     username = (username or "").strip()
     email = (email or "").strip()
     password = password or ""
@@ -411,7 +433,6 @@ def do_register(
         return
 
     _set_notice("error", msg)
-    refresh_captcha()
 
 
 def handle_google_oauth_callback() -> None:
@@ -423,7 +444,7 @@ def handle_google_oauth_callback() -> None:
 
     _set_mode("login")
     inject_css(_AUTH_MIN_CSS)
-    st.title("MaByte")
+    st.markdown(_topbar_html(), unsafe_allow_html=True)
 
     if error:
         st.error(friendly_oauth_error(error, error_desc))
@@ -472,66 +493,64 @@ def _render_google_button() -> None:
 
 
 def _render_login_panel() -> None:
-    a, b = st.session_state.captcha_a, st.session_state.captcha_b
-
     with st.form("auth_login_form", clear_on_submit=False, border=False):
         identifier = st.text_input("Benutzername oder E-Mail", placeholder="name@firma.de")
-        password = st.text_input("Passwort", type="password", placeholder="Passwort")
-        st.markdown(f"**Sicherheitsfrage: {a} + {b} = ?**")
-        captcha = st.text_input("Antwort eingeben", placeholder="Antwort eingeben", label_visibility="collapsed")
-        st.checkbox("Angemeldet bleiben", key="auth_remember")
+        password = st.text_input(
+            "Passwort",
+            type="default" if st.session_state.get("auth_show_password") else "password",
+            placeholder="Passwort",
+        )
+        st.checkbox("Passwort anzeigen", key="auth_show_password", value=False)
+        opt_l, opt_r = st.columns([1, 1])
+        with opt_l:
+            st.checkbox("Angemeldet bleiben", key="auth_remember")
+        with opt_r:
+            st.empty()
         submitted = st.form_submit_button("Anmelden", type="primary", use_container_width=True)
 
+    _, forgot_col = st.columns([1.15, 1])
+    with forgot_col:
+        if st.button("Passwort vergessen?", key="auth_forgot_pw", type="tertiary"):
+            _set_notice("info", "Passwort-Reset folgt in Kürze. Bitte Support kontaktieren.")
+
     if submitted:
-        do_login(identifier, password, captcha=captcha)
+        do_login(identifier, password)
 
     _render_google_button()
 
-    st.markdown(
-        '<p class="auth-register-line">Noch kein Konto?<br>Jetzt registrieren →</p>',
-        unsafe_allow_html=True,
-    )
+    st.markdown('<p class="auth-register-line">Noch kein Konto?</p>', unsafe_allow_html=True)
     if st.button("Jetzt registrieren", key="auth_go_register", type="tertiary", use_container_width=True):
         _set_mode("register")
-        refresh_captcha()
         st.rerun()
 
 
 def _render_register_panel() -> None:
-    a, b = st.session_state.captcha_a, st.session_state.captcha_b
-
     with st.form("auth_register_form", clear_on_submit=False, border=False):
-        full_name = st.text_input("Vollständiger Name", placeholder="Max Mustermann")
+        username = st.text_input("Account Name / Benutzername", placeholder="dein_name")
         email = st.text_input("E-Mail", placeholder="name@firma.de")
-        username = st.text_input("Benutzername", placeholder="dein_name")
-        company = st.text_input("Unternehmen (optional)", placeholder="Firma GmbH")
-        password = st.text_input("Passwort (min. 8)", type="password")
-        password2 = st.text_input("Passwort bestätigen", type="password")
-        st.markdown(f"**Sicherheitsfrage: {a} + {b} = ?**")
-        captcha = st.text_input("Antwort eingeben", placeholder="Antwort eingeben", label_visibility="collapsed")
+        pw_type = "default" if st.session_state.get("auth_reg_show_password") else "password"
+        password = st.text_input("Passwort", type=pw_type, placeholder="Min. 8 Zeichen")
+        password2 = st.text_input("Passwort bestätigen", type=pw_type, placeholder="Wiederholen")
+        st.checkbox("Passwort anzeigen", key="auth_reg_show_password", value=False)
         terms = st.checkbox("Ich akzeptiere die AGB und Datenschutzerklärung.")
-        submitted = st.form_submit_button("Konto erstellen", type="primary", use_container_width=True)
+        submitted = st.form_submit_button("Account erstellen", type="primary", use_container_width=True)
 
     if submitted:
         do_register(
-            full_name=full_name,
             username=username,
             email=email,
             password=password,
             password2=password2,
-            company=company,
             terms=terms,
-            captcha=captcha,
         )
 
-    if st.button("Zurück zum Login", key="auth_go_login", type="secondary"):
+    st.markdown('<p class="auth-register-line">Bereits registriert?</p>', unsafe_allow_html=True)
+    if st.button("Zurück zum Login", key="auth_go_login", type="tertiary", use_container_width=True):
         _set_mode("login")
-        refresh_captcha()
         st.rerun()
 
 
 def render_auth() -> None:
-    ensure_captcha()
     if _get_mode() not in ("login", "register"):
         _set_mode("login")
     elif "gate_mode" not in st.session_state:
@@ -540,15 +559,12 @@ def render_auth() -> None:
     inject_css(_AUTH_MIN_CSS)
     mode = _get_mode()
 
+    st.markdown(_topbar_html(), unsafe_allow_html=True)
+
     left, right = st.columns([1, 1], gap="large")
 
     with left:
-        st.markdown("# MaByte")
-        st.markdown("**One system. Infinite intelligence.**")
-        st.markdown(
-            "Enterprise-Plattform für AI Content, Football Intelligence und Automatisierung."
-        )
-        st.markdown(_BRAND_FEATURES_HTML, unsafe_allow_html=True)
+        st.markdown(_brand_column_html(), unsafe_allow_html=True)
 
     with right:
         st.markdown(
@@ -565,7 +581,7 @@ def render_auth() -> None:
             else:
                 st.markdown('<p class="auth-card-title">Willkommen zurück</p>', unsafe_allow_html=True)
                 st.markdown(
-                    '<p class="auth-card-sub">Melden Sie sich an, um auf Ihren MaByte Workspace zuzugreifen.</p>',
+                    '<p class="auth-card-sub">Melden Sie sich an, um auf Ihren Workspace zuzugreifen.</p>',
                     unsafe_allow_html=True,
                 )
 
