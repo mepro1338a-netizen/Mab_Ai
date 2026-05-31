@@ -1,4 +1,4 @@
-﻿"""MaByte Home — AI Command Center Dashboard."""
+﻿"""MaByte Home — Football Intelligence Command Center."""
 from __future__ import annotations
 
 import streamlit as st
@@ -26,7 +26,7 @@ def render_home() -> None:
     )
     tier = str(plan.get("badge", "Starter"))
 
-    st.markdown('<div class="mb-ai-dash" aria-hidden="true"></div>', unsafe_allow_html=True)
+    st.markdown('<div class="mb-fb-cc" aria-hidden="true"></div>', unsafe_allow_html=True)
 
     render_ai_dashboard(
         user=user,
