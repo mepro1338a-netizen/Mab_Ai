@@ -7,10 +7,12 @@ from typing import Any
 import streamlit as st
 
 from config import football_plan_rank
-from services.football_data_debug import (
-    football_debug_enabled,
-    log_board_counts,
+from services.football_api_debug import (
+    build_premium_diagnosis_report,
+    format_admin_league_debug_markdown,
+    log_raw_fixtures_sample,
 )
+from services.football_data_debug import football_debug_enabled, log_board_counts
 from services.football_access import usage_summary
 from services.football_betting_board import (
     build_fallback_debug_stats,
@@ -156,6 +158,7 @@ def _render_empty_state(
     pools = pools or {}
     live_n = int(pools.get("live") or 0)
     today_n = int(pools.get("today") or 0)
+    upcoming_n = int(pools.get("upcoming") or 0)
 
     st.markdown(
         """
@@ -175,6 +178,10 @@ def _render_empty_state(
         if st.button("Heutige Topspiele anzeigen", key="fbb_show_today", width="stretch"):
             st.session_state.fb_board_time = "heute"
             st.session_state.fb_board_force_no_odds = True
+            st.rerun()
+    elif upcoming_n > 0:
+        if st.button("Nächste Premium-Spiele anzeigen", key="fbb_show_upcoming", width="stretch"):
+            st.session_state.fb_board_time = "heute"
             st.rerun()
 
 
@@ -247,8 +254,10 @@ def _render_match_row_html(row: dict[str, Any]) -> str:
     away = html.escape(str(card.get("away") or "Auswärts"))
     league = html.escape(str(card.get("league") or ""))
     live = bool(card.get("live"))
+    fx_date = html.escape(str(card.get("date") or ""))
     time_lbl = html.escape(str(card.get("status_label") or card.get("time") or ""))
     score = html.escape(str(card.get("score") or ""))
+    meta_time = f"{fx_date} · {time_lbl}" if fx_date and not live else time_lbl
 
     risk = str(row.get("risk") or "Mittel")
     risk_cls = _risk_class(risk)
@@ -297,13 +306,13 @@ def _render_match_row_html(row: dict[str, Any]) -> str:
     return f"""
 <div class="fbb-match{live_cls}">
   <div>
-    <div class="fbb-meta"><strong>{league}</strong> · {time_lbl}</div>
+    <div class="fbb-meta"><strong>{league}</strong> · {meta_time}</div>
     <div class="fbb-odds-grid">
       {odds_line(home, ho, hp)}
       {odds_line("", do, dp, draw_row=True)}
       {odds_line(away, ao, ap)}
     </div>
-    {"<div class='fbb-meta' style='margin-top:6px;'>Keine Quote — Formanalyse</div>" if odd_na and not live else ""}
+    {"<div class='fbb-meta' style='margin-top:6px;'>Quoten aktuell nicht verfügbar</div>" if odd_na else ""}
     {live_extra}
   </div>
   <div class="fbb-pick">
@@ -590,6 +599,13 @@ def render_football_betting_board(
         "tomorrow_matches": len(tomorrow_pool),
     }
     if _show_football_debug():
+        log_raw_fixtures_sample(
+            list(payload.get("raw_today") or []),
+            label="today",
+            limit=50,
+        )
+        diagnosis = build_premium_diagnosis_report(payload)
+        print({"football_premium_diagnosis": diagnosis})
         fallback_stats = build_fallback_debug_stats(
             payload,
             region_filter=st.session_state.fb_board_region,
@@ -598,6 +614,21 @@ def render_football_betting_board(
         )
         print({"football_fallback_debug": fallback_stats})
         log_board_counts(board_counts)
+
+    try:
+        from ui_core import is_admin_user
+
+        if is_admin_user():
+            with st.expander("Admin: Football API Debug", expanded=False):
+                st.markdown(format_admin_league_debug_markdown(build_premium_diagnosis_report(payload)))
+                st.json(build_fallback_debug_stats(
+                    payload,
+                    region_filter=st.session_state.fb_board_region,
+                    service=service,
+                    username=username,
+                ))
+    except Exception:
+        pass
 
     cache: dict[int, dict[str, Any]] = st.session_state.fb_board_cache
     match_result = load_football_matches(
@@ -642,7 +673,19 @@ def render_football_betting_board(
         )
 
     if not rows:
-        _render_empty_state(pools=match_result.get("pools"))
+        stage = str(match_result.get("stage") or "")
+        pools = match_result.get("pools") or {}
+        if stage == "live_empty":
+            if int(pools.get("today") or 0) > 0:
+                if st.button("Heutige Topspiele anzeigen", key="fbb_live_to_today", width="stretch"):
+                    st.session_state.fb_board_time = "heute"
+                    st.rerun()
+            elif int(pools.get("upcoming") or 0) > 0:
+                if st.button("Nächste Premium-Spiele anzeigen", key="fbb_live_to_upcoming", width="stretch"):
+                    st.session_state.fb_board_time = "heute"
+                    st.rerun()
+        else:
+            _render_empty_state(pools=pools)
         st.markdown("</div>", unsafe_allow_html=True)
         return
 

@@ -123,20 +123,54 @@ def _names_match_premium(api_name: str, meta_name: str) -> bool:
     return True
 
 
-def is_premium_league_match(league_id: int | None, league_name: str = "") -> bool:
-    """Match by league ID or fallback to curated name."""
+def _country_matches_premium(api_country: str, meta_country: str) -> bool:
+    """Match API country string to curated meta country."""
+    api = (api_country or "").lower().strip()
+    meta = (meta_country or "").lower().strip()
+    if not meta or not api:
+        return True
+    if api == meta:
+        return True
+    alias_groups = (
+        {"germany", "deutschland"},
+        {"england", "uk"},
+        {"netherlands", "holland"},
+    )
+    for group in alias_groups:
+        if meta in group and api in group:
+            return True
+    return False
+
+
+def is_premium_league_match(
+    league_id: int | None,
+    league_name: str = "",
+    country: str = "",
+) -> bool:
+    """Match by league ID or fallback to curated name + country."""
+    low = (league_name or "").lower().strip()
     if is_blocked_league_name(league_name):
+        return False
+    if any(x in low for x in ("concacaf", "afc ", " caf ", "copa libertadores", "copa sudamericana")):
         return False
     if league_id and int(league_id) in FOOTBALL_PREMIUM_LEAGUE_IDS:
         return True
-    low = (league_name or "").lower().strip()
     if not low:
         return False
+    api_country = (country or "").lower().strip()
     for lid, meta in FOOTBALL_LEAGUE_META.items():
         if int(lid) not in FOOTBALL_PREMIUM_LEAGUE_IDS:
             continue
-        if _names_match_premium(low, str(meta.get("name") or "")):
-            return True
+        meta_name = str(meta.get("name") or "")
+        meta_country = str(meta.get("country") or "")
+        if not _names_match_premium(low, meta_name):
+            continue
+        if not _country_matches_premium(api_country, meta_country):
+            continue
+        if "champions league" in low and "uefa" not in low:
+            if meta_country.lower() != "europe" or api_country not in ("europe", ""):
+                continue
+        return True
     return False
 
 
@@ -178,18 +212,17 @@ def is_featured_league(league_id: int | None) -> bool:
 
 
 def filter_premium_fixtures(fixtures: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Keep only curated premium leagues — strict league ID whitelist."""
+    """Keep curated premium leagues — ID match with name+country fallback."""
     out: list[dict[str, Any]] = []
     for fx in fixtures or []:
         league = fx.get("league") or {}
         league_name = str(league.get("name") or "")
-        if is_blocked_league_name(league_name):
-            continue
+        country = str(league.get("country") or "")
         try:
-            lid = int(league.get("id") or 0)
+            lid = int(league.get("id") or 0) or None
         except (TypeError, ValueError):
-            continue
-        if lid in FOOTBALL_PREMIUM_LEAGUE_IDS:
+            lid = None
+        if is_premium_league_match(lid, league_name, country):
             out.append(fx)
     return out
 

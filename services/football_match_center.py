@@ -213,11 +213,13 @@ def _fetch_upcoming_premium(
     *,
     username: str,
     horizon_days: int = 7,
-    max_leagues: int = 12,
-    per_league: int = 3,
-    max_results: int = 8,
+    max_leagues: int = 14,
+    per_league: int = 5,
+    max_results: int = 24,
 ) -> list[dict[str, Any]]:
-    """Next premium fixtures within N days — league next=N first, then date scan fallback."""
+    """Next premium fixtures within N days — league next=, then league+date scan."""
+    from config import football_api_season
+
     today_s, _ = _local_today_tomorrow()
     try:
         today_dt = datetime.fromisoformat(today_s).date()
@@ -233,33 +235,56 @@ def _fetch_upcoming_premium(
             fx_date = datetime.fromisoformat(d_raw).date()
         except ValueError:
             return False
-        if fx_date <= today_dt or fx_date > horizon:
+        if fx_date < today_dt or fx_date > horizon:
             return False
         return _status_short(fx) not in FINISHED_STATUSES
 
     rows: list[dict[str, Any]] = []
+    seasons = [football_api_season(), football_api_season() - 1, football_api_season() + 1]
     for lid in _sorted_league_ids(league_ids)[:max_leagues]:
-        try:
-            rows.extend(
-                service.get_league_upcoming_fixtures(
+        for season in seasons:
+            try:
+                chunk = service.get_league_upcoming_fixtures(
                     int(lid),
                     next_count=per_league,
+                    season=season,
                     username=username,
                 )
-            )
-        except FootballAPIError:
-            continue
+                if chunk:
+                    rows.extend(chunk)
+                    break
+            except FootballAPIError:
+                continue
 
-    upcoming = [fx for fx in dedupe_fixtures(rows) if _in_window(fx)]
-    if not upcoming:
-        for offset in range(1, horizon_days + 1):
+    upcoming = filter_premium_fixtures([fx for fx in dedupe_fixtures(rows) if _in_window(fx)])
+
+    if len(upcoming) < 3:
+        for offset in range(0, min(horizon_days + 1, 8)):
             day_s = (today_dt + timedelta(days=offset)).isoformat()
             try:
                 day_rows = service.get_fixtures_by_date(day_s, username=username)
             except FootballAPIError:
                 continue
-            upcoming.extend(filter_fixtures(day_rows, league_ids=league_ids))
-        upcoming = [fx for fx in dedupe_fixtures(upcoming) if _in_window(fx)]
+            upcoming.extend(
+                filter_premium_fixtures([fx for fx in day_rows if _in_window(fx)])
+            )
+        upcoming = dedupe_fixtures(upcoming)
+
+    if len(upcoming) < 3:
+        for offset in range(1, min(horizon_days + 1, 8)):
+            day_s = (today_dt + timedelta(days=offset)).isoformat()
+            upcoming.extend(
+                filter_premium_fixtures(
+                    _fetch_by_leagues(
+                        service,
+                        day_s,
+                        league_ids,
+                        username=username,
+                        max_leagues=max_leagues,
+                    )
+                )
+            )
+        upcoming = dedupe_fixtures([fx for fx in upcoming if _in_window(fx)])
 
     return sort_fixtures_by_priority(upcoming)[:max_results]
 
@@ -368,11 +393,9 @@ def fetch_premium_dashboard(
     top_matches = today_sorted[:5]
     all_premium = sort_fixtures_by_priority(premium_fixtures)
 
-    next_matches: list[dict[str, Any]] = []
-    if not today_sorted:
-        next_matches = _fetch_upcoming_premium(
-            service, premium_ids, username=username, horizon_days=7
-        )
+    next_matches: list[dict[str, Any]] = _fetch_upcoming_premium(
+        service, premium_ids, username=username, horizon_days=7, max_results=24
+    )
 
     extended: list[dict[str, Any]] = []
 

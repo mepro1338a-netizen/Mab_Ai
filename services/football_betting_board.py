@@ -114,7 +114,7 @@ def region_filter_label(region_filter: str) -> str:
         "uefa": "UEFA Wettbewerbe",
         "deutschland": "Deutsche Wettbewerbe",
         "topligen": "Topligen",
-        "alle": "Premium-Spiele",
+        "alle": "Premium-Alle",
     }
     return labels.get(region, labels["alle"])
 
@@ -205,6 +205,8 @@ def collect_fixtures_for_filters(
         pool = list(payload.get("live_now") or [])
     elif time_filter == "morgen":
         pool = list(payload.get("tomorrow_fixtures") or [])
+    elif time_filter == "upcoming":
+        pool = list(payload.get("next_matches") or [])
     elif time_filter == "alle":
         pool = dedupe_fixtures(
             list(payload.get("live_now") or [])
@@ -294,12 +296,17 @@ def build_basic_board_rows(fixtures: list[dict[str, Any]]) -> list[dict[str, Any
 _FALLBACK_MESSAGES: dict[str, str] = {
     "today_premium_with_odds": "Heute keine Premium-Live-Spiele — zeige heutige Topspiele.",
     "tomorrow_premium_with_odds": "Keine Premium-Spiele heute — zeige morgige Topspiele.",
+    "upcoming_premium_with_odds": "Nächste Premium-Spiele (7 Tage).",
     "today_premium_without_odds": (
         "Quoten aktuell nicht verfügbar — Analyse basiert auf Formdaten."
     ),
     "tomorrow_premium_without_odds": (
         "Quoten aktuell nicht verfügbar — Analyse basiert auf Formdaten."
     ),
+    "upcoming_premium_without_odds": (
+        "Quoten aktuell nicht verfügbar — nächste Premium-Spiele (Formanalyse)."
+    ),
+    "live_empty": "Keine Premium-Live-Spiele aktuell.",
 }
 
 
@@ -308,29 +315,32 @@ def _fallback_chain(mode: str) -> list[tuple[str, str, bool]]:
     chains: dict[str, list[tuple[str, str, bool]]] = {
         "live": [
             ("live_premium_with_odds", "live", True),
-            ("today_premium_with_odds", "today", True),
-            ("tomorrow_premium_with_odds", "tomorrow", True),
-            ("today_premium_without_odds", "today", False),
-            ("tomorrow_premium_without_odds", "tomorrow", False),
+            ("live_premium_without_odds", "live", False),
         ],
         "heute": [
             ("today_premium_with_odds", "today", True),
             ("tomorrow_premium_with_odds", "tomorrow", True),
+            ("upcoming_premium_with_odds", "upcoming", True),
             ("today_premium_without_odds", "today", False),
             ("tomorrow_premium_without_odds", "tomorrow", False),
+            ("upcoming_premium_without_odds", "upcoming", False),
         ],
         "morgen": [
             ("tomorrow_premium_with_odds", "tomorrow", True),
             ("today_premium_with_odds", "today", True),
+            ("upcoming_premium_with_odds", "upcoming", True),
             ("tomorrow_premium_without_odds", "tomorrow", False),
             ("today_premium_without_odds", "today", False),
+            ("upcoming_premium_without_odds", "upcoming", False),
         ],
         "alle": [
             ("live_premium_with_odds", "live", True),
             ("today_premium_with_odds", "today", True),
             ("tomorrow_premium_with_odds", "tomorrow", True),
+            ("upcoming_premium_with_odds", "upcoming", True),
             ("today_premium_without_odds", "today", False),
             ("tomorrow_premium_without_odds", "tomorrow", False),
+            ("upcoming_premium_without_odds", "upcoming", False),
         ],
     }
     return chains.get((mode or "heute").lower(), chains["heute"])
@@ -377,6 +387,9 @@ def build_fallback_debug_stats(
     tomorrow_premium = collect_fixtures_for_filters(
         payload, time_filter="morgen", region_filter=region_filter
     )
+    upcoming_premium = collect_fixtures_for_filters(
+        payload, time_filter="upcoming", region_filter=region_filter
+    )
     stats: dict[str, Any] = {
         "live_raw": len(payload.get("raw_live") or []),
         "live_premium": len(live_premium),
@@ -384,12 +397,15 @@ def build_fallback_debug_stats(
         "today_premium": len(today_premium),
         "tomorrow_raw": len(payload.get("raw_tomorrow") or []),
         "tomorrow_premium": len(tomorrow_premium),
+        "upcoming_premium": len(upcoming_premium),
         "today_with_odds": None,
         "tomorrow_with_odds": None,
+        "upcoming_with_odds": None,
     }
     if service and username is not None:
         stats["today_with_odds"] = _count_with_odds(service, today_premium, username=username)
         stats["tomorrow_with_odds"] = _count_with_odds(service, tomorrow_premium, username=username)
+        stats["upcoming_with_odds"] = _count_with_odds(service, upcoming_premium, username=username)
     return stats
 
 
@@ -417,6 +433,9 @@ def load_football_matches(
         "tomorrow": collect_fixtures_for_filters(
             payload, time_filter="morgen", region_filter=category
         ),
+        "upcoming": collect_fixtures_for_filters(
+            payload, time_filter="upcoming", region_filter=category
+        ),
     }
     debug_stats = build_fallback_debug_stats(
         payload, region_filter=category, service=service, username=username
@@ -425,6 +444,18 @@ def load_football_matches(
     chain = _fallback_chain(mode)
     if force_no_odds:
         chain = [(s, p, r) for s, p, r in chain if not r]
+
+    if mode == "live" and not pools.get("live"):
+        return {
+            "fixtures": [],
+            "rows": [],
+            "stage": "live_empty",
+            "banner": _FALLBACK_MESSAGES["live_empty"],
+            "pool_key": "live",
+            "require_odds": True,
+            "debug_stats": debug_stats,
+            "pools": {k: len(v) for k, v in pools.items()},
+        }
 
     for stage_id, pool_key, require_odds in chain:
         fixtures = pools.get(pool_key) or []

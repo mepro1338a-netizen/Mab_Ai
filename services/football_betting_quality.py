@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import Any
 
 from config import FOOTBALL_PREMIUM_LEAGUE_IDS
-from services.football_leagues import is_blocked_league_name
+from services.football_leagues import is_blocked_league_name, is_premium_league_match
 from services.football_odds import (
     extract_1x2_odds,
     get_odds_for_fixture,
@@ -56,15 +56,19 @@ def is_excluded_betting_league(league: dict[str, Any] | None) -> bool:
 
 
 def is_bettable_premium_fixture(fixture: dict[str, Any]) -> bool:
-    """Strict premium whitelist — ID in curated set, not excluded."""
+    """Premium by ID or name+country; exclude youth/low-tier by name."""
     league = fixture.get("league") or {}
     if is_excluded_betting_league(league):
         return False
     try:
-        lid = int(league.get("id") or 0)
+        lid = int(league.get("id") or 0) or None
     except (TypeError, ValueError):
-        return False
-    return lid in BETTING_PREMIUM_IDS
+        lid = None
+    return is_premium_league_match(
+        lid,
+        str(league.get("name") or ""),
+        str(league.get("country") or ""),
+    )
 
 
 def filter_bettable_fixtures(fixtures: list[dict[str, Any]]) -> list[dict[str, Any]]:
