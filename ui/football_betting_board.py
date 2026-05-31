@@ -7,6 +7,12 @@ from typing import Any
 import streamlit as st
 
 from config import football_plan_rank
+from services.football_data_debug import (
+    football_debug_enabled,
+    format_debug_widget,
+    log_board_counts,
+    run_board_diagnosis,
+)
 from services.football_access import usage_summary
 from services.football_betting_board import (
     build_board_rows,
@@ -495,6 +501,47 @@ def render_football_betting_board(
     for err in payload.get("errors") or []:
         st.warning(err)
 
+    today_pool = collect_fixtures_for_filters(
+        payload, time_filter="heute", region_filter="alle"
+    )
+    live_pool = collect_fixtures_for_filters(
+        payload, time_filter="live", region_filter="alle"
+    )
+    tomorrow_pool = collect_fixtures_for_filters(
+        payload, time_filter="morgen", region_filter="alle"
+    )
+    board_counts = {
+        "today_matches": len(today_pool),
+        "live_matches": len(live_pool),
+        "tomorrow_matches": len(tomorrow_pool),
+    }
+    log_board_counts(board_counts)
+
+    debug_report: dict[str, Any] = {
+        "counts": board_counts,
+        "dates": {
+            "timezone": "Europe/Berlin",
+            "today": payload.get("today") or payload.get("today_local"),
+            "tomorrow": payload.get("tomorrow"),
+        },
+        "api_status": "OK" if not payload.get("errors") else "ERROR",
+    }
+    if football_debug_enabled() or sum(board_counts.values()) == 0:
+        debug_report = run_board_diagnosis(
+            service, username=username, payload=payload
+        )
+    st.session_state.fb_board_debug = debug_report
+
+    with st.expander("Football Debug", expanded=football_debug_enabled()):
+        st.markdown(format_debug_widget(debug_report))
+        probes = debug_report.get("probes") or {}
+        for label, probe in probes.items():
+            st.caption(
+                f"{label}: endpoint=fixtures status={probe.get('status_code')} "
+                f"len={probe.get('response_length')} cached={probe.get('cached')} "
+                f"err={probe.get('error') or '—'}"
+            )
+
     fixtures = collect_fixtures_for_filters(
         payload,
         time_filter=st.session_state.fb_board_time,
@@ -506,6 +553,8 @@ def render_football_betting_board(
             '<div class="fbb-empty">Keine Spiele für diesen Filter — anderen Zeitraum oder Liga wählen.</div>',
             unsafe_allow_html=True,
         )
+        if football_debug_enabled():
+            st.info(debug_report.get("summary", {}).get("failure_point", ""))
         st.markdown("</div>", unsafe_allow_html=True)
         return
 
@@ -517,7 +566,7 @@ def render_football_betting_board(
         username=username,
         session_plan=session_plan,
         cache=cache,
-        max_enrich=12,
+        max_enrich=6,
     )
     for row in rows:
         _apply_live_enrichment(row, enriched_map)

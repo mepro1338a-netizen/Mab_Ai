@@ -9,6 +9,7 @@ MAX_LOGIN_ATTEMPTS = 5
 LOGIN_WINDOW_SECONDS = 300
 
 MAX_REQUESTS = 60
+FOOTBALL_MAX_REQUESTS = 120
 REQUEST_WINDOW_SECONDS = 60
 
 
@@ -57,13 +58,14 @@ def record_login_failure(username: str) -> None:
 def check_rate_limit(key: str):
     now = time.time()
     key = clean_text(key, 100)
+    max_req = FOOTBALL_MAX_REQUESTS if key.startswith("football_api:") else MAX_REQUESTS
 
     RATE_LIMITS[key] = [
         t for t in RATE_LIMITS[key]
         if now - t < REQUEST_WINDOW_SECONDS
     ]
 
-    if len(RATE_LIMITS[key]) >= MAX_REQUESTS:
+    if len(RATE_LIMITS[key]) >= max_req:
         return False, "Rate Limit erreicht. Bitte kurz warten."
 
     RATE_LIMITS[key].append(now)

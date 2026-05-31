@@ -7,10 +7,8 @@ from config import FOOTBALL_LEAGUE_GROUPS, football_plan_rank
 from services.football_leagues import (
     LIVE_STATUSES,
     filter_premium_fixtures,
-    premium_league_ids,
 )
 from services.football_match_center import (
-    _fetch_by_leagues,
     _local_today_tomorrow,
     dedupe_fixtures,
     fetch_premium_dashboard,
@@ -48,17 +46,15 @@ def fetch_board_payload(
     payload = fetch_premium_dashboard(
         service, username=username, include_all_leagues=include_all_leagues
     )
-    _today_s, tomorrow_s = _local_today_tomorrow()
-    premium_ids = premium_league_ids()
-    try:
-        tomorrow_rows = _fetch_by_leagues(
-            service, tomorrow_s, premium_ids, username=username, max_leagues=17
-        )
-        payload["tomorrow_fixtures"] = sort_fixtures_by_priority(
-            filter_premium_fixtures(dedupe_fixtures(tomorrow_rows))
-        )
-    except FootballAPIError:
-        payload["tomorrow_fixtures"] = []
+    if "tomorrow_fixtures" not in payload:
+        _today_s, tomorrow_s = _local_today_tomorrow()
+        try:
+            tomorrow_rows = service.get_fixtures_by_date(tomorrow_s, username=username)
+            payload["tomorrow_fixtures"] = sort_fixtures_by_priority(
+                filter_premium_fixtures(dedupe_fixtures(tomorrow_rows))
+            )
+        except FootballAPIError:
+            payload["tomorrow_fixtures"] = []
     return payload
 
 

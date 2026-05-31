@@ -334,10 +334,21 @@ def fetch_premium_dashboard(
     except FootballAPIError as exc:
         errors.append(str(exc))
 
-    today_premium = _fetch_by_leagues(
-        service, today_s, premium_ids, username=username, max_leagues=17
-    )
-    merged = dedupe_fixtures(live_rows + today_premium)
+    today_rows: list[dict[str, Any]] = []
+    try:
+        today_rows = service.get_fixtures_by_date(today_s, username=username)
+    except FootballAPIError as exc:
+        errors.append(str(exc))
+
+    tomorrow_rows: list[dict[str, Any]] = []
+    try:
+        tomorrow_rows = service.get_fixtures_by_date(tomorrow_s, username=username)
+    except FootballAPIError as exc:
+        errors.append(str(exc))
+
+    today_premium = filter_premium_fixtures(today_rows)
+    tomorrow_premium = filter_premium_fixtures(tomorrow_rows)
+    merged = dedupe_fixtures(live_rows + today_premium + tomorrow_premium)
     premium_fixtures = filter_premium_fixtures(merged)
     premium_live = filter_premium_fixtures(live_rows)
 
@@ -389,6 +400,7 @@ def fetch_premium_dashboard(
         "non_premium_live_count": non_premium_live_count,
         "include_all_leagues": include_all_leagues,
         "today_local": today_s,
+        "tomorrow_fixtures": sort_fixtures_by_priority(tomorrow_premium),
     }
 
 
