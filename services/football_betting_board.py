@@ -230,6 +230,252 @@ def collect_fixtures_for_filters(
     return sort_fixtures_by_priority(pool)
 
 
+def build_board_rows(
+    fixtures: list[dict[str, Any]],
+    service: FootballService,
+    *,
+    username: str,
+    session_plan: str,
+    cache: dict[int, dict[str, Any]],
+    max_enrich: int = 24,
+    allow_no_odds: bool = False,
+    form_only: bool = False,
+) -> list[dict[str, Any]]:
+    rank = football_plan_rank(session_plan or "none")
+    if rank < 2:
+        return build_basic_board_rows(fixtures[:max_enrich])
+
+    rows: list[dict[str, Any]] = []
+    for fx in fixtures[:max_enrich]:
+        rows.append(
+            enrich_fixture_row(
+                service,
+                fx,
+                username=username,
+                rank=rank,
+                cache=cache,
+                form_only=form_only,
+            )
+        )
+    if form_only or allow_no_odds:
+        return rows
+    return filter_rows_with_odds(rows, allow_no_odds=False)
+
+
+def build_basic_board_rows(fixtures: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Starter plan — show premium fixtures without odds API."""
+    rows: list[dict[str, Any]] = []
+    for fx in fixtures or []:
+        card = parse_match_card(fx)
+        rows.append(
+            {
+                "fixture_id": card.get("fixture_id"),
+                "card": card,
+                "home_odd": None,
+                "draw_odd": None,
+                "away_odd": None,
+                "home_pct": None,
+                "draw_pct": None,
+                "away_pct": None,
+                "ai_pick": "—",
+                "confidence": None,
+                "risk": "Mittel",
+                "no_bet": True,
+                "value": False,
+                "reasons": [],
+                "live_event": "",
+                "momentum": "",
+                "has_odds": False,
+            }
+        )
+    return rows
+
+
+_FALLBACK_MESSAGES: dict[str, str] = {
+    "today_premium_with_odds": "Heute keine Premium-Live-Spiele — zeige heutige Topspiele.",
+    "tomorrow_premium_with_odds": "Keine Premium-Spiele heute — zeige morgige Topspiele.",
+    "today_premium_without_odds": (
+        "Quoten aktuell nicht verfügbar — Analyse basiert auf Formdaten."
+    ),
+    "tomorrow_premium_without_odds": (
+        "Quoten aktuell nicht verfügbar — Analyse basiert auf Formdaten."
+    ),
+}
+
+
+def _fallback_chain(mode: str) -> list[tuple[str, str, bool]]:
+    """Return (stage_id, pool_key, require_odds) in priority order."""
+    chains: dict[str, list[tuple[str, str, bool]]] = {
+        "live": [
+            ("live_premium_with_odds", "live", True),
+            ("today_premium_with_odds", "today", True),
+            ("tomorrow_premium_with_odds", "tomorrow", True),
+            ("today_premium_without_odds", "today", False),
+            ("tomorrow_premium_without_odds", "tomorrow", False),
+        ],
+        "heute": [
+            ("today_premium_with_odds", "today", True),
+            ("tomorrow_premium_with_odds", "tomorrow", True),
+            ("today_premium_without_odds", "today", False),
+            ("tomorrow_premium_without_odds", "tomorrow", False),
+        ],
+        "morgen": [
+            ("tomorrow_premium_with_odds", "tomorrow", True),
+            ("today_premium_with_odds", "today", True),
+            ("tomorrow_premium_without_odds", "tomorrow", False),
+            ("today_premium_without_odds", "today", False),
+        ],
+        "alle": [
+            ("live_premium_with_odds", "live", True),
+            ("today_premium_with_odds", "today", True),
+            ("tomorrow_premium_with_odds", "tomorrow", True),
+            ("today_premium_without_odds", "today", False),
+            ("tomorrow_premium_without_odds", "tomorrow", False),
+        ],
+    }
+    return chains.get((mode or "heute").lower(), chains["heute"])
+
+
+def _count_with_odds(
+    service: FootballService,
+    fixtures: list[dict[str, Any]],
+    *,
+    username: str,
+    sample: int = 8,
+) -> int:
+    """Sample-based odds availability count for admin debug."""
+    if not fixtures:
+        return 0
+    hits = 0
+    for fx in fixtures[:sample]:
+        fid = (fx.get("fixture") or {}).get("id")
+        if not fid:
+            continue
+        try:
+            o = get_odds_for_fixture(service, int(fid), username=username)
+            if has_complete_odds(
+                {"home_odd": o.get("home"), "draw_odd": o.get("draw"), "away_odd": o.get("away")}
+            ):
+                hits += 1
+        except FootballAPIError:
+            pass
+    if len(fixtures) <= sample:
+        return hits
+    return int(round(hits / min(sample, len(fixtures)) * len(fixtures)))
+
+
+def build_fallback_debug_stats(
+    payload: dict[str, Any],
+    *,
+    region_filter: str,
+    service: FootballService | None = None,
+    username: str = "",
+) -> dict[str, Any]:
+    """Admin debug: raw vs premium vs odds counts."""
+    live_premium = collect_fixtures_for_filters(payload, time_filter="live", region_filter=region_filter)
+    today_premium = collect_fixtures_for_filters(payload, time_filter="heute", region_filter=region_filter)
+    tomorrow_premium = collect_fixtures_for_filters(
+        payload, time_filter="morgen", region_filter=region_filter
+    )
+    stats: dict[str, Any] = {
+        "live_raw": len(payload.get("raw_live") or []),
+        "live_premium": len(live_premium),
+        "today_raw": len(payload.get("raw_today") or []),
+        "today_premium": len(today_premium),
+        "tomorrow_raw": len(payload.get("raw_tomorrow") or []),
+        "tomorrow_premium": len(tomorrow_premium),
+        "today_with_odds": None,
+        "tomorrow_with_odds": None,
+    }
+    if service and username is not None:
+        stats["today_with_odds"] = _count_with_odds(service, today_premium, username=username)
+        stats["tomorrow_with_odds"] = _count_with_odds(service, tomorrow_premium, username=username)
+    return stats
+
+
+def load_football_matches(
+    payload: dict[str, Any],
+    service: FootballService,
+    *,
+    username: str,
+    session_plan: str,
+    mode: str,
+    category: str,
+    cache: dict[int, dict[str, Any]],
+    max_enrich: int = 24,
+    force_no_odds: bool = False,
+) -> dict[str, Any]:
+    """
+    Premium fallback pipeline — never return empty while premium fixtures exist.
+    """
+    mode = (mode or "heute").lower().strip()
+    category = (category or "alle").lower().strip()
+
+    pools = {
+        "live": collect_fixtures_for_filters(payload, time_filter="live", region_filter=category),
+        "today": collect_fixtures_for_filters(payload, time_filter="heute", region_filter=category),
+        "tomorrow": collect_fixtures_for_filters(
+            payload, time_filter="morgen", region_filter=category
+        ),
+    }
+    debug_stats = build_fallback_debug_stats(
+        payload, region_filter=category, service=service, username=username
+    )
+
+    chain = _fallback_chain(mode)
+    if force_no_odds:
+        chain = [(s, p, r) for s, p, r in chain if not r]
+
+    for stage_id, pool_key, require_odds in chain:
+        fixtures = pools.get(pool_key) or []
+        if not fixtures:
+            continue
+
+        rows = build_board_rows(
+            fixtures,
+            service,
+            username=username,
+            session_plan=session_plan,
+            cache=cache,
+            max_enrich=max_enrich,
+            allow_no_odds=not require_odds,
+            form_only=not require_odds,
+        )
+        if not rows:
+            continue
+
+        primary_stage = chain[0][0] if chain else ""
+        banner = None
+        if stage_id != primary_stage:
+            banner = _FALLBACK_MESSAGES.get(stage_id)
+        if force_no_odds and not require_odds:
+            banner = _FALLBACK_MESSAGES.get(stage_id) or (
+                "Quoten aktuell nicht verfügbar — Analyse basiert auf Formdaten."
+            )
+
+        return {
+            "fixtures": fixtures[:max_enrich],
+            "rows": rows,
+            "stage": stage_id,
+            "banner": banner,
+            "pool_key": pool_key,
+            "require_odds": require_odds,
+            "debug_stats": debug_stats,
+            "pools": {k: len(v) for k, v in pools.items()},
+        }
+
+    return {
+        "fixtures": [],
+        "rows": [],
+        "stage": "clean_empty_state",
+        "banner": "Keine Premium-Spiele im gewählten Zeitraum.",
+        "pool_key": "",
+        "require_odds": True,
+        "debug_stats": debug_stats,
+        "pools": {k: len(v) for k, v in pools.items()},
+    }
+
+
 def enrich_fixture_row(
     service: FootballService,
     fixture: dict[str, Any],
@@ -237,6 +483,7 @@ def enrich_fixture_row(
     username: str,
     rank: int,
     cache: dict[int, dict[str, Any]],
+    form_only: bool = False,
 ) -> dict[str, Any]:
     card = parse_match_card(fixture)
     fid = card.get("fixture_id")
@@ -245,7 +492,7 @@ def enrich_fixture_row(
     except (TypeError, ValueError):
         fid_int = None
 
-    if fid_int and fid_int in cache:
+    if fid_int and fid_int in cache and not form_only:
         return cache[fid_int]
 
     row: dict[str, Any] = {
@@ -278,11 +525,12 @@ def enrich_fixture_row(
         except FootballAPIError:
             pass
 
-        o1x2 = get_odds_for_fixture(service, fid_int, username=username)
-        row["home_odd"] = o1x2["home"]
-        row["draw_odd"] = o1x2["draw"]
-        row["away_odd"] = o1x2["away"]
-        row["has_odds"] = has_complete_odds(row)
+        if not form_only:
+            o1x2 = get_odds_for_fixture(service, fid_int, username=username)
+            row["home_odd"] = o1x2["home"]
+            row["draw_odd"] = o1x2["draw"]
+            row["away_odd"] = o1x2["away"]
+            row["has_odds"] = has_complete_odds(row)
 
     signal = build_betting_signal(
         home=str(card.get("home") or "Heim"),
@@ -292,6 +540,7 @@ def enrich_fixture_row(
         away_odd=row["away_odd"],
         pred_insights=pred_insights,
         is_live=bool(card.get("live")),
+        form_only=form_only,
     )
     row.update(signal)
 
@@ -305,27 +554,3 @@ def enrich_fixture_row(
     if fid_int:
         cache[fid_int] = row
     return row
-
-
-def build_board_rows(
-    fixtures: list[dict[str, Any]],
-    service: FootballService,
-    *,
-    username: str,
-    session_plan: str,
-    cache: dict[int, dict[str, Any]],
-    max_enrich: int = 24,
-    allow_no_odds: bool = False,
-) -> list[dict[str, Any]]:
-    rank = football_plan_rank(session_plan or "none")
-    if rank < 2:
-        return []
-
-    rows: list[dict[str, Any]] = []
-    for fx in fixtures[:max_enrich]:
-        rows.append(
-            enrich_fixture_row(
-                service, fx, username=username, rank=rank, cache=cache
-            )
-        )
-    return filter_rows_with_odds(rows, allow_no_odds=allow_no_odds)

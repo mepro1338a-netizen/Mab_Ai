@@ -89,6 +89,7 @@ def build_betting_signal(
     is_live: bool = False,
     h2h_support: bool = False,
     injury_advantage: bool = False,
+    form_only: bool = False,
 ) -> dict[str, Any]:
     """AI pick + confidence from odds, API prediction, or baseline."""
     pred = pred_insights or {}
@@ -102,9 +103,57 @@ def build_betting_signal(
     odds_ok = has_complete_odds(
         {"home_odd": home_odd, "draw_odd": draw_odd, "away_odd": away_odd}
     )
+    has_form = bool(pred.get("form_home") or pred.get("form_away"))
+    has_pred = pred.get("home_pct") is not None
 
     if not odds_ok:
         confidence -= 15
+        if form_only and (has_pred or has_form or pred.get("advice")):
+            if pred.get("advice"):
+                confidence += 10
+                reasons.append(str(pred["advice"])[:90])
+            if has_form:
+                confidence += 10
+                fh, fa = pred.get("form_home"), pred.get("form_away")
+                reasons.append(f"Form: {home} {fh or '—'} · {away} {fa or '—'}")
+            if has_pred:
+                api_best = max(
+                    [
+                        ("home", pred.get("home_pct"), home),
+                        ("draw", pred.get("draw_pct"), "X"),
+                        ("away", pred.get("away_pct"), away),
+                    ],
+                    key=lambda x: float(x[1] or 0),
+                )
+                ai_pick = (
+                    f"{api_best[2]} Sieg" if api_best[0] != "draw" else "Unentschieden"
+                )
+                home_pct = pred.get("home_pct")
+                draw_pct = pred.get("draw_pct")
+                away_pct = pred.get("away_pct")
+                reasons.append("Analyse basiert auf Formdaten")
+            else:
+                ai_pick = f"{home} Sieg"
+                reasons.append("Formdaten ohne Quoten")
+            confidence = max(40.0, min(75.0, confidence))
+            if confidence < 60:
+                no_bet = True
+                ai_pick = "No Bet"
+                risk = "Hoch"
+            else:
+                no_bet = False
+                risk = "Mittel"
+            return {
+                "ai_pick": ai_pick,
+                "confidence": round(confidence, 1),
+                "no_bet": no_bet,
+                "risk": risk,
+                "value": False,
+                "reasons": reasons[:3],
+                "home_pct": pred.get("home_pct"),
+                "draw_pct": pred.get("draw_pct"),
+                "away_pct": pred.get("away_pct"),
+            }
         if is_live:
             return {
                 "ai_pick": "No Bet",
@@ -137,9 +186,6 @@ def build_betting_signal(
         ("away", float(away_odd), away_pct, away),
     ]
     fav_key, fav_odd, fav_pct, fav_name = min(sides, key=lambda x: x[1])
-
-    has_form = bool(pred.get("form_home") or pred.get("form_away"))
-    has_pred = pred.get("home_pct") is not None
 
     if not has_form and not has_pred:
         confidence -= 10
