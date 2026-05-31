@@ -241,6 +241,20 @@ FOOTBALL_PREMIUM_LEAGUE_IDS = frozenset(
     for _lid in (int(_lg["id"]),)
 )
 
+# Football AI betting board — strict top-tier whitelist only
+FOOTBALL_BETTING_CORE_LEAGUE_IDS = frozenset(
+    {
+        78,   # 1. Bundesliga
+        79,   # 2. Bundesliga
+        2,    # Champions League
+        3,    # Europa League
+        39,   # Premier League
+        140,  # La Liga
+        135,  # Serie A
+        61,   # Ligue 1
+    }
+)
+
 ROLE_LABELS = {
     "user": "User",
     "supporter": "Supporter",

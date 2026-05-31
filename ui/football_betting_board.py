@@ -9,8 +9,10 @@ import streamlit as st
 from config import football_plan_rank
 from services.football_api_debug import (
     build_premium_diagnosis_report,
+    format_admin_endpoint_probe_markdown,
     format_admin_league_debug_markdown,
     log_raw_fixtures_sample,
+    probe_football_api_endpoints,
 )
 from services.football_data_debug import football_debug_enabled, log_board_counts
 from services.football_access import usage_summary
@@ -256,14 +258,6 @@ def _render_raw_match_row_html(row: dict[str, Any]) -> str:
         meta += f" {time_lbl}"
 
     mid = score if score and score != "vs" else time_lbl or fx_date
-    ho, do, ao = row.get("home_odd"), row.get("draw_odd"), row.get("away_odd")
-    has_odds = bool(row.get("has_odds"))
-    if has_odds:
-        quote_line = (
-            f"1 {_fmt_odd(ho)} · X {_fmt_odd(do)} · 2 {_fmt_odd(ao)}"
-        )
-    else:
-        quote_line = "Keine Quote verfügbar"
 
     return f"""
 <div class="fbb-match{live_cls}">
@@ -274,10 +268,6 @@ def _render_raw_match_row_html(row: dict[str, Any]) -> str:
       <div class="fbb-score-line">{html.escape(str(mid))}</div>
       <div class="fbb-team">{away}</div>
     </div>
-  </div>
-  <div class="fbb-pick">
-    <div class="fbb-meta">Quote</div>
-    <div class="tip" style="font-size:12px;color:#94a3b8!important;">{html.escape(quote_line)}</div>
   </div>
 </div>
 """
@@ -296,16 +286,11 @@ def _render_match_row_html(row: dict[str, Any]) -> str:
     score = html.escape(str(card.get("score") or ""))
     meta_time = f"{fx_date} · {time_lbl}" if fx_date and not live else time_lbl
 
-    risk = str(row.get("risk") or "Mittel")
-    risk_cls = _risk_class(risk)
-    ai_raw = str(row.get("ai_pick") or "").strip()
-    ai_pick = html.escape(ai_raw) if ai_raw else "No Bet"
-    conf = row.get("confidence")
-    conf_txt = f"{conf:.0f}%" if conf is not None else "—"
-    no_bet = bool(row.get("no_bet"))
+    schedule_only = bool(row.get("schedule_only"))
     has_odds = bool(row.get("has_odds") or (
         row.get("home_odd") and row.get("draw_odd") and row.get("away_odd")
     ))
+    show_betting = has_odds and not schedule_only
 
     live_cls = " live" if live else ""
     live_extra = ""
@@ -316,6 +301,30 @@ def _render_match_row_html(row: dict[str, Any]) -> str:
         if row.get("momentum"):
             live_extra += f" · {html.escape(str(row['momentum']))}"
         live_extra += "</div>"
+
+    if not show_betting:
+        mid = score if score and score != "vs" else time_lbl or fx_date
+        return f"""
+<div class="fbb-match{live_cls}">
+  <div>
+    <div class="fbb-meta"><strong>{league}</strong> · {meta_time}</div>
+    <div class="fbb-teams">
+      <div class="fbb-team">{home}</div>
+      <div class="fbb-score-line">{html.escape(str(mid))}</div>
+      <div class="fbb-team">{away}</div>
+    </div>
+    {live_extra}
+  </div>
+</div>
+"""
+
+    risk = str(row.get("risk") or "")
+    ai_raw = str(row.get("ai_pick") or "").strip()
+    ai_pick = html.escape(ai_raw) if ai_raw else "—"
+    conf = row.get("confidence")
+    conf_txt = f"{conf:.0f}%" if conf is not None else "—"
+    no_bet = bool(row.get("no_bet"))
+    risk_cls = _risk_class(risk) if risk else "nobet"
 
     nobet_badge = (
         '<span class="fbb-badge nobet">No Bet</span>'
@@ -334,7 +343,6 @@ def _render_match_row_html(row: dict[str, Any]) -> str:
 
     ho, do, ao = row.get("home_odd"), row.get("draw_odd"), row.get("away_odd")
     hp, dp, ap = row.get("home_pct"), row.get("draw_pct"), row.get("away_pct")
-    odd_na = not has_odds
 
     value_badge = ""
     if row.get("value") and not no_bet:
@@ -349,7 +357,6 @@ def _render_match_row_html(row: dict[str, Any]) -> str:
       {odds_line("", do, dp, draw_row=True)}
       {odds_line(away, ao, ap)}
     </div>
-    {"<div class='fbb-meta' style='margin-top:6px;'>Quoten aktuell nicht verfügbar</div>" if odd_na else ""}
     {live_extra}
   </div>
   <div class="fbb-pick">
@@ -423,16 +430,24 @@ def _render_analysis_panel(
     session_plan: str,
 ) -> None:
     card = detail.get("card") or {}
-    pred = detail.get("prediction") or {}
-    intel = detail.get("intel") or {}
-    rec = intel.get("recommendation") or {}
 
     home = html.escape(str(card.get("home") or ""))
     away = html.escape(str(card.get("away") or ""))
     title = f"{home} vs {away}"
+
+    if not detail.get("analysis_available"):
+        st.markdown(f'<div class="fbb-panel"><h3>{title}</h3>', unsafe_allow_html=True)
+        st.warning("Analyse nicht verfügbar – zu wenig Daten.")
+        st.markdown("</div>", unsafe_allow_html=True)
+        return
+
+    pred = detail.get("prediction") or {}
+    intel = detail.get("intel") or {}
+    rec = intel.get("recommendation") or {}
+
     main_pick = rec.get("main_pick") or pred.get("best_bet") or row.get("ai_pick") if row else pred.get("best_bet")
     conf = rec.get("confidence") or pred.get("best_bet_confidence") or (row.get("confidence") if row else None)
-    risk = str(rec.get("risk") or (row.get("risk") if row else "Mittel") or "Mittel")
+    risk = str(rec.get("risk") or (row.get("risk") if row else "") or "")
     no_bet = bool(pred.get("no_bet") or (row.get("no_bet") if row else False))
     reasons = list(pred.get("reasons") or (row.get("reasons") if row else []) or [])[:3]
 
@@ -660,6 +675,11 @@ def render_football_betting_board(
         log_board_counts(board_counts)
         with st.expander("Admin: Football API Debug", expanded=False):
             st.markdown(format_admin_league_debug_markdown(build_premium_diagnosis_report(payload)))
+            try:
+                endpoint_probe = probe_football_api_endpoints(service, username=username)
+                st.markdown(format_admin_endpoint_probe_markdown(endpoint_probe))
+            except Exception as exc:
+                st.warning(f"Endpoint-Probe fehlgeschlagen: {exc}")
             st.json(build_fallback_debug_stats(
                 payload,
                 region_filter=st.session_state.fb_board_region,
@@ -680,8 +700,8 @@ def render_football_betting_board(
             max_enrich=48,
         )
         st.markdown(
-            '<p class="fbb-raw-note">Du siehst alle API-Spiele. '
-            "Für Betting-Analysen empfehlen wir Premium-Ligen mit Quoten.</p>",
+            '<p class="fbb-raw-note">Raw-Modus: Live-Scores aller API-Spiele — '
+            "ohne Quoten, ohne KI-Tipps, ohne Analyse.</p>",
             unsafe_allow_html=True,
         )
         if st.button("Zurück zu Premium-Spielen", key="fbb_back_premium", width="stretch"):
@@ -763,18 +783,20 @@ def render_football_betting_board(
     for row in rows:
         fid = row.get("fixture_id")
         raw_row = bool(row.get("raw_mode"))
-        can_analyse = bool(row.get("analysis_available")) if raw_row else True
+        can_analyse = bool(row.get("analysis_available"))
         row_cols = st.columns([12, 1])
         with row_cols[0]:
             st.markdown(_render_match_row_html(row), unsafe_allow_html=True)
         with row_cols[1]:
+            if raw_row:
+                continue
             st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
-            if raw_row and not can_analyse:
-                st.caption("Analyse nicht verfügbar")
-            elif st.button("Analyse", key=f"fbb_an_{fid}", width="stretch", disabled=raw_row and not can_analyse):
+            if not can_analyse:
+                st.caption("Analyse nicht verfügbar – zu wenig Daten.")
+            elif st.button("Analyse", key=f"fbb_an_{fid}", width="stretch"):
                 st.session_state.fb_board_analyse = fid
                 st.rerun()
-        if not raw_row and selected and fid and int(selected) == int(fid):
+        if not raw_row and can_analyse and selected and fid and int(selected) == int(fid):
             cache_key = f"fbb_detail_{fid}"
             if cache_key not in st.session_state:
                 with st.spinner("Analyse laden…"):

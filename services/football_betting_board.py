@@ -6,9 +6,11 @@ from typing import Any
 from config import FOOTBALL_LEAGUE_GROUPS, football_plan_rank
 from services.football_betting_quality import (
     build_betting_signal,
-    filter_bettable_fixtures,
+    empty_betting_signal,
+    filter_betting_core_fixtures,
     filter_rows_with_odds,
     has_complete_odds,
+    is_analysis_eligible,
     log_fixture_data_sample,
 )
 from services.football_leagues import LIVE_STATUSES, filter_blocked_fixtures, filter_premium_fixtures
@@ -174,7 +176,7 @@ def fetch_board_payload(
         try:
             tomorrow_rows = service.get_fixtures_by_date(tomorrow_s, username=username)
             payload["tomorrow_fixtures"] = sort_fixtures_by_priority(
-                filter_bettable_fixtures(
+                filter_betting_core_fixtures(
                     filter_premium_fixtures(dedupe_fixtures(tomorrow_rows))
                 )
             )
@@ -227,7 +229,7 @@ def collect_fixtures_for_filters(
                 if _is_live(fx) or _fixture_date(fx) == today_s
             ]
 
-    pool = filter_bettable_fixtures(pool)
+    pool = filter_betting_core_fixtures(pool)
     pool = filter_fixtures_by_region(pool, region_filter)
     return sort_fixtures_by_priority(pool)
 
@@ -271,11 +273,9 @@ def build_raw_board_rows(
     cache: dict[int, dict[str, Any]],
     max_enrich: int = 48,
 ) -> list[dict[str, Any]]:
-    """Minimal rows for raw mode — score/time, optional odds, no AI tips."""
-    rank = football_plan_rank(session_plan or "none")
+    """Minimal rows for raw mode — live scores only, no odds, no AI."""
     rows: list[dict[str, Any]] = []
-    odds_budget = 6
-    for i, fx in enumerate(fixtures[:max_enrich]):
+    for fx in fixtures[:max_enrich]:
         card = parse_match_card(fx)
         fid = card.get("fixture_id")
         try:
@@ -283,40 +283,15 @@ def build_raw_board_rows(
         except (TypeError, ValueError):
             fid_int = None
 
-        row: dict[str, Any] = {
-            "fixture_id": fid_int,
-            "card": card,
-            "raw_mode": True,
-            "home_odd": None,
-            "draw_odd": None,
-            "away_odd": None,
-            "has_odds": False,
-            "analysis_available": False,
-        }
-
-        if rank >= 2 and fid_int and i < odds_budget:
-            cache_key = f"raw_{fid_int}"
-            if cache_key in cache:
-                row.update(cache[cache_key])
-            else:
-                try:
-                    o = get_odds_for_fixture(service, fid_int, username=username)
-                    row["home_odd"] = o.get("home")
-                    row["draw_odd"] = o.get("draw")
-                    row["away_odd"] = o.get("away")
-                    row["has_odds"] = has_complete_odds(row)
-                    row["analysis_available"] = bool(row["has_odds"])
-                    cache[cache_key] = {
-                        "home_odd": row["home_odd"],
-                        "draw_odd": row["draw_odd"],
-                        "away_odd": row["away_odd"],
-                        "has_odds": row["has_odds"],
-                        "analysis_available": row["analysis_available"],
-                    }
-                except FootballAPIError:
-                    pass
-
-        rows.append(row)
+        rows.append(
+            {
+                "fixture_id": fid_int,
+                "card": card,
+                "raw_mode": True,
+                "analysis_available": False,
+                "schedule_only": True,
+            }
+        )
     return rows
 
 
@@ -360,7 +335,7 @@ def build_board_rows(
     cache: dict[int, dict[str, Any]],
     max_enrich: int = 24,
     allow_no_odds: bool = False,
-    form_only: bool = False,
+    schedule_only: bool = False,
 ) -> list[dict[str, Any]]:
     rank = football_plan_rank(session_plan or "none")
     if rank < 2:
@@ -375,16 +350,16 @@ def build_board_rows(
                 username=username,
                 rank=rank,
                 cache=cache,
-                form_only=form_only,
+                schedule_only=schedule_only or allow_no_odds,
             )
         )
-    if form_only or allow_no_odds:
+    if schedule_only or allow_no_odds:
         return rows
     return filter_rows_with_odds(rows, allow_no_odds=False)
 
 
 def build_basic_board_rows(fixtures: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Starter plan — show premium fixtures without odds API."""
+    """Starter plan — premium fixtures without odds API."""
     rows: list[dict[str, Any]] = []
     for fx in fixtures or []:
         card = parse_match_card(fx)
@@ -392,21 +367,12 @@ def build_basic_board_rows(fixtures: list[dict[str, Any]]) -> list[dict[str, Any
             {
                 "fixture_id": card.get("fixture_id"),
                 "card": card,
-                "home_odd": None,
-                "draw_odd": None,
-                "away_odd": None,
-                "home_pct": None,
-                "draw_pct": None,
-                "away_pct": None,
-                "ai_pick": "—",
-                "confidence": None,
-                "risk": "Mittel",
-                "no_bet": True,
-                "value": False,
-                "reasons": [],
+                "schedule_only": True,
+                "analysis_available": False,
+                **empty_betting_signal(),
+                "has_odds": False,
                 "live_event": "",
                 "momentum": "",
-                "has_odds": False,
             }
         )
     return rows
@@ -415,17 +381,16 @@ def build_basic_board_rows(fixtures: list[dict[str, Any]]) -> list[dict[str, Any
 _FALLBACK_MESSAGES: dict[str, str] = {
     "today_premium_with_odds": "Heute keine Premium-Live-Spiele — zeige heutige Topspiele.",
     "tomorrow_premium_with_odds": "Keine Premium-Spiele heute — zeige morgige Topspiele.",
-    "upcoming_premium_with_odds": "Nächste Premium-Spiele (7 Tage).",
-    "today_premium_without_odds": (
-        "Quoten aktuell nicht verfügbar — Analyse basiert auf Formdaten."
-    ),
-    "tomorrow_premium_without_odds": (
-        "Quoten aktuell nicht verfügbar — Analyse basiert auf Formdaten."
-    ),
-    "upcoming_premium_without_odds": (
-        "Quoten aktuell nicht verfügbar — nächste Premium-Spiele (Formanalyse)."
+    "upcoming_premium_with_odds": "Nächste Premium-Spiele (14 Tage).",
+    "today_premium_schedule": "Heute keine Premium-Spiele mit Quoten — Spielplan ohne Betting.",
+    "tomorrow_premium_schedule": "Keine Premium-Spiele heute — morgiger Spielplan ohne Betting.",
+    "upcoming_premium_schedule": (
+        "Nächste Premium-Spiele (14 Tage) — ohne Quoten, nur Spielinfo."
     ),
     "live_empty": "Keine Premium-Live-Spiele aktuell.",
+    "api_plan_no_betting": (
+        "Für Betting-Analyse wird Odds/Prediction API benötigt."
+    ),
 }
 
 
@@ -434,32 +399,32 @@ def _fallback_chain(mode: str) -> list[tuple[str, str, bool]]:
     chains: dict[str, list[tuple[str, str, bool]]] = {
         "live": [
             ("live_premium_with_odds", "live", True),
-            ("live_premium_without_odds", "live", False),
+            ("live_premium_schedule", "live", False),
         ],
         "heute": [
             ("today_premium_with_odds", "today", True),
             ("tomorrow_premium_with_odds", "tomorrow", True),
             ("upcoming_premium_with_odds", "upcoming", True),
-            ("today_premium_without_odds", "today", False),
-            ("tomorrow_premium_without_odds", "tomorrow", False),
-            ("upcoming_premium_without_odds", "upcoming", False),
+            ("today_premium_schedule", "today", False),
+            ("tomorrow_premium_schedule", "tomorrow", False),
+            ("upcoming_premium_schedule", "upcoming", False),
         ],
         "morgen": [
             ("tomorrow_premium_with_odds", "tomorrow", True),
             ("today_premium_with_odds", "today", True),
             ("upcoming_premium_with_odds", "upcoming", True),
-            ("tomorrow_premium_without_odds", "tomorrow", False),
-            ("today_premium_without_odds", "today", False),
-            ("upcoming_premium_without_odds", "upcoming", False),
+            ("tomorrow_premium_schedule", "tomorrow", False),
+            ("today_premium_schedule", "today", False),
+            ("upcoming_premium_schedule", "upcoming", False),
         ],
         "alle": [
             ("live_premium_with_odds", "live", True),
             ("today_premium_with_odds", "today", True),
             ("tomorrow_premium_with_odds", "tomorrow", True),
             ("upcoming_premium_with_odds", "upcoming", True),
-            ("today_premium_without_odds", "today", False),
-            ("tomorrow_premium_without_odds", "tomorrow", False),
-            ("upcoming_premium_without_odds", "upcoming", False),
+            ("today_premium_schedule", "today", False),
+            ("tomorrow_premium_schedule", "tomorrow", False),
+            ("upcoming_premium_schedule", "upcoming", False),
         ],
     }
     return chains.get((mode or "heute").lower(), chains["heute"])
@@ -589,7 +554,7 @@ def load_football_matches(
             cache=cache,
             max_enrich=max_enrich,
             allow_no_odds=not require_odds,
-            form_only=not require_odds,
+            schedule_only=not require_odds,
         )
         if not rows:
             continue
@@ -599,9 +564,9 @@ def load_football_matches(
         if stage_id != primary_stage:
             banner = _FALLBACK_MESSAGES.get(stage_id)
         if force_no_odds and not require_odds:
-            banner = _FALLBACK_MESSAGES.get(stage_id) or (
-                "Quoten aktuell nicht verfügbar — Analyse basiert auf Formdaten."
-            )
+            banner = _FALLBACK_MESSAGES.get("api_plan_no_betting")
+        elif not require_odds and not banner:
+            banner = _FALLBACK_MESSAGES.get(stage_id) or _FALLBACK_MESSAGES["api_plan_no_betting"]
 
         return {
             "fixtures": fixtures[:max_enrich],
@@ -633,7 +598,7 @@ def enrich_fixture_row(
     username: str,
     rank: int,
     cache: dict[int, dict[str, Any]],
-    form_only: bool = False,
+    schedule_only: bool = False,
 ) -> dict[str, Any]:
     card = parse_match_card(fixture)
     fid = card.get("fixture_id")
@@ -642,32 +607,28 @@ def enrich_fixture_row(
     except (TypeError, ValueError):
         fid_int = None
 
-    if fid_int and fid_int in cache and not form_only:
-        return cache[fid_int]
+    cache_key = fid_int
+    if fid_int and fid_int in cache and not schedule_only:
+        cached = cache[fid_int]
+        if cached.get("schedule_only") == schedule_only:
+            return cached
 
     row: dict[str, Any] = {
         "fixture_id": fid_int,
         "card": card,
-        "home_odd": None,
-        "draw_odd": None,
-        "away_odd": None,
-        "home_pct": None,
-        "draw_pct": None,
-        "away_pct": None,
-        "ai_pick": "No Bet",
-        "confidence": None,
-        "risk": "Hoch",
-        "no_bet": True,
-        "value": False,
+        "schedule_only": schedule_only,
+        "has_odds": False,
+        "analysis_available": False,
         "live_event": "",
         "momentum": "",
-        "reasons": [],
-        "has_odds": False,
+        **empty_betting_signal(),
     }
 
     pred_insights: dict[str, Any] = {}
+    home_name = str(card.get("home") or "Heim")
+    away_name = str(card.get("away") or "Auswärts")
 
-    if rank >= 2 and fid_int:
+    if rank >= 2 and fid_int and not schedule_only:
         try:
             pred_rows = service.get_fixture_predictions(fid_int, username=username)
             if pred_rows:
@@ -675,24 +636,31 @@ def enrich_fixture_row(
         except FootballAPIError:
             pass
 
-        if not form_only:
-            o1x2 = get_odds_for_fixture(service, fid_int, username=username)
-            row["home_odd"] = o1x2["home"]
-            row["draw_odd"] = o1x2["draw"]
-            row["away_odd"] = o1x2["away"]
-            row["has_odds"] = has_complete_odds(row)
+        o1x2 = get_odds_for_fixture(service, fid_int, username=username)
+        row["home_odd"] = o1x2["home"]
+        row["draw_odd"] = o1x2["draw"]
+        row["away_odd"] = o1x2["away"]
+        row["has_odds"] = has_complete_odds(row)
 
-    signal = build_betting_signal(
-        home=str(card.get("home") or "Heim"),
-        away=str(card.get("away") or "Auswärts"),
-        home_odd=row["home_odd"],
-        draw_odd=row["draw_odd"],
-        away_odd=row["away_odd"],
+        if row["has_odds"]:
+            signal = build_betting_signal(
+                home=home_name,
+                away=away_name,
+                home_odd=row["home_odd"],
+                draw_odd=row["draw_odd"],
+                away_odd=row["away_odd"],
+                pred_insights=pred_insights,
+                is_live=bool(card.get("live")),
+            )
+            row.update(signal)
+
+    row["analysis_available"] = is_analysis_eligible(
+        fixture_id=fid_int,
+        home=home_name,
+        away=away_name,
         pred_insights=pred_insights,
-        is_live=bool(card.get("live")),
-        form_only=form_only,
+        has_odds=bool(row.get("has_odds")),
     )
-    row.update(signal)
 
     if card.get("live"):
         rc = card.get("red_cards") or {}

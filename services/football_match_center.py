@@ -5,8 +5,8 @@ from datetime import datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from config import FOOTBALL_DEFAULT_SEASON, FOOTBALL_LEAGUE_PRIORITY, FOOTBALL_LEAGUE_TIER, football_plan_rank
-from services.football_betting_quality import filter_bettable_fixtures
+from config import FOOTBALL_BETTING_CORE_LEAGUE_IDS, FOOTBALL_DEFAULT_SEASON, FOOTBALL_LEAGUE_PRIORITY, FOOTBALL_LEAGUE_TIER, football_plan_rank
+from services.football_betting_quality import filter_bettable_fixtures, filter_betting_core_fixtures
 from services.football_leagues import (
     FINISHED_STATUSES,
     LIVE_STATUSES,
@@ -17,7 +17,6 @@ from services.football_leagues import (
     is_premium_league,
     league_name_map,
     league_tier,
-    premium_league_ids,
     relevance_score,
 )
 from services.football_live_intel import parse_fixture_statistics, parse_xg_from_statistics
@@ -212,7 +211,7 @@ def _fetch_upcoming_premium(
     league_ids: set[int],
     *,
     username: str,
-    horizon_days: int = 7,
+    horizon_days: int = 14,
     max_leagues: int = 14,
     per_league: int = 5,
     max_results: int = 24,
@@ -256,31 +255,37 @@ def _fetch_upcoming_premium(
             except FootballAPIError:
                 continue
 
-    upcoming = filter_premium_fixtures([fx for fx in dedupe_fixtures(rows) if _in_window(fx)])
+    upcoming = filter_betting_core_fixtures(
+        filter_premium_fixtures([fx for fx in dedupe_fixtures(rows) if _in_window(fx)])
+    )
 
     if len(upcoming) < 3:
-        for offset in range(0, min(horizon_days + 1, 8)):
+        for offset in range(0, min(horizon_days + 1, 15)):
             day_s = (today_dt + timedelta(days=offset)).isoformat()
             try:
                 day_rows = service.get_fixtures_by_date(day_s, username=username)
             except FootballAPIError:
                 continue
             upcoming.extend(
-                filter_premium_fixtures([fx for fx in day_rows if _in_window(fx)])
+                filter_betting_core_fixtures(
+                    filter_premium_fixtures([fx for fx in day_rows if _in_window(fx)])
+                )
             )
         upcoming = dedupe_fixtures(upcoming)
 
     if len(upcoming) < 3:
-        for offset in range(1, min(horizon_days + 1, 8)):
+        for offset in range(1, min(horizon_days + 1, 15)):
             day_s = (today_dt + timedelta(days=offset)).isoformat()
             upcoming.extend(
-                filter_premium_fixtures(
-                    _fetch_by_leagues(
-                        service,
-                        day_s,
-                        league_ids,
-                        username=username,
-                        max_leagues=max_leagues,
+                filter_betting_core_fixtures(
+                    filter_premium_fixtures(
+                        _fetch_by_leagues(
+                            service,
+                            day_s,
+                            league_ids,
+                            username=username,
+                            max_leagues=max_leagues,
+                        )
                     )
                 )
             )
@@ -336,7 +341,7 @@ def fetch_premium_dashboard(
     """
     today_s, tomorrow_s = _local_today_tomorrow()
     errors: list[str] = []
-    premium_ids = set(premium_league_ids())
+    core_ids = set(FOOTBALL_BETTING_CORE_LEAGUE_IDS)
 
     if not service.is_configured():
         return {
@@ -394,7 +399,7 @@ def fetch_premium_dashboard(
     all_premium = sort_fixtures_by_priority(premium_fixtures)
 
     next_matches: list[dict[str, Any]] = _fetch_upcoming_premium(
-        service, premium_ids, username=username, horizon_days=7, max_results=24
+        service, core_ids, username=username, horizon_days=14, max_results=24
     )
 
     extended: list[dict[str, Any]] = []
@@ -730,5 +735,35 @@ def fetch_match_detail(
             detail["intel"] = build_betting_intelligence_card(detail)
         except Exception:
             pass
+
+    from services.football_betting_quality import has_complete_odds, is_analysis_eligible
+
+    odds_data = detail.get("odds") or {}
+    has_odds = has_complete_odds(
+        {
+            "home_odd": odds_data.get("home"),
+            "draw_odd": odds_data.get("draw"),
+            "away_odd": odds_data.get("away"),
+        }
+    )
+    pred_ins = detail.get("prediction_insights") or {}
+    has_standing = bool(
+        detail.get("home_standing_summary") or detail.get("away_standing_summary")
+    )
+    hf = detail.get("home_form")
+    af = detail.get("away_form")
+    has_form = bool(
+        (hf and str(hf).strip() not in ("", "—"))
+        or (af and str(af).strip() not in ("", "—"))
+    )
+    detail["analysis_available"] = is_analysis_eligible(
+        fixture_id=int(fixture_id),
+        home=home_name,
+        away=away_name,
+        pred_insights=pred_ins,
+        has_odds=has_odds,
+        has_standing=has_standing,
+        has_form=has_form,
+    )
 
     return detail

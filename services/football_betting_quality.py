@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from config import FOOTBALL_PREMIUM_LEAGUE_IDS
+from config import FOOTBALL_BETTING_CORE_LEAGUE_IDS, FOOTBALL_PREMIUM_LEAGUE_IDS
 from services.football_leagues import is_blocked_league_name, is_premium_league_match
 from services.football_odds import (
     extract_1x2_odds,
@@ -15,6 +15,7 @@ from services.football_odds import (
 from services.football_service import FootballAPIError, FootballService
 
 BETTING_PREMIUM_IDS: frozenset[int] = FOOTBALL_PREMIUM_LEAGUE_IDS
+BETTING_CORE_IDS: frozenset[int] = FOOTBALL_BETTING_CORE_LEAGUE_IDS
 
 _EXTRA_BLOCKED = (
     "u17",
@@ -40,6 +41,26 @@ _EXTRA_BLOCKED = (
 )
 
 
+def _league_id(fixture: dict[str, Any]) -> int | None:
+    try:
+        return int((fixture.get("league") or {}).get("id") or 0) or None
+    except (TypeError, ValueError):
+        return None
+
+
+def is_betting_core_fixture(fixture: dict[str, Any]) -> bool:
+    """Strict Football AI whitelist — BL, 2BL, UCL, UEL, PL, La Liga, Serie A, Ligue 1."""
+    league = fixture.get("league") or {}
+    if is_excluded_betting_league(league):
+        return False
+    lid = _league_id(fixture)
+    return lid in BETTING_CORE_IDS
+
+
+def filter_betting_core_fixtures(fixtures: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [fx for fx in fixtures or [] if is_betting_core_fixture(fx)]
+
+
 def is_excluded_betting_league(league: dict[str, Any] | None) -> bool:
     if not league:
         return True
@@ -60,10 +81,7 @@ def is_bettable_premium_fixture(fixture: dict[str, Any]) -> bool:
     league = fixture.get("league") or {}
     if is_excluded_betting_league(league):
         return False
-    try:
-        lid = int(league.get("id") or 0) or None
-    except (TypeError, ValueError):
-        lid = None
+    lid = _league_id(fixture)
     return is_premium_league_match(
         lid,
         str(league.get("name") or ""),
@@ -82,6 +100,53 @@ def has_complete_odds(row: dict[str, Any]) -> bool:
     )
 
 
+def _has_prediction_data(pred_insights: dict[str, Any] | None) -> bool:
+    pred = pred_insights or {}
+    return pred.get("home_pct") is not None or bool(pred.get("advice"))
+
+
+def _has_form_data(pred_insights: dict[str, Any] | None) -> bool:
+    pred = pred_insights or {}
+    return bool(pred.get("form_home") or pred.get("form_away"))
+
+
+def is_analysis_eligible(
+    *,
+    fixture_id: int | None,
+    home: str,
+    away: str,
+    pred_insights: dict[str, Any] | None,
+    has_odds: bool,
+    has_standing: bool = False,
+    has_form: bool = False,
+) -> bool:
+    """Analysis only when fixture, teams, (form|standing), and (odds|prediction) exist."""
+    if not fixture_id:
+        return False
+    if not str(home or "").strip() or not str(away or "").strip():
+        return False
+    form_or_standing = has_standing or has_form or _has_form_data(pred_insights)
+    if not form_or_standing:
+        return False
+    if not (has_odds or _has_prediction_data(pred_insights)):
+        return False
+    return True
+
+
+def empty_betting_signal() -> dict[str, Any]:
+    return {
+        "ai_pick": None,
+        "confidence": None,
+        "no_bet": True,
+        "risk": None,
+        "value": False,
+        "reasons": [],
+        "home_pct": None,
+        "draw_pct": None,
+        "away_pct": None,
+    }
+
+
 def build_betting_signal(
     *,
     home: str,
@@ -93,9 +158,8 @@ def build_betting_signal(
     is_live: bool = False,
     h2h_support: bool = False,
     injury_advantage: bool = False,
-    form_only: bool = False,
 ) -> dict[str, Any]:
-    """AI pick + confidence from odds, API prediction, or baseline."""
+    """AI pick + confidence from odds and optional API prediction — no odds, no output."""
     pred = pred_insights or {}
     reasons: list[str] = []
     confidence = 50.0
@@ -107,80 +171,11 @@ def build_betting_signal(
     odds_ok = has_complete_odds(
         {"home_odd": home_odd, "draw_odd": draw_odd, "away_odd": away_odd}
     )
-    has_form = bool(pred.get("form_home") or pred.get("form_away"))
+    has_form = _has_form_data(pred)
     has_pred = pred.get("home_pct") is not None
 
     if not odds_ok:
-        confidence -= 15
-        if form_only and (has_pred or has_form or pred.get("advice")):
-            if pred.get("advice"):
-                confidence += 10
-                reasons.append(str(pred["advice"])[:90])
-            if has_form:
-                confidence += 10
-                fh, fa = pred.get("form_home"), pred.get("form_away")
-                reasons.append(f"Form: {home} {fh or '—'} · {away} {fa or '—'}")
-            if has_pred:
-                api_best = max(
-                    [
-                        ("home", pred.get("home_pct"), home),
-                        ("draw", pred.get("draw_pct"), "X"),
-                        ("away", pred.get("away_pct"), away),
-                    ],
-                    key=lambda x: float(x[1] or 0),
-                )
-                ai_pick = (
-                    f"{api_best[2]} Sieg" if api_best[0] != "draw" else "Unentschieden"
-                )
-                home_pct = pred.get("home_pct")
-                draw_pct = pred.get("draw_pct")
-                away_pct = pred.get("away_pct")
-                reasons.append("Analyse basiert auf Formdaten")
-            else:
-                ai_pick = f"{home} Sieg"
-                reasons.append("Formdaten ohne Quoten")
-            confidence = max(40.0, min(75.0, confidence))
-            if confidence < 60:
-                no_bet = True
-                ai_pick = "No Bet"
-                risk = "Hoch"
-            else:
-                no_bet = False
-                risk = "Mittel"
-            return {
-                "ai_pick": ai_pick,
-                "confidence": round(confidence, 1),
-                "no_bet": no_bet,
-                "risk": risk,
-                "value": False,
-                "reasons": reasons[:3],
-                "home_pct": pred.get("home_pct"),
-                "draw_pct": pred.get("draw_pct"),
-                "away_pct": pred.get("away_pct"),
-            }
-        if is_live:
-            return {
-                "ai_pick": "No Bet",
-                "confidence": max(35.0, confidence),
-                "no_bet": True,
-                "risk": "Hoch",
-                "value": False,
-                "reasons": ["Keine Quoten — Live nur Score-Modus."],
-                "home_pct": None,
-                "draw_pct": None,
-                "away_pct": None,
-            }
-        return {
-            "ai_pick": "No Bet",
-            "confidence": max(35.0, confidence),
-            "no_bet": True,
-            "risk": "Hoch",
-            "value": False,
-            "reasons": ["Keine vollständigen 1X2-Quoten."],
-            "home_pct": None,
-            "draw_pct": None,
-            "away_pct": None,
-        }
+        return empty_betting_signal()
 
     home_pct, draw_pct, away_pct = win_pcts_from_odds(home_odd, draw_odd, away_odd)
 
