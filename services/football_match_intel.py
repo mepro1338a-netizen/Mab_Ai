@@ -116,4 +116,21 @@ def build_match_analysis_sections(
         if reasons:
             sections["reasoning"] = reasons
 
+    ai_pred = detail.get("prediction") or {}
+    if not sections.get("best_bet") and ai_pred.get("best_bet") and ai_pred["best_bet"] != "—":
+        sections["best_bet"] = {
+            "pick": ai_pred.get("best_bet"),
+            "risk": None,
+            "no_bet": ai_pred.get("no_bet"),
+        }
+    if not sections.get("reasoning") and ai_pred.get("reasons"):
+        sections["reasoning"] = list(ai_pred["reasons"])[:5]
+    if "confidence" not in sections and ai_pred.get("best_bet_confidence") is not None:
+        sections["confidence"] = ai_pred["best_bet_confidence"]
+    if "prediction" not in sections and ai_pred.get("outcome"):
+        sections["prediction"] = {
+            "outcome": ai_pred.get("outcome"),
+            "outcome_confidence": ai_pred.get("outcome_confidence"),
+        }
+
     return sections

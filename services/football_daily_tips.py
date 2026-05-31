@@ -55,7 +55,7 @@ def build_daily_betting_tips(
             continue
 
         if rank >= 3:
-            intel = build_betting_intelligence_card(detail)
+            intel = detail.get("intel") or build_betting_intelligence_card(detail)
         else:
             intel = build_pro_preview_card(detail)
 

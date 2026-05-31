@@ -31,66 +31,6 @@ def validate_password(password):
     return True, ""
 
 
-def create_user(username, email, password):
-    username = normalize_username(username)
-    email = (email or "").strip().lower()
-
-    if not username or not email or not password:
-        return False, "Bitte alle Felder ausfüllen."
-
-    valid, msg = validate_password(password)
-    if not valid:
-        return False, msg
-
-    conn = get_connection()
-    cur = conn.cursor()
-
-    try:
-        password_hash = bcrypt.hashpw(
-            password.encode("utf-8"),
-            bcrypt.gensalt(),
-        ).decode("utf-8")
-
-        cur.execute("""
-        INSERT INTO users (
-            username,
-            email,
-            password_hash,
-            plan,
-            tokens,
-            automation_unlocked,
-            role,
-            admin_level,
-            is_banned,
-            created_at
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            username,
-            email,
-            password_hash,
-            "free",
-            int(PLANS["free"]["tokens"]),
-            0,
-            "user",
-            0,
-            0,
-            now(),
-        ))
-
-        conn.commit()
-        return True, "Account erstellt."
-
-    except sqlite3.IntegrityError:
-        return False, "Username oder Email existiert bereits."
-
-    except Exception as e:
-        return False, f"Datenbankfehler: {e}"
-
-    finally:
-        conn.close()
-
-
 def register_account(
     *,
     username: str,

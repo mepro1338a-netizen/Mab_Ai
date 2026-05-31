@@ -28,6 +28,8 @@ def render_home() -> None:
 
     st.markdown('<div class="mb-fb-cc" aria-hidden="true"></div>', unsafe_allow_html=True)
 
+    inject_ai_dashboard_css()
+
     render_ai_dashboard(
         user=user,
         plan_key=plan_key,
@@ -37,5 +39,3 @@ def render_home() -> None:
         fb_label=fb_label,
         tier=tier,
     )
-
-    inject_ai_dashboard_css()

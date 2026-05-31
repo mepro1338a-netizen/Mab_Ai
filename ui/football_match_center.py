@@ -410,29 +410,6 @@ def render_section_title(title: str) -> None:
     st.markdown(f'<p class="fb-mc-section">{html.escape(title)}</p>', unsafe_allow_html=True)
 
 
-def render_few_top_matches_note() -> None:
-    st.markdown(
-        '<div class="fb-mc-empty-few"><strong>Keine weiteren Topspiele heute.</strong> '
-        "Nur ein Premium-Match gelistet — weitere Ligen per Button unten.</div>",
-        unsafe_allow_html=True,
-    )
-
-
-def render_empty_top_matches(*, show_intl_hint: bool = False, raw_live: int = 0) -> None:
-    extra = ""
-    if show_intl_hint and raw_live:
-        extra = f" Es laufen {raw_live} Spiele in kleineren Ligen."
-    st.markdown(
-        f"""
-<div class="fb-mc-empty-state">
-    <strong>Heute keine Topspiele verfügbar.</strong>
-    In Premium-Ligen (Bundesliga, UEFA, Topligen) sind heute keine Partien gelistet.{extra}
-</div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-
 def render_top_matches_row(
     fixtures: list[dict[str, Any]],
     *,
@@ -462,14 +439,6 @@ def render_top_matches_row(
                 st.session_state.fb_mc_selected_fixture = fid_int
                 st.session_state.pop(f"fb_bet_details_{fid_int}", None)
                 st.rerun()
-
-
-def render_category_chips(categories: dict[str, str], active: str) -> None:
-    chips = []
-    for key, label in categories.items():
-        cls = "fb-mc-cat active" if key == active else "fb-mc-cat"
-        chips.append(f'<span class="{cls}">{html.escape(label)}</span>')
-    st.markdown(f'<div class="fb-mc-cat-row">{"".join(chips)}</div>', unsafe_allow_html=True)
 
 
 def _logo_img(url: str, alt: str, css_class: str) -> str:
@@ -528,20 +497,6 @@ def _render_match_card_html(card: dict[str, Any]) -> str:
     {live_extra}
 </div>
 """
-
-
-def render_premium_live_empty(*, raw_live_count: int) -> None:
-    extra = ""
-    if raw_live_count:
-        extra = f" ({raw_live_count} Spiele in kleineren Ligen laufen gerade.)"
-    st.markdown(
-        f"""
-<div class="fb-mc-empty-premium">
-    <strong>Heute keine Topspiele live.</strong>{extra}
-</div>
-        """,
-        unsafe_allow_html=True,
-    )
 
 
 def render_dashboard_tip_mini(intel: dict[str, Any], *, fixture_id: int) -> None:

@@ -624,7 +624,7 @@ def render_subscription_overview(*, plan_label: str, tokens: int, fb_label: str,
         for a, b in rows
     )
     st.markdown(
-        f'<div class="mb-fb-section">Subscription Overview</div>'
+        f'<div class="mb-fb-section">Abo-Übersicht</div>'
         f'<div class="mb-fb-sub-box">{inner}</div>',
         unsafe_allow_html=True,
     )
@@ -634,9 +634,8 @@ def render_subscription_overview(*, plan_label: str, tokens: int, fb_label: str,
 
 def render_usage_analytics(username: str) -> None:
     summary = usage_summary(username=username, days=7) or []
-    st.markdown('<div class="mb-fb-section">Usage Analytics (7T)</div>', unsafe_allow_html=True)
+    st.markdown('<div class="mb-fb-section">Nutzung (7 Tage)</div>', unsafe_allow_html=True)
     if not summary:
-        st.markdown('<p class="mb-fb-empty">Noch keine Nutzung — starte mit Football AI.</p>', unsafe_allow_html=True)
         return
     max_runs = max(int(r.get("runs") or 0) for r in summary) or 1
     bars: list[str] = []
@@ -654,9 +653,8 @@ def render_usage_analytics(username: str) -> None:
 
 def render_activity_feed(username: str) -> None:
     items = recent_activity(username=username, limit=8) or []
-    st.markdown('<div class="mb-fb-section">Activity Feed</div>', unsafe_allow_html=True)
+    st.markdown('<div class="mb-fb-section">Aktivitäts-Feed</div>', unsafe_allow_html=True)
     if not items:
-        st.markdown('<p class="mb-fb-empty">Noch keine Aktivität protokolliert.</p>', unsafe_allow_html=True)
         return
     blocks = []
     for row in items:
@@ -706,10 +704,14 @@ def render_ai_dashboard(
                 tier=tier,
                 plan_key=plan_key,
             )
-        with st.container(border=True):
-            render_usage_analytics(username)
-        with st.container(border=True):
-            render_activity_feed(username)
+        usage = usage_summary(username=username, days=7) or []
+        if usage:
+            with st.container(border=True):
+                render_usage_analytics(username)
+        activity = recent_activity(username=username, limit=8) or []
+        if activity:
+            with st.container(border=True):
+                render_activity_feed(username)
 
     st.markdown(
         f'<p class="mb-fb-empty" style="text-align:center;margin-top:12px">'

@@ -375,6 +375,23 @@ def do_login(identifier: str, password: str) -> None:
     _set_notice("error", login_msg or "Benutzername/E-Mail oder Passwort falsch.")
 
 
+def _refresh_register_captcha() -> tuple[int, int]:
+    import random
+
+    a, b = random.randint(2, 9), random.randint(2, 9)
+    st.session_state["reg_cap_a"] = a
+    st.session_state["reg_cap_b"] = b
+    return a, b
+
+
+def _register_captcha_values() -> tuple[int, int]:
+    a = int(st.session_state.get("reg_cap_a") or 0)
+    b = int(st.session_state.get("reg_cap_b") or 0)
+    if a < 1 or b < 1:
+        return _refresh_register_captcha()
+    return a, b
+
+
 def do_register(
     *,
     username: str,
@@ -382,11 +399,23 @@ def do_register(
     password: str,
     password2: str,
     terms: bool,
+    captcha_answer: str,
 ) -> None:
     username = (username or "").strip()
     email = (email or "").strip()
     password = password or ""
     password2 = password2 or ""
+
+    cap_a = int(st.session_state.get("reg_cap_a") or 0)
+    cap_b = int(st.session_state.get("reg_cap_b") or 0)
+    try:
+        cap_ok = int(str(captcha_answer or "").strip()) == cap_a + cap_b
+    except ValueError:
+        cap_ok = False
+    if not cap_ok:
+        _refresh_register_captcha()
+        _set_notice("error", "Captcha falsch — bitte erneut versuchen.")
+        return
 
     if password != password2:
         _set_notice("error", "Passwörter stimmen nicht überein.")
@@ -525,11 +554,16 @@ def _render_login_panel() -> None:
 
 
 def _render_register_panel() -> None:
+    cap_a, cap_b = _register_captcha_values()
     with st.form("auth_register_form", clear_on_submit=False, border=False):
         username = st.text_input("Benutzername", placeholder="dein_name")
         email = st.text_input("E-Mail", placeholder="name@firma.de")
         password = st.text_input("Passwort", type="password", placeholder="Min. 8 Zeichen")
         password2 = st.text_input("Passwort bestätigen", type="password", placeholder="Wiederholen")
+        captcha = st.text_input(
+            f"Captcha: Was ist {cap_a} + {cap_b}?",
+            placeholder="Ergebnis eingeben",
+        )
         terms = st.checkbox("Ich akzeptiere die AGB und Datenschutzerklärung.")
         submitted = st.form_submit_button("Account erstellen", type="primary", use_container_width=True)
 
@@ -540,6 +574,7 @@ def _render_register_panel() -> None:
             password=password,
             password2=password2,
             terms=terms,
+            captcha_answer=captcha,
         )
 
     st.markdown('<p class="auth-register-line">Bereits registriert?</p>', unsafe_allow_html=True)
