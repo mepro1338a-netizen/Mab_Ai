@@ -18,6 +18,8 @@ from services.football_betting_board import (
     build_board_rows,
     collect_fixtures_for_filters,
     fetch_board_payload,
+    log_displayed_fixtures,
+    region_filter_label,
 )
 from services.football_match_center import fetch_match_detail
 from services.football_odds import calculate_tip_odds
@@ -546,7 +548,7 @@ def render_football_betting_board(
         st.rerun()
 
     st.markdown(
-        '<p class="fbb-filter-note">Premium-Ligen · Bundesliga · UEFA · Top 5</p>',
+        f'<p class="fbb-filter-note">{html.escape(region_filter_label(st.session_state.fb_board_region, premium_only=premium_only))}</p>',
         unsafe_allow_html=True,
     )
 
@@ -608,6 +610,13 @@ def render_football_betting_board(
         region_filter=st.session_state.fb_board_region,
         premium_only=premium_only,
     )
+
+    if _show_football_debug():
+        log_displayed_fixtures(
+            fixtures,
+            region_filter=st.session_state.fb_board_region,
+            premium_only=premium_only,
+        )
 
     if not fixtures:
         _render_empty_state(

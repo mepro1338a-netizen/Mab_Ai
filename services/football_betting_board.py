@@ -22,7 +22,7 @@ from services.football_service import FootballAPIError, FootballService
 
 _REGION_IDS: dict[str, frozenset[int]] = {
     "deutschland": frozenset(int(x["id"]) for x in FOOTBALL_LEAGUE_GROUPS.get("deutschland", [])),
-    "uefa": frozenset(int(x["id"]) for x in FOOTBALL_LEAGUE_GROUPS.get("uefa", [])),
+    "uefa": frozenset({2, 3, 848, 5, 14}),
     "topligen": frozenset(
         int(x["id"])
         for grp in ("europa_top",)
@@ -30,6 +30,128 @@ _REGION_IDS: dict[str, frozenset[int]] = {
     )
     | frozenset({39}),
 }
+
+
+# Strict UEFA competitions (API-Football league IDs)
+UEFA_COMPETITION_IDS: frozenset[int] = frozenset({2, 3, 848, 5, 14})
+# 2=UCL, 3=UEL, 848=Conference, 5=Nations League, 14=UEFA Youth League
+
+_UEFA_NAME_KEYWORDS = (
+    "uefa champions league",
+    "uefa europa league",
+    "uefa conference league",
+    "uefa youth league",
+    "uefa nations league",
+)
+
+
+def is_uefa_competition(league: dict[str, Any] | None) -> bool:
+    """Only official UEFA club/national team competitions."""
+    if not league:
+        return False
+    try:
+        lid = int(league.get("id") or 0)
+    except (TypeError, ValueError):
+        lid = 0
+    if lid in UEFA_COMPETITION_IDS:
+        return True
+    name = str(league.get("name") or "").lower().strip()
+    country = str(league.get("country") or "").lower().strip()
+    if not name:
+        return False
+    if "uefa" in name:
+        return any(kw in name for kw in _UEFA_NAME_KEYWORDS) or (
+            "champions league" in name
+            or "europa league" in name
+            or "conference league" in name
+            or "nations league" in name
+            or "youth league" in name
+        )
+    if country == "europe" and name in (
+        "champions league",
+        "europa league",
+        "conference league",
+    ):
+        return True
+    return False
+
+
+def filter_fixtures_by_region(
+    fixtures: list[dict[str, Any]],
+    region_filter: str,
+) -> list[dict[str, Any]]:
+    """Apply region filter — always runs (premium + show-all modes)."""
+    region = (region_filter or "alle").lower().strip()
+    if region in ("alle", "all", ""):
+        return list(fixtures or [])
+
+    if region == "uefa":
+        return [
+            fx
+            for fx in fixtures or []
+            if is_uefa_competition(fx.get("league") or {})
+        ]
+
+    region_ids = league_group_ids(region)
+    if region_ids is not None:
+        return [
+            fx
+            for fx in fixtures or []
+            if int((fx.get("league") or {}).get("id") or 0) in region_ids
+        ]
+    return list(fixtures or [])
+
+
+def region_filter_label(region_filter: str, *, premium_only: bool) -> str:
+    region = (region_filter or "alle").lower().strip()
+    labels = {
+        "uefa": "UEFA Wettbewerbe",
+        "deutschland": "Deutsche Wettbewerbe",
+        "topligen": "Top 5 Ligen",
+        "alle": "Alle verfügbaren Spiele" if not premium_only else "Premium-Ligen · Bundesliga · UEFA · Top 5",
+    }
+    return labels.get(region, labels["alle"])
+
+
+def fixture_league_debug_info(fixture: dict[str, Any]) -> dict[str, Any]:
+    league = fixture.get("league") or {}
+    teams = fixture.get("teams") or {}
+    home = (teams.get("home") or {}).get("name") or "?"
+    away = (teams.get("away") or {}).get("name") or "?"
+    return {
+        "match": f"{home} vs {away}",
+        "league_id": league.get("id"),
+        "league_name": league.get("name"),
+        "country": league.get("country"),
+    }
+
+
+def log_displayed_fixtures(
+    fixtures: list[dict[str, Any]],
+    *,
+    region_filter: str,
+    premium_only: bool,
+) -> None:
+    """Debug: log league metadata for each displayed match."""
+    region = (region_filter or "alle").lower()
+    logic = (
+        f"region={region}, premium_only={premium_only}, "
+        f"uefa_strict={'is_uefa_competition()' if region == 'uefa' else 'league_id in region_ids'}"
+    )
+    print(
+        {
+            "uefa_filter_debug": {
+                "count": len(fixtures or []),
+                "filter_logic": logic,
+                "league_names": [
+                    str((fx.get("league") or {}).get("name") or "?")
+                    for fx in (fixtures or [])
+                ],
+            }
+        }
+    )
+    for fx in fixtures or []:
+        print(fixture_league_debug_info(fx))
 
 
 def league_group_ids(region: str) -> frozenset[int] | None:
@@ -97,6 +219,7 @@ def collect_fixtures_for_filters(
                     for fx in pool
                     if _is_live(fx) or _fixture_date(fx) == today_s
                 ]
+        pool = filter_fixtures_by_region(pool, region_filter)
         return sort_fixtures_by_priority(pool)
 
     if time_filter == "live":
@@ -123,14 +246,7 @@ def collect_fixtures_for_filters(
                 if _is_live(fx) or _fixture_date(fx) == today_s
             ]
 
-    region_ids = league_group_ids(region_filter)
-    if region_ids is not None:
-        pool = [
-            fx
-            for fx in pool
-            if int((fx.get("league") or {}).get("id") or 0) in region_ids
-        ]
-
+    pool = filter_fixtures_by_region(pool, region_filter)
     return sort_fixtures_by_priority(pool)
 
 
