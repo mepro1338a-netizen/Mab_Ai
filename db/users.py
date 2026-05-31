@@ -124,14 +124,14 @@ def register_account(
     if not terms_accepted:
         return False, "Bitte AGB und Datenschutz bestätigen.", None
 
-    if not full_name or len(full_name) < 2:
-        return False, "Bitte deinen vollständigen Namen eingeben.", None
-
     if not username or not email or not password:
         return False, "Bitte alle Pflichtfelder ausfüllen.", None
 
+    if not full_name or len(full_name) < 2:
+        full_name = username
+
     if not use_case:
-        return False, "Bitte wähle, wofür du MaByte nutzen möchtest.", None
+        use_case = "Sonstiges"
 
     valid, msg = validate_password(password)
     if not valid:

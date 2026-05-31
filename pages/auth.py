@@ -351,12 +351,10 @@ def do_login(identifier: str, password: str, *, captcha: str) -> None:
 
 def do_register(
     *,
-    full_name: str,
     username: str,
     email: str,
     password: str,
     password2: str,
-    company: str,
     terms: bool,
     captcha: str,
 ) -> None:
@@ -375,7 +373,7 @@ def do_register(
     if not is_valid_username(username):
         _set_notice(
             "error",
-            "Benutzername: 3–40 Zeichen, nur Buchstaben, Zahlen oder Unterstrich.",
+            "Account Name: 3–40 Zeichen, nur Buchstaben, Zahlen oder Unterstrich.",
         )
         return
 
@@ -392,8 +390,8 @@ def do_register(
         username=username,
         email=email,
         password=password,
-        full_name=full_name,
-        company=(company or "").strip(),
+        full_name=username,
+        company="",
         phone="",
         country=_DEFAULT_COUNTRY,
         use_case=_DEFAULT_USE_CASE,
@@ -559,9 +557,9 @@ def render_auth() -> None:
         )
         with st.container():
             if mode == "register":
-                st.markdown('<p class="auth-card-title">Konto erstellen</p>', unsafe_allow_html=True)
+                st.markdown('<p class="auth-card-title">Account erstellen</p>', unsafe_allow_html=True)
                 st.markdown(
-                    '<p class="auth-card-sub">Registrieren Sie sich für Ihren MaByte Workspace.</p>',
+                    '<p class="auth-card-sub">Account Name, E-Mail und Passwort — in unter einer Minute startklar.</p>',
                     unsafe_allow_html=True,
                 )
             else:
