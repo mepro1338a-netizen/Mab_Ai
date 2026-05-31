@@ -415,21 +415,29 @@ def render_welcome_header(*, user: str, plan_label: str, fb_label: str, hub: dic
     live_n = len(payload.get("live_now") or [])
     top_n = len(payload.get("top_matches") or [])
     live_cls = " mb-fb-pill live" if live_n else ""
-    live_txt = f"{live_n} Live" if live_n else "Keine Live-Spiele"
+    live_pill = (
+        f'<span class="mb-fb-pill{live_cls}">{live_n} Live</span>'
+        if live_n
+        else ""
+    )
+    top_pill = (
+        f'<span class="mb-fb-pill">{top_n} Top-Spiele heute</span>'
+        if top_n
+        else ""
+    )
     st.markdown(
         f"""
 <div class="mb-fb-welcome">
-  <div class="mb-fb-kicker">Football Intelligence Command Center</div>
+  <div class="mb-fb-kicker">Fußball Intelligence</div>
   <h1>Willkommen zurück, {html.escape(user)}</h1>
   <p>
-    Dein tägliches Briefing: Top-Spiele, AI Picks und Live-Signale —
-    damit du morgen wieder einen Schritt voraus bist.
+    Dein tägliches Briefing: Top-Spiele, KI-Tipps und Live-Signale.
   </p>
   <div class="mb-fb-pills">
     <span class="mb-fb-pill">Plan {html.escape(plan_label)}</span>
     <span class="mb-fb-pill">Football {html.escape(fb_label)}</span>
-    <span class="mb-fb-pill{live_cls}">{html.escape(live_txt)}</span>
-    <span class="mb-fb-pill">{top_n} Top-Spiele heute</span>
+    {live_pill}
+    {top_pill}
   </div>
 </div>
         """,

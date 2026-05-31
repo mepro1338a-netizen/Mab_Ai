@@ -335,7 +335,7 @@ def fetch_premium_dashboard(
         errors.append(str(exc))
 
     today_premium = _fetch_by_leagues(
-        service, today_s, premium_ids, username=username, max_leagues=24
+        service, today_s, premium_ids, username=username, max_leagues=17
     )
     merged = dedupe_fixtures(live_rows + today_premium)
     premium_fixtures = filter_premium_fixtures(merged)
@@ -364,7 +364,7 @@ def fetch_premium_dashboard(
 
     extended: list[dict[str, Any]] = []
 
-    live_now_cards = _enrich_live_cards(service, live_now, username=username, max_cards=6)
+    live_now_cards = _enrich_live_cards(service, live_now, username=username, max_cards=4)
 
     raw_live_count = len(live_rows)
     non_premium_live_count = max(0, raw_live_count - len(premium_live))
