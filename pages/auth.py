@@ -22,12 +22,12 @@ from ui.styles import inject_css
 _DEFAULT_USE_CASE = "Sonstiges"
 _DEFAULT_COUNTRY = "Deutschland"
 
-# Minimal dark styling only — no grid, :has(), transforms, or column hacks.
+# Polish CSS — scoped to right column marker only (no grid / column width hacks).
 _AUTH_MIN_CSS = """
 html, body, .stApp,
 [data-testid="stAppViewContainer"],
 [data-testid="stAppViewBlockContainer"] {
-    background: #09090b !important;
+    background: linear-gradient(180deg, #09090b 0%, #18181b 45%, #09090b 100%) !important;
     color: #fafafa !important;
 }
 #MainMenu, footer,
@@ -40,24 +40,110 @@ html, body, .stApp,
 [data-testid="stMain"] .block-container,
 [data-testid="stMainBlockContainer"] {
     max-width: 1200px !important;
-    padding: 2rem 1.5rem !important;
+    padding: 2.25rem 1.75rem 2.5rem !important;
 }
-[data-testid="stTextInput"] input,
-[data-testid="stNumberInput"] input {
+
+/* Glass card — right login column only */
+[data-testid="stColumn"]:has(.auth-glass-marker) {
+    background: rgba(24, 24, 27, 0.72) !important;
+    border: 1px solid rgba(255, 255, 255, 0.09) !important;
+    border-radius: 20px !important;
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.35) !important;
+    padding: 2rem 2rem 1.75rem 2rem !important;
+    box-sizing: border-box !important;
+}
+[data-testid="stColumn"]:has(.auth-glass-marker) [data-testid="stVerticalBlock"] {
+    gap: 0.7rem !important;
+}
+[data-testid="stColumn"]:has(.auth-glass-marker) h3 {
+    color: #fafafa !important;
+    margin-bottom: 0.25rem !important;
+}
+
+/* Inputs & captcha */
+[data-testid="stColumn"]:has(.auth-glass-marker) [data-testid="stTextInput"] input,
+[data-testid="stColumn"]:has(.auth-glass-marker) [data-testid="stNumberInput"] input {
     background: #27272a !important;
     color: #fafafa !important;
     border: 1px solid #3f3f46 !important;
-    border-radius: 8px !important;
+    border-radius: 10px !important;
+    min-height: 44px !important;
 }
-[data-testid="stFormSubmitButton"] button[kind="primary"],
-.stButton > button[kind="primary"] {
-    background: #7c3aed !important;
+[data-testid="stColumn"]:has(.auth-glass-marker) div[data-baseweb="input"] {
+    background: #27272a !important;
+    border: 1px solid #3f3f46 !important;
+    border-radius: 10px !important;
+}
+[data-testid="stColumn"]:has(.auth-glass-marker) [data-testid="stNumberInput"] button {
+    background: #27272a !important;
+    border-color: #3f3f46 !important;
+    color: #a1a1aa !important;
+}
+[data-testid="stColumn"]:has(.auth-glass-marker) [data-testid="stTextInput"] button {
+    background: transparent !important;
+    border: none !important;
+    color: #a1a1aa !important;
+}
+[data-testid="stColumn"]:has(.auth-glass-marker) [data-testid="stWidgetLabel"] p,
+[data-testid="stColumn"]:has(.auth-glass-marker) [data-testid="stCheckbox"] label p {
+    color: #d4d4d8 !important;
+}
+
+/* Primary login — violet/blue gradient (not red) */
+[data-testid="stColumn"]:has(.auth-glass-marker) [data-testid="stFormSubmitButton"] button[kind="primary"],
+[data-testid="stColumn"]:has(.auth-glass-marker) [data-testid="stFormSubmitButton"] button[data-testid="stBaseButton-primaryFormSubmit"],
+[data-testid="stColumn"]:has(.auth-glass-marker) .stButton > button[kind="primary"] {
+    background: linear-gradient(135deg, #a855f7 0%, #7c3aed 45%, #4f46e5 100%) !important;
     color: #ffffff !important;
     border: none !important;
+    border-radius: 12px !important;
+    min-height: 48px !important;
+    box-shadow: 0 4px 18px rgba(124, 58, 237, 0.35) !important;
 }
-[data-testid="stFormSubmitButton"] button[kind="primary"] p,
-.stButton > button[kind="primary"] p {
+[data-testid="stColumn"]:has(.auth-glass-marker) [data-testid="stFormSubmitButton"] button[kind="primary"] p,
+[data-testid="stColumn"]:has(.auth-glass-marker) .stButton > button[kind="primary"] p {
     color: #ffffff !important;
+    font-weight: 700 !important;
+}
+
+/* Google & secondary actions — dark */
+[data-testid="stColumn"]:has(.auth-glass-marker) [data-testid="stLinkButton"] a {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    min-height: 44px !important;
+    border-radius: 10px !important;
+    background: #27272a !important;
+    border: 1px solid #3f3f46 !important;
+    color: #fafafa !important;
+    text-decoration: none !important;
+    font-weight: 600 !important;
+    margin-top: 0.35rem !important;
+}
+[data-testid="stColumn"]:has(.auth-glass-marker) .stButton > button[kind="secondary"] {
+    background: rgba(124, 58, 237, 0.14) !important;
+    border: 1px solid rgba(167, 139, 250, 0.45) !important;
+    color: #c4b5fd !important;
+    border-radius: 10px !important;
+    min-height: 42px !important;
+    width: 100% !important;
+}
+[data-testid="stColumn"]:has(.auth-glass-marker) .stButton > button[kind="secondary"] p {
+    color: #c4b5fd !important;
+    font-weight: 600 !important;
+}
+[data-testid="stColumn"]:has(.auth-glass-marker) [data-testid="stCaption"] {
+    color: #a1a1aa !important;
+    font-size: 0.9rem !important;
+    margin-top: 1rem !important;
+    margin-bottom: 0.35rem !important;
+    text-align: center !important;
+}
+[data-testid="stColumn"]:has(.auth-glass-marker) .stButton > button[kind="tertiary"] {
+    color: #a1a1aa !important;
+    background: transparent !important;
+    border: none !important;
 }
 """
 
@@ -291,8 +377,8 @@ def _render_login_panel() -> None:
         if url:
             st.link_button("Mit Google anmelden", url, use_container_width=True)
 
-    st.caption("Noch kein Konto?")
-    if st.button("Jetzt registrieren", key="auth_go_register", type="secondary"):
+    st.caption("Noch kein Konto? Jetzt registrieren:")
+    if st.button("Konto erstellen", key="auth_go_register", type="secondary", use_container_width=True):
         _set_mode("register")
         refresh_captcha()
         st.rerun()
@@ -354,6 +440,10 @@ def render_auth() -> None:
         st.markdown("- Teams")
 
     with right:
+        st.markdown(
+            '<span class="auth-glass-marker" hidden aria-hidden="true"></span>',
+            unsafe_allow_html=True,
+        )
         with st.container():
             if mode == "register":
                 st.subheader("Konto erstellen")
