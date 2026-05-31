@@ -206,9 +206,6 @@ def _build_reasons(
             f"Verletzungen: Heim {inj['home_impact']} ({len(inj['home'])}), "
             f"Auswärts {inj['away_impact']} ({len(inj['away'])})"
         )
-    elif inj["missing"]:
-        reasons.append("Verletzungen: keine API-Daten")
-
     if detail.get("lineups"):
         reasons.append("Aufstellungen verfügbar")
 
@@ -219,9 +216,6 @@ def _build_reasons(
     if pred.get("advice") and len(reasons) < 4:
         short = pred["advice"][:90] + ("…" if len(pred["advice"]) > 90 else "")
         reasons.append(f"API: {short}")
-
-    if not reasons:
-        reasons.append("Datenbasis begrenzt — vorsichtig bewerten")
 
     return reasons
 

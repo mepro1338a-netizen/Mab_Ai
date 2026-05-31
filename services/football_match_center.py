@@ -18,6 +18,7 @@ from services.football_leagues import (
     premium_league_ids,
     relevance_score,
 )
+from services.football_live_intel import parse_fixture_statistics, parse_xg_from_statistics
 from services.football_odds import parse_fixture_odds_payload, parse_prediction_insights
 from services.football_service import FootballAPIError, FootballService, fixture_team_names
 
@@ -672,5 +673,28 @@ def fetch_match_detail(
             detail["odds"] = parse_fixture_odds_payload(odds_rows)
         except FootballAPIError:
             detail["missing"].append("odds")
+
+        try:
+            stats_rows = service.get_fixture_statistics(fixture_id, username=username)
+            detail["fixture_statistics"] = stats_rows
+            detail["match_stats"] = parse_fixture_statistics(stats_rows)
+            xg = parse_xg_from_statistics(stats_rows)
+            if xg:
+                detail["xg"] = xg
+            else:
+                detail["missing"].append("xg")
+        except FootballAPIError:
+            detail["missing"].append("fixture_statistics")
+
+        hf, af = detail.get("home_form"), detail.get("away_form")
+        if (hf and str(hf).strip() != "—") or (af and str(af).strip() != "—"):
+            detail["form"] = {"home": hf or "", "away": af or ""}
+
+        try:
+            from services.football_elite_betting_card import build_betting_intelligence_card
+
+            detail["intel"] = build_betting_intelligence_card(detail)
+        except Exception:
+            pass
 
     return detail

@@ -24,6 +24,54 @@ def _stat_value(stats_block: dict, stat_type: str) -> int | float | None:
     return None
 
 
+_XG_STAT_TYPES = (
+    "expected goals",
+    "expected_goals",
+    "goals expected",
+    "xg",
+)
+
+
+def parse_xg_from_statistics(stats_rows: list[dict[str, Any]]) -> dict[str, Any] | None:
+    """Extract expected goals from API-Football fixture statistics when present."""
+    if not stats_rows:
+        return None
+    home_name, away_name = "Home", "Away"
+    home_block: dict[str, Any] = {}
+    away_block: dict[str, Any] = {}
+
+    for block in stats_rows or []:
+        team = (block.get("team") or {}).get("name") or "Team"
+        if not home_block:
+            home_name = team
+            home_block = block
+        else:
+            away_name = team
+            away_block = block
+
+    def _xg_val(block: dict) -> float | None:
+        for row in block.get("statistics") or []:
+            typ = str(row.get("type") or "").lower()
+            if any(x in typ for x in _XG_STAT_TYPES):
+                val = row.get("value")
+                try:
+                    return round(float(val), 2)
+                except (TypeError, ValueError):
+                    return None
+        return None
+
+    hx, ax = _xg_val(home_block), _xg_val(away_block)
+    if hx is None and ax is None:
+        return None
+    return {
+        "home": home_name,
+        "away": away_name,
+        "home_xg": hx,
+        "away_xg": ax,
+        "total_xg": round((hx or 0) + (ax or 0), 2) if (hx is not None or ax is not None) else None,
+    }
+
+
 def parse_fixture_statistics(stats_rows: list[dict[str, Any]]) -> dict[str, Any]:
     """Normalize API-Football fixture statistics."""
     home_name, away_name = "Home", "Away"

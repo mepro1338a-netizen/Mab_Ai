@@ -14,16 +14,14 @@ from ui.football_match_center import (
     fixture_select_options,
     inject_match_center_css,
     render_dashboard_tip_mini,
-    render_empty_top_matches,
     render_match_grid,
     render_mc_header,
     render_section_title,
-    render_few_top_matches_note,
     render_top_matches_row,
 )
 from ui.premium_foundation import render_upgrade_card
 
-_FB_MC_DATA_VERSION = 8
+_FB_MC_DATA_VERSION = 9
 
 
 def _init_session() -> None:
@@ -73,69 +71,69 @@ def dedupe_fixtures_list(fixtures: list) -> list:
     return out
 
 
-def _render_live_section(payload: dict, *, selected: int | None) -> None:
+def _has_live_content(payload: dict, *, include_all: bool) -> bool:
+    if list(payload.get("live_now") or []):
+        return True
+    if include_all and list(payload.get("extended") or []):
+        return True
+    return bool(payload.get("show_live_intl_prompt") or int(payload.get("raw_live_count") or 0))
+
+
+def _render_live_section(payload: dict, *, selected: int | None, include_all: bool) -> None:
     live_now = list(payload.get("live_now") or [])
+    extended = list(payload.get("extended") or [])
     if live_now:
         render_match_grid(live_now, key_prefix="live", selected_fixture=selected, max_cards=8)
+    elif include_all and extended:
+        render_match_grid(extended, key_prefix="ext_live", selected_fixture=selected, max_cards=12)
     elif payload.get("show_live_intl_prompt") or int(payload.get("raw_live_count") or 0):
-        st.markdown(
-            '<div class="fb-mc-empty-state"><strong>Heute keine Topspiele live.</strong>'
-            "In Premium-Ligen läuft gerade nichts.</div>",
-            unsafe_allow_html=True,
-        )
         if st.button("Alle Live-Spiele anzeigen", key="fb_mc_all_live", width="stretch"):
             st.session_state.fb_mc_include_all = True
             st.session_state.fb_mc_payload = None
             st.rerun()
-    else:
-        st.markdown(
-            '<div class="fb-mc-empty-state"><strong>Heute keine Topspiele live.</strong>'
-            "In Premium-Ligen läuft gerade nichts.</div>",
-            unsafe_allow_html=True,
-        )
+
+
+def _has_top_content(payload: dict) -> bool:
+    return bool(
+        payload.get("top_matches")
+        or payload.get("next_matches")
+        or payload.get("all_premium")
+        or payload.get("show_international_prompt")
+        or int(payload.get("raw_live_count") or 0)
+    )
 
 
 def _render_top_section(payload: dict, *, selected: int | None) -> None:
     top_matches = list(payload.get("top_matches") or [])
     next_matches = list(payload.get("next_matches") or [])
+    all_premium = list(payload.get("all_premium") or [])
     if top_matches:
         render_top_matches_row(top_matches, key_prefix="top", selected_fixture=selected)
-        if len(top_matches) == 1:
-            render_few_top_matches_note()
     elif next_matches:
-        st.markdown(
-            '<div class="fb-mc-empty-state" style="margin-bottom:12px;">'
-            "<strong>Heute keine Topspiele verfügbar.</strong> "
-            "Nächste Premium-Partien in den kommenden 7 Tagen.</div>",
-            unsafe_allow_html=True,
-        )
         render_top_matches_row(next_matches, key_prefix="next", selected_fixture=selected)
-    else:
-        render_empty_top_matches(
-            show_intl_hint=bool(payload.get("show_international_prompt")),
-            raw_live=int(payload.get("raw_live_count") or 0),
-        )
+    elif all_premium:
+        render_match_grid(all_premium[:8], key_prefix="prem_fallback", selected_fixture=selected, max_cards=8)
+    elif payload.get("show_international_prompt") or int(payload.get("raw_live_count") or 0):
         if st.button("Alle Live-Spiele anzeigen", key="fb_mc_all_top", width="stretch"):
             st.session_state.fb_mc_include_all = True
             st.session_state.fb_mc_payload = None
             st.rerun()
 
 
-def _render_tips_section(*, tip_pool: list, tips: list, rank: int, open_premium) -> None:
+def _has_tips_content(*, tips: list, rank: int) -> bool:
+    return rank < 2 or bool(tips)
+
+
+def _render_tips_section(*, tips: list, rank: int, open_premium) -> None:
     if rank < 2:
         st.info("AI Tipps ab Football Pro.")
         if st.button("Upgrade", key="fb_mc_tip_up", width="stretch"):
             open_premium()
         return
-    if tips:
-        tip_cols = st.columns(min(len(tips), 3))
-        for i, tip in enumerate(tips[:3]):
-            with tip_cols[i]:
-                render_dashboard_tip_mini(tip["intel"], fixture_id=int(tip["fixture_id"]))
-    elif tip_pool:
-        st.caption("Keine ausreichenden Prognose-Daten — nächste Spiele werden geladen.")
-    else:
-        st.caption("Tipps erscheinen, sobald Premium-Spiele verfügbar sind.")
+    tip_cols = st.columns(min(len(tips), 3))
+    for i, tip in enumerate(tips[:3]):
+        with tip_cols[i]:
+            render_dashboard_tip_mini(tip["intel"], fixture_id=int(tip["fixture_id"]))
 
 
 def _render_analyse_section(
@@ -154,7 +152,6 @@ def _render_analyse_section(
     all_premium: list,
 ) -> None:
     if not selected:
-        st.info("Wähle ein Spiel unter Live Center oder Top Matches — dann „Analyse“.")
         pool = dedupe_fixtures_list(all_premium + next_matches + live_now + top_matches)
         if pool:
             opts = fixture_select_options(pool[:12])
@@ -165,7 +162,7 @@ def _render_analyse_section(
         return
 
     cache_key = f"fb_mc_detail_{selected}"
-    sig_d = f"{selected}|{session_plan}|v8"
+    sig_d = f"{selected}|{session_plan}|v9"
     if st.session_state.get("fb_mc_detail_sig") != sig_d:
         st.session_state.fb_mc_detail_sig = sig_d
         st.session_state.pop(cache_key, None)
@@ -177,8 +174,10 @@ def _render_analyse_section(
             )
 
     detail = st.session_state.get(cache_key)
-    if not detail or detail.get("error"):
-        st.error(detail.get("error", "Analyse nicht verfügbar.") if detail else "Keine Daten.")
+    if not detail:
+        return
+    if detail.get("error"):
+        st.error(str(detail["error"]))
         return
 
     render_match_intelligence_section(
@@ -218,10 +217,7 @@ def render_tab_live_match_center(
 
     service = get_football_service()
     if not service.is_configured():
-        st.markdown(
-            '<div class="fb-empty">FOOTBALL_API_KEY fehlt — API wird angebunden.</div>',
-            unsafe_allow_html=True,
-        )
+        st.error("FOOTBALL_API_KEY fehlt — Konfiguration in .env erforderlich.")
         return
 
     elite_ok, _, _ = can_access_feature(username, "ai_elite_live_intelligence", session_plan)
@@ -277,7 +273,7 @@ def render_tab_live_match_center(
     st.caption(cap)
 
     tip_pool = all_premium or top_matches or next_matches
-    tips_sig = f"{len(tip_pool)}|{session_plan}|{today_local}|v8"
+    tips_sig = f"{len(tip_pool)}|{session_plan}|{today_local}|v9"
     if st.session_state.get("fb_mc_tips_sig") != tips_sig:
         st.session_state.fb_mc_tips_sig = tips_sig
         st.session_state.fb_mc_tips = None
@@ -289,13 +285,17 @@ def render_tab_live_match_center(
     tips = st.session_state.get("fb_mc_tips") or []
 
     def _live() -> None:
+        if not _has_live_content(payload, include_all=include_all):
+            return
         render_section_title("Live Now · Premium")
-        _render_live_section(payload, selected=selected)
-        if include_all and extended:
+        _render_live_section(payload, selected=selected, include_all=include_all)
+        if include_all and extended and live_now:
             st.caption(f"{len(extended)} weitere Live-/Liga-Spiele")
-            render_match_grid(extended, key_prefix="ext_live", selected_fixture=selected, max_cards=12)
+            render_match_grid(extended, key_prefix="ext_live2", selected_fixture=selected, max_cards=12)
 
     def _top() -> None:
+        if not _has_top_content(payload):
+            return
         render_section_title("Top Matches Today")
         _render_top_section(payload, selected=selected)
         if all_premium and len(all_premium) > len(top_matches or []):
@@ -303,8 +303,10 @@ def render_tab_live_match_center(
                 render_match_grid(all_premium, key_prefix="all_prem", selected_fixture=selected, max_cards=24)
 
     def _tips() -> None:
+        if not _has_tips_content(tips=tips, rank=rank):
+            return
         render_section_title("AI Betting Insights · Top 3")
-        _render_tips_section(tip_pool=tip_pool, tips=tips, rank=rank, open_premium=open_premium)
+        _render_tips_section(tips=tips, rank=rank, open_premium=open_premium)
 
     def _analyse() -> None:
         render_section_title("Match Intelligence")
@@ -332,15 +334,28 @@ def render_tab_live_match_center(
     elif section == "analyse":
         _analyse()
     else:
-        t1, t2, t3, t4 = st.tabs(["Live Center", "Top Matches", "AI Tipps", "Match Analyse"])
-        with t1:
-            _live()
-        with t2:
-            _top()
-        with t3:
-            _tips()
-        with t4:
+        tabs: list[str] = []
+        if _has_live_content(payload, include_all=include_all):
+            tabs.append("Live Center")
+        if _has_top_content(payload):
+            tabs.append("Top Matches")
+        if _has_tips_content(tips=tips, rank=rank):
+            tabs.append("AI Tipps")
+        tabs.append("Match Analyse")
+        if len(tabs) == 1:
             _analyse()
+        else:
+            widgets = st.tabs(tabs)
+            for idx, label in enumerate(tabs):
+                with widgets[idx]:
+                    if label == "Live Center":
+                        _live()
+                    elif label == "Top Matches":
+                        _top()
+                    elif label == "AI Tipps":
+                        _tips()
+                    else:
+                        _analyse()
 
     if not include_all and (
         payload.get("show_international_prompt") or payload.get("show_live_intl_prompt")

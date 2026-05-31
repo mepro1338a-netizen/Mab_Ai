@@ -203,8 +203,6 @@ def _render_live_events(detail: dict[str, Any], bundle: dict[str, Any] | None) -
             + "</div>",
             unsafe_allow_html=True,
         )
-    elif card.get("live"):
-        st.caption("Live-Details für dieses Spiel aktuell nicht verfügbar.")
 
 
 def render_compact_intelligence_card(
@@ -265,9 +263,6 @@ def render_compact_intelligence_card(
             f"Auswärts {html.escape(str(inj.get('away_impact')))}</p>",
             unsafe_allow_html=True,
         )
-    elif inj.get("missing"):
-        st.caption("Verletzungsdaten derzeit nicht verfügbar.")
-
     _render_live_events(detail, bundle)
     _disclaimer()
 
@@ -316,7 +311,6 @@ def render_pro_preview_card(preview: dict[str, Any]) -> None:
     if reasons:
         items = "".join(f"<li>{html.escape(r)}</li>" for r in reasons)
         st.markdown(f'<ul class="fb-bet-reasons">{items}</ul>', unsafe_allow_html=True)
-    st.info(preview.get("upgrade_hint", ""))
     _disclaimer()
 
 
@@ -474,9 +468,14 @@ def render_match_intelligence_section(
 
     bundle = st.session_state.get(f"fb_mc_elite_{fixture_id}")
 
+    from ui.football_match_analysis import render_match_analysis_panel
+
     if elite_ok:
-        intel = build_betting_intelligence_card(detail, bundle=bundle)
+        intel = detail.get("intel") or build_betting_intelligence_card(detail, bundle=bundle)
         render_compact_intelligence_card(intel, detail, bundle=bundle)
+        render_match_analysis_panel(
+            detail, intel, live_bundle=bundle, include_reasoning=False
+        )
         render_value_quote_input(intel, key_prefix=f"fb_vq_{fixture_id}")
 
         if detail.get("card", {}).get("live") and not bundle:
@@ -522,7 +521,9 @@ def render_match_intelligence_section(
 
     elif pro_ok:
         preview = build_pro_preview_card(detail)
+        intel = detail.get("intel") or build_betting_intelligence_card(detail)
         render_pro_preview_card(preview)
+        render_match_analysis_panel(detail, intel, include_reasoning=True)
         _render_live_events(detail, None)
         render_upgrade_card(
             "Elite Betting Intelligence",
