@@ -395,7 +395,7 @@ def do_register(
     if not is_valid_username(username):
         _set_notice(
             "error",
-            "Account Name: 3–40 Zeichen, nur Buchstaben, Zahlen oder Unterstrich.",
+            "Benutzername: 3–40 Zeichen, nur Buchstaben, Zahlen oder Unterstrich.",
         )
         return
 
@@ -526,12 +526,10 @@ def _render_login_panel() -> None:
 
 def _render_register_panel() -> None:
     with st.form("auth_register_form", clear_on_submit=False, border=False):
-        username = st.text_input("Account Name / Benutzername", placeholder="dein_name")
+        username = st.text_input("Benutzername", placeholder="dein_name")
         email = st.text_input("E-Mail", placeholder="name@firma.de")
-        pw_type = "default" if st.session_state.get("auth_reg_show_password") else "password"
-        password = st.text_input("Passwort", type=pw_type, placeholder="Min. 8 Zeichen")
-        password2 = st.text_input("Passwort bestätigen", type=pw_type, placeholder="Wiederholen")
-        st.checkbox("Passwort anzeigen", key="auth_reg_show_password", value=False)
+        password = st.text_input("Passwort", type="password", placeholder="Min. 8 Zeichen")
+        password2 = st.text_input("Passwort bestätigen", type="password", placeholder="Wiederholen")
         terms = st.checkbox("Ich akzeptiere die AGB und Datenschutzerklärung.")
         submitted = st.form_submit_button("Account erstellen", type="primary", use_container_width=True)
 
@@ -575,7 +573,7 @@ def render_auth() -> None:
             if mode == "register":
                 st.markdown('<p class="auth-card-title">Account erstellen</p>', unsafe_allow_html=True)
                 st.markdown(
-                    '<p class="auth-card-sub">Account Name, E-Mail und Passwort — in unter einer Minute startklar.</p>',
+                    '<p class="auth-card-sub">Benutzername, E-Mail und Passwort — schnell startklar.</p>',
                     unsafe_allow_html=True,
                 )
             else:
