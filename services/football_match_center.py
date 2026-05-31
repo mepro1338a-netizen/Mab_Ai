@@ -11,6 +11,7 @@ from services.football_leagues import (
     LIVE_STATUSES,
     SCHEDULED_STATUSES,
     extended_league_ids,
+    filter_premium_fixtures,
     is_featured_league,
     is_premium_league,
     league_name_map,
@@ -453,8 +454,8 @@ def fetch_premium_dashboard(
         service, today_s, premium_ids, username=username, max_leagues=24
     )
     merged = dedupe_fixtures(live_rows + today_premium)
-    premium_fixtures = filter_fixtures(merged, league_ids=premium_ids)
-    premium_live = filter_fixtures(live_rows, league_ids=premium_ids)
+    premium_fixtures = filter_premium_fixtures(merged)
+    premium_live = filter_premium_fixtures(live_rows)
 
     sections = classify_fixtures(premium_fixtures, today=today_s, tomorrow=tomorrow_s)
     live_now = list(sections.get("live_now") or premium_live)
@@ -478,28 +479,13 @@ def fetch_premium_dashboard(
         )
 
     extended: list[dict[str, Any]] = []
-    if include_all_leagues:
-        ext_ids = set(extended_league_ids())
-        # Curated non-premium leagues only — per-league fetch (no global API dump)
-        extended = _fetch_by_leagues(
-            service, today_s, ext_ids, username=username, max_leagues=12
-        )
-        # Non-premium live spillover (e.g. MLS live while user opted in)
-        for fx in live_rows:
-            lid = _league_id(fx)
-            if lid is None or int(lid) in premium_ids:
-                continue
-            if int(lid) in ext_ids:
-                extended.append(fx)
-        extended = sort_fixtures_by_priority(dedupe_fixtures(extended))
+
+    live_now_cards = _enrich_live_cards(service, live_now, username=username, max_cards=6)
 
     raw_live_count = len(live_rows)
-    non_premium_live_count = raw_live_count - len(premium_live)
+    non_premium_live_count = max(0, raw_live_count - len(premium_live))
     premium_count = len(all_premium)
-    show_intl = not include_all_leagues and (
-        (premium_count == 0 and raw_live_count > 0)
-        or (len(live_now) == 0 and non_premium_live_count > 0)
-    )
+    show_intl = False
 
     return {
         "configured": True,
@@ -511,6 +497,7 @@ def fetch_premium_dashboard(
         "all_premium": all_premium,
         "next_matches": next_matches,
         "extended": extended,
+        "live_now_cards": live_now_cards,
         "premium_count": premium_count,
         "raw_live_count": raw_live_count,
         "show_international_prompt": show_intl,
@@ -534,6 +521,106 @@ def _team_standing_row(standings_payload: list[dict[str, Any]], team_id: int) ->
     except (TypeError, ValueError, IndexError):
         return None
     return None
+
+
+def _standing_summary(row: dict[str, Any] | None) -> dict[str, Any] | None:
+    if not row:
+        return None
+    all_ = row.get("all") or {}
+    goals = all_.get("goals") or {}
+    try:
+        return {
+            "rank": row.get("rank"),
+            "points": row.get("points"),
+            "played": all_.get("played"),
+            "goals_for": goals.get("for"),
+            "goals_against": goals.get("against"),
+            "goal_diff": row.get("goalsDiff"),
+        }
+    except (TypeError, ValueError):
+        return None
+
+
+def _parse_suspensions(rows: list[dict[str, Any]]) -> list[dict[str, str]]:
+    out: list[dict[str, str]] = []
+    for r in rows or []:
+        typ = str(r.get("type") or "").lower()
+        if "suspend" not in typ and typ not in ("red card", "yellow red"):
+            continue
+        pl = r.get("player") or {}
+        name = pl.get("name") if isinstance(pl, dict) else str(pl or "Spieler")
+        reason = str(r.get("reason") or r.get("type") or "Sperre")
+        out.append({"player": str(name), "reason": reason})
+    return out[:8]
+
+
+def _red_cards_from_events(
+    events: list[dict[str, Any]],
+    *,
+    home_id: int | None = None,
+    away_id: int | None = None,
+) -> dict[str, int]:
+    home_rc, away_rc = 0, 0
+    for block in events or []:
+        ev_list = block.get("events") or ([block] if block.get("type") else [])
+        for ev in ev_list:
+            if str(ev.get("type") or "").lower() != "card":
+                continue
+            if "red" not in str(ev.get("detail") or "").lower():
+                continue
+            tid = (ev.get("team") or {}).get("id")
+            try:
+                tid_int = int(tid) if tid is not None else None
+            except (TypeError, ValueError):
+                tid_int = None
+            if tid_int is not None and home_id is not None and tid_int == int(home_id):
+                home_rc += 1
+            elif tid_int is not None and away_id is not None and tid_int == int(away_id):
+                away_rc += 1
+            else:
+                home_rc += 1
+    return {"home": home_rc, "away": away_rc, "total": home_rc + away_rc}
+
+
+def _enrich_live_cards(
+    service: FootballService,
+    fixtures: list[dict[str, Any]],
+    *,
+    username: str,
+    max_cards: int = 6,
+) -> list[dict[str, Any]]:
+    """Attach live stats, xG, red cards to premium live cards (API budget capped)."""
+    cards: list[dict[str, Any]] = []
+    for fx in (fixtures or [])[:max_cards]:
+        card = parse_match_card(fx)
+        if not card.get("live"):
+            cards.append(card)
+            continue
+        fid = card.get("fixture_id")
+        if not fid:
+            cards.append(card)
+            continue
+        teams = fx.get("teams") or {}
+        home_id = (teams.get("home") or {}).get("id")
+        away_id = (teams.get("away") or {}).get("id")
+        try:
+            stats_rows = service.get_fixture_statistics(int(fid), username=username)
+            stats = parse_fixture_statistics(stats_rows)
+            xg = parse_xg_from_statistics(stats_rows)
+            h = stats.get("home") or {}
+            a = stats.get("away") or {}
+            card["live_possession"] = f"{h.get('possession') or '—'}% / {a.get('possession') or '—'}%"
+            card["live_shots"] = f"{h.get('shots_on') or h.get('shots') or '—'} / {a.get('shots_on') or a.get('shots') or '—'}"
+            if xg:
+                card["live_xg"] = f"{xg.get('home_xg', '—')} / {xg.get('away_xg', '—')}"
+            events = service.get_fixture_events(int(fid), username=username)
+            card["red_cards"] = _red_cards_from_events(
+                events, home_id=home_id, away_id=away_id
+            )
+        except FootballAPIError:
+            pass
+        cards.append(card)
+    return cards
 
 
 def _form_from_fixtures(fixtures: list[dict[str, Any]], team_id: int) -> str:
@@ -614,10 +701,12 @@ def fetch_match_detail(
             detail["home_standing"] = _team_standing_row(
                 detail.get("standings") or [], int(home_id)
             )
+            detail["home_standing_summary"] = _standing_summary(detail.get("home_standing"))
         if away_id:
             detail["away_standing"] = _team_standing_row(
                 detail.get("standings") or [], int(away_id)
             )
+            detail["away_standing_summary"] = _standing_summary(detail.get("away_standing"))
 
     if rank >= 2:
         for key, fn in (
@@ -664,6 +753,26 @@ def fetch_match_detail(
                 except FootballAPIError:
                     detail["missing"].append(side)
 
+        for side, tid in (("home_sidelined", home_id), ("away_sidelined", away_id)):
+            if tid:
+                try:
+                    detail[side] = service.get_team_sidelined(
+                        int(tid), season=season, username=username
+                    )
+                except FootballAPIError:
+                    detail["missing"].append(side)
+
+        from services.football_elite_betting_card import _parse_injuries_detail
+
+        detail["injuries_parsed"] = _parse_injuries_detail(detail)
+        home_susp = _parse_suspensions(detail.get("home_sidelined") or [])
+        away_susp = _parse_suspensions(detail.get("away_sidelined") or [])
+        detail["suspensions_parsed"] = {
+            "home": home_susp,
+            "away": away_susp,
+            "available": bool(home_susp or away_susp),
+        }
+
         pred_rows = detail.get("predictions") or []
         if pred_rows:
             detail["prediction_insights"] = parse_prediction_insights(pred_rows[0])
@@ -692,7 +801,9 @@ def fetch_match_detail(
 
         try:
             from services.football_elite_betting_card import build_betting_intelligence_card
+            from services.football_prediction_engine import build_match_prediction
 
+            detail["prediction"] = build_match_prediction(detail)
             detail["intel"] = build_betting_intelligence_card(detail)
         except Exception:
             pass

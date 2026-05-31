@@ -486,7 +486,7 @@ def _intel_pick_html(intel: dict, *, title: str) -> str:
   <div class="match">{html.escape(str(h.get('home')))} vs {html.escape(str(h.get('away')))}</div>
   <div class="tip">{html.escape(str(pick))}</div>
   <div class="chips">
-    <span class="mb-fb-chip">Conf {html.escape(conf_txt)}</span>
+    <span class="mb-fb-chip">Konfidenz {html.escape(conf_txt)}</span>
     <span class="mb-fb-chip">Risiko {html.escape(str(rec.get('risk') or '—'))}</span>
     <span class="mb-fb-chip">Value {html.escape(val_txt)}</span>
   </div>
@@ -509,105 +509,85 @@ def render_football_command_center(hub: dict, *, fb_plan: str) -> None:
         for err in payload["errors"][:2]:
             st.caption(str(err))
 
-    st.markdown('<div class="mb-fb-section">Football Command Center</div>', unsafe_allow_html=True)
+    st.markdown('<div class="mb-fb-section">Fußball Kommandozentrale</div>', unsafe_allow_html=True)
 
     top_card = hub.get("top_card")
-    pick_intel = hub.get("pick_intel")
-    best_intel = hub.get("best_intel")
+    pick_intel = hub.get("pick_intel") if rank >= 2 else None
+    best_intel = hub.get("best_intel") if rank >= 2 else None
+    injuries = hub.get("injuries") or []
+    live_cards = hub.get("live_cards") or []
 
-    r1a, r1b = st.columns([1, 1], gap="medium")
-    with r1a:
+    row1: list = []
+    if top_card:
+        row1.append("top")
+    if pick_intel:
+        row1.append("pick")
+    if row1:
+        cols = st.columns(len(row1))
+        idx = 0
+        if "top" in row1:
+            with cols[idx]:
+                with st.container(border=True):
+                    st.markdown('<div class="mb-fb-section">Top-Spiel heute</div>', unsafe_allow_html=True)
+                    st.markdown(_match_hero_html(top_card), unsafe_allow_html=True)
+                    fid = top_card.get("fixture_id")
+                    if fid and st.button("Analyse öffnen", key="fb_top_match", use_container_width=True):
+                        st.session_state.page = "football"
+                        st.session_state.fb_mc_selected_fixture = int(fid)
+                        nav("football")
+            idx += 1
+        if "pick" in row1:
+            with cols[idx]:
+                with st.container(border=True):
+                    st.markdown(_intel_pick_html(pick_intel, title="KI-Tipp des Tages"), unsafe_allow_html=True)
+
+    row2: list = []
+    if best_intel:
+        row2.append("bet")
+    if injuries:
+        row2.append("inj")
+    if row2:
+        cols = st.columns(len(row2))
+        idx = 0
+        if "bet" in row2:
+            with cols[idx]:
+                with st.container(border=True):
+                    st.markdown('<div class="mb-fb-section">Beste Wettchance</div>', unsafe_allow_html=True)
+                    st.markdown(_intel_pick_html(best_intel, title=""), unsafe_allow_html=True)
+            idx += 1
+        if "inj" in row2:
+            with cols[idx]:
+                with st.container(border=True):
+                    st.markdown('<div class="mb-fb-section">Verletzungsnews</div>', unsafe_allow_html=True)
+                    items = "".join(
+                        f'<div class="mb-fb-injury-item"><strong>{html.escape(i["match"])}</strong>'
+                        f'<span>{html.escape(i.get("detail") or i["line"])}</span></div>'
+                        for i in injuries
+                    )
+                    st.markdown(f'<div class="mb-fb-injury-list">{items}</div>', unsafe_allow_html=True)
+
+    if live_cards:
         with st.container(border=True):
-            st.markdown('<div class="mb-fb-section">Top Match Today</div>', unsafe_allow_html=True)
-            if top_card:
-                st.markdown(_match_hero_html(top_card), unsafe_allow_html=True)
-                fid = top_card.get("fixture_id")
-                if fid and st.button("Analyse öffnen", key="fb_top_match", use_container_width=True):
-                    st.session_state.page = "football"
-                    st.session_state.fb_mc_selected_fixture = int(fid)
-                    nav("football")
-            else:
-                st.markdown(
-                    '<p class="mb-fb-empty">Heute keine Premium-Topspiele — nächste Partien im Live Center.</p>',
-                    unsafe_allow_html=True,
+            st.markdown('<div class="mb-fb-section">Live-Spiele</div>', unsafe_allow_html=True)
+            cells = []
+            for c in live_cards[:6]:
+                extra = ""
+                if c.get("live_possession"):
+                    extra = f' · {html.escape(str(c.get("live_possession")))}'
+                if c.get("live_xg"):
+                    extra += f' · xG {html.escape(str(c.get("live_xg")))}'
+                cells.append(
+                    f'<div class="mb-fb-live-item">'
+                    f'<div class="t">{html.escape(str(c.get("home")))} vs {html.escape(str(c.get("away")))}</div>'
+                    f'<div class="s">{html.escape(str(c.get("score")))}</div>'
+                    f'<div class="l">{html.escape(str(c.get("league")))} · '
+                    f'{html.escape(str(c.get("status_label")))}{extra}</div>'
+                    f"</div>"
                 )
-
-    with r1b:
-        with st.container(border=True):
-            if rank < 2:
-                st.markdown('<div class="mb-fb-section">AI Pick of the Day</div>', unsafe_allow_html=True)
-                st.markdown(
-                    '<p class="mb-fb-empty">AI Picks ab Football Pro. Upgrade für tägliche Intelligence.</p>',
-                    unsafe_allow_html=True,
-                )
-                if st.button("Football Pro freischalten", key="fb_cc_up", use_container_width=True):
-                    nav("premium")
-            elif pick_intel:
-                st.markdown(_intel_pick_html(pick_intel, title="AI Pick of the Day"), unsafe_allow_html=True)
-            else:
-                st.markdown(
-                    '<p class="mb-fb-empty">Pick wird geladen, sobald Prognose-Daten verfügbar sind.</p>',
-                    unsafe_allow_html=True,
-                )
-
-    r2a, r2b = st.columns([1, 1], gap="medium")
-    with r2a:
-        with st.container(border=True):
-            st.markdown('<div class="mb-fb-section">Best Betting Opportunity</div>', unsafe_allow_html=True)
-            if rank < 2:
-                st.markdown('<p class="mb-fb-empty">Value-Analyse ab Football Pro.</p>', unsafe_allow_html=True)
-            elif best_intel:
-                st.markdown(_intel_pick_html(best_intel, title=""), unsafe_allow_html=True)
-            else:
-                st.markdown('<p class="mb-fb-empty">Keine Value-Quote für heute.</p>', unsafe_allow_html=True)
-
-    with r2b:
-        with st.container(border=True):
-            st.markdown('<div class="mb-fb-section">Injury News</div>', unsafe_allow_html=True)
-            injuries = hub.get("injuries") or []
-            if injuries:
-                items = "".join(
-                    f'<div class="mb-fb-injury-item"><strong>{html.escape(i["match"])}</strong>'
-                    f'<span>{html.escape(i.get("detail") or i["line"])}</span></div>'
-                    for i in injuries
-                )
-                st.markdown(f'<div class="mb-fb-injury-list">{items}</div>', unsafe_allow_html=True)
-            elif pick_intel and (pick_intel.get("injuries") or {}).get("available"):
-                inj = pick_intel["injuries"]
-                st.markdown(
-                    f'<p class="mb-fb-empty">Heim {html.escape(str(inj.get("home_impact")))} · '
-                    f'Auswärts {html.escape(str(inj.get("away_impact")))}</p>',
-                    unsafe_allow_html=True,
-                )
-            else:
-                st.markdown(
-                    '<p class="mb-fb-empty">Keine Verletzungs-Highlights für die Top-Picks.</p>',
-                    unsafe_allow_html=True,
-                )
-
-    with st.container(border=True):
-        st.markdown('<div class="mb-fb-section">Live Matches</div>', unsafe_allow_html=True)
-        live_cards = hub.get("live_cards") or []
-        if live_cards:
-            cells = "".join(
-                f'<div class="mb-fb-live-item">'
-                f'<div class="t">{html.escape(str(c.get("home")))} vs {html.escape(str(c.get("away")))}</div>'
-                f'<div class="s">{html.escape(str(c.get("score")))}</div>'
-                f'<div class="l">{html.escape(str(c.get("league")))} · {html.escape(str(c.get("status_label")))}</div>'
-                f"</div>"
-                for c in live_cards[:6]
-            )
-            st.markdown(f'<div class="mb-fb-live-grid">{cells}</div>', unsafe_allow_html=True)
-        else:
-            st.markdown(
-                '<p class="mb-fb-empty">Aktuell keine Premium-Live-Spiele. Prüfe später oder öffne das Live Center.</p>',
-                unsafe_allow_html=True,
-            )
-        if st.button("Alle Live-Spiele", key="fb_cc_all_live", use_container_width=True):
-            st.session_state.page = "football"
-            st.session_state.fb_mc_include_all = True
-            st.session_state.fb_mc_payload = None
-            nav("football")
+            st.markdown(f'<div class="mb-fb-live-grid">{"".join(cells)}</div>', unsafe_allow_html=True)
+            if st.button("Live Center öffnen", key="fb_cc_all_live", use_container_width=True):
+                st.session_state.page = "football"
+                nav("football")
 
 
 def render_brand_column() -> None:

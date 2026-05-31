@@ -164,52 +164,62 @@ def football_api_season() -> int:
     now = datetime.now(ZoneInfo("Europe/Berlin"))
     return now.year if now.month >= 7 else now.year - 1
 
-# API-Football league IDs (v3) — Premium-first Live Match Center
-# Tier 0=DE · 1=UEFA · 2=Topligen · 3=National · 4=Secondary · 5=International
+# API-Football league IDs (v3) — Phase 2 beta whitelist only
+# Tier 0=UEFA · 1=DE · 2=England · 3=Top leagues · 4=International
 FOOTBALL_LEAGUE_GROUPS: dict[str, list[dict[str, str | int]]] = {
-    "deutschland": [
-        {"id": 78, "name": "1. Bundesliga", "country": "Germany"},
-        {"id": 79, "name": "2. Bundesliga", "country": "Germany"},
-        {"id": 81, "name": "DFB Pokal", "country": "Germany"},
-    ],
     "uefa": [
         {"id": 2, "name": "Champions League", "country": "Europe"},
         {"id": 3, "name": "Europa League", "country": "Europe"},
         {"id": 848, "name": "Conference League", "country": "Europe"},
     ],
-    "europa_top": [
+    "deutschland": [
+        {"id": 78, "name": "1. Bundesliga", "country": "Germany"},
+        {"id": 79, "name": "2. Bundesliga", "country": "Germany"},
+        {"id": 81, "name": "DFB Pokal", "country": "Germany"},
+    ],
+    "england": [
         {"id": 39, "name": "Premier League", "country": "England"},
+        {"id": 40, "name": "Championship", "country": "England"},
+        {"id": 45, "name": "FA Cup", "country": "England"},
+    ],
+    "europa_top": [
         {"id": 140, "name": "La Liga", "country": "Spain"},
         {"id": 135, "name": "Serie A", "country": "Italy"},
         {"id": 61, "name": "Ligue 1", "country": "France"},
-        {"id": 88, "name": "Eredivisie", "country": "Netherlands"},
-        {"id": 94, "name": "Primeira Liga", "country": "Portugal"},
     ],
     "national": [
-        {"id": 4, "name": "Euro Championship", "country": "Europe"},
-        {"id": 960, "name": "Euro Qualification", "country": "Europe"},
-        {"id": 5, "name": "UEFA Nations League", "country": "Europe"},
-        {"id": 32, "name": "World Cup Qual. Europe", "country": "Europe"},
         {"id": 1, "name": "World Cup", "country": "World"},
-    ],
-    "secondary": [
-        {"id": 80, "name": "3. Liga", "country": "Germany"},
-    ],
-    "international": [
-        {"id": 307, "name": "Saudi Pro League", "country": "Saudi Arabia"},
-        {"id": 253, "name": "MLS", "country": "USA"},
-        {"id": 9, "name": "Copa America", "country": "South America"},
+        {"id": 4, "name": "Euro Championship", "country": "Europe"},
+        {"id": 5, "name": "UEFA Nations League", "country": "Europe"},
     ],
 }
 
 _FOOTBALL_TIER_ORDER = (
-    "deutschland",
     "uefa",
+    "deutschland",
+    "england",
     "europa_top",
     "national",
-    "secondary",
-    "international",
 )
+
+# Live Center sort: UCL → UEL → Bundesliga → PL → rest
+FOOTBALL_LIVE_SORT_PRIORITY: dict[int, int] = {
+    2: 10,
+    3: 20,
+    848: 30,
+    78: 40,
+    39: 50,
+    79: 55,
+    81: 56,
+    40: 57,
+    45: 58,
+    140: 60,
+    135: 61,
+    61: 62,
+    1: 70,
+    4: 71,
+    5: 72,
+}
 
 FOOTBALL_LEAGUE_TIER: dict[int, int] = {}
 FOOTBALL_LEAGUE_PRIORITY: dict[int, int] = {}
@@ -225,7 +235,7 @@ for _tier_idx, _group in enumerate(_FOOTBALL_TIER_ORDER):
 
 FOOTBALL_PREMIUM_LEAGUE_IDS = frozenset(
     _lid
-    for _grp in ("deutschland", "uefa", "europa_top", "national")
+    for _grp in ("uefa", "deutschland", "england", "europa_top", "national")
     for _lg in FOOTBALL_LEAGUE_GROUPS.get(_grp, [])
     for _lid in (int(_lg["id"]),)
 )

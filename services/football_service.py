@@ -500,6 +500,38 @@ class FootballService:
           username=username,
       )
 
+  def get_fixture_injuries(
+      self,
+      fixture_id: int,
+      *,
+      username: str = "",
+  ) -> list[dict[str, Any]]:
+      return self._request(
+          "injuries",
+          {"fixture": int(fixture_id)},
+          feature="api_injuries",
+          live=True,
+          username=username,
+      )
+
+  def get_team_sidelined(
+      self,
+      team_id: int,
+      *,
+      season: int | None = None,
+      username: str = "",
+  ) -> list[dict[str, Any]]:
+      """Injuries + suspensions (API sidelined feed)."""
+      return self._request(
+          "sidelined",
+          {
+              "team": int(team_id),
+              "season": int(season or FOOTBALL_DEFAULT_SEASON),
+          },
+          feature="api_injuries",
+          username=username,
+      )
+
   def search_leagues(
       self,
       name: str,

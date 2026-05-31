@@ -198,7 +198,7 @@ def _render_live_events(detail: dict[str, Any], bundle: dict[str, Any] | None) -
     if lines:
         st.markdown(
             '<div class="fb-bet-inj" style="border-color:rgba(34,197,94,.25);background:rgba(22,101,52,.12);">'
-            '<h4 style="color:#86efac!important;">Live Intelligence</h4>'
+            '<h4 style="color:#86efac!important;">Live-Analyse</h4>'
             + "".join(f"<p>{html.escape(l)}</p>" for l in lines)
             + "</div>",
             unsafe_allow_html=True,
@@ -221,15 +221,22 @@ def render_compact_intelligence_card(
     status = html.escape(str(h.get("status") or "NS"))
     form = intel.get("form") or {}
     h2h = intel.get("h2h") or ""
+    outcome = rec.get("outcome") or ""
+    outcome_conf = rec.get("outcome_confidence")
+    outcome_line = ""
+    if outcome:
+        oc = f" · {float(outcome_conf):.0f}%" if outcome_conf is not None else ""
+        outcome_line = f'<p style="color:#94a3b8;font-size:13px;margin:0 0 8px 0;">Ergebnis: <strong style="color:#e2e8f0;">{html.escape(str(outcome))}</strong>{oc}</p>'
 
     st.markdown(
         f"""
 <div class="{card_cls}">
     <p class="fb-bet-match">{html.escape(str(h.get('home')))} vs {html.escape(str(h.get('away')))}</p>
     <p class="fb-bet-meta">{html.escape(str(h.get('league')))} · <strong>{html.escape(str(h.get('score')))}</strong> · {html.escape(str(h.get('time') or h.get('date')))} · {status}</p>
+    {outcome_line}
     <p class="{pick_cls}">{html.escape(str(rec.get('main_pick', '—')))}</p>
     <div class="fb-bet-metrics">
-        <div class="fb-bet-metric"><div class="k">Confidence</div><div class="v">{rec.get('confidence', 0):.0f}%</div></div>
+        <div class="fb-bet-metric"><div class="k">Konfidenz</div><div class="v">{rec.get('confidence', 0):.0f}%</div></div>
         <div class="fb-bet-metric {_risk_class(str(rec.get('risk', 'Mittel')))}"><div class="k">Risiko</div><div class="v">{html.escape(str(rec.get('risk', '—')))}</div></div>
     </div>
 </div>
@@ -291,13 +298,13 @@ def render_pro_preview_card(preview: dict[str, Any]) -> None:
 <div class="fb-bet-card">
     <p class="fb-bet-match">{html.escape(str(h.get('home')))} vs {html.escape(str(h.get('away')))}</p>
     <p class="fb-bet-meta">{html.escape(str(h.get('league')))} · {html.escape(str(h.get('score')))}</p>
-    <p style="color:#86efac;font-size:12px;font-weight:800;margin:0 0 10px 0;">AI PREVIEW · PRO</p>
+    <p style="color:#86efac;font-size:12px;font-weight:800;margin:0 0 10px 0;">KI-VORSCHAU · PRO</p>
 </div>
         """,
         unsafe_allow_html=True,
     )
     cols = st.columns(3)
-    for i, (lbl, key) in enumerate((("Heim", "home_pct"), ("Draw", "draw_pct"), ("Ausw.", "away_pct"))):
+    for i, (lbl, key) in enumerate((("Heim", "home_pct"), ("Remis", "draw_pct"), ("Ausw.", "away_pct"))):
         val = pred.get(key)
         cols[i].markdown(
             f'<div class="fb-bet-prob"><strong>{val:.0f}%</strong><span>{lbl}</span></div>'
@@ -335,7 +342,7 @@ def render_elite_betting_card(
     <p class="fb-bet-meta">{html.escape(str(h.get('league')))}{live_badge} · {html.escape(str(h.get('time') or h.get('date')))} · <strong>{html.escape(str(h.get('score')))}</strong></p>
     <p class="{pick_cls}">{html.escape(str(rec.get('main_pick', '—')))}</p>
     <div class="fb-bet-metrics">
-        <div class="fb-bet-metric"><div class="k">Confidence</div><div class="v">{rec.get('confidence', 0):.0f}%</div></div>
+        <div class="fb-bet-metric"><div class="k">Konfidenz</div><div class="v">{rec.get('confidence', 0):.0f}%</div></div>
         <div class="fb-bet-metric {_risk_class(str(rec.get('risk', 'Mittel')))}"><div class="k">Risiko</div><div class="v">{html.escape(str(rec.get('risk', '—')))}</div></div>
     </div>
 </div>
@@ -409,7 +416,7 @@ def render_value_quote_input(
     st.markdown(
         f"""
 <div class="{cls}">
-    <div style="color:#86efac;font-size:11px;font-weight:800;letter-spacing:.1em;">VALUE CHECK</div>
+    <div style="color:#86efac;font-size:11px;font-weight:800;letter-spacing:.1em;">VALUE-CHECK</div>
     <p style="color:#e2e8f0;font-size:13px;margin:8px 0 0 0;">
         Implizit: <strong>{core['implied_probability_pct']:.1f}%</strong> ·
         AI: <strong>{prob:.1f}%</strong> ·

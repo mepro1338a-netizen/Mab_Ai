@@ -79,9 +79,18 @@ def build_match_analysis_sections(
     else:
         from services.football_elite_betting_card import _parse_injuries_detail
 
-        parsed = _parse_injuries_detail(detail)
+        parsed = detail.get("injuries_parsed") or _parse_injuries_detail(detail)
         if parsed.get("available"):
             sections["injuries"] = parsed
+
+    susp = detail.get("suspensions_parsed") or {}
+    if susp.get("available"):
+        sections["suspensions"] = susp
+
+    hs = detail.get("home_standing_summary") or {}
+    aws = detail.get("away_standing_summary") or {}
+    if hs.get("rank") is not None or aws.get("rank") is not None:
+        sections["league_position"] = {"home": hs, "away": aws, "card": detail.get("card") or {}}
 
     if _form_usable(form):
         sections["form"] = form

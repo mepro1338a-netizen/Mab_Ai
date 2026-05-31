@@ -18,9 +18,44 @@ def _block(title: str, body_html: str) -> None:
     )
 
 
+def _render_suspensions(susp: dict[str, Any]) -> None:
+    body = ""
+    for side, rows in (("Heim", susp.get("home") or []), ("Auswärts", susp.get("away") or [])):
+        if not rows:
+            continue
+        names = ", ".join(
+            f"{html.escape(str(r.get('player', '')))} ({html.escape(str(r.get('reason', '')))})"
+            for r in rows[:6]
+        )
+        body += f"<p><strong>{side}</strong>: {names}</p>"
+    if body:
+        _block("Sperren", body)
+
+
+def _render_league_position(pos: dict[str, Any]) -> None:
+    card = pos.get("card") or {}
+    hn = html.escape(str(card.get("home") or "Heim"))
+    an = html.escape(str(card.get("away") or "Auswärts"))
+    hs = pos.get("home") or {}
+    aws = pos.get("away") or {}
+    body = ""
+    if hs.get("rank") is not None:
+        body += (
+            f"<p><strong>{hn}</strong> #{hs.get('rank')} · "
+            f"{hs.get('goals_for', '—')}:{hs.get('goals_against', '—')} · {hs.get('points', '—')} Pkt</p>"
+        )
+    if aws.get("rank") is not None:
+        body += (
+            f"<p><strong>{an}</strong> #{aws.get('rank')} · "
+            f"{aws.get('goals_for', '—')}:{aws.get('goals_against', '—')} · {aws.get('points', '—')} Pkt</p>"
+        )
+    if body:
+        _block("Tabellenplatz & Tore", body)
+
+
 def _render_prediction(pred: dict[str, Any], card: dict[str, Any]) -> None:
     cols = st.columns(3)
-    for i, (lbl, key) in enumerate((("Heim", "home_pct"), ("Draw", "draw_pct"), ("Ausw.", "away_pct"))):
+    for i, (lbl, key) in enumerate((("Heim", "home_pct"), ("Remis", "draw_pct"), ("Ausw.", "away_pct"))):
         val = pred.get(key)
         with cols[i]:
             if val is not None:
@@ -74,7 +109,7 @@ def _render_h2h(h2h: Any, card: dict[str, Any]) -> None:
             f"<strong>{g.get('home')}-{g.get('away')}</strong> "
             f"{html.escape((t.get('away') or {}).get('name', '?'))}"
         )
-    _block("Head-to-Head", "".join(f"<p>{line}</p>" for line in lines))
+    _block("Direktvergleich", "".join(f"<p>{line}</p>" for line in lines))
 
 
 def _render_xg(xg: dict[str, Any]) -> None:
@@ -87,7 +122,7 @@ def _render_xg(xg: dict[str, Any]) -> None:
     body += f"<strong>{an}</strong> xG {ax if ax is not None else '—'}</p>"
     if xg.get("total_xg") is not None:
         body += f"<p>Gesamt xG: <strong>{xg['total_xg']}</strong></p>"
-    _block("Expected Goals (xG)", body)
+    _block("Erwartete Tore (xG)", body)
 
 
 def _render_live_stats(stats: dict[str, Any]) -> None:
@@ -144,12 +179,20 @@ def render_match_analysis_panel(
         _render_form(sections["form"], card)
         shown = True
 
+    if "league_position" in sections:
+        _render_league_position(sections["league_position"])
+        shown = True
+
     if "h2h" in sections:
         _render_h2h(sections["h2h"], card)
         shown = True
 
     if "injuries" in sections:
         _render_injuries(sections["injuries"])
+        shown = True
+
+    if "suspensions" in sections:
+        _render_suspensions(sections["suspensions"])
         shown = True
 
     if "xg" in sections:

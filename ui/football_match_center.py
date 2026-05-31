@@ -183,6 +183,12 @@ MATCH_CENTER_CSS = """
     border-color: rgba(34,197,94,.65);
     box-shadow: 0 0 36px rgba(34,197,94,.22);
 }
+.fb-mc-live-stats {
+    color: #86efac !important;
+    font-size: 11px;
+    margin-top: 8px;
+    line-height: 1.35;
+}
 .fb-mc-card-head {
     display: flex;
     justify-content: space-between;
@@ -484,6 +490,20 @@ def _render_match_card_html(card: dict[str, Any]) -> str:
     league_logo = _logo_img(str(card.get("league_logo") or ""), "Liga", "fb-mc-league-logo")
     home_logo = _logo_img(str(card.get("home_logo") or ""), "Heim", "fb-mc-team-logo")
     away_logo = _logo_img(str(card.get("away_logo") or ""), "Auswärts", "fb-mc-team-logo")
+    live_extra = ""
+    if card.get("live"):
+        bits = []
+        if card.get("live_possession"):
+            bits.append(f"Ball {card['live_possession']}")
+        if card.get("live_shots"):
+            bits.append(f"Schüsse {card['live_shots']}")
+        if card.get("live_xg"):
+            bits.append(f"xG {card['live_xg']}")
+        rc = card.get("red_cards") or {}
+        if rc.get("total"):
+            bits.append(f"Rot {rc.get('total')}")
+        if bits:
+            live_extra = f'<div class="fb-mc-live-stats">{html.escape(" · ".join(bits))}</div>'
     return f"""
 <div class="fb-mc-card{live_cls}{featured_cls}">
     <div class="fb-mc-card-head">
@@ -505,6 +525,7 @@ def _render_match_card_html(card: dict[str, Any]) -> str:
         <span class="fb-mc-badge {badge}">{html.escape(str(card.get('status_label') or card.get('status') or 'NS'))}</span>
         <span class="fb-mc-venue">{html.escape(venue_txt)}</span>
     </div>
+    {live_extra}
 </div>
 """
 
@@ -545,7 +566,7 @@ def render_dashboard_tip_mini(intel: dict[str, Any], *, fixture_id: int) -> None
     pick = rec.get("main_pick") or "—"
     conf = rec.get("confidence")
     risk = rec.get("risk") or "—"
-    conf_chip = f"Conf {float(conf):.0f}%" if conf is not None else "Conf —"
+    conf_chip = f"Konfidenz {float(conf):.0f}%" if conf is not None else "Konfidenz —"
     st.markdown(
         f"""
 <div class="fb-mc-tip-mini">
@@ -577,17 +598,31 @@ def render_match_grid(
     key_prefix: str = "mc",
     selected_fixture: int | None = None,
     max_cards: int = 24,
+    enriched_cards: list[dict[str, Any]] | None = None,
 ) -> None:
     rows = fixtures[:max_cards]
     if not rows:
         return
+    card_by_id: dict[int, dict[str, Any]] = {}
+    for c in enriched_cards or []:
+        try:
+            fid = int(c.get("fixture_id") or 0)
+        except (TypeError, ValueError):
+            continue
+        if fid:
+            card_by_id[fid] = c
     for i in range(0, len(rows), 3):
         cols = st.columns(3)
         for j, col in enumerate(cols):
             if i + j >= len(rows):
                 break
             fx = rows[i + j]
-            card = parse_match_card(fx)
+            fid_raw = (fx.get("fixture") or {}).get("id")
+            try:
+                fid_int = int(fid_raw) if fid_raw else 0
+            except (TypeError, ValueError):
+                fid_int = 0
+            card = card_by_id.get(fid_int) or parse_match_card(fx)
             fid = card.get("fixture_id")
             if not fid:
                 continue

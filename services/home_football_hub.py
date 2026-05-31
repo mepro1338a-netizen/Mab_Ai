@@ -46,10 +46,12 @@ def load_home_football_hub(
 
     injuries = _injury_headlines(tips)
 
-    live_cards = [
-        parse_match_card(fx)
-        for fx in (payload.get("live_now") or [])[:6]
-    ]
+    live_cards = list(payload.get("live_now_cards") or [])
+    if not live_cards:
+        live_cards = [
+            parse_match_card(fx)
+            for fx in (payload.get("live_now") or [])[:6]
+        ]
 
     return {
         "payload": payload,

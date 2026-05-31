@@ -227,12 +227,17 @@ def build_betting_intelligence_card(
     user_odd: float | None = None,
 ) -> dict[str, Any]:
     """Build compact intelligence card from fetch_match_detail (+ optional elite bundle)."""
+    from services.football_prediction_engine import build_match_prediction
+
     card = detail.get("card") or {}
     pred = detail.get("prediction_insights") or {}
     missing = list(detail.get("missing") or [])
 
-    main_pick, confidence, no_bet = _pick_main_tip(card, pred, detail, bundle)
-    reasons_all = _build_reasons(detail, card, pred, bundle)
+    ai_pred = detail.get("prediction") or build_match_prediction(detail, bundle=bundle)
+    main_pick = ai_pred.get("best_bet") or "—"
+    confidence = float(ai_pred.get("best_bet_confidence") or 35.0)
+    no_bet = bool(ai_pred.get("no_bet"))
+    reasons_all = list(ai_pred.get("reasons") or [])
     injuries = _parse_injuries_detail(detail)
 
     ai_prob = float(pred.get("home_pct") or 50.0)
@@ -297,6 +302,8 @@ def build_betting_intelligence_card(
             "confidence": round(confidence, 1),
             "risk": risk,
             "no_bet": no_bet,
+            "outcome": ai_pred.get("outcome"),
+            "outcome_confidence": ai_pred.get("outcome_confidence"),
         },
         "reasons_short": reasons_all[:3],
         "reasons_full": reasons_all,
@@ -311,6 +318,7 @@ def build_betting_intelligence_card(
         "lineups_available": bool(detail.get("lineups")),
         "data_gaps": missing,
         "has_predictions": bool(pred),
+        "ai_prediction": ai_pred,
     }
 
 

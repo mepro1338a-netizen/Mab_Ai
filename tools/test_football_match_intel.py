@@ -52,9 +52,30 @@ def test_sections_only_real_data() -> None:
     assert "injuries" not in sections
 
 
+def test_prediction_engine() -> None:
+    from services.football_prediction_engine import build_match_prediction
+
+    detail = {
+        "card": {"home": "Arsenal", "away": "PSG", "live": False},
+        "prediction_insights": {"home_pct": 58.0, "draw_pct": 22.0, "away_pct": 20.0},
+        "home_form": "W W W D W",
+        "away_form": "L D W L D",
+        "home_standing_summary": {"rank": 2, "goals_for": 45, "goals_against": 18, "points": 52, "played": 20},
+        "away_standing_summary": {"rank": 4, "goals_for": 38, "goals_against": 25, "points": 44, "played": 20},
+        "injuries_parsed": {"available": True, "home_impact": "niedrig", "away_impact": "hoch", "home": [], "away": [{"player": "Defender", "reason": "Suspended"}]},
+        "suspensions_parsed": {"available": True, "home": [], "away": [{"player": "Defender", "reason": "Suspended"}]},
+        "xg": {"home_xg": 1.8, "away_xg": 1.1},
+    }
+    pred = build_match_prediction(detail)
+    assert pred["outcome"] in ("Heimsieg", "Unentschieden", "Auswärtssieg")
+    assert pred["best_bet"]
+    assert len(pred["reasons"]) >= 3
+
+
 def main() -> int:
     test_xg_parser()
     test_sections_only_real_data()
+    test_prediction_engine()
     print("OK — football_match_intel tests passed")
     return 0
 

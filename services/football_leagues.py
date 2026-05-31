@@ -8,6 +8,7 @@ from config import (
     FOOTBALL_LEAGUE_META,
     FOOTBALL_LEAGUE_PRIORITY,
     FOOTBALL_LEAGUE_TIER,
+    FOOTBALL_LIVE_SORT_PRIORITY,
     FOOTBALL_PREMIUM_LEAGUE_IDS,
 )
 
@@ -34,12 +35,32 @@ def premium_league_ids() -> frozenset[int]:
     return FOOTBALL_PREMIUM_LEAGUE_IDS
 
 
+# Block youth / reserve / amateur leagues even if API returns them in live=all
+_BLOCKED_LEAGUE_NAME_PARTS = (
+    "u19",
+    "u21",
+    "u23",
+    "u20",
+    "u18",
+    "youth",
+    "reserve",
+    "amateur",
+    "regionalliga",
+    "3. liga",
+    "tercera",
+    "fourth",
+    "fourth division",
+)
+
+
 def extended_league_ids() -> frozenset[int]:
-    """Secondary + international — only on explicit user action."""
-    ids: set[int] = set()
-    for grp in ("secondary", "international"):
-        ids.update(int(lg["id"]) for lg in LEAGUE_CATALOG.get(grp, []))
-    return frozenset(ids)
+    """Phase 2: no extended/low-tier leagues."""
+    return frozenset()
+
+
+def is_blocked_league_name(name: str) -> bool:
+    low = (name or "").lower()
+    return any(part in low for part in _BLOCKED_LEAGUE_NAME_PARTS)
 
 
 def all_curated_league_ids() -> frozenset[int]:
@@ -101,8 +122,12 @@ def filter_premium_fixtures(fixtures: list[dict[str, Any]]) -> list[dict[str, An
             lid = int((fx.get("league") or {}).get("id") or 0)
         except (TypeError, ValueError):
             continue
-        if lid in pids:
-            out.append(fx)
+        if lid not in pids:
+            continue
+        league_name = str((fx.get("league") or {}).get("name") or "")
+        if is_blocked_league_name(league_name):
+            continue
+        out.append(fx)
     return out
 
 
@@ -140,9 +165,10 @@ def sort_fixtures_priority(fixtures: list[dict[str, Any]]) -> list[dict[str, Any
         live = _status(fx) in LIVE_STATUSES
         finished = _status(fx) in FINISHED_STATUSES
         meta = fx.get("fixture") or {}
+        live_prio = int(FOOTBALL_LIVE_SORT_PRIORITY.get(int(lid or 0), 500 + tier * 10))
         return (
             0 if live else 1,
-            tier,
+            live_prio,
             int(FOOTBALL_LEAGUE_PRIORITY.get(lid or 0, 99)),
             -relevance_score(league_id=lid, live=live, finished=finished),
             str(meta.get("date") or ""),
@@ -156,9 +182,11 @@ def league_ids_for_view(view: str, favorites: list[int] | None = None) -> set[in
         return None
     if view == "deutschland":
         return {int(lg["id"]) for lg in LEAGUE_CATALOG.get("deutschland", [])}
+    if view == "england":
+        return {int(lg["id"]) for lg in LEAGUE_CATALOG.get("england", [])}
     if view == "europa":
         ids: set[int] = set()
-        for grp in ("uefa", "europa_top"):
+        for grp in ("uefa", "england", "europa_top"):
             ids.update(int(lg["id"]) for lg in LEAGUE_CATALOG.get(grp, []))
         return ids
     if view == "favoriten":
