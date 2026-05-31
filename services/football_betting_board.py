@@ -11,7 +11,7 @@ from services.football_betting_quality import (
     has_complete_odds,
     log_fixture_data_sample,
 )
-from services.football_leagues import LIVE_STATUSES, filter_premium_fixtures
+from services.football_leagues import LIVE_STATUSES, filter_blocked_fixtures, filter_premium_fixtures
 from services.football_match_center import (
     _local_today_tomorrow,
     dedupe_fixtures,
@@ -114,7 +114,7 @@ def region_filter_label(region_filter: str) -> str:
         "uefa": "UEFA Wettbewerbe",
         "deutschland": "Deutsche Wettbewerbe",
         "topligen": "Topligen",
-        "alle": "Premium-Alle",
+        "alle": "Premium-Spiele",
     }
     return labels.get(region, labels["alle"])
 
@@ -230,6 +230,125 @@ def collect_fixtures_for_filters(
     pool = filter_bettable_fixtures(pool)
     pool = filter_fixtures_by_region(pool, region_filter)
     return sort_fixtures_by_priority(pool)
+
+
+def collect_raw_fixtures_for_filters(
+    payload: dict[str, Any],
+    *,
+    time_filter: str,
+) -> list[dict[str, Any]]:
+    """All API fixtures for time window — youth/reserve names blocked only."""
+    today_s = str(payload.get("today") or payload.get("today_local") or "")
+    raw_live = list(payload.get("raw_live") or [])
+    raw_today = list(payload.get("raw_today") or [])
+    raw_tomorrow = list(payload.get("raw_tomorrow") or [])
+
+    if time_filter == "live":
+        pool = raw_live
+    elif time_filter == "morgen":
+        pool = raw_tomorrow
+    elif time_filter == "alle":
+        pool = dedupe_fixtures(raw_live + raw_today + raw_tomorrow)
+    else:
+        pool = dedupe_fixtures(raw_live + raw_today)
+        if time_filter == "heute":
+            pool = [
+                fx
+                for fx in pool
+                if _is_live(fx) or _fixture_date(fx) == today_s
+            ]
+
+    pool = filter_blocked_fixtures(pool)
+    return sort_fixtures_by_priority(pool)
+
+
+def build_raw_board_rows(
+    fixtures: list[dict[str, Any]],
+    service: FootballService,
+    *,
+    username: str,
+    session_plan: str,
+    cache: dict[int, dict[str, Any]],
+    max_enrich: int = 48,
+) -> list[dict[str, Any]]:
+    """Minimal rows for raw mode — score/time, optional odds, no AI tips."""
+    rank = football_plan_rank(session_plan or "none")
+    rows: list[dict[str, Any]] = []
+    odds_budget = 6
+    for i, fx in enumerate(fixtures[:max_enrich]):
+        card = parse_match_card(fx)
+        fid = card.get("fixture_id")
+        try:
+            fid_int = int(fid) if fid is not None else None
+        except (TypeError, ValueError):
+            fid_int = None
+
+        row: dict[str, Any] = {
+            "fixture_id": fid_int,
+            "card": card,
+            "raw_mode": True,
+            "home_odd": None,
+            "draw_odd": None,
+            "away_odd": None,
+            "has_odds": False,
+            "analysis_available": False,
+        }
+
+        if rank >= 2 and fid_int and i < odds_budget:
+            cache_key = f"raw_{fid_int}"
+            if cache_key in cache:
+                row.update(cache[cache_key])
+            else:
+                try:
+                    o = get_odds_for_fixture(service, fid_int, username=username)
+                    row["home_odd"] = o.get("home")
+                    row["draw_odd"] = o.get("draw")
+                    row["away_odd"] = o.get("away")
+                    row["has_odds"] = has_complete_odds(row)
+                    row["analysis_available"] = bool(row["has_odds"])
+                    cache[cache_key] = {
+                        "home_odd": row["home_odd"],
+                        "draw_odd": row["draw_odd"],
+                        "away_odd": row["away_odd"],
+                        "has_odds": row["has_odds"],
+                        "analysis_available": row["analysis_available"],
+                    }
+                except FootballAPIError:
+                    pass
+
+        rows.append(row)
+    return rows
+
+
+def load_raw_football_matches(
+    payload: dict[str, Any],
+    service: FootballService,
+    *,
+    username: str,
+    session_plan: str,
+    mode: str,
+    cache: dict[int, dict[str, Any]],
+    max_enrich: int = 48,
+) -> dict[str, Any]:
+    """Raw API fixtures — no premium filter."""
+    mode = (mode or "heute").lower().strip()
+    fixtures = collect_raw_fixtures_for_filters(payload, time_filter=mode)
+    rows = build_raw_board_rows(
+        fixtures,
+        service,
+        username=username,
+        session_plan=session_plan,
+        cache=cache,
+        max_enrich=max_enrich,
+    )
+    return {
+        "fixtures": fixtures[:max_enrich],
+        "rows": rows,
+        "stage": "raw_all",
+        "banner": None,
+        "raw_mode": True,
+        "pools": {"raw": len(fixtures)},
+    }
 
 
 def build_board_rows(

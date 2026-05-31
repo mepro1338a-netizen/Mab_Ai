@@ -17,8 +17,10 @@ from services.football_access import usage_summary
 from services.football_betting_board import (
     build_fallback_debug_stats,
     collect_fixtures_for_filters,
+    collect_raw_fixtures_for_filters,
     fetch_board_payload,
     load_football_matches,
+    load_raw_football_matches,
     log_displayed_fixtures,
     region_filter_label,
 )
@@ -44,6 +46,15 @@ _BOARD_CSS = """
     display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px;
 }
 .fbb-filter-note { color: #64748b !important; font-size: 11px; margin: -6px 0 12px 0; }
+.fbb-match.raw {
+    grid-template-columns: 1fr minmax(120px, 160px);
+}
+.fbb-match.raw .fbb-teams { display: flex; flex-direction: column; gap: 4px; }
+.fbb-match.raw .fbb-score-line { font-size: 13px; color: #e2e8f0 !important; font-weight: 700; }
+.fbb-raw-note {
+    color: #94a3b8 !important; font-size: 12px; padding: 8px 12px; margin: 0 0 12px 0;
+    background: rgba(30,41,59,.5); border: 1px solid rgba(255,255,255,.08); border-radius: 8px;
+}
 .fbb-fallback-note {
     color: #fde047 !important; font-size: 12px; padding: 8px 12px; margin: 0 0 12px 0;
     background: rgba(234,179,8,.08); border: 1px solid rgba(234,179,8,.22); border-radius: 8px;
@@ -131,13 +142,7 @@ _REGION_FILTERS = (
 
 
 def _show_football_debug() -> bool:
-    if football_debug_enabled():
-        return True
-    try:
-        from ui_core import is_admin_user
-        return is_admin_user()
-    except Exception:
-        return False
+    return football_debug_enabled()
 
 
 def _filter_user_errors(errors: list[str]) -> list[str]:
@@ -151,15 +156,7 @@ def _filter_user_errors(errors: list[str]) -> list[str]:
     return out
 
 
-def _render_empty_state(
-    *,
-    pools: dict[str, int] | None = None,
-) -> None:
-    pools = pools or {}
-    live_n = int(pools.get("live") or 0)
-    today_n = int(pools.get("today") or 0)
-    upcoming_n = int(pools.get("upcoming") or 0)
-
+def _render_empty_state(*, raw_count: int = 0) -> None:
     st.markdown(
         """
 <div class="fbb-empty">
@@ -169,19 +166,9 @@ def _render_empty_state(
         """,
         unsafe_allow_html=True,
     )
-    if live_n > 0:
-        if st.button("Live-Spiele ohne Quoten anzeigen", key="fbb_live_no_odds", width="stretch"):
-            st.session_state.fb_board_time = "live"
-            st.session_state.fb_board_force_no_odds = True
-            st.rerun()
-    elif today_n > 0:
-        if st.button("Heutige Topspiele anzeigen", key="fbb_show_today", width="stretch"):
-            st.session_state.fb_board_time = "heute"
-            st.session_state.fb_board_force_no_odds = True
-            st.rerun()
-    elif upcoming_n > 0:
-        if st.button("Nächste Premium-Spiele anzeigen", key="fbb_show_upcoming", width="stretch"):
-            st.session_state.fb_board_time = "heute"
+    if raw_count > 0:
+        if st.button("Alle verfügbaren Spiele anzeigen", key="fbb_show_all_raw", width="stretch"):
+            st.session_state.show_all_raw_matches = True
             st.rerun()
 
 
@@ -248,7 +235,57 @@ def _apply_live_enrichment(row: dict[str, Any], enriched: dict[int, dict[str, An
         row["momentum"] = f"xG {extra['live_xg']}"
 
 
+def _render_raw_match_row_html(row: dict[str, Any]) -> str:
+    card = row.get("card") or {}
+    home = html.escape(str(card.get("home") or "Heim"))
+    away = html.escape(str(card.get("away") or "Auswärts"))
+    league = html.escape(str(card.get("league") or ""))
+    country = html.escape(str(card.get("country") or ""))
+    live = bool(card.get("live"))
+    status = html.escape(str(card.get("status") or card.get("status_label") or ""))
+    time_lbl = html.escape(str(card.get("time") or ""))
+    score = html.escape(str(card.get("score") or ""))
+    fx_date = html.escape(str(card.get("date") or ""))
+
+    live_cls = " live raw" if live else " raw"
+    meta = f"<strong>{league}</strong>"
+    if country:
+        meta += f" · {country}"
+    meta += f" · {status}"
+    if live and time_lbl:
+        meta += f" {time_lbl}"
+
+    mid = score if score and score != "vs" else time_lbl or fx_date
+    ho, do, ao = row.get("home_odd"), row.get("draw_odd"), row.get("away_odd")
+    has_odds = bool(row.get("has_odds"))
+    if has_odds:
+        quote_line = (
+            f"1 {_fmt_odd(ho)} · X {_fmt_odd(do)} · 2 {_fmt_odd(ao)}"
+        )
+    else:
+        quote_line = "Keine Quote verfügbar"
+
+    return f"""
+<div class="fbb-match{live_cls}">
+  <div>
+    <div class="fbb-meta">{meta}</div>
+    <div class="fbb-teams">
+      <div class="fbb-team">{home}</div>
+      <div class="fbb-score-line">{html.escape(str(mid))}</div>
+      <div class="fbb-team">{away}</div>
+    </div>
+  </div>
+  <div class="fbb-pick">
+    <div class="fbb-meta">Quote</div>
+    <div class="tip" style="font-size:12px;color:#94a3b8!important;">{html.escape(quote_line)}</div>
+  </div>
+</div>
+"""
+
+
 def _render_match_row_html(row: dict[str, Any]) -> str:
+    if row.get("raw_mode"):
+        return _render_raw_match_row_html(row)
     card = row.get("card") or {}
     home = html.escape(str(card.get("home") or "Heim"))
     away = html.escape(str(card.get("away") or "Auswärts"))
@@ -542,8 +579,11 @@ def render_football_betting_board(
         st.session_state.fb_board_version = 1
     if "fb_board_force_no_odds" not in st.session_state:
         st.session_state.fb_board_force_no_odds = False
+    if "show_all_raw_matches" not in st.session_state:
+        st.session_state.show_all_raw_matches = False
 
     force_no_odds = bool(st.session_state.fb_board_force_no_odds)
+    show_raw = bool(st.session_state.show_all_raw_matches)
 
     hdr_cols = st.columns([5, 1])
     with hdr_cols[1]:
@@ -551,6 +591,7 @@ def render_football_betting_board(
             st.session_state.fb_board_payload = None
             st.session_state.fb_board_cache = {}
             st.session_state.fb_board_force_no_odds = False
+            st.session_state.show_all_raw_matches = False
 
     new_time, new_region = _render_filter_bar(
         time_filter=st.session_state.fb_board_time,
@@ -560,10 +601,15 @@ def render_football_betting_board(
         st.session_state.fb_board_time = new_time
         st.session_state.fb_board_region = new_region
         st.session_state.fb_board_force_no_odds = False
+        st.session_state.show_all_raw_matches = False
         st.rerun()
 
+    if show_raw:
+        subtitle = "Alle verfügbaren Spiele"
+    else:
+        subtitle = region_filter_label(st.session_state.fb_board_region)
     st.markdown(
-        f'<p class="fbb-filter-note">{html.escape(region_filter_label(st.session_state.fb_board_region))}</p>',
+        f'<p class="fbb-filter-note">{html.escape(subtitle)}</p>',
         unsafe_allow_html=True,
     )
 
@@ -604,44 +650,55 @@ def render_football_betting_board(
             label="today",
             limit=50,
         )
-        diagnosis = build_premium_diagnosis_report(payload)
-        print({"football_premium_diagnosis": diagnosis})
-        fallback_stats = build_fallback_debug_stats(
+        print({"football_premium_diagnosis": build_premium_diagnosis_report(payload)})
+        print({"football_fallback_debug": build_fallback_debug_stats(
             payload,
             region_filter=st.session_state.fb_board_region,
             service=service,
             username=username,
-        )
-        print({"football_fallback_debug": fallback_stats})
+        )})
         log_board_counts(board_counts)
-
-    try:
-        from ui_core import is_admin_user
-
-        if is_admin_user():
-            with st.expander("Admin: Football API Debug", expanded=False):
-                st.markdown(format_admin_league_debug_markdown(build_premium_diagnosis_report(payload)))
-                st.json(build_fallback_debug_stats(
-                    payload,
-                    region_filter=st.session_state.fb_board_region,
-                    service=service,
-                    username=username,
-                ))
-    except Exception:
-        pass
+        with st.expander("Admin: Football API Debug", expanded=False):
+            st.markdown(format_admin_league_debug_markdown(build_premium_diagnosis_report(payload)))
+            st.json(build_fallback_debug_stats(
+                payload,
+                region_filter=st.session_state.fb_board_region,
+                service=service,
+                username=username,
+            ))
 
     cache: dict[int, dict[str, Any]] = st.session_state.fb_board_cache
-    match_result = load_football_matches(
-        payload,
-        service,
-        username=username,
-        session_plan=session_plan,
-        mode=st.session_state.fb_board_time,
-        category=st.session_state.fb_board_region,
-        cache=cache,
-        max_enrich=24,
-        force_no_odds=force_no_odds,
-    )
+
+    if show_raw:
+        match_result = load_raw_football_matches(
+            payload,
+            service,
+            username=username,
+            session_plan=session_plan,
+            mode=st.session_state.fb_board_time,
+            cache=cache,
+            max_enrich=48,
+        )
+        st.markdown(
+            '<p class="fbb-raw-note">Du siehst alle API-Spiele. '
+            "Für Betting-Analysen empfehlen wir Premium-Ligen mit Quoten.</p>",
+            unsafe_allow_html=True,
+        )
+        if st.button("Zurück zu Premium-Spielen", key="fbb_back_premium", width="stretch"):
+            st.session_state.show_all_raw_matches = False
+            st.rerun()
+    else:
+        match_result = load_football_matches(
+            payload,
+            service,
+            username=username,
+            session_plan=session_plan,
+            mode=st.session_state.fb_board_time,
+            category=st.session_state.fb_board_region,
+            cache=cache,
+            max_enrich=24,
+            force_no_odds=force_no_odds,
+        )
 
     if _show_football_debug():
         print(
@@ -674,8 +731,13 @@ def render_football_betting_board(
 
     if not rows:
         stage = str(match_result.get("stage") or "")
-        pools = match_result.get("pools") or {}
-        if stage == "live_empty":
+        if show_raw:
+            st.markdown(
+                '<div class="fbb-empty"><h4>Keine Spiele für diesen Filter.</h4></div>',
+                unsafe_allow_html=True,
+            )
+        elif stage == "live_empty":
+            pools = match_result.get("pools") or {}
             if int(pools.get("today") or 0) > 0:
                 if st.button("Heutige Topspiele anzeigen", key="fbb_live_to_today", width="stretch"):
                     st.session_state.fb_board_time = "heute"
@@ -685,26 +747,34 @@ def render_football_betting_board(
                     st.session_state.fb_board_time = "heute"
                     st.rerun()
         else:
-            _render_empty_state(pools=pools)
+            raw_pool = collect_raw_fixtures_for_filters(
+                payload, time_filter=st.session_state.fb_board_time
+            )
+            _render_empty_state(raw_count=len(raw_pool))
         st.markdown("</div>", unsafe_allow_html=True)
         return
 
-    enriched_map = _live_enrichment_map(payload)
+    enriched_map = _live_enrichment_map(payload) if not show_raw else {}
     for row in rows:
-        _apply_live_enrichment(row, enriched_map)
+        if not show_raw:
+            _apply_live_enrichment(row, enriched_map)
 
     selected = st.session_state.get("fb_board_analyse")
     for row in rows:
         fid = row.get("fixture_id")
+        raw_row = bool(row.get("raw_mode"))
+        can_analyse = bool(row.get("analysis_available")) if raw_row else True
         row_cols = st.columns([12, 1])
         with row_cols[0]:
             st.markdown(_render_match_row_html(row), unsafe_allow_html=True)
         with row_cols[1]:
             st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
-            if st.button("Analyse", key=f"fbb_an_{fid}", width="stretch"):
+            if raw_row and not can_analyse:
+                st.caption("Analyse nicht verfügbar")
+            elif st.button("Analyse", key=f"fbb_an_{fid}", width="stretch", disabled=raw_row and not can_analyse):
                 st.session_state.fb_board_analyse = fid
                 st.rerun()
-        if selected and fid and int(selected) == int(fid):
+        if not raw_row and selected and fid and int(selected) == int(fid):
             cache_key = f"fbb_detail_{fid}"
             if cache_key not in st.session_state:
                 with st.spinner("Analyse laden…"):

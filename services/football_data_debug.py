@@ -12,9 +12,7 @@ from services.football_service import FootballAPIError, FootballService
 
 
 def football_debug_enabled() -> bool:
-    if os.getenv("ADMIN_DEBUG", "").strip().lower() in ("1", "true", "yes", "on"):
-        return True
-    return os.getenv("FOOTBALL_DEBUG", "").strip().lower() in ("1", "true", "yes", "on")
+    return os.getenv("ADMIN_DEBUG", "").strip().lower() in ("1", "true", "yes", "on")
 
 
 def _probe(
