@@ -1,6 +1,7 @@
-﻿"""MaByte Auth — emergency minimal Streamlit layout (no auth_premium CSS)."""
+﻿"""MaByte Auth — stable minimal Streamlit layout with scoped polish CSS."""
 from __future__ import annotations
 
+import html
 import random
 
 import streamlit as st
@@ -22,13 +23,14 @@ from ui.styles import inject_css
 _DEFAULT_USE_CASE = "Sonstiges"
 _DEFAULT_COUNTRY = "Deutschland"
 
-# Polish CSS — scoped to right column marker only (no grid / column width hacks).
+# Scoped polish CSS — no grid / column-width hacks on Streamlit blocks.
 _AUTH_MIN_CSS = """
 html, body, .stApp,
 [data-testid="stAppViewContainer"],
 [data-testid="stAppViewBlockContainer"] {
     background: linear-gradient(180deg, #09090b 0%, #18181b 45%, #09090b 100%) !important;
     color: #fafafa !important;
+    overflow-x: hidden !important;
 }
 #MainMenu, footer,
 [data-testid="stToolbar"],
@@ -40,29 +42,72 @@ html, body, .stApp,
 [data-testid="stMain"] .block-container,
 [data-testid="stMainBlockContainer"] {
     max-width: 1200px !important;
-    padding: 2.25rem 1.75rem 2.5rem !important;
+    padding: 2.5rem 1.75rem 2.75rem !important;
+    overflow-x: hidden !important;
 }
 
-/* Glass card — right login column only */
+/* Left branding feature cards */
+[data-testid="stColumn"]:has(.auth-brand-marker) .auth-feat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 1.5rem;
+    max-width: 560px;
+}
+[data-testid="stColumn"]:has(.auth-brand-marker) .auth-feat-card {
+    padding: 14px 14px 12px 14px;
+    border-radius: 14px;
+    background: rgba(39, 39, 42, 0.65);
+    border: 1px solid rgba(63, 63, 70, 0.8);
+    box-sizing: border-box;
+}
+[data-testid="stColumn"]:has(.auth-brand-marker) .auth-feat-card strong {
+    display: block;
+    color: #fafafa;
+    font-size: 13px;
+    margin-bottom: 4px;
+}
+[data-testid="stColumn"]:has(.auth-brand-marker) .auth-feat-card span {
+    display: block;
+    color: #a1a1aa;
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+/* Glass login card — right column */
 [data-testid="stColumn"]:has(.auth-glass-marker) {
-    background: rgba(24, 24, 27, 0.72) !important;
-    border: 1px solid rgba(255, 255, 255, 0.09) !important;
-    border-radius: 20px !important;
-    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.35) !important;
-    padding: 2rem 2rem 1.75rem 2rem !important;
+    max-width: 520px !important;
+    width: 100% !important;
+    margin-left: auto !important;
+    background: rgba(24, 24, 27, 0.78) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 22px !important;
+    box-shadow:
+        0 0 0 1px rgba(124, 58, 237, 0.12),
+        0 8px 32px rgba(124, 58, 237, 0.18),
+        0 24px 48px rgba(0, 0, 0, 0.4) !important;
+    padding: 2.5rem 2.25rem 2.25rem 2.25rem !important;
     box-sizing: border-box !important;
 }
 [data-testid="stColumn"]:has(.auth-glass-marker) [data-testid="stVerticalBlock"] {
-    gap: 0.7rem !important;
+    gap: 0.85rem !important;
 }
-[data-testid="stColumn"]:has(.auth-glass-marker) h3 {
+.auth-card-title {
     color: #fafafa !important;
-    margin-bottom: 0.25rem !important;
+    font-size: 1.65rem !important;
+    font-weight: 700 !important;
+    margin: 0 0 0.4rem 0 !important;
+    line-height: 1.25 !important;
+}
+.auth-card-sub {
+    color: #a1a1aa !important;
+    font-size: 0.92rem !important;
+    margin: 0 0 1.25rem 0 !important;
+    line-height: 1.5 !important;
 }
 
-/* Inputs & captcha */
-[data-testid="stColumn"]:has(.auth-glass-marker) [data-testid="stTextInput"] input,
-[data-testid="stColumn"]:has(.auth-glass-marker) [data-testid="stNumberInput"] input {
+/* Inputs */
+[data-testid="stColumn"]:has(.auth-glass-marker) [data-testid="stTextInput"] input {
     background: #27272a !important;
     color: #fafafa !important;
     border: 1px solid #3f3f46 !important;
@@ -74,11 +119,6 @@ html, body, .stApp,
     border: 1px solid #3f3f46 !important;
     border-radius: 10px !important;
 }
-[data-testid="stColumn"]:has(.auth-glass-marker) [data-testid="stNumberInput"] button {
-    background: #27272a !important;
-    border-color: #3f3f46 !important;
-    color: #a1a1aa !important;
-}
 [data-testid="stColumn"]:has(.auth-glass-marker) [data-testid="stTextInput"] button {
     background: transparent !important;
     border: none !important;
@@ -89,7 +129,7 @@ html, body, .stApp,
     color: #d4d4d8 !important;
 }
 
-/* Primary login — violet/blue gradient (not red) */
+/* Primary — violet/blue gradient */
 [data-testid="stColumn"]:has(.auth-glass-marker) [data-testid="stFormSubmitButton"] button[kind="primary"],
 [data-testid="stColumn"]:has(.auth-glass-marker) [data-testid="stFormSubmitButton"] button[data-testid="stBaseButton-primaryFormSubmit"],
 [data-testid="stColumn"]:has(.auth-glass-marker) .stButton > button[kind="primary"] {
@@ -98,7 +138,7 @@ html, body, .stApp,
     border: none !important;
     border-radius: 12px !important;
     min-height: 48px !important;
-    box-shadow: 0 4px 18px rgba(124, 58, 237, 0.35) !important;
+    box-shadow: 0 4px 20px rgba(124, 58, 237, 0.38) !important;
 }
 [data-testid="stColumn"]:has(.auth-glass-marker) [data-testid="stFormSubmitButton"] button[kind="primary"] p,
 [data-testid="stColumn"]:has(.auth-glass-marker) .stButton > button[kind="primary"] p {
@@ -106,20 +146,55 @@ html, body, .stApp,
     font-weight: 700 !important;
 }
 
-/* Google & secondary actions — dark */
-[data-testid="stColumn"]:has(.auth-glass-marker) [data-testid="stLinkButton"] a {
+/* Google button */
+[data-testid="stColumn"]:has(.auth-glass-marker) a.auth-google-btn {
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
+    gap: 10px !important;
     width: 100% !important;
-    min-height: 44px !important;
+    min-height: 46px !important;
+    margin-top: 0.75rem !important;
+    padding: 0 16px !important;
     border-radius: 10px !important;
     background: #27272a !important;
     border: 1px solid #3f3f46 !important;
     color: #fafafa !important;
     text-decoration: none !important;
     font-weight: 600 !important;
-    margin-top: 0.35rem !important;
+    font-size: 14px !important;
+    box-sizing: border-box !important;
+}
+[data-testid="stColumn"]:has(.auth-glass-marker) a.auth-google-btn:hover {
+    border-color: #52525b !important;
+    background: #3f3f46 !important;
+}
+[data-testid="stColumn"]:has(.auth-glass-marker) .auth-google-icon {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 20px !important;
+    height: 20px !important;
+    flex-shrink: 0 !important;
+}
+
+/* Register link area */
+[data-testid="stColumn"]:has(.auth-glass-marker) .auth-register-line {
+    text-align: center !important;
+    margin: 1.35rem 0 0.5rem 0 !important;
+    color: #a1a1aa !important;
+    font-size: 0.9rem !important;
+    line-height: 1.5 !important;
+}
+[data-testid="stColumn"]:has(.auth-glass-marker) .stButton > button[kind="tertiary"] {
+    color: #c4b5fd !important;
+    background: transparent !important;
+    border: none !important;
+    width: 100% !important;
+    font-weight: 600 !important;
+}
+[data-testid="stColumn"]:has(.auth-glass-marker) .stButton > button[kind="tertiary"] p {
+    color: #c4b5fd !important;
 }
 [data-testid="stColumn"]:has(.auth-glass-marker) .stButton > button[kind="secondary"] {
     background: rgba(124, 58, 237, 0.14) !important;
@@ -133,18 +208,38 @@ html, body, .stApp,
     color: #c4b5fd !important;
     font-weight: 600 !important;
 }
-[data-testid="stColumn"]:has(.auth-glass-marker) [data-testid="stCaption"] {
-    color: #a1a1aa !important;
-    font-size: 0.9rem !important;
-    margin-top: 1rem !important;
-    margin-bottom: 0.35rem !important;
-    text-align: center !important;
+
+@media (max-width: 900px) {
+    [data-testid="stColumn"]:has(.auth-glass-marker) {
+        max-width: 100% !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        padding: 2rem 1.5rem !important;
+    }
+    [data-testid="stColumn"]:has(.auth-brand-marker) .auth-feat-grid {
+        grid-template-columns: 1fr;
+        max-width: 100%;
+    }
 }
-[data-testid="stColumn"]:has(.auth-glass-marker) .stButton > button[kind="tertiary"] {
-    color: #a1a1aa !important;
-    background: transparent !important;
-    border: none !important;
-}
+"""
+
+_GOOGLE_ICON_SVG = (
+    '<svg class="auth-google-icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">'
+    '<path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>'
+    '<path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>'
+    '<path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>'
+    '<path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>'
+    "</svg>"
+)
+
+_BRAND_FEATURES_HTML = """
+<span class="auth-brand-marker" hidden aria-hidden="true"></span>
+<div class="auth-feat-grid">
+  <div class="auth-feat-card"><strong>AI Reels Studio</strong><span>Automatisierte Shorts &amp; Videos</span></div>
+  <div class="auth-feat-card"><strong>Football Intelligence</strong><span>Datenbasierte Analysen &amp; Prognosen</span></div>
+  <div class="auth-feat-card"><strong>Publishing Engine</strong><span>Omnichannel Distribution</span></div>
+  <div class="auth-feat-card"><strong>Team Workspace</strong><span>Zusammenarbeit &amp; Verwaltung</span></div>
+</div>
 """
 
 
@@ -208,16 +303,24 @@ def _show_notice() -> None:
         st.info(message)
 
 
-def _check_captcha(captcha: int) -> bool:
+def _parse_captcha_answer(raw: str) -> int | None:
+    text = (raw or "").strip()
+    if not text or not text.isdigit():
+        return None
+    return int(text)
+
+
+def _check_captcha(captcha_raw: str) -> bool:
     expected = int(st.session_state.captcha_a) + int(st.session_state.captcha_b)
-    if int(captcha) != expected:
+    answer = _parse_captcha_answer(captcha_raw)
+    if answer is None or answer != expected:
         _set_notice("error", "Rechenaufgabe falsch — bitte erneut versuchen.")
         refresh_captcha()
         return False
     return True
 
 
-def do_login(identifier: str, password: str, *, captcha: int) -> None:
+def do_login(identifier: str, password: str, *, captcha: str) -> None:
     if not _check_captcha(captcha):
         return
 
@@ -255,7 +358,7 @@ def do_register(
     password2: str,
     company: str,
     terms: bool,
-    captcha: int,
+    captcha: str,
 ) -> None:
     if not _check_captcha(captcha):
         return
@@ -355,30 +458,42 @@ def handle_google_oauth_callback() -> None:
         st.rerun()
 
 
+def _render_google_button() -> None:
+    if not provider_configured("google"):
+        return
+    url = auth_url("google", make_state("google"))
+    if not url:
+        return
+    safe_url = html.escape(url)
+    st.markdown(
+        f'<a class="auth-google-btn" href="{safe_url}">'
+        f"{_GOOGLE_ICON_SVG}"
+        "<span>Mit Google anmelden</span></a>",
+        unsafe_allow_html=True,
+    )
+
+
 def _render_login_panel() -> None:
     a, b = st.session_state.captcha_a, st.session_state.captcha_b
 
     with st.form("auth_login_form", clear_on_submit=False, border=False):
         identifier = st.text_input("Benutzername oder E-Mail", placeholder="name@firma.de")
         password = st.text_input("Passwort", type="password", placeholder="Passwort")
-        captcha = st.number_input(f"Sicherheitsfrage: {a} + {b} = ?", min_value=0, max_value=30, step=1, value=0)
+        st.markdown(f"**Sicherheitsfrage: {a} + {b} = ?**")
+        captcha = st.text_input("Antwort eingeben", placeholder="Antwort eingeben", label_visibility="collapsed")
         st.checkbox("Angemeldet bleiben", key="auth_remember")
         submitted = st.form_submit_button("Anmelden", type="primary", use_container_width=True)
 
     if submitted:
-        do_login(identifier, password, captcha=int(captcha))
+        do_login(identifier, password, captcha=captcha)
 
-    if st.button("Neue Rechenaufgabe", key="auth_cap_refresh"):
-        refresh_captcha()
-        st.rerun()
+    _render_google_button()
 
-    if provider_configured("google"):
-        url = auth_url("google", make_state("google"))
-        if url:
-            st.link_button("Mit Google anmelden", url, use_container_width=True)
-
-    st.caption("Noch kein Konto? Jetzt registrieren:")
-    if st.button("Konto erstellen", key="auth_go_register", type="secondary", use_container_width=True):
+    st.markdown(
+        '<p class="auth-register-line">Noch kein Konto?<br>Jetzt registrieren →</p>',
+        unsafe_allow_html=True,
+    )
+    if st.button("Jetzt registrieren", key="auth_go_register", type="tertiary", use_container_width=True):
         _set_mode("register")
         refresh_captcha()
         st.rerun()
@@ -394,7 +509,8 @@ def _render_register_panel() -> None:
         company = st.text_input("Unternehmen (optional)", placeholder="Firma GmbH")
         password = st.text_input("Passwort (min. 8)", type="password")
         password2 = st.text_input("Passwort bestätigen", type="password")
-        captcha = st.number_input(f"Sicherheitsfrage: {a} + {b} = ?", min_value=0, max_value=30, step=1, value=0)
+        st.markdown(f"**Sicherheitsfrage: {a} + {b} = ?**")
+        captcha = st.text_input("Antwort eingeben", placeholder="Antwort eingeben", label_visibility="collapsed")
         terms = st.checkbox("Ich akzeptiere die AGB und Datenschutzerklärung.")
         submitted = st.form_submit_button("Konto erstellen", type="primary", use_container_width=True)
 
@@ -407,7 +523,7 @@ def _render_register_panel() -> None:
             password2=password2,
             company=company,
             terms=terms,
-            captcha=int(captcha),
+            captcha=captcha,
         )
 
     if st.button("Zurück zum Login", key="auth_go_login", type="secondary"):
@@ -434,10 +550,7 @@ def render_auth() -> None:
         st.markdown(
             "Enterprise-Plattform für AI Content, Football Intelligence und Automatisierung."
         )
-        st.markdown("- AI Reels")
-        st.markdown("- Football AI")
-        st.markdown("- Publishing")
-        st.markdown("- Teams")
+        st.markdown(_BRAND_FEATURES_HTML, unsafe_allow_html=True)
 
     with right:
         st.markdown(
@@ -446,9 +559,17 @@ def render_auth() -> None:
         )
         with st.container():
             if mode == "register":
-                st.subheader("Konto erstellen")
+                st.markdown('<p class="auth-card-title">Konto erstellen</p>', unsafe_allow_html=True)
+                st.markdown(
+                    '<p class="auth-card-sub">Registrieren Sie sich für Ihren MaByte Workspace.</p>',
+                    unsafe_allow_html=True,
+                )
             else:
-                st.subheader("Anmelden")
+                st.markdown('<p class="auth-card-title">Willkommen zurück</p>', unsafe_allow_html=True)
+                st.markdown(
+                    '<p class="auth-card-sub">Melden Sie sich an, um auf Ihren MaByte Workspace zuzugreifen.</p>',
+                    unsafe_allow_html=True,
+                )
 
             _show_notice()
 
