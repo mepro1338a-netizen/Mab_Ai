@@ -87,6 +87,54 @@ def is_premium_league(league_id: int | None) -> bool:
     return int(league_id) in FOOTBALL_PREMIUM_LEAGUE_IDS
 
 
+def _names_match_premium(api_name: str, meta_name: str) -> bool:
+    """Fuzzy match API league name to curated premium meta name."""
+    api = (api_name or "").lower().strip()
+    meta = (meta_name or "").lower().strip()
+    if not api or not meta:
+        return False
+    if api == meta:
+        return True
+    if meta not in api and api not in meta:
+        return False
+    # Avoid false positives
+    if meta == "premier league" and "championship" in api:
+        return False
+    if meta == "1. bundesliga" and api.startswith("2."):
+        return False
+    if meta == "2. bundesliga" and "1." in api and "2." not in api:
+        return False
+    return True
+
+
+def is_premium_league_match(league_id: int | None, league_name: str = "") -> bool:
+    """Match by league ID or fallback to curated name."""
+    if is_blocked_league_name(league_name):
+        return False
+    if league_id and int(league_id) in FOOTBALL_PREMIUM_LEAGUE_IDS:
+        return True
+    low = (league_name or "").lower().strip()
+    if not low:
+        return False
+    for lid, meta in FOOTBALL_LEAGUE_META.items():
+        if int(lid) not in FOOTBALL_PREMIUM_LEAGUE_IDS:
+            continue
+        if _names_match_premium(low, str(meta.get("name") or "")):
+            return True
+    return False
+
+
+def filter_blocked_fixtures(fixtures: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Remove youth/reserve/amateur by name — used for 'Alle Spiele' view."""
+    out: list[dict[str, Any]] = []
+    for fx in fixtures or []:
+        league_name = str((fx.get("league") or {}).get("name") or "")
+        if is_blocked_league_name(league_name):
+            continue
+        out.append(fx)
+    return out
+
+
 def relevance_score(
     *,
     league_id: int | None,
@@ -114,20 +162,17 @@ def is_featured_league(league_id: int | None) -> bool:
 
 
 def filter_premium_fixtures(fixtures: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Keep only curated premium leagues — default for all Football AI views."""
-    pids = premium_league_ids()
+    """Keep only curated premium leagues — ID match with name fallback."""
     out: list[dict[str, Any]] = []
     for fx in fixtures or []:
+        league = fx.get("league") or {}
         try:
-            lid = int((fx.get("league") or {}).get("id") or 0)
+            lid = int(league.get("id") or 0) or None
         except (TypeError, ValueError):
-            continue
-        if lid not in pids:
-            continue
-        league_name = str((fx.get("league") or {}).get("name") or "")
-        if is_blocked_league_name(league_name):
-            continue
-        out.append(fx)
+            lid = None
+        league_name = str(league.get("name") or "")
+        if is_premium_league_match(lid, league_name):
+            out.append(fx)
     return out
 
 

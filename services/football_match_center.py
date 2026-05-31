@@ -401,6 +401,9 @@ def fetch_premium_dashboard(
         "include_all_leagues": include_all_leagues,
         "today_local": today_s,
         "tomorrow_fixtures": sort_fixtures_by_priority(tomorrow_premium),
+        "raw_live": live_rows,
+        "raw_today": today_rows,
+        "raw_tomorrow": tomorrow_rows,
     }
 
 

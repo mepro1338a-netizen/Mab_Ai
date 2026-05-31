@@ -40,7 +40,6 @@ SIDEBAR_SECTIONS: list[tuple[str, list[tuple[str, str]]]] = [
             ("Profil & Tokens", "dashboard"),
             ("Premium", "premium"),
             ("Support", "support"),
-            ("Code einlösen", "redeem"),
         ],
     ),
 ]

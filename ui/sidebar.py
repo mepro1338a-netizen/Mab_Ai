@@ -290,6 +290,9 @@ def sidebar_master_css(active_page: str = "home") -> str:
     font-weight: inherit !important;
     font-size: 13px !important;
     margin: 0 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
 }}
 
 {_icon_css_rules()}

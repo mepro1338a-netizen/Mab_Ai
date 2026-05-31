@@ -87,7 +87,12 @@ _BOARD_CSS = """
     margin-top: 14px; padding: 12px; border-radius: 10px;
     background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255,255,255,.08);
 }
-.fbb-empty { color: #64748b !important; font-size: 13px; padding: 24px; text-align: center; }
+.fbb-empty {
+    color: #94a3b8 !important; font-size: 14px; padding: 28px 20px; text-align: center;
+    background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(255,255,255,.08);
+    border-radius: 14px; margin: 12px 0;
+}
+.fbb-empty h4 { color: #e2e8f0 !important; margin: 0 0 8px 0; font-size: 16px; }
 @media (max-width: 768px) {
     .fbb-match { grid-template-columns: 1fr; }
     .fbb-pick { text-align: left; margin-top: 8px; }
@@ -107,6 +112,7 @@ _TIME_FILTERS = (
     ("heute", "Heute"),
     ("live", "Live"),
     ("morgen", "Morgen"),
+    ("alle", "Alle"),
 )
 _REGION_FILTERS = (
     ("alle", "Alle"),
@@ -116,10 +122,64 @@ _REGION_FILTERS = (
 )
 
 
+def _show_football_debug() -> bool:
+    if football_debug_enabled():
+        return True
+    try:
+        from ui_core import is_admin_user
+        return is_admin_user()
+    except Exception:
+        return False
+
+
+def _filter_user_errors(errors: list[str]) -> list[str]:
+    """Hide rate-limit noise when API/cache still delivers data."""
+    out: list[str] = []
+    for err in errors or []:
+        low = str(err).lower()
+        if "rate limit" in low:
+            continue
+        out.append(str(err))
+    return out
+
+
+def _render_empty_state(*, premium_only: bool, time_filter: str) -> None:
+    tf = {"heute": "heute", "live": "live", "morgen": "morgen", "alle": "in den Top-Ligen"}.get(
+        time_filter, "für diesen Filter"
+    )
+    if premium_only:
+        msg = f"Heute keine Premium-Spiele gefunden." if time_filter == "heute" else f"Keine Premium-Spiele {tf}."
+        st.markdown(
+            f"""
+<div class="fbb-empty">
+  <h4>{html.escape(msg)}</h4>
+  <p>Saisonpause oder kein Spieltag in Bundesliga, UEFA & Topligen.</p>
+</div>
+            """,
+            unsafe_allow_html=True,
+        )
+        if st.button("Alle Spiele anzeigen", key="fbb_show_all", width="stretch"):
+            st.session_state.fb_board_premium_only = False
+            st.rerun()
+    else:
+        st.markdown(
+            """
+<div class="fbb-empty">
+  <h4>Keine Spiele für diesen Filter</h4>
+  <p>Anderen Zeitraum oder Liga wählen.</p>
+</div>
+            """,
+            unsafe_allow_html=True,
+        )
+        if st.button("Nur Premium-Ligen", key="fbb_premium_only", width="stretch"):
+            st.session_state.fb_board_premium_only = True
+            st.rerun()
+
+
 def inject_betting_board_css() -> None:
     inject_css(
         MB_THEME_VARS
-        + page_layout_css(1180, 88, 32)
+        + page_layout_css(1180, 100, 32)
         + BETA_GLOBAL_CSS
         + _BOARD_CSS
     )
@@ -190,7 +250,11 @@ def _render_match_row_html(row: dict[str, Any]) -> str:
 
     risk = str(row.get("risk") or "Mittel")
     risk_cls = _risk_class(risk)
-    ai_pick = html.escape(str(row.get("ai_pick") or "—"))
+    ai_raw = str(row.get("ai_pick") or "").strip()
+    if not ai_raw or ai_raw in ("—", "-"):
+        ai_pick = "KI-Tipp wird aus Formdaten berechnet"
+    else:
+        ai_pick = html.escape(ai_raw)
     conf = row.get("confidence")
     conf_txt = f"{conf:.0f}%" if conf is not None else "—"
     no_bet = bool(row.get("no_bet"))
@@ -461,8 +525,10 @@ def render_football_betting_board(
         st.session_state.fb_board_payload = None
     if "fb_board_version" not in st.session_state:
         st.session_state.fb_board_version = 1
+    if "fb_board_premium_only" not in st.session_state:
+        st.session_state.fb_board_premium_only = True
 
-    include_all = st.session_state.fb_board_region == "alle"
+    premium_only = bool(st.session_state.fb_board_premium_only)
 
     hdr_cols = st.columns([5, 1])
     with hdr_cols[1]:
@@ -490,7 +556,7 @@ def render_football_betting_board(
                 st.session_state.fb_board_payload = fetch_board_payload(
                     service,
                     username=username,
-                    include_all_leagues=include_all,
+                    include_all_leagues=False,
                 )
             except FootballAPIError as exc:
                 st.error(str(exc))
@@ -498,63 +564,56 @@ def render_football_betting_board(
                 return
 
     payload = st.session_state.fb_board_payload or {}
-    for err in payload.get("errors") or []:
+    for err in _filter_user_errors(list(payload.get("errors") or [])):
         st.warning(err)
 
     today_pool = collect_fixtures_for_filters(
-        payload, time_filter="heute", region_filter="alle"
+        payload, time_filter="heute", region_filter="alle", premium_only=premium_only
     )
     live_pool = collect_fixtures_for_filters(
-        payload, time_filter="live", region_filter="alle"
+        payload, time_filter="live", region_filter="alle", premium_only=premium_only
     )
     tomorrow_pool = collect_fixtures_for_filters(
-        payload, time_filter="morgen", region_filter="alle"
+        payload, time_filter="morgen", region_filter="alle", premium_only=premium_only
     )
     board_counts = {
         "today_matches": len(today_pool),
         "live_matches": len(live_pool),
         "tomorrow_matches": len(tomorrow_pool),
     }
-    log_board_counts(board_counts)
+    if _show_football_debug():
+        log_board_counts(board_counts)
 
-    debug_report: dict[str, Any] = {
-        "counts": board_counts,
-        "dates": {
-            "timezone": "Europe/Berlin",
-            "today": payload.get("today") or payload.get("today_local"),
-            "tomorrow": payload.get("tomorrow"),
-        },
-        "api_status": "OK" if not payload.get("errors") else "ERROR",
-    }
-    if football_debug_enabled() or sum(board_counts.values()) == 0:
-        debug_report = run_board_diagnosis(
-            service, username=username, payload=payload
-        )
-    st.session_state.fb_board_debug = debug_report
-
-    with st.expander("Football Debug", expanded=football_debug_enabled()):
-        st.markdown(format_debug_widget(debug_report))
-        probes = debug_report.get("probes") or {}
-        for label, probe in probes.items():
-            st.caption(
-                f"{label}: endpoint=fixtures status={probe.get('status_code')} "
-                f"len={probe.get('response_length')} cached={probe.get('cached')} "
-                f"err={probe.get('error') or '—'}"
+    if _show_football_debug():
+        debug_report: dict[str, Any] = {
+            "counts": board_counts,
+            "dates": {
+                "timezone": "Europe/Berlin",
+                "today": payload.get("today") or payload.get("today_local"),
+                "tomorrow": payload.get("tomorrow"),
+            },
+            "api_status": "OK" if not payload.get("errors") else "ERROR",
+        }
+        if sum(board_counts.values()) == 0:
+            debug_report = run_board_diagnosis(
+                service, username=username, payload=payload
             )
+        st.session_state.fb_board_debug = debug_report
+        with st.expander("Football Debug", expanded=football_debug_enabled()):
+            st.markdown(format_debug_widget(debug_report))
 
     fixtures = collect_fixtures_for_filters(
         payload,
         time_filter=st.session_state.fb_board_time,
         region_filter=st.session_state.fb_board_region,
+        premium_only=premium_only,
     )
 
     if not fixtures:
-        st.markdown(
-            '<div class="fbb-empty">Keine Spiele für diesen Filter — anderen Zeitraum oder Liga wählen.</div>',
-            unsafe_allow_html=True,
+        _render_empty_state(
+            premium_only=premium_only,
+            time_filter=st.session_state.fb_board_time,
         )
-        if football_debug_enabled():
-            st.info(debug_report.get("summary", {}).get("failure_point", ""))
         st.markdown("</div>", unsafe_allow_html=True)
         return
 

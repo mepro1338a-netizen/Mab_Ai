@@ -15,7 +15,7 @@ html, body, .stApp {
 }
 @media (max-width: 768px) {
     .main .block-container {
-        padding-top: 72px !important;
+        padding-top: 80px !important;
         padding-left: 0.85rem !important;
         padding-right: 0.85rem !important;
     }

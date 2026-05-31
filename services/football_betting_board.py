@@ -6,6 +6,7 @@ from typing import Any
 from config import FOOTBALL_LEAGUE_GROUPS, football_plan_rank
 from services.football_leagues import (
     LIVE_STATUSES,
+    filter_blocked_fixtures,
     filter_premium_fixtures,
 )
 from services.football_match_center import (
@@ -72,14 +73,43 @@ def collect_fixtures_for_filters(
     *,
     time_filter: str,
     region_filter: str,
+    premium_only: bool = True,
 ) -> list[dict[str, Any]]:
     today_s = str(payload.get("today") or payload.get("today_local") or "")
     tomorrow_s = str(payload.get("tomorrow") or "")
+
+    if not premium_only:
+        if time_filter == "live":
+            pool = filter_blocked_fixtures(list(payload.get("raw_live") or []))
+        elif time_filter == "morgen":
+            pool = filter_blocked_fixtures(list(payload.get("raw_tomorrow") or []))
+        else:
+            pool = filter_blocked_fixtures(
+                dedupe_fixtures(
+                    list(payload.get("raw_live") or [])
+                    + list(payload.get("raw_today") or [])
+                    + list(payload.get("raw_tomorrow") or [])
+                )
+            )
+            if time_filter == "heute":
+                pool = [
+                    fx
+                    for fx in pool
+                    if _is_live(fx) or _fixture_date(fx) == today_s
+                ]
+        return sort_fixtures_by_priority(pool)
 
     if time_filter == "live":
         pool = list(payload.get("live_now") or [])
     elif time_filter == "morgen":
         pool = list(payload.get("tomorrow_fixtures") or [])
+    elif time_filter == "alle":
+        pool = dedupe_fixtures(
+            list(payload.get("live_now") or [])
+            + list(payload.get("all_premium") or [])
+            + list(payload.get("tomorrow_fixtures") or [])
+            + list(payload.get("next_matches") or [])
+        )
     else:
         pool = dedupe_fixtures(
             list(payload.get("live_now") or [])
