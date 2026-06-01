@@ -164,6 +164,19 @@ def football_api_season() -> int:
     now = datetime.now(ZoneInfo("Europe/Berlin"))
     return now.year if now.month >= 7 else now.year - 1
 
+
+def football_api_seasons_to_try() -> list[int]:
+    """Season years to try (paid + free-plan fallback 2022–2024)."""
+    primary = football_api_season()
+    extra = [primary, primary - 1, primary + 1, 2024, 2023, 2022]
+    seen: set[int] = set()
+    out: list[int] = []
+    for year in extra:
+        if year not in seen and year >= 2022:
+            seen.add(year)
+            out.append(year)
+    return out
+
 # API-Football league IDs (v3) — Phase 2 beta whitelist only
 # Tier 0=UEFA · 1=DE · 2=England · 3=Top leagues · 4=International
 FOOTBALL_LEAGUE_GROUPS: dict[str, list[dict[str, str | int]]] = {
@@ -246,14 +259,18 @@ FOOTBALL_BETTING_CORE_LEAGUE_IDS = frozenset(
     {
         78,   # 1. Bundesliga
         79,   # 2. Bundesliga
+        81,   # DFB Pokal
         2,    # Champions League
         3,    # Europa League
+        848,  # Conference League
         39,   # Premier League
         140,  # La Liga
         135,  # Serie A
         61,   # Ligue 1
     }
 )
+
+FOOTBALL_UPCOMING_HORIZON_DAYS = 30
 
 ROLE_LABELS = {
     "user": "User",

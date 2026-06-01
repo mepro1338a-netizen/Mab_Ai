@@ -18,6 +18,7 @@ from services.football_data_debug import football_debug_enabled, log_board_count
 from services.football_access import usage_summary
 from services.football_betting_board import (
     build_fallback_debug_stats,
+    build_premium_upcoming_report,
     collect_fixtures_for_filters,
     collect_raw_fixtures_for_filters,
     fetch_board_payload,
@@ -303,16 +304,25 @@ def _render_match_row_html(row: dict[str, Any]) -> str:
         live_extra += "</div>"
 
     if not show_betting:
-        mid = score if score and score != "vs" else time_lbl or fx_date
+        kickoff = time_lbl or fx_date
+        mid = score if score and score != "vs" else kickoff
+        date_badge = f'<span class="fbb-meta">{fx_date}</span> · ' if fx_date and not live else ""
+        no_odds_note = ""
+        if schedule_only:
+            no_odds_note = (
+                '<div class="fbb-meta" style="margin-top:6px;color:#94a3b8;">'
+                "Quoten/Prediction aktuell nicht verfügbar.</div>"
+            )
         return f"""
 <div class="fbb-match{live_cls}">
   <div>
-    <div class="fbb-meta"><strong>{league}</strong> · {meta_time}</div>
+    <div class="fbb-meta">{date_badge}<strong>{league}</strong> · {meta_time}</div>
     <div class="fbb-teams">
       <div class="fbb-team">{home}</div>
       <div class="fbb-score-line">{html.escape(str(mid))}</div>
       <div class="fbb-team">{away}</div>
     </div>
+    {no_odds_note}
     {live_extra}
   </div>
 </div>
@@ -629,7 +639,7 @@ def render_football_betting_board(
     )
 
     if st.session_state.fb_board_payload is None:
-        with st.spinner("Spiele laden…"):
+        with st.spinner("Premium-Spiele laden (30-Tage-Scan)…"):
             try:
                 st.session_state.fb_board_payload = fetch_board_payload(
                     service,
@@ -720,6 +730,11 @@ def render_football_betting_board(
             force_no_odds=force_no_odds,
         )
 
+    upcoming_report = match_result.get("upcoming_report") or build_premium_upcoming_report(
+        payload, service, username=username
+    )
+    print({"football_premium_upcoming_report": upcoming_report})
+
     if _show_football_debug():
         print(
             {
@@ -741,6 +756,7 @@ def render_football_betting_board(
             username=username,
             limit=5,
         )
+        st.json(upcoming_report)
 
     rows = match_result.get("rows") or []
     if match_result.get("banner"):

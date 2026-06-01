@@ -230,7 +230,7 @@ def build_premium_diagnosis_report(payload: dict[str, Any]) -> dict[str, Any]:
             "nur Low-Tier-Ligen (USL etc.) aktiv"
         )
     elif not premium_today and premium_upcoming:
-        why_zero = "Heute keine Premium-Spiele; nächste Termine im 14-Tage-Scan"
+        why_zero = "Heute keine Premium-Spiele; nächste Termine im 30-Tage-Scan"
     elif not premium_today:
         why_zero = "Premium-Ligen erkannt, aber Filter/Region schließt alle aus"
 
@@ -256,7 +256,7 @@ def format_admin_league_debug_markdown(report: dict[str, Any]) -> str:
         f"- **API OK:** {'Ja' if report.get('api_ok') else 'Nein'}",
         f"- **Raw heute:** {report.get('raw_today', 0)} · "
         f"**Premium nach Filter:** {report.get('premium_after_filter_today', 0)}",
-        f"- **Nächste Premium (14T):** {report.get('next_premium_upcoming', 0)}",
+        f"- **Nächste Premium (30T):** {report.get('next_premium_upcoming', 0)}",
         f"- **Diagnose:** {report.get('why_premium_zero', '—')}",
         "",
     ]

@@ -3,7 +3,13 @@ from __future__ import annotations
 
 from typing import Any
 
-from config import FOOTBALL_LEAGUE_GROUPS, football_plan_rank
+from config import (
+    FOOTBALL_BETTING_CORE_LEAGUE_IDS,
+    FOOTBALL_LEAGUE_GROUPS,
+    FOOTBALL_LEAGUE_META,
+    FOOTBALL_UPCOMING_HORIZON_DAYS,
+    football_plan_rank,
+)
 from services.football_betting_quality import (
     build_betting_signal,
     empty_betting_signal,
@@ -381,34 +387,48 @@ def build_basic_board_rows(fixtures: list[dict[str, Any]]) -> list[dict[str, Any
 _FALLBACK_MESSAGES: dict[str, str] = {
     "today_premium_with_odds": "Heute keine Premium-Live-Spiele — zeige heutige Topspiele.",
     "tomorrow_premium_with_odds": "Keine Premium-Spiele heute — zeige morgige Topspiele.",
-    "upcoming_premium_with_odds": "Nächste Premium-Spiele (14 Tage).",
-    "today_premium_schedule": "Heute keine Premium-Spiele mit Quoten — Spielplan ohne Betting.",
-    "tomorrow_premium_schedule": "Keine Premium-Spiele heute — morgiger Spielplan ohne Betting.",
+    "upcoming_premium_with_odds": f"Nächste Premium-Spiele ({FOOTBALL_UPCOMING_HORIZON_DAYS} Tage).",
+    "today_premium_schedule": "Heute keine Premium-Spiele — Spielplan ohne Betting.",
+    "tomorrow_premium_schedule": "Keine Premium-Spiele heute — morgiger Spielplan.",
     "upcoming_premium_schedule": (
-        "Nächste Premium-Spiele (14 Tage) — ohne Quoten, nur Spielinfo."
+        f"Nächste Premium-Spiele ({FOOTBALL_UPCOMING_HORIZON_DAYS} Tage) — Spielplan mit Datum."
     ),
     "live_empty": "Keine Premium-Live-Spiele aktuell.",
-    "api_plan_no_betting": (
-        "Für Betting-Analyse wird Odds/Prediction API benötigt."
-    ),
+    "api_plan_no_betting": "Quoten/Prediction aktuell nicht verfügbar.",
 }
 
 
-def _fallback_chain(mode: str) -> list[tuple[str, str, bool]]:
+def _fallback_chain(
+    mode: str,
+    *,
+    today_empty: bool = False,
+    live_empty: bool = True,
+) -> list[tuple[str, str, bool]]:
     """Return (stage_id, pool_key, require_odds) in priority order."""
+    heute_when_empty = [
+        ("upcoming_premium_with_odds", "upcoming", True),
+        ("upcoming_premium_schedule", "upcoming", False),
+        ("tomorrow_premium_with_odds", "tomorrow", True),
+        ("tomorrow_premium_schedule", "tomorrow", False),
+        ("today_premium_with_odds", "today", True),
+        ("today_premium_schedule", "today", False),
+    ]
+    heute_default = [
+        ("today_premium_with_odds", "today", True),
+        ("upcoming_premium_with_odds", "upcoming", True),
+        ("tomorrow_premium_with_odds", "tomorrow", True),
+        ("today_premium_schedule", "today", False),
+        ("upcoming_premium_schedule", "upcoming", False),
+        ("tomorrow_premium_schedule", "tomorrow", False),
+    ]
     chains: dict[str, list[tuple[str, str, bool]]] = {
         "live": [
             ("live_premium_with_odds", "live", True),
             ("live_premium_schedule", "live", False),
-        ],
-        "heute": [
-            ("today_premium_with_odds", "today", True),
-            ("tomorrow_premium_with_odds", "tomorrow", True),
             ("upcoming_premium_with_odds", "upcoming", True),
-            ("today_premium_schedule", "today", False),
-            ("tomorrow_premium_schedule", "tomorrow", False),
             ("upcoming_premium_schedule", "upcoming", False),
         ],
+        "heute": heute_when_empty if (today_empty and live_empty) else heute_default,
         "morgen": [
             ("tomorrow_premium_with_odds", "tomorrow", True),
             ("today_premium_with_odds", "today", True),
@@ -428,6 +448,77 @@ def _fallback_chain(mode: str) -> list[tuple[str, str, bool]]:
         ],
     }
     return chains.get((mode or "heute").lower(), chains["heute"])
+
+
+def build_premium_upcoming_report(
+    payload: dict[str, Any],
+    service: FootballService | None = None,
+    *,
+    username: str = "",
+    sample_odds: int = 6,
+) -> dict[str, Any]:
+    """Report: upcoming premium count, league IDs used, odds sample."""
+    upcoming = list(payload.get("next_matches") or [])
+    league_ids_used = sorted(
+        {
+            int((fx.get("league") or {}).get("id") or 0)
+            for fx in upcoming
+            if (fx.get("league") or {}).get("id")
+        }
+    )
+    samples: list[dict[str, Any]] = []
+    for fx in upcoming[:10]:
+        league = fx.get("league") or {}
+        teams = fx.get("teams") or {}
+        samples.append(
+            {
+                "date": _fixture_date(fx),
+                "league_id": league.get("id"),
+                "league": league.get("name"),
+                "home": (teams.get("home") or {}).get("name"),
+                "away": (teams.get("away") or {}).get("name"),
+            }
+        )
+
+    odds_hits = 0
+    odds_checked = 0
+    if service and upcoming:
+        for fx in upcoming[:sample_odds]:
+            fid = (fx.get("fixture") or {}).get("id")
+            if not fid:
+                continue
+            odds_checked += 1
+            try:
+                o = get_odds_for_fixture(service, int(fid), username=username)
+                if has_complete_odds(
+                    {
+                        "home_odd": o.get("home"),
+                        "draw_odd": o.get("draw"),
+                        "away_odd": o.get("away"),
+                    }
+                ):
+                    odds_hits += 1
+            except FootballAPIError:
+                pass
+
+    note = None
+    if not upcoming:
+        note = (
+            "Keine Premium-Fixtures im 30-Tage-Fenster. "
+            "Häufig: Saisonpause, Free-API-Plan (kein next=, nur ±1 Tag), "
+            "oder Pro-Plan mit Saison 2025+ nötig."
+        )
+
+    return {
+        "horizon_days": FOOTBALL_UPCOMING_HORIZON_DAYS,
+        "core_league_ids_config": sorted(FOOTBALL_BETTING_CORE_LEAGUE_IDS),
+        "naechste_premium_spiele_gefunden": len(upcoming),
+        "league_ids_genutzt": league_ids_used,
+        "odds_verfuegbar": (odds_hits > 0) if odds_checked else None,
+        "odds_sample": f"{odds_hits}/{odds_checked}",
+        "sample_fixtures": samples,
+        "hinweis": note,
+    }
 
 
 def _count_with_odds(
@@ -525,34 +616,27 @@ def load_football_matches(
         payload, region_filter=category, service=service, username=username
     )
 
-    chain = _fallback_chain(mode)
+    today_empty = not pools.get("today")
+    live_empty = not pools.get("live")
+    chain = _fallback_chain(mode, today_empty=today_empty, live_empty=live_empty)
     if force_no_odds:
         chain = [(s, p, r) for s, p, r in chain if not r]
 
-    if mode == "live" and not pools.get("live"):
-        return {
-            "fixtures": [],
-            "rows": [],
-            "stage": "live_empty",
-            "banner": _FALLBACK_MESSAGES["live_empty"],
-            "pool_key": "live",
-            "require_odds": True,
-            "debug_stats": debug_stats,
-            "pools": {k: len(v) for k, v in pools.items()},
-        }
+    enrich_limit = 48 if any(p == "upcoming" for _, p, _ in chain[:3]) else max_enrich
 
     for stage_id, pool_key, require_odds in chain:
         fixtures = pools.get(pool_key) or []
         if not fixtures:
             continue
 
+        row_limit = enrich_limit if pool_key == "upcoming" else max_enrich
         rows = build_board_rows(
             fixtures,
             service,
             username=username,
             session_plan=session_plan,
             cache=cache,
-            max_enrich=max_enrich,
+            max_enrich=row_limit,
             allow_no_odds=not require_odds,
             schedule_only=not require_odds,
         )
@@ -569,7 +653,7 @@ def load_football_matches(
             banner = _FALLBACK_MESSAGES.get(stage_id) or _FALLBACK_MESSAGES["api_plan_no_betting"]
 
         return {
-            "fixtures": fixtures[:max_enrich],
+            "fixtures": fixtures[:row_limit],
             "rows": rows,
             "stage": stage_id,
             "banner": banner,
@@ -577,6 +661,9 @@ def load_football_matches(
             "require_odds": require_odds,
             "debug_stats": debug_stats,
             "pools": {k: len(v) for k, v in pools.items()},
+            "upcoming_report": build_premium_upcoming_report(
+                payload, service, username=username
+            ),
         }
 
     return {
@@ -588,6 +675,9 @@ def load_football_matches(
         "require_odds": True,
         "debug_stats": debug_stats,
         "pools": {k: len(v) for k, v in pools.items()},
+        "upcoming_report": build_premium_upcoming_report(
+            payload, service, username=username
+        ),
     }
 
 

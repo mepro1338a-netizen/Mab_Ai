@@ -5,7 +5,15 @@ from datetime import datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from config import FOOTBALL_BETTING_CORE_LEAGUE_IDS, FOOTBALL_DEFAULT_SEASON, FOOTBALL_LEAGUE_PRIORITY, FOOTBALL_LEAGUE_TIER, football_plan_rank
+from config import (
+    FOOTBALL_BETTING_CORE_LEAGUE_IDS,
+    FOOTBALL_DEFAULT_SEASON,
+    FOOTBALL_LEAGUE_PRIORITY,
+    FOOTBALL_LEAGUE_TIER,
+    FOOTBALL_UPCOMING_HORIZON_DAYS,
+    football_api_seasons_to_try,
+    football_plan_rank,
+)
 from services.football_betting_quality import filter_bettable_fixtures, filter_betting_core_fixtures
 from services.football_leagues import (
     FINISHED_STATUSES,
@@ -189,20 +197,25 @@ def _fetch_by_leagues(
     *,
     username: str,
     max_leagues: int = 18,
+    seasons: list[int] | None = None,
 ) -> list[dict[str, Any]]:
     """Reliable path: fixtures per league+date (finds Bundesliga etc.)."""
     rows: list[dict[str, Any]] = []
+    season_list = seasons or football_api_seasons_to_try()
     for lid in _sorted_league_ids(league_ids)[:max_leagues]:
-        try:
-            rows.extend(
-                service.get_fixtures_by_date(
+        for season in season_list:
+            try:
+                chunk = service.get_fixtures_by_date(
                     date_s,
                     league_id=int(lid),
+                    season=season,
                     username=username,
                 )
-            )
-        except FootballAPIError:
-            continue
+                if chunk:
+                    rows.extend(chunk)
+                    break
+            except FootballAPIError:
+                continue
     return dedupe_fixtures(rows)
 
 
@@ -211,13 +224,18 @@ def _fetch_upcoming_premium(
     league_ids: set[int],
     *,
     username: str,
-    horizon_days: int = 14,
-    max_leagues: int = 14,
-    per_league: int = 5,
-    max_results: int = 24,
+    horizon_days: int | None = None,
+    max_leagues: int | None = None,
+    per_league: int = 12,
+    max_results: int = 48,
 ) -> list[dict[str, Any]]:
     """Next premium fixtures within N days — league next=, then league+date scan."""
-    from config import football_api_season
+    horizon_days = int(horizon_days or FOOTBALL_UPCOMING_HORIZON_DAYS)
+    core_ids = set(league_ids) & FOOTBALL_BETTING_CORE_LEAGUE_IDS
+    if not core_ids:
+        core_ids = set(FOOTBALL_BETTING_CORE_LEAGUE_IDS)
+    max_leagues = max_leagues or len(core_ids)
+    seasons = football_api_seasons_to_try()
 
     today_s, _ = _local_today_tomorrow()
     try:
@@ -238,10 +256,17 @@ def _fetch_upcoming_premium(
             return False
         return _status_short(fx) not in FINISHED_STATUSES
 
+    def _filter_core(fixtures: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        return filter_betting_core_fixtures(
+            filter_premium_fixtures([fx for fx in fixtures if _in_window(fx)])
+        )
+
     rows: list[dict[str, Any]] = []
-    seasons = [football_api_season(), football_api_season() - 1, football_api_season() + 1]
-    for lid in _sorted_league_ids(league_ids)[:max_leagues]:
-        for season in seasons:
+    use_next = True
+    for lid in _sorted_league_ids(core_ids)[:max_leagues]:
+        if not use_next:
+            break
+        for season in seasons[:3]:
             try:
                 chunk = service.get_league_upcoming_fixtures(
                     int(lid),
@@ -252,40 +277,32 @@ def _fetch_upcoming_premium(
                 if chunk:
                     rows.extend(chunk)
                     break
-            except FootballAPIError:
+            except FootballAPIError as exc:
+                msg = str(exc).lower()
+                if "next parameter" in msg or "next parameter" in str(getattr(exc, "api_errors", "")).lower():
+                    use_next = False
+                    break
                 continue
 
-    upcoming = filter_betting_core_fixtures(
-        filter_premium_fixtures([fx for fx in dedupe_fixtures(rows) if _in_window(fx)])
-    )
+    upcoming = _filter_core(dedupe_fixtures(rows))
 
-    if len(upcoming) < 3:
-        for offset in range(0, min(horizon_days + 1, 15)):
-            day_s = (today_dt + timedelta(days=offset)).isoformat()
-            try:
-                day_rows = service.get_fixtures_by_date(day_s, username=username)
-            except FootballAPIError:
+    if len(upcoming) < 8:
+        scan_days = [0, 7, 14, 21, 28]
+        if horizon_days >= 30:
+            scan_days.append(30)
+        for offset in scan_days:
+            if offset > horizon_days:
                 continue
-            upcoming.extend(
-                filter_betting_core_fixtures(
-                    filter_premium_fixtures([fx for fx in day_rows if _in_window(fx)])
-                )
-            )
-        upcoming = dedupe_fixtures(upcoming)
-
-    if len(upcoming) < 3:
-        for offset in range(1, min(horizon_days + 1, 15)):
             day_s = (today_dt + timedelta(days=offset)).isoformat()
             upcoming.extend(
-                filter_betting_core_fixtures(
-                    filter_premium_fixtures(
-                        _fetch_by_leagues(
-                            service,
-                            day_s,
-                            league_ids,
-                            username=username,
-                            max_leagues=max_leagues,
-                        )
+                _filter_core(
+                    _fetch_by_leagues(
+                        service,
+                        day_s,
+                        core_ids,
+                        username=username,
+                        max_leagues=max_leagues,
+                        seasons=seasons[:2],
                     )
                 )
             )
@@ -399,7 +416,11 @@ def fetch_premium_dashboard(
     all_premium = sort_fixtures_by_priority(premium_fixtures)
 
     next_matches: list[dict[str, Any]] = _fetch_upcoming_premium(
-        service, core_ids, username=username, horizon_days=14, max_results=24
+        service,
+        core_ids,
+        username=username,
+        horizon_days=FOOTBALL_UPCOMING_HORIZON_DAYS,
+        max_results=48,
     )
 
     extended: list[dict[str, Any]] = []
