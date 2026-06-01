@@ -5,8 +5,10 @@ from __future__ import annotations
 import hashlib
 import json
 import time
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 import requests
 
@@ -20,8 +22,10 @@ from config import (
     FOOTBALL_API_LIVE_CACHE_TTL,
     FOOTBALL_API_STANDINGS_CACHE_TTL,
     FOOTBALL_API_TIMEOUT,
+    FOOTBALL_BETTING_CORE_LEAGUE_IDS,
     FOOTBALL_DEFAULT_SEASON,
     football_api_season,
+    football_api_seasons_to_try,
 )
 from logger import log_error, log_info, log_warning
 from security import check_rate_limit
@@ -459,6 +463,103 @@ class FootballService:
           feature="api_results",
           username=username,
       )
+
+  def get_fixtures_by_league_season(
+      self,
+      league_id: int,
+      *,
+      season: int | None = None,
+      username: str = "",
+  ) -> list[dict[str, Any]]:
+      """All fixtures for league+season (client-side date filter for upcoming)."""
+      return self._request(
+          "fixtures",
+          {
+              "league": int(league_id),
+              "season": int(season or football_api_season() or FOOTBALL_DEFAULT_SEASON),
+          },
+          feature="api_fixtures",
+          username=username,
+      )
+
+  def get_premium_fixtures_upcoming(
+      self,
+      *,
+      days: int = 30,
+      username: str = "",
+  ) -> list[dict[str, Any]]:
+      """
+      Premium whitelist: fixtures?league=ID&season=current per league.
+      From today through the next `days` days, sorted by kickoff.
+      """
+      from services.football_leagues import FINISHED_STATUSES, sort_fixtures_priority
+
+      tz = ZoneInfo("Europe/Berlin")
+      today = datetime.now(tz).date()
+      horizon = today + timedelta(days=max(1, int(days)))
+      seasons = football_api_seasons_to_try()
+
+      def _fixture_date_local(fx: dict[str, Any]) -> str:
+          raw = str((fx.get("fixture") or {}).get("date") or "")
+          if not raw:
+              return ""
+          try:
+              normalized = raw.replace("Z", "+00:00")
+              dt = datetime.fromisoformat(normalized)
+              if dt.tzinfo is None:
+                  dt = dt.replace(tzinfo=tz)
+              return dt.astimezone(tz).date().isoformat()
+          except ValueError:
+              return raw[:10] if raw else ""
+
+      def _in_window(fx: dict[str, Any]) -> bool:
+          d_raw = _fixture_date_local(fx)
+          if not d_raw:
+              return False
+          try:
+              fx_date = datetime.fromisoformat(d_raw).date()
+          except ValueError:
+              return False
+          if fx_date < today or fx_date > horizon:
+              return False
+          st = str(((fx.get("fixture") or {}).get("status") or {}).get("short") or "NS")
+          return st not in FINISHED_STATUSES
+
+      rows: list[dict[str, Any]] = []
+      for lid in sorted(FOOTBALL_BETTING_CORE_LEAGUE_IDS):
+          league_in_window: list[dict[str, Any]] = []
+          for season in seasons:
+              try:
+                  part = self.get_fixtures_by_league_season(
+                      int(lid),
+                      season=season,
+                      username=username,
+                  )
+              except FootballAPIError:
+                  continue
+              if not part:
+                  continue
+              league_in_window = [fx for fx in part if _in_window(fx)]
+              if league_in_window:
+                  break
+          rows.extend(league_in_window)
+
+      seen: set[int] = set()
+      deduped: list[dict[str, Any]] = []
+      for fx in rows:
+          fid = (fx.get("fixture") or {}).get("id")
+          if not fid:
+              continue
+          try:
+              key = int(fid)
+          except (TypeError, ValueError):
+              continue
+          if key in seen:
+              continue
+          seen.add(key)
+          deduped.append(fx)
+
+      return sort_fixtures_priority(deduped)
 
   def get_league_upcoming_fixtures(
       self,

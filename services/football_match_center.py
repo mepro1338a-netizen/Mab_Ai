@@ -358,8 +358,6 @@ def fetch_premium_dashboard(
     """
     today_s, tomorrow_s = _local_today_tomorrow()
     errors: list[str] = []
-    core_ids = set(FOOTBALL_BETTING_CORE_LEAGUE_IDS)
-
     if not service.is_configured():
         return {
             "configured": False,
@@ -394,11 +392,24 @@ def fetch_premium_dashboard(
     except FootballAPIError as exc:
         errors.append(str(exc))
 
-    today_premium = filter_bettable_fixtures(filter_premium_fixtures(today_rows))
-    tomorrow_premium = filter_bettable_fixtures(filter_premium_fixtures(tomorrow_rows))
-    merged = dedupe_fixtures(live_rows + today_premium + tomorrow_premium)
-    premium_fixtures = filter_bettable_fixtures(filter_premium_fixtures(merged))
-    premium_live = filter_bettable_fixtures(filter_premium_fixtures(live_rows))
+    upcoming_rows: list[dict[str, Any]] = []
+    try:
+        upcoming_rows = service.get_premium_fixtures_upcoming(
+            days=FOOTBALL_UPCOMING_HORIZON_DAYS,
+            username=username,
+        )
+    except FootballAPIError as exc:
+        errors.append(str(exc))
+
+    today_premium = [
+        fx for fx in upcoming_rows if _fixture_date(fx) == today_s
+    ]
+    tomorrow_premium = [
+        fx for fx in upcoming_rows if _fixture_date(fx) == tomorrow_s
+    ]
+    premium_live = filter_betting_core_fixtures(filter_premium_fixtures(live_rows))
+    merged = dedupe_fixtures(premium_live + today_premium + tomorrow_premium)
+    premium_fixtures = filter_betting_core_fixtures(dedupe_fixtures(merged))
 
     sections = classify_fixtures(premium_fixtures, today=today_s, tomorrow=tomorrow_s)
     live_now = list(sections.get("live_now") or premium_live)
@@ -415,13 +426,7 @@ def fetch_premium_dashboard(
     top_matches = today_sorted[:5]
     all_premium = sort_fixtures_by_priority(premium_fixtures)
 
-    next_matches: list[dict[str, Any]] = _fetch_upcoming_premium(
-        service,
-        core_ids,
-        username=username,
-        horizon_days=FOOTBALL_UPCOMING_HORIZON_DAYS,
-        max_results=48,
-    )
+    next_matches: list[dict[str, Any]] = list(upcoming_rows)
 
     extended: list[dict[str, Any]] = []
 

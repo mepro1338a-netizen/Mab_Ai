@@ -311,9 +311,10 @@ def load_raw_football_matches(
     cache: dict[int, dict[str, Any]],
     max_enrich: int = 48,
 ) -> dict[str, Any]:
-    """Raw API fixtures — no premium filter."""
-    mode = (mode or "heute").lower().strip()
-    fixtures = collect_raw_fixtures_for_filters(payload, time_filter=mode)
+    """Raw API fixtures for today only (fixtures?date=today) — no premium filter."""
+    _ = mode
+    fixtures = filter_blocked_fixtures(list(payload.get("raw_today") or []))
+    fixtures = sort_fixtures_by_priority(fixtures)
     rows = build_raw_board_rows(
         fixtures,
         service,
@@ -394,7 +395,7 @@ _FALLBACK_MESSAGES: dict[str, str] = {
         f"Nächste Premium-Spiele ({FOOTBALL_UPCOMING_HORIZON_DAYS} Tage) — Spielplan mit Datum."
     ),
     "live_empty": "Keine Premium-Live-Spiele aktuell.",
-    "api_plan_no_betting": "Quoten/Prediction aktuell nicht verfügbar.",
+    "api_plan_no_betting": "Quoten aktuell nicht verfügbar.",
 }
 
 

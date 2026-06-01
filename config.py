@@ -267,6 +267,8 @@ FOOTBALL_BETTING_CORE_LEAGUE_IDS = frozenset(
         140,  # La Liga
         135,  # Serie A
         61,   # Ligue 1
+        88,   # Eredivisie
+        94,   # Primeira Liga
     }
 )
 
