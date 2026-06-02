@@ -5,6 +5,7 @@ from typing import Any
 
 from config import (
     FOOTBALL_DEFAULT_SEASON,
+    FOOTBALL_TOPSPIELE_LEAGUE_IDS,
     football_plan_rank,
 )
 from services.football_loaders import (
@@ -646,8 +647,20 @@ def _empty_topspiele_message(time_filter: str) -> str:
     return "Heute keine Topspiele verfügbar."
 
 
+def _is_topspiele_league(fixture: dict[str, Any]) -> bool:
+    try:
+        lid = int((fixture.get("league") or {}).get("id") or 0)
+    except (TypeError, ValueError):
+        return False
+    return lid in FOOTBALL_TOPSPIELE_LEAGUE_IDS
+
+
+def _filter_topspiele_fixtures(fixtures: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [fx for fx in fixtures or [] if _is_topspiele_league(fx)]
+
+
 def _premium_fixtures_for_time(payload: dict[str, Any], time_filter: str) -> list[dict[str, Any]]:
-    """Topspiele — strictly FOOTBALL_PREMIUM_LEAGUE_IDS only."""
+    """Topspiele — strictly FOOTBALL_TOPSPIELE_LEAGUE_IDS only."""
     today_s = str(payload.get("today") or payload.get("today_local") or "")
     tf = (time_filter or "heute").lower()
     if tf == "live":
@@ -658,7 +671,7 @@ def _premium_fixtures_for_time(payload: dict[str, Any], time_filter: str) -> lis
         pool = list(payload.get("next_matches") or payload.get("all_premium") or [])
         if tf == "heute":
             pool = [fx for fx in pool if _is_live(fx) or _fixture_date(fx) == today_s]
-    pool = filter_premium_fixtures(pool)
+    pool = _filter_topspiele_fixtures(pool)
     return sort_fixtures_by_priority(pool)[:FEED_CAP_DEFAULT]
 
 
@@ -710,7 +723,7 @@ def resolve_football_board(
     tf = str(time_filter or "heute").lower()
 
     premium_count = len(
-        filter_premium_fixtures(
+        _filter_topspiele_fixtures(
             list(payload.get("next_matches") or payload.get("all_premium") or [])
         )
     )

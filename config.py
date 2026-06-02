@@ -262,8 +262,8 @@ FOOTBALL_PREMIUM_LEAGUE_IDS = frozenset(
     for _lid in (int(_lg["id"]),)
 )
 
-# Football AI betting board — strict top-tier whitelist only
-FOOTBALL_BETTING_CORE_LEAGUE_IDS = frozenset(
+# Football AI Topspiele — strict premium whitelist
+FOOTBALL_TOPSPIELE_LEAGUE_IDS = frozenset(
     {
         78,   # 1. Bundesliga
         79,   # 2. Bundesliga
@@ -275,9 +275,12 @@ FOOTBALL_BETTING_CORE_LEAGUE_IDS = frozenset(
         140,  # La Liga
         135,  # Serie A
         61,   # Ligue 1
-        1,    # FIFA World Cup (WM)
-        4,    # UEFA Euro
     }
+)
+
+# Football AI betting board — top-tier whitelist (+ WM/Euro for curated feed)
+FOOTBALL_BETTING_CORE_LEAGUE_IDS = frozenset(
+    FOOTBALL_TOPSPIELE_LEAGUE_IDS | {1, 4}
 )
 
 FOOTBALL_UPCOMING_HORIZON_DAYS = 60

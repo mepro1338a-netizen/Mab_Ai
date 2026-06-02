@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import streamlit as st
 
-_UI_VERSION = 11
+_UI_VERSION = 12
 
 
 GLOBAL_DESIGN_CSS = """
@@ -17,7 +17,7 @@ html, body, .stApp {
 }
 @media (max-width: 768px) {
     .main .block-container {
-        padding-top: 80px !important;
+        padding-top: 88px !important;
         padding-left: 0.85rem !important;
         padding-right: 0.85rem !important;
     }
@@ -272,10 +272,10 @@ def master_button_css() -> str:
 
 def inject_global_ui(*, force: bool = False) -> None:
     """Inject on every run — Streamlit rebuilds the page each rerun."""
-    from ui.styles import MB_THEME_VARS, streamlit_force_dark_css
+    from ui.header import header_css, render_header_bar
     from ui.premium_foundation import BETA_GLOBAL_CSS
     from ui.prompt_ui import MABYTE_PROMPT_CSS
-    from ui.styles import inject_css, page_layout_css
+    from ui.styles import MB_THEME_VARS, inject_css, page_layout_css, streamlit_force_dark_css
     from ui_core import core_app_css
 
     _page = str(st.session_state.get("page") or "home").strip()
@@ -287,11 +287,12 @@ def inject_global_ui(*, force: bool = False) -> None:
         + MB_THEME_VARS
         + streamlit_force_dark_css()
         + BETA_GLOBAL_CSS
-        + page_layout_css(1480, 100, 42)
+        + header_css()
+        + page_layout_css(1480, 88, 42)
         + GLOBAL_DESIGN_CSS
         + core_app_css()
         + master_button_css()
         + MABYTE_PROMPT_CSS
     )
-    st.markdown('<div class="custom-topbar"></div>', unsafe_allow_html=True)
+    render_header_bar()
     st.session_state["_mb_ui_version"] = _UI_VERSION

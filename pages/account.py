@@ -8,7 +8,7 @@ import streamlit as st
 
 from config import PLANS, TOKEN_COSTS
 from database import get_user, list_purchases
-from ui.ai_dashboard import (
+from ui.components import (
     inject_dashboard_css,
     render_daily_limits,
     render_header,

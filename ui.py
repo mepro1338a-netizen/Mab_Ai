@@ -13,8 +13,8 @@ from ui_core import load_css, sync_session_user
 
 from pages.auth import render_auth
 from pages.chat import render_chat
-from ui.ai_dashboard import render_home
-from ui.football_betting_board import render_football_betting_board
+from ui.dashboard import render_home
+from ui.football import render_football_betting_board
 from pages.projects import render_projects
 from pages.automation_lab import render_automation_lab
 from pages.premium import render_premium

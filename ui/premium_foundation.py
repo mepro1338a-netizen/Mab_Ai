@@ -67,15 +67,14 @@ section.main .stButton > button:not([kind="primary"]) {
 
 PREMIUM_COMPONENT_CSS = """
 .mb-page-hero {
-    border-radius: 28px;
-    padding: 28px 32px;
-    margin-bottom: 22px;
+    border-radius: 16px;
+    padding: 16px 20px;
+    margin-bottom: 14px;
     background:
-        radial-gradient(circle at 88% 12%, rgba(168,85,247,.22), transparent 34%),
-        radial-gradient(circle at 8% 0%, rgba(96,165,250,.14), transparent 32%),
+        radial-gradient(circle at 88% 12%, rgba(168,85,247,.16), transparent 34%),
         linear-gradient(135deg, rgba(12,18,42,.96), rgba(8,12,28,.98));
-    border: 1px solid rgba(255,231,163,.12);
-    box-shadow: 0 24px 60px rgba(0,0,0,.32);
+    border: 1px solid rgba(255,255,255,.08);
+    box-shadow: 0 8px 24px rgba(0,0,0,.2);
 }
 .mb-kicker {
     color: #c084fc !important;
@@ -85,19 +84,19 @@ PREMIUM_COMPONENT_CSS = """
     text-transform: uppercase;
 }
 .mb-hero-title {
-    color: #ffe7a3 !important;
-    font-size: 34px;
-    font-weight: 1000;
-    letter-spacing: -1.2px;
-    margin-top: 8px;
-    line-height: 1.05;
+    color: #fafafa !important;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin-top: 6px;
+    line-height: 1.15;
 }
 .mb-hero-sub {
     color: #94a3b8 !important;
-    font-size: 15px;
-    line-height: 1.55;
-    max-width: 780px;
-    margin-top: 10px;
+    font-size: 13px;
+    line-height: 1.45;
+    max-width: 640px;
+    margin-top: 6px;
 }
 .mb-upgrade-card {
     border-radius: 20px;

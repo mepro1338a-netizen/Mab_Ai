@@ -19,17 +19,6 @@ def img_base64(path: Path) -> str:
 
 
 def core_app_css() -> str:
-    slogan = img_base64(SLOGAN_HEADER)
-    slogan_css = ""
-    if slogan:
-        slogan_css = f"""
-.custom-topbar {{
-    background-image: url("data:image/png;base64,{slogan}");
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-}}
-"""
     return f"""
 :root {{
     --mb-radius-sm: 12px;
@@ -68,15 +57,15 @@ html, body, .stApp, .main,
     top: 0;
     left: 0;
     right: 0;
-    height: 76px;
-    min-height: 76px;
+    height: 88px;
+    min-height: 88px;
+    max-height: 100px;
     z-index: 999999;
     background: linear-gradient(90deg, rgba(9,8,24,.97), rgba(25,8,42,.97));
     border-bottom: 1px solid rgba(255,255,255,.08);
     backdrop-filter: blur(18px);
-    box-shadow: 0 4px 24px rgba(0,0,0,.25);
+    box-shadow: 0 2px 16px rgba(0,0,0,.2);
 }}
-{slogan_css}
 
 h1, h2, h3, h4, h5, h6 {{
     color: #fafafa !important;
@@ -228,7 +217,7 @@ section.main [data-testid="stTabs"] button[aria-selected="true"] {{
 }}
 
 @media (max-width: 900px) {{
-    .custom-topbar {{ height: 64px !important; min-height: 64px !important; }}
+    .custom-topbar {{ height: 72px !important; min-height: 72px !important; }}
 }}
 """
 
