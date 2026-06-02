@@ -268,6 +268,7 @@ class FootballService:
       self._memory_cache: dict[str, tuple[float, Any]] = {}
       self._inflight: set[str] = set()
       self._last_http_debug: dict[str, Any] = {}
+      self._premium_load_report: dict[str, Any] = {}
 
   def last_http_debug(self) -> dict[str, Any]:
       return dict(self._last_http_debug)
@@ -731,7 +732,7 @@ class FootballService:
 
       # Composite cache: avoid re-fetching 12 leagues on every page load.
       composite_key = self._cache_key(
-          "premium_upcoming",
+          "premium_upcoming_v2",
           {"days": int(days), "core_ids": sorted(int(x) for x in FOOTBALL_BETTING_CORE_LEAGUE_IDS)},
       )
       composite_ttl = 21_600  # 6 hours
@@ -774,8 +775,15 @@ class FootballService:
           return st not in FINISHED_STATUSES
 
       rows: list[dict[str, Any]] = []
+      load_report: dict[str, Any] = {
+          "horizon_days": int(days),
+          "seasons_tried": seasons,
+          "leagues": {},
+          "total_upcoming": 0,
+      }
       for lid in sorted(FOOTBALL_BETTING_CORE_LEAGUE_IDS):
           league_in_window: list[dict[str, Any]] = []
+          season_used: int | None = None
           for season in seasons:
               try:
                   part = self.get_fixtures_by_league_season(
@@ -790,8 +798,26 @@ class FootballService:
                   continue
               league_in_window = [fx for fx in part if _in_window(fx)]
               if league_in_window:
+                  season_used = int(season)
                   break
+          load_report["leagues"][str(lid)] = {
+              "count": len(league_in_window),
+              "season": season_used,
+          }
           rows.extend(league_in_window)
+      load_report["total_upcoming"] = len(rows)
+      self._premium_load_report = load_report
+      try:
+          from logger import log_info
+
+          with_fixtures = [k for k, v in load_report["leagues"].items() if int(v.get("count") or 0) > 0]
+          log_info(
+              f"Football premium load: {load_report['total_upcoming']} fixtures in {days}d "
+              f"from {len(with_fixtures)} leagues; seasons={seasons}",
+              category="football",
+          )
+      except Exception:
+          pass
 
       seen: set[int] = set()
       deduped: list[dict[str, Any]] = []

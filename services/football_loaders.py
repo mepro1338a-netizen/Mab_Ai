@@ -297,12 +297,11 @@ def fetch_premium_dashboard(
     if include_live:
         live_rows = _fetch_rows(lambda: service.get_live_fixtures(username=username), errors)
 
-    today_premium = [fx for fx in upcoming_rows if _fixture_date(fx) == today_s]
-    tomorrow_premium = [fx for fx in upcoming_rows if _fixture_date(fx) == tomorrow_s]
+    all_upcoming = filter_betting_core_fixtures(dedupe_fixtures(upcoming_rows))
+    today_premium = [fx for fx in all_upcoming if _fixture_date(fx) == today_s]
+    tomorrow_premium = [fx for fx in all_upcoming if _fixture_date(fx) == tomorrow_s]
     premium_live = filter_betting_core_fixtures(filter_premium_fixtures(live_rows))
-    premium_fixtures = filter_betting_core_fixtures(
-        dedupe_fixtures(premium_live + today_premium + tomorrow_premium)
-    )
+    premium_fixtures = dedupe_fixtures(premium_live + all_upcoming)
 
     sections = classify_fixtures(premium_fixtures, today=today_s, tomorrow=tomorrow_s)
     live_now = list(sections.get("live_now") or premium_live) or sort_fixtures_by_priority(premium_live)
@@ -310,14 +309,17 @@ def fetch_premium_dashboard(
         (sections.get("live_now") or []) + (sections.get("later_today") or []) + (sections.get("finished_today") or [])
     )
     top_matches = sort_fixtures_by_priority(today_pool)[:5]
-    all_premium = sort_fixtures_by_priority(premium_fixtures)
+    all_premium = sort_fixtures_by_priority(all_upcoming)
     live_now_cards = [parse_match_card(fx) for fx in live_now[:4]]
     show_intl = False
 
     return {
         "configured": True, "today": today_s, "tomorrow": tomorrow_s, "errors": errors,
         "top_matches": top_matches, "live_now": live_now, "all_premium": all_premium,
-        "next_matches": list(upcoming_rows), "extended": [], "live_now_cards": live_now_cards,
+        "next_matches": all_upcoming,
+        "extended": [],
+        "live_now_cards": live_now_cards,
+        "load_report": getattr(service, "_premium_load_report", None),
         "premium_count": len(all_premium), "raw_live_count": len(live_rows),
         "show_international_prompt": show_intl, "show_live_intl_prompt": show_intl and not live_now,
         "non_premium_live_count": max(0, len(live_rows) - len(premium_live)),

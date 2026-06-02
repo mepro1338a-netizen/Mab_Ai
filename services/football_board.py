@@ -34,7 +34,7 @@ REGION_FILTERS: tuple[tuple[str, str], ...] = (
 _REGION_IDS: dict[str, frozenset[int]] = {
     "deutschland": frozenset({78, 79, 81}),
     "uefa": frozenset({2, 3, 848}),
-    "topligen": frozenset({39, 140, 135, 61, 88, 94}),
+    "topligen": frozenset({39, 140, 135, 61}),
 }
 
 
@@ -694,22 +694,16 @@ def collect_fixtures_for_filters(
     elif time_filter == "alle":
         pool = dedupe_fixtures(
             list(payload.get("live_now") or [])
-            + list(payload.get("all_premium") or [])
-            + list(payload.get("tomorrow_fixtures") or [])
-            + list(payload.get("next_matches") or [])
+            + list(payload.get("next_matches") or payload.get("all_premium") or [])
         )
     else:
-        pool = dedupe_fixtures(
-            list(payload.get("live_now") or [])
-            + list(payload.get("all_premium") or [])
-            + list(payload.get("next_matches") or [])
-        )
-        if time_filter == "heute":
-            pool = [
-                fx
-                for fx in pool
-                if _is_live(fx) or _fixture_date(fx) == today_s
-            ]
+        # heute: nur heutige Topspiele (+ laufende)
+        pool = list(payload.get("next_matches") or payload.get("all_premium") or [])
+        pool = [
+            fx
+            for fx in pool
+            if _is_live(fx) or _fixture_date(fx) == today_s
+        ]
 
     pool = filter_betting_core_fixtures(pool)
     pool = filter_fixtures_by_region(pool, region_filter=region_filter)
@@ -813,15 +807,16 @@ def load_raw_football_matches(
 
 
 _FALLBACK_MESSAGES: dict[str, str] = {
-    "today_premium_with_odds": "Heute keine Premium-Live-Spiele — zeige heutige Topspiele.",
-    "tomorrow_premium_with_odds": "Keine Premium-Spiele heute — zeige morgige Topspiele.",
-    "upcoming_premium_with_odds": f"Nächste Premium-Spiele ({FOOTBALL_UPCOMING_HORIZON_DAYS} Tage).",
-    "today_premium_schedule": "Heute keine Premium-Spiele — Spielplan ohne Betting.",
-    "tomorrow_premium_schedule": "Keine Premium-Spiele heute — morgiger Spielplan.",
-    "upcoming_premium_schedule": (
-        f"Nächste Premium-Spiele ({FOOTBALL_UPCOMING_HORIZON_DAYS} Tage) — Spielplan mit Datum."
+    "today_premium_with_odds": "Heute keine Spiele – nächste Topspiele.",
+    "tomorrow_premium_with_odds": "Keine Spiele im Filter – nächste Topspiele.",
+    "upcoming_premium_with_odds": f"Nächste Topspiele (kommende {FOOTBALL_UPCOMING_HORIZON_DAYS} Tage).",
+    "today_premium_schedule": "Heute keine Spiele – nächste Topspiele.",
+    "tomorrow_premium_schedule": "Keine Spiele im Filter – nächste Topspiele.",
+    "upcoming_premium_schedule": f"Nächste Topspiele (kommende {FOOTBALL_UPCOMING_HORIZON_DAYS} Tage).",
+    "live_empty": "Keine Live-Topspiele – nächste Topspiele.",
+    "filter_empty_upcoming": (
+        "Aktuell keine Spiele im gewählten Filter. Nächste Topspiele werden geladen."
     ),
-    "live_empty": "Keine Premium-Live-Spiele aktuell.",
     "api_plan_no_betting": "Quoten aktuell nicht verfügbar.",
 }
 
@@ -836,20 +831,18 @@ def _fallback_chain(
     heute_when_empty = [
         ("upcoming_premium_with_odds", "upcoming", True),
         ("upcoming_premium_schedule", "upcoming", False),
-        ("tomorrow_premium_with_odds", "tomorrow", True),
-        ("tomorrow_premium_schedule", "tomorrow", False),
-        ("today_premium_with_odds", "today", True),
-        ("today_premium_schedule", "today", False),
     ]
     heute_default = [
         ("today_premium_with_odds", "today", True),
-        ("upcoming_premium_with_odds", "upcoming", True),
-        ("tomorrow_premium_with_odds", "tomorrow", True),
         ("today_premium_schedule", "today", False),
+        ("upcoming_premium_with_odds", "upcoming", True),
         ("upcoming_premium_schedule", "upcoming", False),
-        ("tomorrow_premium_schedule", "tomorrow", False),
     ]
     chains: dict[str, list[tuple[str, str, bool]]] = {
+        "upcoming": [
+            ("upcoming_premium_with_odds", "upcoming", True),
+            ("upcoming_premium_schedule", "upcoming", False),
+        ],
         "live": [
             ("live_premium_with_odds", "live", True),
             ("live_premium_schedule", "live", False),
@@ -875,7 +868,7 @@ def _fallback_chain(
             ("upcoming_premium_schedule", "upcoming", False),
         ],
     }
-    return chains.get((mode or "heute").lower(), chains["heute"])
+    return chains.get((mode or "upcoming").lower(), chains["upcoming"])
 
 
 def build_board_rows(
@@ -943,7 +936,7 @@ def load_football_matches(
     """
     Premium fallback pipeline — never return empty while premium fixtures exist.
     """
-    mode = (mode or "heute").lower().strip()
+    mode = (mode or "upcoming").lower().strip()
 
     pools = {
         "live": collect_fixtures_for_filters(payload, time_filter="live", region_filter=region_filter),
@@ -998,7 +991,7 @@ def load_football_matches(
         "fixtures": [],
         "rows": [],
         "stage": "clean_empty_state",
-        "banner": "Keine Premium-Spiele im gewählten Zeitraum.",
+        "banner": _FALLBACK_MESSAGES["filter_empty_upcoming"],
         "pool_key": "",
         "require_odds": True,
         "pools": {k: len(v) for k, v in pools.items()},
@@ -1042,7 +1035,7 @@ def enrich_fixture_row(
     away_name = str(card.get("away") or "Auswärts")
     # Analysis endpoints (odds/predictions/standings/injuries/h2h) are ONLY fetched on click.
     # So: show schedule-only rows on load.
-    row["analysis_available"] = bool(rank >= 2 and fid_int)
+    row["analysis_available"] = False
 
     if card.get("live"):
         rc = card.get("red_cards") or {}

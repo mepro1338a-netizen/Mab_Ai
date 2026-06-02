@@ -166,13 +166,17 @@ def football_api_season() -> int:
 
 
 def football_api_seasons_to_try() -> list[int]:
-    """Season years to try (paid + free-plan fallback 2022–2024)."""
+    """Try calendar year, then previous year, then football season start year."""
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    now = datetime.now(ZoneInfo("Europe/Berlin"))
+    cy, py = int(now.year), int(now.year) - 1
     primary = football_api_season()
-    extra = [primary, primary - 1, primary + 1, 2024, 2023, 2022]
     seen: set[int] = set()
     out: list[int] = []
-    for year in extra:
-        if year not in seen and year >= 2022:
+    for year in (cy, py, primary, primary - 1):
+        if year not in seen and year >= 2020:
             seen.add(year)
             out.append(year)
     return out
@@ -257,7 +261,7 @@ FOOTBALL_PREMIUM_LEAGUE_IDS = frozenset(
 # Football AI betting board — strict top-tier whitelist only
 FOOTBALL_BETTING_CORE_LEAGUE_IDS = frozenset(
     {
-        78,   # 1. Bundesliga
+        78,   # Bundesliga
         79,   # 2. Bundesliga
         81,   # DFB Pokal
         2,    # Champions League
@@ -267,12 +271,10 @@ FOOTBALL_BETTING_CORE_LEAGUE_IDS = frozenset(
         140,  # La Liga
         135,  # Serie A
         61,   # Ligue 1
-        88,   # Eredivisie
-        94,   # Primeira Liga
     }
 )
 
-FOOTBALL_UPCOMING_HORIZON_DAYS = 30
+FOOTBALL_UPCOMING_HORIZON_DAYS = 60
 
 ROLE_LABELS = {
     "user": "User",
