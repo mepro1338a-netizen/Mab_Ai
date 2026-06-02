@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import streamlit as st
 
-_UI_VERSION = 7
+_UI_VERSION = 8
 
 
 GLOBAL_DESIGN_CSS = """
