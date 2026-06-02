@@ -19,7 +19,7 @@ from db.video_engine import (
     update_video_job,
 )
 from services.social_oauth import SOCIAL_PLATFORMS, platform_configured
-from services.token_secure import decrypt_token, encrypt_token
+from services.social_oauth import decrypt_token, encrypt_token
 from services.youtube_api import (
     ensure_access_token,
     fetch_channel_info,

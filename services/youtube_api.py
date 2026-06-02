@@ -13,7 +13,7 @@ import requests
 
 from config import YOUTUBE_OAUTH_CLIENT_ID, YOUTUBE_OAUTH_CLIENT_SECRET
 from db.video_engine import save_social_connection
-from services.token_secure import decrypt_token, encrypt_token
+from services.social_oauth import decrypt_token, encrypt_token
 
 GOOGLE_TOKEN_URL = "https://oauth2.googleapis.com/token"
 YOUTUBE_API = "https://www.googleapis.com/youtube/v3"

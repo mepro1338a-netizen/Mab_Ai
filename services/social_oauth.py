@@ -7,6 +7,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import hmac
+import os
 import json
 import secrets
 import time
@@ -29,8 +30,41 @@ from config import (
 )
 from db.video_engine import save_social_connection
 from oauth_service import oauth_state_ready, resolve_public_origin
-from services.token_secure import encrypt_token
-from services.youtube_api import parse_youtube_error
+
+
+def _token_secret() -> bytes:
+    raw = (
+        os.getenv("VIDEO_TOKEN_ENCRYPT_KEY", "").strip()
+        or os.getenv("OAUTH_STATE_SECRET", "").strip()
+    )
+    if not raw:
+        return b""
+    return hashlib.sha256(raw.encode("utf-8")).digest()
+
+
+def encrypt_token(plain: str) -> str:
+    if not plain:
+        return ""
+    key = _token_secret()
+    if not key:
+        return ""
+    data = plain.encode("utf-8")
+    xored = bytes(b ^ key[i % len(key)] for i, b in enumerate(data))
+    return base64.urlsafe_b64encode(xored).decode("ascii")
+
+
+def decrypt_token(enc: str) -> str:
+    if not enc:
+        return ""
+    key = _token_secret()
+    if not key:
+        return ""
+    try:
+        data = base64.urlsafe_b64decode(enc.encode("ascii"))
+        plain = bytes(b ^ key[i % len(key)] for i, b in enumerate(data))
+        return plain.decode("utf-8")
+    except Exception:
+        return ""
 
 SOCIAL_PLATFORMS: dict[str, dict] = {
     "youtube_shorts": {
@@ -256,6 +290,8 @@ def complete_social_connect(
                     label = items[0].get("snippet", {}).get("title") or label
                     channel_id = items[0].get("id") or ""
             elif ch.status_code in (401, 403):
+                from services.youtube_api import parse_youtube_error
+
                 return False, parse_youtube_error(ch)
 
         elif prov == "instagram":
@@ -327,6 +363,8 @@ def complete_social_connect(
     except requests.HTTPError as exc:
         resp = getattr(exc, "response", None)
         if resp is not None:
+            from services.youtube_api import parse_youtube_error
+
             return False, parse_youtube_error(resp)
         return False, "OAuth-Verbindung fehlgeschlagen. Bitte erneut versuchen."
     except requests.Timeout:

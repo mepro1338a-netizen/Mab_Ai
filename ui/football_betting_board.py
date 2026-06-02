@@ -8,7 +8,7 @@ from typing import Any
 import streamlit as st
 
 from config import football_plan_rank
-from services.football_access import usage_summary
+from services.football_service import usage_summary
 from services.football_board import (
     calculate_tip_odds,
     collect_fixtures_for_filters,
