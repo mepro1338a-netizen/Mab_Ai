@@ -6,7 +6,10 @@ from __future__ import annotations
 import subprocess
 from pathlib import Path
 
-from services.video_render import ffmpeg_available
+def ffmpeg_available() -> bool:
+    import shutil
+
+    return bool(shutil.which("ffmpeg"))
 
 BRAND_NAME = "MaByte"
 TAGLINE = "One system. Infinite intelligence."

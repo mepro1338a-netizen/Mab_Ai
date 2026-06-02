@@ -8,6 +8,11 @@ from db.app import *  # noqa: F403
 
 from db.app import force_owner_account  # noqa: F401
 
+# Keep compatibility for payments module
+from db.billing import record_purchase  # noqa: F401
+from db.billing import payment_already_paid  # noqa: F401
+from db.billing import list_usage, recent_activity, usage_summary  # noqa: F401
+
 # Back-compat explicit imports (some modules import from database directly)
 from db.app import (  # noqa: F401
     get_football_plan,

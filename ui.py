@@ -1,13 +1,16 @@
-﻿import streamlit as st
+﻿import html
+import traceback
+from typing import Callable
 
+import streamlit as st
+
+from config import APP_BASE_URL, APP_NAME, APP_TAGLINE
 from database import ensure_db_ready, get_user
 from payments import confirm_checkout_session
-from ui_core import load_css, sync_session_user
+from services.session_auth import enforce_active_session
 from ui.sidebar import render_sidebar
 from ui.sidebar_nav import LEGACY_PAGE_ALIASES
-from ui.error_boundary import safe_render
-from ui.seo import inject_seo_meta
-from services.session_auth import enforce_active_session
+from ui_core import load_css, sync_session_user
 
 from pages.auth import render_auth
 from pages.home import render_home
@@ -19,6 +22,74 @@ from pages.premium import render_premium
 
 from pages.account import render_dashboard
 
+
+# =========================================================
+# INLINE: ui.seo (single consumer: ui.py)
+# =========================================================
+
+def inject_seo_meta() -> None:
+    title = f"{APP_NAME} — AI Operating System"
+    desc = APP_TAGLINE or "One AI system. Infinite workflows."
+    url = APP_BASE_URL or "https://mabyte.de"
+    image = f"{url.rstrip('/')}/static/og-preview.png"
+
+    st.markdown(
+        f"""
+<meta name="description" content="{html.escape(desc)}" />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="{html.escape(title)}" />
+<meta property="og:description" content="{html.escape(desc)}" />
+<meta property="og:url" content="{html.escape(url)}" />
+<meta property="og:site_name" content="{html.escape(APP_NAME)}" />
+<meta property="og:image" content="{html.escape(image)}" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="{html.escape(title)}" />
+<meta name="twitter:description" content="{html.escape(desc)}" />
+<meta name="theme-color" content="#09090b" />
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+# =========================================================
+# INLINE: ui.error_boundary (single consumer: ui.py)
+# =========================================================
+
+def safe_render(page_name: str, render_fn: Callable[[], None]) -> None:
+    ui_msg = "Ein Fehler ist aufgetreten."
+    try:
+        render_fn()
+    except Exception as exc:
+        try:
+            from logger import log_exception, user_friendly_error
+
+            log_exception(
+                exc,
+                category="system",
+                page=page_name,
+                user=str(st.session_state.get("user") or ""),
+            )
+            ui_msg = user_friendly_error("system")
+        except Exception:
+            pass
+
+        st.markdown(
+            f"""
+<div class="mb-error-panel">
+    <h3>Workspace vorübergehend nicht verfügbar</h3>
+    <p>{ui_msg}</p>
+    <p style="margin-top:10px;font-size:13px;opacity:.9;">
+        Workspace: <strong>{page_name}</strong> — Session bleibt aktiv.
+    </p>
+</div>
+            """,
+            unsafe_allow_html=True,
+        )
+        if st.button("Zur Startseite", key=f"err_home_{page_name}", width="stretch"):
+            st.session_state.page = "home"
+            st.rerun()
+        with st.expander("Details (Beta)"):
+            st.code(traceback.format_exc())
 
 # =========================================================
 # SAFE MEDIA IMPORT

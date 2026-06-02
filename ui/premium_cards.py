@@ -1,7 +1,10 @@
 """Unified Premium plan cards — one renderer for AI + Football."""
 from __future__ import annotations
 
+import json
+
 import streamlit as st
+import streamlit.components.v1 as components
 
 from services.billing_plans import (
     AI_CHECKOUT_KEYS,
@@ -11,14 +14,52 @@ from services.billing_plans import (
     plan_catalog,
     plan_category,
     plan_checkout_ready,
+    USER_FRIENDLY_CHECKOUT_ERROR,
 )
 from services.stripe_verify import get_stripe_verify_cache
-from ui.stripe_checkout import begin_stripe_checkout
+
+from payments import create_checkout_session
 
 
 ICON_AI = """<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2L14.5 8.5L21 9L16 13.4L17.6 20L12 16.5L6.4 20L8 13.4L3 9L9.5 8.5L12 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>"""
 ICON_BALL = """<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 7L15.5 10L14.2 14.5H9.8L8.5 10L12 7Z" stroke="currentColor" stroke-width="2"/></svg>"""
 ICON_B2B = """<svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M4 21V5C4 3.9 4.9 3 6 3H18C19.1 3 20 3.9 20 5V21" stroke="currentColor" stroke-width="2"/><path d="M8 8H10M14 8H16M8 12H10M14 12H16M8 16H10M14 16H16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>"""
+
+
+def begin_stripe_checkout(plan_key: str, *, username: str) -> None:
+    """Erstellt Checkout-Session und leitet sofort zu Stripe weiter (ein Klick)."""
+    if not username:
+        st.warning("Bitte zuerst einloggen.")
+        return
+
+    ready, _ = plan_checkout_ready(plan_key, stripe_cache=get_stripe_verify_cache())
+    if not ready:
+        st.error(USER_FRIENDLY_CHECKOUT_ERROR)
+        return
+
+    with st.spinner("Weiterleitung zu Stripe…"):
+        url, err = create_checkout_session(username, plan_key)
+
+    if err:
+        st.error(err)
+        return
+    if not url:
+        st.error(USER_FRIENDLY_CHECKOUT_ERROR)
+        return
+
+    st.session_state.pop("checkout_url", None)
+    st.session_state.pop("checkout_plan", None)
+
+    components.html(
+        f"<script>window.top.location.href = {json.dumps(url)};</script>",
+        height=0,
+    )
+    st.link_button(
+        "Falls keine Weiterleitung: Jetzt zur Kasse (Stripe)",
+        url,
+        type="primary",
+        width="stretch",
+    )
 
 
 def _bubble(label: str, value: str, sub: str = "") -> None:

@@ -4,9 +4,196 @@ from __future__ import annotations
 from config import VIDEO_PROVIDER
 
 from services.video_providers.base import BaseVideoProvider, VideoGenRequest, VideoGenResult
-from services.video_providers.fal_provider import FalVideoProvider
-from services.video_providers.mock_provider import MockVideoProvider
-from services.video_providers.replicate_provider import ReplicateVideoProvider
+
+# ---------------------------------------------------------
+# Inline providers (single consumer: this registry)
+# ---------------------------------------------------------
+
+from pathlib import Path
+from typing import Any
+
+import requests
+
+from config import (
+    FAL_KEY,
+    FAL_VIDEO_ENDPOINT,
+    REPLICATE_API_TOKEN,
+    REPLICATE_REELS_MODEL,
+    REPLICATE_VIDEO_MODEL,
+)
+from services.mabyte_video_brand import render_mabyte_studio_mp4
+
+try:
+    import replicate  # type: ignore
+except Exception:
+    replicate = None
+
+
+class FalVideoProvider(BaseVideoProvider):
+    name = "fal"
+
+    def available(self) -> bool:
+        return bool((FAL_KEY or "").strip() and (FAL_VIDEO_ENDPOINT or "").strip())
+
+    def generate(self, request: VideoGenRequest, *, out_path: str) -> VideoGenResult:
+        if not self.available():
+            return VideoGenResult(
+                ok=False,
+                provider=self.name,
+                error="FAL_API_KEY oder FAL_VIDEO_ENDPOINT fehlt.",
+            )
+        path = Path(out_path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            resp = requests.post(
+                FAL_VIDEO_ENDPOINT,
+                headers={
+                    "Authorization": f"Key {FAL_KEY}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "prompt": request.prompt[:900],
+                    "duration": min(max(int(request.duration_sec), 3), 15),
+                    "aspect_ratio": "9:16" if request.aspect == "9:16" else "16:9",
+                },
+                timeout=300,
+            )
+            if resp.status_code >= 400:
+                return VideoGenResult(
+                    ok=False,
+                    provider=self.name,
+                    error=f"FAL HTTP {resp.status_code}: {resp.text[:300]}",
+                )
+            data = resp.json()
+            video_url = (
+                data.get("video", {}).get("url")
+                or data.get("output", {}).get("url")
+                or data.get("url")
+                or ""
+            )
+            if not video_url:
+                return VideoGenResult(ok=False, provider=self.name, error="FAL: keine Video-URL.")
+            dl = requests.get(video_url, timeout=180)
+            if dl.status_code >= 400:
+                return VideoGenResult(ok=False, provider=self.name, error="FAL Download fehlgeschlagen.")
+            path.write_bytes(dl.content)
+            return VideoGenResult(
+                ok=True,
+                file_path=str(path),
+                file_url=video_url,
+                provider=self.name,
+                message="MaByte Video — KI-Clip bereit",
+            )
+        except Exception as exc:
+            return VideoGenResult(ok=False, provider=self.name, error=str(exc))
+
+
+class MockVideoProvider(BaseVideoProvider):
+    """Internal id: mock — user-facing: MaByte Studio."""
+
+    name = "mabyte_studio"
+
+    def available(self) -> bool:
+        return True
+
+    def generate(self, request: VideoGenRequest, *, out_path: str) -> VideoGenResult:
+        path = Path(out_path)
+        w = 1080 if request.aspect == "9:16" else 1920
+        h = 1920 if request.aspect == "9:16" else 1080
+
+        ok, msg = render_mabyte_studio_mp4(
+            path,
+            duration_sec=request.duration_sec,
+            width=w,
+            height=h,
+        )
+        if ok and path.exists():
+            return VideoGenResult(
+                ok=True,
+                file_path=str(path),
+                provider=self.name,
+                message=msg,
+            )
+
+        return VideoGenResult(
+            ok=False,
+            provider=self.name,
+            error=msg
+            or "MaByte Studio Export fehlgeschlagen. Setze REPLICATE_API_TOKEN für KI-Clips.",
+        )
+
+
+def _replicate_normalize_output(output: Any) -> str:
+    if output is None:
+        return ""
+    if isinstance(output, str):
+        return output
+    if isinstance(output, (list, tuple)) and output:
+        return _replicate_normalize_output(output[0])
+    url = getattr(output, "url", None)
+    if callable(url):
+        try:
+            return str(url())
+        except Exception:
+            pass
+    return str(output)
+
+
+class ReplicateVideoProvider(BaseVideoProvider):
+    name = "replicate"
+
+    def available(self) -> bool:
+        return bool(
+            replicate
+            and (REPLICATE_API_TOKEN or "").strip()
+            and (REPLICATE_REELS_MODEL or REPLICATE_VIDEO_MODEL or "").strip()
+        )
+
+    def generate(self, request: VideoGenRequest, *, out_path: str) -> VideoGenResult:
+        if not self.available():
+            return VideoGenResult(
+                ok=False,
+                provider=self.name,
+                error="REPLICATE_API_TOKEN oder REPLICATE_VIDEO_MODEL fehlt.",
+            )
+        model = REPLICATE_REELS_MODEL or REPLICATE_VIDEO_MODEL
+        path = Path(out_path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            import os
+
+            os.environ["REPLICATE_API_TOKEN"] = REPLICATE_API_TOKEN
+            payload: dict[str, Any] = {"prompt": request.prompt[:900]}
+            if "kling" in str(model).lower():
+                payload["duration"] = min(max(int(request.duration_sec), 5), 10)
+            output = replicate.run(model, input=payload)  # type: ignore[attr-defined]
+            url = _replicate_normalize_output(output)
+            if not url:
+                return VideoGenResult(ok=False, provider=self.name, error="Kein Video von Replicate.")
+            if url.startswith("http"):
+                resp = requests.get(url, timeout=180)
+                if resp.status_code >= 400:
+                    return VideoGenResult(
+                        ok=False,
+                        provider=self.name,
+                        error=f"Download HTTP {resp.status_code}",
+                    )
+                path.write_bytes(resp.content)
+                return VideoGenResult(
+                    ok=True,
+                    file_path=str(path),
+                    file_url=url,
+                    provider=self.name,
+                    message="MaByte Video — KI-Clip bereit",
+                )
+            return VideoGenResult(
+                ok=True,
+                file_path=url,
+                provider=self.name,
+                message="MaByte Video — KI-Clip bereit",
+            )
+        except Exception as exc:
+            return VideoGenResult(ok=False, provider=self.name, error=str(exc))
 
 _STUDIO = MockVideoProvider()
 _PROVIDERS: dict[str, BaseVideoProvider] = {
@@ -71,6 +258,7 @@ def provider_status() -> dict[str, bool]:
 __all__ = [
     "VideoGenRequest",
     "VideoGenResult",
+    "BaseVideoProvider",
     "get_video_provider",
     "get_studio_provider",
     "get_ai_provider",
