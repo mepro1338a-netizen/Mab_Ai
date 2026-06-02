@@ -8,8 +8,7 @@ from config import APP_BASE_URL, APP_NAME, APP_TAGLINE
 from database import ensure_db_ready, get_user
 from payments import confirm_checkout_session
 from services.session_auth import enforce_active_session
-from ui.sidebar import render_sidebar
-from ui.sidebar_nav import LEGACY_PAGE_ALIASES
+from ui.sidebar import LEGACY_PAGE_ALIASES, render_sidebar
 from ui_core import load_css, sync_session_user
 
 from pages.auth import render_auth

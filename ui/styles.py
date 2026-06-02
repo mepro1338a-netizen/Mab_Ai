@@ -133,33 +133,15 @@ section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"],
 section[data-testid="stSidebar"] [data-testid="stVerticalBlock"],
 section[data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"],
 section[data-testid="stSidebar"] [data-testid="stSidebarNav"] {
-    background: #18181b !important;
-    background-color: #18181b !important;
+    background: #09090b !important;
+    background-color: #09090b !important;
     color: #e4e4e7 !important;
 }
 
-section[data-testid="stSidebar"] .stButton > button,
-section[data-testid="stSidebar"] button[kind="secondary"],
-section[data-testid="stSidebar"] button[kind="primary"],
-section[data-testid="stSidebar"] button[data-testid="stBaseButton-secondary"],
-section[data-testid="stSidebar"] button[data-testid="stBaseButton-primary"] {
+section[data-testid="stSidebar"] div[data-testid="stVerticalBlockBorderWrapper"] {
     background: transparent !important;
-    background-color: transparent !important;
-    background-image: none !important;
-    border: 1px solid transparent !important;
+    border: none !important;
     box-shadow: none !important;
-    color: #a1a1aa !important;
-}
-section[data-testid="stSidebar"] .stButton > button:focus,
-section[data-testid="stSidebar"] .stButton > button:active,
-section[data-testid="stSidebar"] .stButton > button:focus-visible {
-    outline: none !important;
-    box-shadow: none !important;
-}
-
-section[data-testid="stSidebar"] .stButton > button p,
-section[data-testid="stSidebar"] button p {
-    color: inherit !important;
 }
 
 button[data-testid="collapsedControl"],
@@ -202,11 +184,6 @@ div[data-baseweb="textarea"] {
 section.main div[data-testid="stVerticalBlockBorderWrapper"] {
     background: #18181b !important;
     border-color: #3f3f46 !important;
-}
-section[data-testid="stSidebar"] div[data-testid="stVerticalBlockBorderWrapper"] {
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
 }
 
 #MainMenu,

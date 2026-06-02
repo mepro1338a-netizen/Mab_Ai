@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import streamlit as st
 
-_UI_VERSION = 8
+_UI_VERSION = 9
 
 
 GLOBAL_DESIGN_CSS = """
@@ -275,7 +275,6 @@ def inject_global_ui(*, force: bool = False) -> None:
     from ui.styles import MB_THEME_VARS, streamlit_force_dark_css
     from ui.premium_foundation import BETA_GLOBAL_CSS
     from ui.prompt_ui import MABYTE_PROMPT_CSS
-    from ui.sidebar import sidebar_master_css
     from ui.styles import inject_css, page_layout_css
     from ui_core import core_app_css
 
@@ -292,7 +291,6 @@ def inject_global_ui(*, force: bool = False) -> None:
         + GLOBAL_DESIGN_CSS
         + core_app_css()
         + master_button_css()
-        + sidebar_master_css(_page)
         + MABYTE_PROMPT_CSS
     )
     st.markdown('<div class="custom-topbar"></div>', unsafe_allow_html=True)
