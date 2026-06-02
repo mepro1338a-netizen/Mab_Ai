@@ -11,7 +11,6 @@ from config import football_plan_rank
 from services.football_service import usage_summary
 from services.football_board import (
     calculate_tip_odds,
-    compute_football_board_metrics,
     fetch_board_payload,
     fetch_match_detail,
     load_football_matches,
@@ -37,18 +36,6 @@ _BOARD_CSS = """
     display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px;
 }
 .fbb-filter-note { color: #64748b !important; font-size: 11px; margin: -6px 0 12px 0; }
-.fbb-source-stats {
-    font-family: ui-monospace, monospace;
-    font-size: 11px;
-    color: #94a3b8 !important;
-    background: rgba(15, 23, 42, 0.85);
-    border: 1px solid rgba(255,255,255,.08);
-    border-radius: 8px;
-    padding: 10px 12px;
-    margin: 0 0 14px 0;
-    line-height: 1.55;
-}
-.fbb-source-stats strong { color: #e2e8f0 !important; }
 .fbb-fallback-note {
     color: #fde047 !important; font-size: 12px; padding: 8px 12px; margin: 0 0 12px 0;
     background: rgba(234,179,8,.08); border: 1px solid rgba(234,179,8,.22); border-radius: 8px;
@@ -557,15 +544,6 @@ def render_football_betting_board(
         )
 
     rows = match_result.get("rows") or []
-    board_metrics = compute_football_board_metrics(
-        payload,
-        match_result,
-        show_raw=show_raw,
-        time_filter=time_filter,
-        region_filter=region_filter,
-    )
-    _render_source_stats(board_metrics)
-
     if match_result.get("banner"):
         st.markdown(
             f'<p class="fbb-fallback-note">{html.escape(str(match_result["banner"]))}</p>',
