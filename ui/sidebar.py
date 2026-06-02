@@ -23,14 +23,11 @@ ICON_MAP = {
     "automation_lab": "automations",
     "football": "football",
     "image": "image",
-    "creator": "reels",
+    "video": "reels",
     "music": "music",
     "coding": "code",
     "dashboard": "dashboard",
     "premium": "premium",
-    "redeem": "redeem",
-    "support": "tools",
-    "admin": "settings-sliders",
 }
 
 # Minimal stroke icons (always available — no PNG dependency)
@@ -553,9 +550,6 @@ def render_sidebar(active_page: str | None = None) -> None:
 
         for idx, (section_title, items) in enumerate(SIDEBAR_SECTIONS):
             _nav_section(section_title, items, first=idx == 0)
-
-        if _is_admin_user():
-            _nav_section("System", [("Admin Panel", "admin")])
 
         st.markdown('<div class="mb-sidebar-footer">', unsafe_allow_html=True)
         _render_user_footer()

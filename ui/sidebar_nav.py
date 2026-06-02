@@ -22,7 +22,7 @@ SIDEBAR_SECTIONS: list[tuple[str, list[tuple[str, str]]]] = [
         "Create",
         [
             ("Image", "image"),
-            ("Video & Reels", "creator"),
+            ("Video", "video"),
             ("Music", "music"),
             ("Code", "coding"),
         ],
@@ -37,14 +37,13 @@ SIDEBAR_SECTIONS: list[tuple[str, list[tuple[str, str]]]] = [
     (
         "Account",
         [
-            ("Profil & Tokens", "dashboard"),
+            ("Profile", "dashboard"),
             ("Premium", "premium"),
-            ("Support", "support"),
         ],
     ),
 ]
 
 LEGACY_PAGE_ALIASES: dict[str, str] = {
-    "reels": "creator",
-    "video": "creator",
+    "reels": "video",
+    "creator": "video",
 }

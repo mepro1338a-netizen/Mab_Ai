@@ -27,6 +27,8 @@ from config import (
     football_api_season,
     football_api_seasons_to_try,
 )
+import os
+
 from logger import log_error, log_info, log_warning
 from security import check_rate_limit
 from services.football_access import (
@@ -64,6 +66,9 @@ class FootballService:
   def last_http_debug(self) -> dict[str, Any]:
       return dict(self._last_http_debug)
 
+  def _dev_mode(self) -> bool:
+      return os.getenv("DEV_MODE", "").strip().lower() in ("1", "true", "yes", "on")
+
   def _log_http_debug(
       self,
       *,
@@ -78,6 +83,8 @@ class FootballService:
       response_snippet: str = "",
       limiter: str = "",
   ) -> None:
+      if not self._dev_mode():
+          return
       self._last_http_debug = {
           "endpoint": endpoint,
           "params": params,
@@ -460,9 +467,9 @@ class FootballService:
           response_snippet=str(getattr(response, "text", "") or "")[:1200],
           limiter="api",
       )
-      log_info(
-          f"Football API {endpoint} params={clean_params} results={len(data)}"
-      )
+      # Keep provider logs minimal in production.
+      if self._dev_mode():
+          log_info(f"Football API {endpoint} params={clean_params} results={len(data)}")
       return data
 
   def get_recent_fixtures(

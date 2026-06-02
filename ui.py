@@ -17,13 +17,7 @@ from pages.projects import render_projects
 from pages.automation_lab import render_automation_lab
 from pages.premium import render_premium
 
-from pages.account import (
-    render_dashboard,
-    render_support,
-    render_redeem,
-)
-
-from pages.admin import render_admin
+from pages.account import render_dashboard
 
 
 # =========================================================
@@ -237,14 +231,9 @@ PAGE_HANDLERS = {
     "coding": ("Code Studio", lambda: render_media("coding")),
     "image": ("Image Studio", lambda: render_media("image")),
     "music": ("Music Studio", lambda: render_media("music")),
-    "creator": ("Creator Studio", lambda: render_media("creator")),
-    "reels": ("Creator Studio", lambda: render_media("reels")),
-    "video": ("Creator Studio", lambda: render_media("video")),
+    "video": ("Video Studio", lambda: render_media("video")),
     "dashboard": ("Dashboard", render_dashboard),
-    "support": ("Support", render_support),
     "premium": ("Premium", render_premium),
-    "redeem": ("Redeem", render_redeem),
-    "admin": ("Admin Panel", render_admin),
 }
 
 if page == "auth":

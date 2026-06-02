@@ -148,6 +148,6 @@ def render_enterprise_block() -> None:
     )
     st.markdown('<div class="mb-btn-gold">', unsafe_allow_html=True)
     if st.button("Enterprise Anfrage starten", key="enterprise_request", width="stretch", type="primary"):
-        st.session_state.page = "support"
+        st.session_state.page = "premium"
         st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)

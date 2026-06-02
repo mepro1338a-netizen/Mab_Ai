@@ -82,6 +82,6 @@ def render_os_guide_dashboard() -> None:
                 '<div class="os-guide-reply os-guide-empty">Stelle eine Frage oder wähle einen Quick-Link.</div>',
                 unsafe_allow_html=True,
             )
-        if st.button("Support öffnen", key="os_guide_dash_support", width="stretch"):
-            st.session_state.page = "support"
+        if st.button("Premium öffnen", key="os_guide_dash_support", width="stretch"):
+            st.session_state.page = "premium"
             st.rerun()

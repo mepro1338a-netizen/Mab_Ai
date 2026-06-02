@@ -21,6 +21,45 @@ from services.football_loaders import (
 from services.football_service import FootballAPIError, FootballService, fixture_team_names
 
 # ---------------------------------------------------------------------------
+# Region filters (minimal, fixed set)
+# ---------------------------------------------------------------------------
+
+REGION_FILTERS: tuple[tuple[str, str], ...] = (
+    ("alle", "Alle"),
+    ("deutschland", "Deutschland"),
+    ("uefa", "UEFA"),
+    ("topligen", "Topligen"),
+)
+
+_REGION_IDS: dict[str, frozenset[int]] = {
+    "deutschland": frozenset({78, 79, 81}),
+    "uefa": frozenset({2, 3, 848}),
+    "topligen": frozenset({39, 140, 135, 61, 88, 94}),
+}
+
+
+def filter_fixtures_by_region(
+    fixtures: list[dict[str, Any]],
+    *,
+    region_filter: str,
+) -> list[dict[str, Any]]:
+    key = (region_filter or "alle").lower().strip()
+    if key in ("", "alle"):
+        return list(fixtures or [])
+    ids = _REGION_IDS.get(key)
+    if not ids:
+        return list(fixtures or [])
+    out: list[dict[str, Any]] = []
+    for fx in fixtures or []:
+        try:
+            lid = int((fx.get("league") or {}).get("id") or 0)
+        except (TypeError, ValueError):
+            continue
+        if lid in ids:
+            out.append(fx)
+    return out
+
+# ---------------------------------------------------------------------------
 # Odds (from football_odds)
 # ---------------------------------------------------------------------------
 
@@ -641,8 +680,9 @@ def collect_fixtures_for_filters(
     payload: dict[str, Any],
     *,
     time_filter: str,
+    region_filter: str,
 ) -> list[dict[str, Any]]:
-    """Premium fixtures only — strict ID whitelist."""
+    """Premium fixtures only — strict ID whitelist + minimal region filter."""
     today_s = str(payload.get("today") or payload.get("today_local") or "")
 
     if time_filter == "live":
@@ -672,6 +712,7 @@ def collect_fixtures_for_filters(
             ]
 
     pool = filter_betting_core_fixtures(pool)
+    pool = filter_fixtures_by_region(pool, region_filter=region_filter)
     return sort_fixtures_by_priority(pool)
 
 
@@ -895,6 +936,7 @@ def load_football_matches(
     username: str,
     session_plan: str,
     mode: str,
+    region_filter: str,
     cache: dict[int, dict[str, Any]],
     max_enrich: int = 24,
 ) -> dict[str, Any]:
@@ -904,10 +946,10 @@ def load_football_matches(
     mode = (mode or "heute").lower().strip()
 
     pools = {
-        "live": collect_fixtures_for_filters(payload, time_filter="live"),
-        "today": collect_fixtures_for_filters(payload, time_filter="heute"),
-        "tomorrow": collect_fixtures_for_filters(payload, time_filter="morgen"),
-        "upcoming": collect_fixtures_for_filters(payload, time_filter="upcoming"),
+        "live": collect_fixtures_for_filters(payload, time_filter="live", region_filter=region_filter),
+        "today": collect_fixtures_for_filters(payload, time_filter="heute", region_filter=region_filter),
+        "tomorrow": collect_fixtures_for_filters(payload, time_filter="morgen", region_filter=region_filter),
+        "upcoming": collect_fixtures_for_filters(payload, time_filter="upcoming", region_filter=region_filter),
     }
 
     today_empty = not pools.get("today")

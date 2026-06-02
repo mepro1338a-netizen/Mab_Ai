@@ -40,8 +40,5 @@ def safe_render(page_name: str, render_fn: Callable[[], None]) -> None:
         if st.button("Zur Startseite", key=f"err_home_{page_name}", width="stretch"):
             st.session_state.page = "home"
             st.rerun()
-        if st.button("Support öffnen", key=f"err_support_{page_name}", width="stretch"):
-            st.session_state.page = "support"
-            st.rerun()
         with st.expander("Details (Beta)"):
             st.code(traceback.format_exc())
