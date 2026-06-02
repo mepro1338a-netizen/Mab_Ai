@@ -544,6 +544,14 @@ def fetch_match_detail(
         except FootballAPIError:
             detail["missing"].append("predictions")
 
+        # Injuries (on-demand only; can be rate-limited)
+        for side, tid in (("home_injuries", home_id), ("away_injuries", away_id)):
+            if tid:
+                try:
+                    detail[side] = service.get_team_injuries(int(tid), season=season, username=username)
+                except FootballAPIError:
+                    detail["missing"].append(side)
+
         if home_id and away_id:
             try:
                 detail["h2h"] = service.get_head_to_head(
@@ -613,21 +621,11 @@ def fetch_board_payload(
     service: FootballService,
     *,
     username: str,
-    include_all_leagues: bool = False,
+    include_live: bool = False,
 ) -> dict[str, Any]:
-    payload = fetch_premium_dashboard(
-        service, username=username, include_all_leagues=include_all_leagues
-    )
-    if "tomorrow_fixtures" not in payload:
-        _today_s, tomorrow_s = _local_today_tomorrow()
-        try:
-            tomorrow_rows = service.get_fixtures_by_date(tomorrow_s, username=username)
-            payload["tomorrow_fixtures"] = sort_fixtures_by_priority(
-                filter_betting_core_fixtures(dedupe_fixtures(tomorrow_rows))
-            )
-        except FootballAPIError:
-            payload["tomorrow_fixtures"] = []
-    return payload
+    # Default premium page-load must do ONE request (premium upcoming, cached).
+    # Live fixtures are optional and only loaded when the user opens the Live tab.
+    return fetch_premium_dashboard(service, username=username, include_live=include_live)
 
 
 def _fixture_date(fixture: dict[str, Any]) -> str:
@@ -751,7 +749,9 @@ def load_raw_football_matches(
 ) -> dict[str, Any]:
     """Raw API fixtures for today only (fixtures?date=today) — no premium filter."""
     _ = mode
-    fixtures = filter_blocked_fixtures(list(payload.get("raw_today") or []))
+    today_s = str(payload.get("today") or payload.get("today_local") or "") or _local_today_tomorrow()[0]
+    # Raw is on-demand (not loaded on page load).
+    fixtures = filter_blocked_fixtures(service.get_fixtures_by_date(today_s, username=username))
     fixtures = sort_fixtures_by_priority(fixtures)
     rows = build_raw_board_rows(
         fixtures,
@@ -861,12 +861,11 @@ def build_board_rows(
                 username=username,
                 rank=rank,
                 cache=cache,
-                schedule_only=schedule_only or allow_no_odds,
+                # Strict: no odds/predictions on page load. Analysis endpoints are on-demand.
+                schedule_only=True,
             )
         )
-    if schedule_only or allow_no_odds:
-        return rows
-    return filter_rows_with_odds(rows, allow_no_odds=False)
+    return rows
 
 
 def build_basic_board_rows(fixtures: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -898,7 +897,6 @@ def load_football_matches(
     mode: str,
     cache: dict[int, dict[str, Any]],
     max_enrich: int = 24,
-    force_no_odds: bool = False,
 ) -> dict[str, Any]:
     """
     Premium fallback pipeline — never return empty while premium fixtures exist.
@@ -915,8 +913,6 @@ def load_football_matches(
     today_empty = not pools.get("today")
     live_empty = not pools.get("live")
     chain = _fallback_chain(mode, today_empty=today_empty, live_empty=live_empty)
-    if force_no_odds:
-        chain = [(s, p, r) for s, p, r in chain if not r]
 
     enrich_limit = 48 if any(p == "upcoming" for _, p, _ in chain[:3]) else max_enrich
 
@@ -933,8 +929,8 @@ def load_football_matches(
             session_plan=session_plan,
             cache=cache,
             max_enrich=row_limit,
-            allow_no_odds=not require_odds,
-            schedule_only=not require_odds,
+            allow_no_odds=True,
+            schedule_only=True,
         )
         if not rows:
             continue
@@ -943,9 +939,7 @@ def load_football_matches(
         banner = None
         if stage_id != primary_stage:
             banner = _FALLBACK_MESSAGES.get(stage_id)
-        if force_no_odds and not require_odds:
-            banner = _FALLBACK_MESSAGES.get("api_plan_no_betting")
-        elif not require_odds and not banner:
+        if not banner:
             banner = _FALLBACK_MESSAGES.get(stage_id) or _FALLBACK_MESSAGES["api_plan_no_betting"]
 
         return {
@@ -1004,40 +998,9 @@ def enrich_fixture_row(
     pred_insights: dict[str, Any] = {}
     home_name = str(card.get("home") or "Heim")
     away_name = str(card.get("away") or "Auswärts")
-
-    if rank >= 2 and fid_int and not schedule_only:
-        try:
-            pred_rows = service.get_fixture_predictions(fid_int, username=username)
-            if pred_rows:
-                pred_insights = parse_prediction_insights(pred_rows[0])
-        except FootballAPIError:
-            pass
-
-        o1x2 = get_odds_for_fixture(service, fid_int, username=username)
-        row["home_odd"] = o1x2["home"]
-        row["draw_odd"] = o1x2["draw"]
-        row["away_odd"] = o1x2["away"]
-        row["has_odds"] = has_complete_odds(row)
-
-        if row["has_odds"]:
-            signal = build_betting_signal(
-                home=home_name,
-                away=away_name,
-                home_odd=row["home_odd"],
-                draw_odd=row["draw_odd"],
-                away_odd=row["away_odd"],
-                pred_insights=pred_insights,
-                is_live=bool(card.get("live")),
-            )
-            row.update(signal)
-
-    row["analysis_available"] = is_analysis_eligible(
-        fixture_id=fid_int,
-        home=home_name,
-        away=away_name,
-        pred_insights=pred_insights,
-        has_odds=bool(row.get("has_odds")),
-    )
+    # Analysis endpoints (odds/predictions/standings/injuries/h2h) are ONLY fetched on click.
+    # So: show schedule-only rows on load.
+    row["analysis_available"] = bool(rank >= 2 and fid_int)
 
     if card.get("live"):
         rc = card.get("red_cards") or {}

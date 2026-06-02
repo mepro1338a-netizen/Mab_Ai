@@ -74,6 +74,9 @@ class FootballService:
       cached: bool,
       error: str = "",
       rate_limit_remaining: str | None = None,
+      headers: dict[str, str] | None = None,
+      response_snippet: str = "",
+      limiter: str = "",
   ) -> None:
       self._last_http_debug = {
           "endpoint": endpoint,
@@ -83,6 +86,9 @@ class FootballService:
           "cached": cached,
           "error": error,
           "rate_limit_remaining": rate_limit_remaining,
+          "headers": dict(headers or {}),
+          "response_snippet": str(response_snippet or "")[:1200],
+          "limiter": limiter,
       }
 
   def is_configured(self) -> bool:
@@ -97,23 +103,26 @@ class FootballService:
       return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
   def _ttl_for(self, endpoint: str, live: bool, username: str = "") -> int:
+      # Explicit per-endpoint TTL targets (seconds)
+      # - fixtures_by_date: 10 min
+      # - premium upcoming: handled via ttl_override when calling _request
+      # - odds: 30 min
+      # - predictions: 6 h
+      # - injuries: 6 h
+      # - standings: 12 h
       if endpoint == "standings":
-          base = max(3600, int(FOOTBALL_API_STANDINGS_CACHE_TTL))
-      elif endpoint == "injuries":
-          base = max(21600, int(FOOTBALL_API_INJURIES_CACHE_TTL))
-      elif endpoint == "fixtures" and not live:
-          base = max(600, int(FOOTBALL_API_FIXTURES_CACHE_TTL))
-      elif live or endpoint in {
-          "fixtures",
-          "fixtures/statistics",
-          "fixtures/events",
-          "fixtures/lineups",
-          "odds",
-      }:
-          base = max(60, int(FOOTBALL_API_LIVE_CACHE_TTL))
-      else:
-          base = max(60, int(FOOTBALL_API_CACHE_TTL))
-      return base
+          return max(43_200, int(FOOTBALL_API_STANDINGS_CACHE_TTL))
+      if endpoint == "injuries":
+          return max(21_600, int(FOOTBALL_API_INJURIES_CACHE_TTL))
+      if endpoint == "predictions":
+          return 21_600
+      if endpoint == "odds":
+          return 1_800
+      if endpoint == "fixtures" and not live:
+          return max(600, int(FOOTBALL_API_FIXTURES_CACHE_TTL))
+      if live or endpoint in {"fixtures", "fixtures/statistics"}:
+          return max(60, int(FOOTBALL_API_LIVE_CACHE_TTL))
+      return max(60, int(FOOTBALL_API_CACHE_TTL))
 
   def _read_cache_any_age(self, key: str) -> Any | None:
       now = time.time()
@@ -180,6 +189,7 @@ class FootballService:
       live: bool = False,
       username: str = "",
       use_cache: bool = True,
+      ttl_override: int | None = None,
   ) -> list[dict[str, Any]]:
       if username:
           try:
@@ -199,7 +209,7 @@ class FootballService:
 
       clean_params = {k: v for k, v in (params or {}).items() if v not in (None, "")}
       cache_key = self._cache_key(endpoint, clean_params)
-      ttl = self._ttl_for(endpoint, live, username)
+      ttl = int(ttl_override) if ttl_override is not None else self._ttl_for(endpoint, live, username)
 
       if use_cache:
           cached = self._read_cache(cache_key, ttl)
@@ -210,6 +220,7 @@ class FootballService:
                   status_code=200,
                   response_length=len(cached) if isinstance(cached, list) else 0,
                   cached=True,
+                  limiter="cache",
               )
               return cached
 
@@ -271,8 +282,18 @@ class FootballService:
                   response_length=len(stale) if isinstance(stale, list) else 0,
                   cached=True,
                   error="internal_rate_limit_stale",
+                  limiter="internal",
               )
               return stale
+          self._log_http_debug(
+              endpoint=endpoint,
+              params=clean_params,
+              status_code=None,
+              response_length=0,
+              cached=False,
+              error="internal_rate_limit_block",
+              limiter="internal",
+          )
           raise FootballAPIError(rate_msg)
 
       url = f"{self.base_url}/{endpoint.lstrip('/')}"
@@ -303,6 +324,19 @@ class FootballService:
           response.headers.get("x-ratelimit-requests-remaining")
           or response.headers.get("X-RateLimit-Remaining")
       )
+      dbg_headers = {
+          "x-ratelimit-requests-limit": str(
+              response.headers.get("x-ratelimit-requests-limit")
+              or response.headers.get("X-RateLimit-Limit")
+              or ""
+          ),
+          "x-ratelimit-requests-remaining": str(rate_remaining or ""),
+          "x-ratelimit-requests-reset": str(
+              response.headers.get("x-ratelimit-requests-reset")
+              or response.headers.get("X-RateLimit-Reset")
+              or ""
+          ),
+      }
 
       if response.status_code == 429:
           log_warning(f"Football API rate limit: {endpoint}")
@@ -317,6 +351,9 @@ class FootballService:
                   cached=True,
                   error="api_429_stale",
                   rate_limit_remaining=rate_remaining,
+                  headers=dbg_headers,
+                  response_snippet=str(getattr(response, "text", "") or "")[:1200],
+                  limiter="api",
               )
               return stale
           self._log_http_debug(
@@ -327,6 +364,9 @@ class FootballService:
               cached=False,
               error="Football API Rate Limit erreicht",
               rate_limit_remaining=rate_remaining,
+              headers=dbg_headers,
+              response_snippet=str(getattr(response, "text", "") or "")[:1200],
+              limiter="api",
           )
           raise FootballAPIError(
               "Football API Rate Limit erreicht. Bitte kurz warten oder Plan pruefen.",
@@ -372,6 +412,9 @@ class FootballService:
               cached=False,
               error=message,
               rate_limit_remaining=rate_remaining,
+              headers=dbg_headers,
+              response_snippet=str(getattr(response, "text", "") or "")[:1200],
+              limiter="api",
           )
           raise FootballAPIError(message or "Football API Fehler.", api_errors=api_errors)
 
@@ -384,6 +427,9 @@ class FootballService:
               cached=False,
               error=f"HTTP {response.status_code}",
               rate_limit_remaining=rate_remaining,
+              headers=dbg_headers,
+              response_snippet=str(getattr(response, "text", "") or "")[:1200],
+              limiter="api",
           )
           raise FootballAPIError(
               f"Football API HTTP {response.status_code}",
@@ -410,6 +456,9 @@ class FootballService:
           response_length=len(data),
           cached=False,
           rate_limit_remaining=rate_remaining,
+          headers=dbg_headers,
+          response_snippet=str(getattr(response, "text", "") or "")[:1200],
+          limiter="api",
       )
       log_info(
           f"Football API {endpoint} params={clean_params} results={len(data)}"
@@ -436,6 +485,7 @@ class FootballService:
       *,
       season: int | None = None,
       username: str = "",
+      ttl_override: int | None = None,
   ) -> list[dict[str, Any]]:
       """All fixtures for league+season (client-side date filter for upcoming)."""
       return self._request(
@@ -446,6 +496,7 @@ class FootballService:
           },
           feature="api_fixtures",
           username=username,
+          ttl_override=ttl_override,
       )
 
   def get_premium_fixtures_upcoming(
@@ -464,6 +515,24 @@ class FootballService:
       today = datetime.now(tz).date()
       horizon = today + timedelta(days=max(1, int(days)))
       seasons = football_api_seasons_to_try()
+
+      # Composite cache: avoid re-fetching 12 leagues on every page load.
+      composite_key = self._cache_key(
+          "premium_upcoming",
+          {"days": int(days), "core_ids": sorted(int(x) for x in FOOTBALL_BETTING_CORE_LEAGUE_IDS)},
+      )
+      composite_ttl = 21_600  # 6 hours
+      cached = self._read_cache(composite_key, composite_ttl)
+      if cached is not None:
+          self._log_http_debug(
+              endpoint="premium_upcoming",
+              params={"days": int(days)},
+              status_code=200,
+              response_length=len(cached) if isinstance(cached, list) else 0,
+              cached=True,
+              limiter="cache",
+          )
+          return cached
 
       def _fixture_date_local(fx: dict[str, Any]) -> str:
           raw = str((fx.get("fixture") or {}).get("date") or "")
@@ -500,6 +569,7 @@ class FootballService:
                       int(lid),
                       season=season,
                       username=username,
+                      ttl_override=21_600,
                   )
               except FootballAPIError:
                   continue
@@ -525,7 +595,11 @@ class FootballService:
           seen.add(key)
           deduped.append(fx)
 
-      return sort_fixtures_by_priority(deduped)
+      # Cache this "premium upcoming" path aggressively via TTL override.
+      # It is the default data source on page load.
+      out = sort_fixtures_by_priority(deduped)
+      self._write_cache(composite_key, out)
+      return out
 
   def get_live_fixtures(
       self,
@@ -647,6 +721,24 @@ class FootballService:
       from services.football_board import get_odds_for_fixture as _get
 
       return _get(self, int(fixture_id), username=username)
+
+  def get_team_injuries(
+      self,
+      team_id: int,
+      *,
+      season: int | None = None,
+      username: str = "",
+  ) -> list[dict[str, Any]]:
+      """Injuries feed (cached 6h via _ttl_for)."""
+      return self._request(
+          "injuries",
+          {
+              "team": int(team_id),
+              "season": int(season or FOOTBALL_DEFAULT_SEASON),
+          },
+          feature="api_injuries",
+          username=username,
+      )
 
 
 def fixture_label(fixture: dict[str, Any]) -> str:

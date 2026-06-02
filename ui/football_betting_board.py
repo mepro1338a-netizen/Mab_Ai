@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import html
+import time
 from typing import Any
 
 import streamlit as st
@@ -579,7 +580,17 @@ def render_football_betting_board(
 
     hdr_cols = st.columns([5, 1])
     with hdr_cols[1]:
-        if st.button("↻", key="fbb_refresh", help="Aktualisieren", width="stretch"):
+        if "fb_board_last_refresh" not in st.session_state:
+            st.session_state.fb_board_last_refresh = 0.0
+        cooldown_ok = (time.time() - float(st.session_state.fb_board_last_refresh or 0.0)) >= 60.0
+        if st.button(
+            "↻",
+            key="fbb_refresh",
+            help="Aktualisieren (Cooldown 60s)",
+            width="stretch",
+            disabled=not cooldown_ok,
+        ):
+            st.session_state.fb_board_last_refresh = time.time()
             st.session_state.fb_board_payload = None
             st.session_state.fb_board_cache = {}
             st.session_state.fb_board_force_no_odds = False
@@ -588,6 +599,8 @@ def render_football_betting_board(
     if new_view != view_mode:
         st.session_state.fb_board_view = new_view
         st.session_state.fb_board_force_no_odds = False
+        # Ensure on-demand view data is fetched lazily.
+        st.session_state.fb_board_payload = None
         st.rerun()
     view_mode = str(st.session_state.fb_board_view or "premium").lower()
     show_raw = view_mode == "raw"
@@ -604,21 +617,32 @@ def render_football_betting_board(
     )
 
     if st.session_state.fb_board_payload is None:
-        with st.spinner("Premium-Spiele laden (30-Tage-Scan)…"):
+        with st.spinner("Premium-Spiele laden…"):
             try:
                 st.session_state.fb_board_payload = fetch_board_payload(
                     service,
                     username=username,
-                    include_all_leagues=False,
+                    include_live=(view_mode == "live"),
                 )
             except FootballAPIError as exc:
-                st.error(str(exc))
+                msg = str(exc)
+                low = msg.lower()
+                if "rate limit" in low or getattr(exc, "status_code", None) == 429:
+                    st.info("Analyse aktuell nicht verfügbar – API-Limit erreicht.")
+                    st.caption(msg)
+                else:
+                    st.error(msg)
                 st.markdown("</div>", unsafe_allow_html=True)
                 return
 
     payload = st.session_state.fb_board_payload or {}
     for err in _filter_user_errors(list(payload.get("errors") or [])):
-        st.warning(err)
+        low = str(err).lower()
+        if "rate limit" in low:
+            st.info("Analyse aktuell nicht verfügbar – API-Limit erreicht.")
+            st.caption(str(err))
+        else:
+            st.warning(err)
 
     today_pool = collect_fixtures_for_filters(payload, time_filter="heute")
     live_pool = collect_fixtures_for_filters(payload, time_filter="live")
@@ -627,13 +651,17 @@ def render_football_betting_board(
         "today_matches": len(today_pool),
         "live_matches": len(live_pool),
         "tomorrow_matches": len(tomorrow_pool),
-        "raw_today": len(payload.get("raw_today") or []),
-        "raw_live": len(payload.get("raw_live") or []),
         "premium_count": payload.get("premium_count"),
     }
     if _is_admin():
-        print({"football_board_counts": board_counts})
-        st.json(board_counts)
+        with st.expander("Admin: Debug", expanded=False):
+            if st.button("API Test starten", key="fb_admin_api_test"):
+                # One cheap test call only, no multi-endpoint probes.
+                try:
+                    _ = service.get_premium_fixtures_upcoming(days=1, username=username)
+                except Exception:
+                    pass
+            st.json({"board_counts": board_counts, "last_http": service.last_http_debug()})
 
     cache: dict[int, dict[str, Any]] = st.session_state.fb_board_cache
 
@@ -663,7 +691,6 @@ def render_football_betting_board(
             mode=board_mode,
             cache=cache,
             max_enrich=24,
-            force_no_odds=force_no_odds,
         )
 
     rows = match_result.get("rows") or []
@@ -732,7 +759,13 @@ def render_football_betting_board(
                         st.session_state[cache_key] = {"error": str(exc), "fixture_id": fid}
             detail = st.session_state.get(cache_key) or {}
             if detail.get("error"):
-                st.warning(str(detail["error"]))
+                msg = str(detail["error"])
+                low = msg.lower()
+                if "rate limit" in low or "tageslimit" in low:
+                    st.info("Analyse aktuell nicht verfügbar – API-Limit erreicht.")
+                    st.caption(msg)
+                else:
+                    st.warning(msg)
             else:
                 _render_analysis_panel(
                     detail,
