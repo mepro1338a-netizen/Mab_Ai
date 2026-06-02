@@ -22,11 +22,54 @@ FINISHED_STATUSES = frozenset({"FT", "AET", "PEN", "AWD", "WO"})
 _TIER_SCORE = {0: 50_000, 1: 40_000, 2: 30_000, 3: 20_000, 4: 5_000, 5: 1_000}
 _BLOCKED = (
     "u17", "u-17", " u17", "u19", "u21", "u23", "u20", "u18", "youth", "women",
-    "woman", "feminin", "frauen", "reserve", " ii", "amateur", " usl",
+    "woman", "feminin", "frauen", "reserve", " ii", "amateur", " usl", "usl ",
     "canadian premier", "canada premier", "sudan", "queensland", "tasmania",
-    "regionalliga", "3. liga", "tercera", "fourth", "fourth division",
-    "development league", "premier league 2", "feminine", " frauen", "npl",
-    " 2 team", "reserve league",
+    "regionalliga", "3. liga", "4. liga", "landesliga", "tercera", "fourth",
+    "fourth division", "development league", "premier league 2", "feminine",
+    " frauen", "npl", " 2 team", "reserve league", "primera b", "segunda b",
+    "third league", "isthmian", "national league north",
+)
+
+FEED_CAP_DEFAULT = 10
+FEED_CAP_RAW = 50
+FEED_MIN_SCORE_DEFAULT = 30
+FEED_MIN_SCORE_RAW = 1
+
+_MAJOR_COUNTRIES = frozenset({
+    "germany", "deutschland", "england", "spain", "italy", "france", "portugal",
+    "netherlands", "holland", "belgium", "austria", "switzerland", "scotland", "wales",
+    "ireland", "poland", "czech-republic", "czechia", "croatia", "serbia", "denmark",
+    "sweden", "norway", "finland", "turkey", "greece", "ukraine", "russia",
+    "usa", "united-states", "mexico", "brazil", "argentina", "colombia", "chile",
+    "uruguay", "japan", "south-korea", "korea-republic", "australia", "canada",
+    "europe", "world", "international",
+})
+
+_EXOTIC_COUNTRIES = frozenset({
+    "algeria", "iran", "iraq", "mali", "gabon", "aruba", "libya", "syria", "yemen",
+    "oman", "kuwait", "bahrain", "jordan", "lebanon", "palestine", "bangladesh",
+    "myanmar", "cambodia", "laos", "mongolia", "uzbekistan", "turkmenistan",
+    "bolivia", "paraguay", "nicaragua", "honduras", "el-salvador", "jamaica",
+    "haiti", "kenya", "uganda", "tanzania", "zambia", "zimbabwe", "mozambique",
+    "angola", "ghana", "nigeria", "senegal", "tunisia", "morocco", "egypt",
+    "venezuela", "ecuador", "peru", "panama", "costa-rica", "guatemala",
+})
+
+_TOP_LEAGUE_HINTS = (
+    "premier league", "la liga", "serie a", "ligue 1", "bundesliga", "eredivisie",
+    "primeira", "super lig", "championship", "2. bundesliga", "world cup", "euro",
+    "nations league", "champions", "europa", "conference", "dfb", "fa cup",
+    "copa del rey", "mls", "liga mx", "brasileir", "serie a",
+)
+
+_YOUTH_MARKERS = ("u17", "u-17", "u19", "u21", "u23", "u20", "u18", "youth", "junior")
+_WOMEN_MARKERS = ("women", "woman", "feminin", "frauen", "feminine", " damen")
+_LOW_TIER_MARKERS = (
+    "regionalliga", "3. liga", "4. liga", "landesliga", "tercera", "fourth",
+    "reserve", " ii", " usl", "usl ", "development", "premier league 2", "npl",
+    "isthmian", "national league north", "primera b", "segunda b", "third league",
+    "serie c", "serie d", "2. liga", "asean", "ykkönen", "ykkonen",
+    "ii liga", "ettan", "persha liga", "tournoi", "revello", "concacaf",
 )
 
 
@@ -138,6 +181,77 @@ def is_betting_core_fixture(fixture: dict[str, Any]) -> bool:
 
 def filter_betting_core_fixtures(fixtures: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return [fx for fx in fixtures or [] if is_betting_core_fixture(fx)]
+
+
+def _fixture_league_context(fixture: dict[str, Any]) -> tuple[str, str, int | None]:
+    league = fixture.get("league") or {}
+    name = str(league.get("name") or "").lower()
+    country = str(league.get("country") or "").lower().replace(" ", "-")
+    return name, country, _league_id(fixture)
+
+
+def fixture_feed_relevance_score(fixture: dict[str, Any]) -> int:
+    """Beta feed score — higher = more relevant for default view."""
+    name, country, lid = _fixture_league_context(fixture)
+    country_spaced = country.replace("-", " ")
+    blob = f"{name} {country}"
+
+    if is_blocked_league_name(name):
+        return -200
+
+    score = 0
+
+    if is_betting_core_fixture(fixture) or (lid and int(lid) in FOOTBALL_PREMIUM_LEAGUE_IDS):
+        score += 100
+    elif is_premium_league_match(lid, name, country_spaced):
+        score += 100
+
+    if any(m in name for m in ("world cup", "euro championship", "euro ", "nations league")):
+        score += 80
+    elif "friendl" in name:
+        if country in _MAJOR_COUNTRIES and country not in ("world", "international"):
+            score += 80
+        else:
+            score -= 50
+    elif country in _MAJOR_COUNTRIES and any(h in name for h in _TOP_LEAGUE_HINTS):
+        score += 60
+    elif country in _MAJOR_COUNTRIES:
+        score += 40
+
+    if any(m in blob for m in _YOUTH_MARKERS):
+        score -= 100
+    if any(m in blob for m in _WOMEN_MARKERS):
+        score -= 80
+    if any(m in blob for m in _LOW_TIER_MARKERS):
+        score -= 80
+    if country in _EXOTIC_COUNTRIES:
+        score -= 70
+    if "friendl" in name and country not in _MAJOR_COUNTRIES:
+        score -= 60
+
+    st = _status_short(fixture)
+    if st in LIVE_STATUSES:
+        score += 15
+
+    return score
+
+
+def curate_feed_fixtures(
+    fixtures: list[dict[str, Any]],
+    *,
+    min_score: int = FEED_MIN_SCORE_DEFAULT,
+    max_count: int = FEED_CAP_DEFAULT,
+) -> list[dict[str, Any]]:
+    """Sort by relevance and cap — curated feed, not API dump."""
+    pool = dedupe_fixtures(fixtures or [])
+    ranked: list[tuple[int, str, dict[str, Any]]] = []
+    for fx in pool:
+        pts = fixture_feed_relevance_score(fx)
+        if pts > min_score:
+            kickoff = str((fx.get("fixture") or {}).get("date") or "")
+            ranked.append((pts, kickoff, fx))
+    ranked.sort(key=lambda row: (-row[0], row[1]))
+    return [fx for _, _, fx in ranked[: max(1, int(max_count))]]
 
 
 def _local_today_tomorrow() -> tuple[str, str]:
