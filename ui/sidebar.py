@@ -163,12 +163,12 @@ def sidebar_master_css(active_page: str = "home") -> str:
     active = active_page or "home"
     return f"""
 :root {{
-    --sb-width: 17rem;
-    --sb-bg: #0b0b0f;
-    --sb-surface: #16161c;
-    --sb-border: rgba(255,255,255,.08);
-    --sb-text: #e4e4e7;
-    --sb-muted: #71717a;
+    --sb-width: 18.5rem;
+    --sb-bg: #09090b;
+    --sb-surface: #18181b;
+    --sb-border: rgba(255,255,255,.09);
+    --sb-text: #f4f4f5;
+    --sb-muted: #a1a1aa;
     --sb-accent: #8b5cf6;
 }}
 
@@ -191,7 +191,7 @@ def sidebar_master_css(active_page: str = "home") -> str:
     background: var(--sb-bg) !important;
 }}
 {_SB} [data-testid="stVerticalBlock"] {{
-    gap: 2px !important;
+    gap: 4px !important;
     padding: 0 !important;
 }}
 {_SB} [data-testid="stVerticalBlockBorderWrapper"] {{
@@ -203,9 +203,11 @@ def sidebar_master_css(active_page: str = "home") -> str:
 }}
 
 .mb-sidebar-brand {{
-    padding: 18px 6px 14px 6px;
-    margin-bottom: 6px;
+    padding: 20px 8px 16px 8px;
+    margin-bottom: 8px;
     border-bottom: 1px solid var(--sb-border);
+    background: linear-gradient(180deg, rgba(139,92,246,.06), transparent);
+    border-radius: 0 0 12px 12px;
 }}
 .mb-sidebar-brand img {{
     width: 100%;
@@ -230,17 +232,17 @@ def sidebar_master_css(active_page: str = "home") -> str:
 }}
 
 .mb-nav-section-gap {{
-    height: 8px;
-    border-top: 1px solid rgba(255,255,255,.04);
-    margin: 8px 0 4px 0;
+    height: 10px;
+    border-top: 1px solid rgba(255,255,255,.06);
+    margin: 10px 0 6px 0;
 }}
 
 .mb-section-label {{
-    margin: 12px 4px 6px 6px;
+    margin: 14px 6px 8px 8px;
     color: var(--sb-muted) !important;
     font-size: 10px;
-    font-weight: 700;
-    letter-spacing: .12em;
+    font-weight: 800;
+    letter-spacing: .14em;
     text-transform: uppercase;
     line-height: 1;
 }}
@@ -249,10 +251,10 @@ def sidebar_master_css(active_page: str = "home") -> str:
 {_SB} div[class*="st-key-nav_"]:not(.st-key-nav_logout) .stButton > button,
 {_SB} div[class*="st-key-nav_"]:not(.st-key-nav_logout) button {{
     width: 100% !important;
-    min-height: 40px !important;
-    height: 40px !important;
-    padding: 0 12px 0 42px !important;
-    margin: 1px 0 !important;
+    min-height: 42px !important;
+    height: 42px !important;
+    padding: 0 14px 0 44px !important;
+    margin: 2px 0 !important;
     border-radius: 10px !important;
     border: 1px solid transparent !important;
     background: transparent !important;

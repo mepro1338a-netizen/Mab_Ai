@@ -9,7 +9,9 @@ import streamlit as st
 
 from config import football_plan_rank
 from services.football_service import usage_summary
+from config import FOOTBALL_LEAGUE_META
 from services.football_board import (
+    LEAGUE_DISPLAY_ORDER,
     calculate_tip_odds,
     fetch_board_payload,
     fetch_match_detail,
@@ -36,6 +38,18 @@ _BOARD_CSS = """
     display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px;
 }
 .fbb-filter-note { color: #64748b !important; font-size: 11px; margin: -6px 0 12px 0; }
+.fbb-filter-row-label {
+    color: #64748b !important; font-size: 10px; font-weight: 700;
+    letter-spacing: .1em; text-transform: uppercase; margin: 0 0 6px 2px;
+}
+.fbb-league-head {
+    display: flex; align-items: center; gap: 10px;
+    margin: 18px 0 8px 0; padding: 8px 12px;
+    background: rgba(139,92,246,.08); border: 1px solid rgba(139,92,246,.2);
+    border-radius: 10px;
+}
+.fbb-league-head span { color: #e2e8f0 !important; font-size: 13px; font-weight: 800; }
+.fbb-league-head small { color: #94a3b8 !important; font-size: 11px; font-weight: 500; }
 .fbb-fallback-note {
     color: #fde047 !important; font-size: 12px; padding: 8px 12px; margin: 0 0 12px 0;
     background: rgba(234,179,8,.08); border: 1px solid rgba(234,179,8,.22); border-radius: 8px;
@@ -118,17 +132,47 @@ def _filter_user_errors(errors: list[str]) -> list[str]:
     return out
 
 
-def _render_empty_state(*, raw_count: int = 0) -> None:
+def _render_empty_state(*, message: str = "") -> None:
+    body = message or (
+        "Aktuell keine Topspiele im gewählten Filter. "
+        "Wähle „Nächste Topspiele“ oder „Alle“, oder aktualisiere die Seite."
+    )
     st.markdown(
-        """
+        f"""
 <div class="fbb-empty">
-  <h4>Keine Topspiele im gewählten Filter.</h4>
-  <p>Aktuell keine Spiele im gewählten Filter. Nächste Topspiele werden geladen.</p>
+  <h4>Keine Spiele angezeigt</h4>
+  <p>{html.escape(body)}</p>
 </div>
         """,
         unsafe_allow_html=True,
     )
-    _ = raw_count
+
+
+def _league_heading(league_id: int) -> str:
+    meta = FOOTBALL_LEAGUE_META.get(int(league_id)) or {}
+    name = str(meta.get("name") or f"Liga {league_id}")
+    country = str(meta.get("country") or "")
+    country_bit = f' <small>· {html.escape(country)}</small>' if country else ""
+    return (
+        f'<div class="fbb-league-head"><span>{html.escape(name)}</span>{country_bit}</div>'
+    )
+
+
+def _group_rows_by_league(rows: list[dict[str, Any]]) -> list[tuple[int, list[dict[str, Any]]]]:
+    buckets: dict[int, list[dict[str, Any]]] = {}
+    for row in rows:
+        try:
+            lid = int((row.get("card") or {}).get("league_id") or 0)
+        except (TypeError, ValueError):
+            lid = 0
+        buckets.setdefault(lid, []).append(row)
+    ordered: list[tuple[int, list[dict[str, Any]]]] = []
+    for lid in LEAGUE_DISPLAY_ORDER:
+        if lid in buckets:
+            ordered.append((lid, buckets.pop(lid)))
+    for lid in sorted(buckets.keys()):
+        ordered.append((lid, buckets[lid]))
+    return ordered
 
 
 def inject_betting_board_css() -> None:
@@ -237,6 +281,9 @@ def _render_filter_bar(*, time_filter: str, region_filter: str) -> tuple[str, st
                 width="stretch",
             ):
                 new_time = key
+    st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown('<p class="fbb-filter-row-label">Wettbewerb</p>', unsafe_allow_html=True)
+    st.markdown('<div class="fbb-filters">', unsafe_allow_html=True)
     cols2 = st.columns(len(REGION_FILTERS))
     new_region = region_filter
     for col, (key, label) in zip(cols2, REGION_FILTERS):
@@ -406,9 +453,9 @@ def render_football_betting_board(
         f"""
 <div class="fbb-header">
   <div>
-    <div class="sub" style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#86efac!important;">Football Intelligence</div>
-    <h1>Premium Betting Analysis</h1>
-    <div class="sub">Top-Spiele · Quoten · KI-Tipps · Value</div>
+    <div class="sub" style="font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#86efac!important;">Football AI</div>
+    <h1>Top-Ligen & Wettanalyse</h1>
+    <div class="sub">Bundesliga · 2. BL · UEFA · WM 2026 · Topligen</div>
   </div>
   <div class="fbb-api">{html.escape(api_line)}<br>{html.escape(str(summary.get('plan_label') or ''))}</div>
 </div>
@@ -443,7 +490,7 @@ def render_football_betting_board(
         st.session_state.fb_board_cache = {}
     if "fb_board_payload" not in st.session_state:
         st.session_state.fb_board_payload = None
-    _FB_DATA_VERSION = 2
+    _FB_DATA_VERSION = 3
     if st.session_state.get("fb_board_version") != _FB_DATA_VERSION:
         st.session_state.fb_board_version = _FB_DATA_VERSION
         st.session_state.fb_board_payload = None
@@ -485,7 +532,7 @@ def render_football_betting_board(
     show_raw = bool(st.session_state.fb_show_raw_all)
     region_filter = str(st.session_state.fb_board_region or "alle").lower()
 
-    subtitle = "Top-Ligen · Bundesliga · UEFA · Premier League & mehr"
+    subtitle = "1. & 2. Bundesliga · Champions League · Europa League · WM 2026"
     st.markdown(
         f'<p class="fbb-filter-note">{html.escape(subtitle)}</p>',
         unsafe_allow_html=True,
@@ -544,14 +591,16 @@ def render_football_betting_board(
         )
 
     rows = match_result.get("rows") or []
-    if match_result.get("banner"):
+    banner = str(match_result.get("banner") or "").strip()
+    if banner and rows and str(match_result.get("stage") or "") != "clean_empty_state":
         st.markdown(
-            f'<p class="fbb-fallback-note">{html.escape(str(match_result["banner"]))}</p>',
+            f'<p class="fbb-fallback-note">{html.escape(banner)}</p>',
             unsafe_allow_html=True,
         )
 
     if not rows:
         stage = str(match_result.get("stage") or "")
+        empty_msg = str(match_result.get("banner") or "") if stage == "clean_empty_state" else ""
         if stage == "live_empty" and time_filter == "live":
             pools = match_result.get("pools") or {}
             if int(pools.get("upcoming") or 0) > 0:
@@ -560,7 +609,7 @@ def render_football_betting_board(
                     st.session_state.fb_show_raw_all = False
                     st.rerun()
         else:
-            _render_empty_state(raw_count=0)
+            _render_empty_state(message=empty_msg)
             if not show_raw and int((match_result.get("pools") or {}).get("upcoming") or 0) > 0:
                 if st.button("Nächste Topspiele anzeigen", key="fbb_empty_to_upcoming", width="stretch"):
                     st.session_state.fb_board_view = "upcoming"
@@ -570,62 +619,64 @@ def render_football_betting_board(
         return
 
     enriched_map = _live_enrichment_map(payload) if not show_raw else {}
-    for row in rows:
-        if not show_raw:
-            _apply_live_enrichment(row, enriched_map)
-
+    grouped = _group_rows_by_league(rows) if not show_raw and len(rows) > 3 else [(0, rows)]
     selected = st.session_state.get("fb_board_analyse")
-    for row in rows:
-        fid = row.get("fixture_id")
-        row_cols = st.columns([12, 1])
-        with row_cols[0]:
-            st.markdown(_render_match_row_html(row), unsafe_allow_html=True)
-        with row_cols[1]:
-            st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
-            if show_raw or rank < 2:
-                st.button(
-                    "Analyse später verfügbar",
-                    key=f"fbb_an_{fid}",
-                    width="stretch",
-                    disabled=True,
-                )
-            elif st.button("Analyse", key=f"fbb_an_{fid}", width="stretch"):
-                st.session_state.fb_board_analyse = fid
-                st.rerun()
-        if not show_raw and rank >= 2 and selected and fid and int(selected) == int(fid):
-            cache_key = f"fbb_detail_{fid}"
-            if cache_key not in st.session_state:
-                with st.spinner("Analyse laden…"):
-                    try:
-                        st.session_state[cache_key] = fetch_match_detail(
-                            service,
-                            int(fid),
-                            username=username,
-                            session_plan=session_plan,
-                        )
-                    except Exception as exc:
-                        st.session_state[cache_key] = {"error": str(exc), "fixture_id": fid}
-            detail = st.session_state.get(cache_key) or {}
-            if detail.get("error"):
-                msg = str(detail["error"])
-                low = msg.lower()
-                if "rate limit" in low or "tageslimit" in low:
-                    st.info("Analyse aktuell nicht verfügbar – API-Limit erreicht.")
-                    st.caption(msg)
+    for league_id, group_rows in grouped:
+        if league_id and not show_raw:
+            st.markdown(_league_heading(league_id), unsafe_allow_html=True)
+        for row in group_rows:
+            if not show_raw:
+                _apply_live_enrichment(row, enriched_map)
+            fid = row.get("fixture_id")
+            row_cols = st.columns([12, 1])
+            with row_cols[0]:
+                st.markdown(_render_match_row_html(row), unsafe_allow_html=True)
+            with row_cols[1]:
+                st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
+                if show_raw or rank < 2:
+                    st.button(
+                        "Analyse später verfügbar",
+                        key=f"fbb_an_{fid}",
+                        width="stretch",
+                        disabled=True,
+                    )
+                elif st.button("Analyse", key=f"fbb_an_{fid}", width="stretch"):
+                    st.session_state.fb_board_analyse = fid
+                    st.rerun()
+            if not show_raw and rank >= 2 and selected and fid and int(selected) == int(fid):
+                cache_key = f"fbb_detail_{fid}"
+                if cache_key not in st.session_state:
+                    with st.spinner("Analyse laden…"):
+                        try:
+                            st.session_state[cache_key] = fetch_match_detail(
+                                service,
+                                int(fid),
+                                username=username,
+                                session_plan=session_plan,
+                            )
+                        except Exception as exc:
+                            st.session_state[cache_key] = {"error": str(exc), "fixture_id": fid}
+                detail = st.session_state.get(cache_key) or {}
+                if detail.get("error"):
+                    msg = str(detail["error"])
+                    low = msg.lower()
+                    if "rate limit" in low or "tageslimit" in low:
+                        st.info("Analyse aktuell nicht verfügbar – API-Limit erreicht.")
+                        st.caption(msg)
+                    else:
+                        st.warning(msg)
+                elif not detail.get("analysis_available"):
+                    st.info("Analyse später verfügbar – Quoten oder Prognose fehlen noch.")
                 else:
-                    st.warning(msg)
-            elif not detail.get("analysis_available"):
-                st.info("Analyse später verfügbar – Quoten oder Prognose fehlen noch.")
-            else:
-                _render_analysis_panel(
-                    detail,
-                    row=row,
-                    username=username,
-                    session_plan=session_plan,
-                )
-            if st.button("Schließen", key=f"fbb_close_{fid}"):
-                st.session_state.pop("fb_board_analyse", None)
-                st.rerun()
+                    _render_analysis_panel(
+                        detail,
+                        row=row,
+                        username=username,
+                        session_plan=session_plan,
+                    )
+                if st.button("Schließen", key=f"fbb_close_{fid}"):
+                    st.session_state.pop("fb_board_analyse", None)
+                    st.rerun()
 
     if rank < 2:
         st.caption("Volle Quoten & KI-Tipps ab Football Pro.")

@@ -29,13 +29,19 @@ REGION_FILTERS: tuple[tuple[str, str], ...] = (
     ("deutschland", "Deutschland"),
     ("uefa", "UEFA"),
     ("topligen", "Topligen"),
+    ("intl", "WM & Euro"),
 )
 
 _REGION_IDS: dict[str, frozenset[int]] = {
     "deutschland": frozenset({78, 79, 81}),
     "uefa": frozenset({2, 3, 848}),
     "topligen": frozenset({39, 140, 135, 61}),
+    "intl": frozenset({1, 4}),
 }
+
+LEAGUE_DISPLAY_ORDER: tuple[int, ...] = (
+    78, 79, 81, 2, 3, 848, 39, 140, 135, 61, 1, 4,
+)
 
 
 def filter_fixtures_by_region(
@@ -987,12 +993,21 @@ def load_football_matches(
     """
     mode = (mode or "upcoming").lower().strip()
 
-    pools = {
-        "live": collect_fixtures_for_filters(payload, time_filter="live", region_filter=region_filter),
-        "today": collect_fixtures_for_filters(payload, time_filter="heute", region_filter=region_filter),
-        "tomorrow": collect_fixtures_for_filters(payload, time_filter="morgen", region_filter=region_filter),
-        "upcoming": collect_fixtures_for_filters(payload, time_filter="upcoming", region_filter=region_filter),
-    }
+    def _build_pools(region: str) -> dict[str, list[dict[str, Any]]]:
+        return {
+            "live": collect_fixtures_for_filters(payload, time_filter="live", region_filter=region),
+            "today": collect_fixtures_for_filters(payload, time_filter="heute", region_filter=region),
+            "tomorrow": collect_fixtures_for_filters(payload, time_filter="morgen", region_filter=region),
+            "upcoming": collect_fixtures_for_filters(payload, time_filter="upcoming", region_filter=region),
+        }
+
+    pools = _build_pools(region_filter)
+    region_banner: str | None = None
+    if region_filter not in ("", "alle") and not any(pools.values()):
+        alt = _build_pools("alle")
+        if any(alt.values()):
+            pools = alt
+            region_banner = "Keine Spiele in dieser Region — alle Top-Ligen."
 
     today_empty = not pools.get("today")
     live_empty = not pools.get("live")
@@ -1020,9 +1035,9 @@ def load_football_matches(
             continue
 
         primary_stage = chain[0][0] if chain else ""
-        banner = None
+        banner = region_banner
         if stage_id != primary_stage:
-            banner = _FALLBACK_MESSAGES.get(stage_id)
+            banner = banner or _FALLBACK_MESSAGES.get(stage_id)
         if not banner:
             banner = _FALLBACK_MESSAGES.get(stage_id) or _FALLBACK_MESSAGES["api_plan_no_betting"]
 
@@ -1037,11 +1052,21 @@ def load_football_matches(
             "pools": {k: len(v) for k, v in pools.items()},
         }
 
+    api_errors = [str(e) for e in (payload.get("errors") or []) if str(e).strip()]
+    banner = _FALLBACK_MESSAGES["filter_empty_upcoming"]
+    if api_errors:
+        banner = api_errors[0]
+    elif int(payload.get("premium_count") or 0) <= 0:
+        banner = (
+            "Keine Topspiele geladen. API-Key oder Saison prüfen — "
+            "Bundesliga, UEFA & WM erscheinen nach erfolgreichem Abruf."
+        )
+
     return {
         "fixtures": [],
         "rows": [],
         "stage": "clean_empty_state",
-        "banner": _FALLBACK_MESSAGES["filter_empty_upcoming"],
+        "banner": banner,
         "pool_key": "",
         "selected_source": "clean_empty_state",
         "require_odds": True,

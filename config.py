@@ -179,6 +179,10 @@ def football_api_seasons_to_try() -> list[int]:
         if year not in seen and year >= 2020:
             seen.add(year)
             out.append(year)
+    for year in (2024, 2023, 2022):
+        if year not in seen:
+            seen.add(year)
+            out.append(year)
     return out
 
 # API-Football league IDs (v3) — Phase 2 beta whitelist only
@@ -261,7 +265,7 @@ FOOTBALL_PREMIUM_LEAGUE_IDS = frozenset(
 # Football AI betting board — strict top-tier whitelist only
 FOOTBALL_BETTING_CORE_LEAGUE_IDS = frozenset(
     {
-        78,   # Bundesliga
+        78,   # 1. Bundesliga
         79,   # 2. Bundesliga
         81,   # DFB Pokal
         2,    # Champions League
@@ -271,6 +275,8 @@ FOOTBALL_BETTING_CORE_LEAGUE_IDS = frozenset(
         140,  # La Liga
         135,  # Serie A
         61,   # Ligue 1
+        1,    # FIFA World Cup (WM)
+        4,    # UEFA Euro
     }
 )
 

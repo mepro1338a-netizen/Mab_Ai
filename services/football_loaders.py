@@ -301,7 +301,13 @@ def fetch_premium_dashboard(
     if include_live:
         live_rows = _fetch_rows(lambda: service.get_live_fixtures(username=username), errors)
 
+    load_report = getattr(service, "_premium_load_report", None) or {}
     all_upcoming = filter_betting_core_fixtures(dedupe_fixtures(upcoming_rows))
+    if not all_upcoming and int(load_report.get("date_fallback") or 0) > 0:
+        errors.append(
+            "Heute keine Spiele in Bundesliga, UEFA oder Top-Ligen im gewählten Zeitraum. "
+            "Nächste Topspiele erscheinen sobald die API sie liefert."
+        )
     today_premium = [fx for fx in all_upcoming if _fixture_date(fx) == today_s]
     tomorrow_premium = [fx for fx in all_upcoming if _fixture_date(fx) == tomorrow_s]
     premium_live = filter_betting_core_fixtures(filter_premium_fixtures(live_rows))
