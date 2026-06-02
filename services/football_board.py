@@ -10,14 +10,13 @@ from config import (
 from services.football_loaders import (
     FEED_CAP_DEFAULT,
     FEED_CAP_RAW,
-    FEED_MIN_SCORE_DEFAULT,
     FEED_MIN_SCORE_RAW,
     LIVE_STATUSES,
     curate_feed_fixtures,
     dedupe_fixtures,
     fetch_premium_dashboard,
-    filter_betting_core_fixtures,
     filter_blocked_fixtures,
+    filter_premium_fixtures,
     parse_match_card,
     sort_fixtures_by_priority,
 )
@@ -635,11 +634,20 @@ def fetch_board_payload(
     )
 
 
-MSG_NO_PREMIUM = "Heute keine Topspiele – zeige relevante verfügbare Spiele."
 MSG_NO_MATCHES = "Aktuell keine Spiele verfügbar. Bitte später erneut prüfen."
 
 
+def _empty_topspiele_message(time_filter: str) -> str:
+    tf = (time_filter or "heute").lower()
+    if tf == "morgen":
+        return "Morgen keine Topspiele verfügbar."
+    if tf == "live":
+        return "Keine Live-Topspiele verfügbar."
+    return "Heute keine Topspiele verfügbar."
+
+
 def _premium_fixtures_for_time(payload: dict[str, Any], time_filter: str) -> list[dict[str, Any]]:
+    """Topspiele — strictly FOOTBALL_PREMIUM_LEAGUE_IDS only."""
     today_s = str(payload.get("today") or payload.get("today_local") or "")
     tf = (time_filter or "heute").lower()
     if tf == "live":
@@ -647,10 +655,11 @@ def _premium_fixtures_for_time(payload: dict[str, Any], time_filter: str) -> lis
     elif tf == "morgen":
         pool = list(payload.get("tomorrow_fixtures") or [])
     else:
-        pool = list(payload.get("next_matches") or [])
+        pool = list(payload.get("next_matches") or payload.get("all_premium") or [])
         if tf == "heute":
             pool = [fx for fx in pool if _is_live(fx) or _fixture_date(fx) == today_s]
-    return filter_betting_core_fixtures(pool)
+    pool = filter_premium_fixtures(pool)
+    return sort_fixtures_by_priority(pool)[:FEED_CAP_DEFAULT]
 
 
 def _raw_fixtures_for_time(payload: dict[str, Any], time_filter: str) -> list[dict[str, Any]]:
@@ -695,13 +704,15 @@ def resolve_football_board(
     username: str,
     session_plan: str,
 ) -> dict[str, Any]:
-    """Premium-first feed; curated fallback (max 10), raw mode capped at 50."""
+    """Topspiele = PREMIUM_LEAGUE_IDS only; Alle Spiele = curated raw (max 50)."""
     _ = service, username, session_plan
     vm = "raw" if str(view_mode).lower() == "raw" else "premium"
     tf = str(time_filter or "heute").lower()
 
-    premium_count = int(
-        payload.get("premium_count") or len(payload.get("next_matches") or [])
+    premium_count = len(
+        filter_premium_fixtures(
+            list(payload.get("next_matches") or payload.get("all_premium") or [])
+        )
     )
     raw_pool = _raw_fixtures_for_time(payload, tf)
     raw_count = len(dedupe_fixtures(raw_pool))
@@ -719,32 +730,15 @@ def resolve_football_board(
         source = "raw"
     else:
         fixtures = _premium_fixtures_for_time(payload, tf)
+        source = "premium"
         if not fixtures:
-            upcoming = filter_betting_core_fixtures(list(payload.get("next_matches") or []))
-            if upcoming:
-                fixtures = upcoming
-                source = "premium_upcoming"
-                banner = MSG_NO_PREMIUM
-        if fixtures:
-            fixtures = curate_feed_fixtures(
-                fixtures,
-                min_score=FEED_MIN_SCORE_DEFAULT,
-                max_count=FEED_CAP_DEFAULT,
-            )
-        elif raw_count > 0:
-            fixtures = curate_feed_fixtures(
-                raw_pool,
-                min_score=FEED_MIN_SCORE_DEFAULT,
-                max_count=FEED_CAP_DEFAULT,
-            )
-            source = "curated_fallback"
-            banner = MSG_NO_PREMIUM
+            banner = _empty_topspiele_message(tf)
 
     rows = build_basic_board_rows(fixtures)
     displayed_count = len(rows)
 
-    if displayed_count == 0:
-        banner = MSG_NO_MATCHES
+    if displayed_count == 0 and not banner:
+        banner = MSG_NO_MATCHES if vm == "raw" else _empty_topspiele_message(tf)
 
     metrics = {
         "premium_count": premium_count,

@@ -81,7 +81,7 @@ def render_football_betting_board(
     st.markdown('<div class="fbb-root">', unsafe_allow_html=True)
     st.markdown('<h1 class="fbb-title">Football AI</h1>', unsafe_allow_html=True)
     st.markdown(
-        '<p class="fbb-sub">Kuratiert · Top-Ligen · max. 10 Topspiele · 50 Alle Spiele</p>',
+        '<p class="fbb-sub">Topspiele = Premium-Ligen · Alle Spiele = kuratierte API-Liste</p>',
         unsafe_allow_html=True,
     )
 
@@ -109,8 +109,8 @@ def render_football_betting_board(
         st.session_state.fb_time = "heute"
     if "fb_payload" not in st.session_state:
         st.session_state.fb_payload = None
-    if st.session_state.get("fb_ver") != 5:
-        st.session_state.fb_ver = 5
+    if st.session_state.get("fb_ver") != 6:
+        st.session_state.fb_ver = 6
         st.session_state.fb_payload = None
 
     mode = str(st.session_state.fb_mode or "premium")
@@ -153,14 +153,17 @@ def render_football_betting_board(
     mode = str(st.session_state.fb_mode)
     time_f = str(st.session_state.fb_time)
 
-    if st.session_state.fb_payload is None:
+    need_raw = mode == "raw"
+    if st.session_state.fb_payload is None or (
+        need_raw and not (st.session_state.fb_payload or {}).get("raw_today")
+    ):
         with st.spinner("Spiele laden…"):
             try:
                 st.session_state.fb_payload = fetch_board_payload(
                     service,
                     username=username,
-                    include_live=(time_f == "live"),
-                    include_raw=True,
+                    include_live=(time_f == "live") or need_raw,
+                    include_raw=need_raw,
                 )
             except FootballAPIError as exc:
                 st.error(str(exc))
@@ -183,7 +186,9 @@ def render_football_betting_board(
     )
     rows = result.get("rows") or []
     banner = str(result.get("banner") or "").strip()
-    if banner:
+    is_empty_topspiele = mode == "premium" and not rows
+
+    if banner and not is_empty_topspiele:
         st.markdown(f'<p class="fbb-note">{html.escape(banner)}</p>', unsafe_allow_html=True)
 
     if not rows:
