@@ -204,7 +204,7 @@ def init_db():
     """)
 
     try:
-        from db.leads import init_leads_table
+        from db.app import init_leads_table
 
         init_leads_table()
     except Exception:

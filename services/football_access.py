@@ -15,7 +15,7 @@ from config import (
     get_football_plan,
 )
 
-from db.football_billing import (
+from db.app import (
     get_football_plan as db_get_football_plan,
     get_football_usage_today,
     record_football_ai_analysis,

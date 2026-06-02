@@ -96,7 +96,7 @@ def redeem_code(username, code):
     if item["plan"]:
         plan_value = str(item["plan"])
         if plan_value.startswith("football_"):
-            from db.football_billing import set_football_plan
+            from db.app import set_football_plan
 
             set_football_plan(username, plan_value)
         else:

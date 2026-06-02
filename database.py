@@ -2,17 +2,14 @@
 import sys
 
 from db.core import *  # noqa: F403
-from db.audit import *  # noqa: F403
-from db.billing import *  # noqa: F403
-from db.projects import *  # noqa: F403
-from db.automations import *  # noqa: F403
 from db.users import *  # noqa: F403  # includes secure_set_football_plan, register_account
-from db.leads import *  # noqa: F403
-from db.memory import *  # noqa: F403
-from db.errors import *  # noqa: F403
-from db.bootstrap import force_owner_account
-from db.billing import payment_already_paid  # noqa: F401
-from db.football_billing import (  # noqa: F401
+from db.video_engine import *  # noqa: F403
+from db.app import *  # noqa: F403
+
+from db.app import force_owner_account  # noqa: F401
+
+# Back-compat explicit imports (some modules import from database directly)
+from db.app import (  # noqa: F401
     get_football_plan,
     set_football_plan,
     get_football_usage_today,

@@ -6,9 +6,10 @@ from __future__ import annotations
 import uuid
 from pathlib import Path
 
-from config import DATA_DIR, VIDEO_PROVIDER
+from config import DATA_DIR, OPENAI_API_KEY, OPENAI_TEXT_MODEL, VIDEO_PROVIDER
 from db.video_engine import (
     add_video_output,
+    create_scheduled_post,
     create_video_job,
     get_latest_output,
     get_video_job,
@@ -16,8 +17,6 @@ from db.video_engine import (
 )
 from pricing import GEN_AI, GEN_AI_HD, GEN_STUDIO, get_video_generation_cost
 from services.access_control import plan_rank
-from services.video_metadata import generate_post_metadata
-from services.video_prompt import build_ai_video_prompt
 from services.video_providers import (
     VideoGenRequest,
     ai_provider_available,
@@ -27,6 +26,12 @@ from services.video_providers import (
 )
 
 VIDEO_EXPORT_DIR = DATA_DIR / "video_engine" / "exports"
+
+_PLATFORM_STYLE = {
+    "tiktok": "TikTok native, punchy hook in first second, high energy, mobile-first",
+    "instagram_reels": "Instagram Reels aesthetic, polished, vibrant, scroll-stopping",
+    "youtube_shorts": "YouTube Shorts, clear subject, strong contrast, retention-focused",
+}
 
 PLATFORM_MAP = {
     "tiktok": "tiktok",
@@ -42,6 +47,74 @@ PLATFORM_MAP = {
 
 def normalize_platform(platform: str) -> str:
     return PLATFORM_MAP.get(platform, platform.lower().replace(" ", "_"))
+
+
+def build_ai_video_prompt(
+    user_prompt: str,
+    *,
+    platform: str = "tiktok",
+    duration_sec: int = 5,
+    hd: bool = False,
+) -> str:
+    style = _PLATFORM_STYLE.get(platform, "short-form vertical social video")
+    quality = (
+        "4K detail, cinematic lighting, shallow depth of field, smooth motion, "
+        "professional color grade, sharp focus, film grain subtle"
+        if hd
+        else "cinematic lighting, smooth camera motion, sharp focus, clean composition"
+    )
+    return (
+        f"{user_prompt.strip()}. "
+        f"Style: {style}. Duration feel: {duration_sec} seconds. "
+        f"{quality}. Vertical 9:16. No text overlays, no logos, no watermarks."
+    )[:950]
+
+
+def generate_post_metadata(
+    prompt: str,
+    *,
+    platform: str,
+    duration_sec: int,
+) -> tuple[str, str, str, str | None]:
+    """Returns title, caption, hashtags, error."""
+    if not (OPENAI_API_KEY or "").strip():
+        title = prompt.strip()[:60] or "MaByte"
+        return title, prompt[:280], "#MaByte #MaByteAI #shorts #reels", None
+    try:
+        from openai import OpenAI
+
+        client = OpenAI(api_key=OPENAI_API_KEY)
+        user = f"""
+Plattform: {platform}
+Länge: {duration_sec}s
+Konzept: {prompt}
+
+Erstelle kurz:
+TITLE: (max 80 Zeichen)
+CAPTION: (max 220 Zeichen, mit Emoji sparsam)
+HASHTAGS: (8-12 Tags, mit #)
+"""
+        r = client.chat.completions.create(
+            model=OPENAI_TEXT_MODEL,
+            messages=[
+                {"role": "system", "content": "Du bist Social Media Editor. Nur die drei Blöcke ausgeben."},
+                {"role": "user", "content": user},
+            ],
+            temperature=0.6,
+        )
+        text = (r.choices[0].message.content or "").strip()
+        title, caption, tags = prompt[:60], prompt[:200], "#MaByte #MaByteAI"
+        for line in text.splitlines():
+            u = line.strip()
+            if u.upper().startswith("TITLE:"):
+                title = u.split(":", 1)[-1].strip()[:80]
+            elif u.upper().startswith("CAPTION:"):
+                caption = u.split(":", 1)[-1].strip()[:280]
+            elif u.upper().startswith("HASHTAGS:"):
+                tags = u.split(":", 1)[-1].strip()[:400]
+        return title, caption, tags, None
+    except Exception as exc:
+        return prompt[:60], prompt[:200], "#mabyte", str(exc)
 
 
 def max_duration_for_plan(plan: str, studio_type: str, *, mode: str = GEN_AI) -> int:
@@ -73,6 +146,38 @@ def can_use_ai_video(plan: str) -> bool:
 
 def can_use_automation(plan: str, automation_unlocked: bool) -> bool:
     return plan_rank(plan) >= 2 and automation_unlocked
+
+
+def create_automation_rule(
+    username: str,
+    *,
+    plan: str,
+    automation_unlocked: bool,
+    platform: str,
+    scheduled_at: str,
+    frequency: str,
+    prompt_template: str,
+    hashtag_set: str,
+    auto_caption: bool,
+    auto_post: bool,
+    user_consent: bool,
+) -> tuple[dict | None, str | None]:
+    if not can_use_automation(plan, automation_unlocked):
+        return None, "Automation ab Grand-Plan + Unlock."
+    if auto_post and not user_consent:
+        return None, "Auto-Post erfordert ausdrückliche Zustimmung."
+    post = create_scheduled_post(
+        username,
+        platform=platform,
+        scheduled_at=scheduled_at,
+        frequency=frequency,
+        prompt_template=prompt_template,
+        hashtag_set=hashtag_set,
+        auto_caption=auto_caption,
+        auto_post=auto_post,
+        user_consent=user_consent,
+    )
+    return post, None
 
 
 def estimate_cost(

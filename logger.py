@@ -159,7 +159,7 @@ def log_exception(exc: BaseException, *, category: str = "system", page: str = "
         user=user,
     )
     try:
-        from db.errors import record_app_error
+        from db.app import record_app_error
         record_app_error(category, type(exc).__name__, str(exc), page=page, username=user)
     except Exception:
         pass

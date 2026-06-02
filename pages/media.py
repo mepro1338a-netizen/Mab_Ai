@@ -602,27 +602,18 @@ def run_video_generation(
         st.error(f"Fehler: {exc}")
 
 
-def render_video_ai():
+def render_creator_studio():
     from ui.video_engine_ui import render_video_engine_studio
 
+    fmt = str(st.session_state.get("creator_format") or "Shorts").strip().lower()
+    mode = "video" if fmt == "video" else "reel"
     user = get_user(username()) or {}
     render_video_engine_studio(
-        mode="video",
+        mode=mode,
         username=username(),
         tokens=get_tokens(),
         user=user,
     )
-
-
-def render_creator_studio():
-    from pages.creator_studio import render_creator_studio_page
-
-    render_creator_studio_page()
-
-
-def render_reels_studio():
-    st.session_state.creator_format = "Shorts"
-    render_creator_studio()
 
 
 def render_media(active_tool="reels"):

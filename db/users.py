@@ -16,7 +16,7 @@ from db.core import (
     row_to_dict,
     rows_to_dicts,
 )
-from db.audit import add_audit_log
+from db.app import add_audit_log
 
 def validate_password(password):
     if not password:
@@ -609,7 +609,7 @@ def secure_set_football_plan(actor, target, football_plan):
     if not ok:
         return False, msg
 
-    from db.football_billing import set_football_plan
+    from db.app import set_football_plan
 
     plan_key = str(football_plan or "none").strip().lower()
     if plan_key not in FOOTBALL_PLANS:

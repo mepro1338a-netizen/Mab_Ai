@@ -13,13 +13,14 @@ from database import get_user, save_usage, spend_tokens, update_tokens
 from db.video_engine import list_video_jobs
 from pricing import GEN_AI, GEN_AI_HD, GEN_STUDIO, cost_label, get_video_generation_cost
 from services.access_control import can_access_plan_feature, plan_rank
-from db.reel_jobs import list_queued_reel_jobs
+from db.app import list_queued_reel_jobs
 from services.reel_queue import enqueue_reel, process_reel_queue
-from services.reel_scheduler import process_due_schedules
+from services.reel_queue import process_due_schedules
 from services.video_engine import (
     can_generate_video,
     can_use_ai_video,
     can_use_automation,
+    create_automation_rule,
     engine_status,
     get_job_bundle,
     max_duration_for_plan,
@@ -27,7 +28,6 @@ from services.video_engine import (
 from services.video_providers import ai_provider_available
 from services.social_oauth import SOCIAL_PLATFORMS
 from services.social_publish import SocialPublishService
-from services.video_automation import create_automation_rule
 from ui.social_connections_ui import render_connected_accounts
 from ui.styles import inject_css
 
@@ -542,7 +542,7 @@ def _tab_queue(username: str, user: dict) -> None:
         cols = st.columns(2)
         with cols[0]:
             if job.get("status") == "failed" and st.button("Retry", key=f"retry_{jid}"):
-                from db.reel_jobs import update_reel_job
+                from db.app import update_reel_job
 
                 update_reel_job(jid, status="queued", error_message="")
                 st.rerun()
