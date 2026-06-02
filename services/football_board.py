@@ -802,7 +802,56 @@ def load_raw_football_matches(
         "stage": "raw_all",
         "banner": None,
         "raw_mode": True,
+        "pool_key": "raw_api_today",
+        "selected_source": "raw_api_today",
         "pools": {"raw": len(fixtures)},
+    }
+
+
+def compute_football_board_metrics(
+    payload: dict[str, Any],
+    match_result: dict[str, Any],
+    *,
+    show_raw: bool,
+    time_filter: str,
+    region_filter: str,
+) -> dict[str, Any]:
+    """Exact source counts for Football AI board diagnostics."""
+    premium_count = int(
+        payload.get("premium_count") or len(payload.get("all_premium") or payload.get("next_matches") or [])
+    )
+    raw_live_count = int(
+        payload.get("raw_live_count") or len(payload.get("raw_live") or [])
+    )
+    raw_today_count = int(
+        payload.get("raw_today_count") or len(payload.get("raw_today") or [])
+    )
+    raw_tomorrow_count = int(
+        payload.get("raw_tomorrow_count") or len(payload.get("raw_tomorrow") or [])
+    )
+    if show_raw:
+        raw_today_count = max(
+            raw_today_count,
+            int((match_result.get("pools") or {}).get("raw") or 0),
+        )
+    displayed_count = len(match_result.get("rows") or [])
+    selected_source = str(
+        match_result.get("selected_source")
+        or match_result.get("pool_key")
+        or match_result.get("stage")
+        or ("raw_api_today" if show_raw else "none")
+    )
+    return {
+        "premium_count": premium_count,
+        "raw_today_count": raw_today_count,
+        "raw_live_count": raw_live_count,
+        "raw_tomorrow_count": raw_tomorrow_count,
+        "displayed_count": displayed_count,
+        "selected_source": selected_source,
+        "time_filter": time_filter,
+        "region_filter": region_filter,
+        "view_mode": "raw_api" if show_raw else "premium",
+        "pools": match_result.get("pools") or {},
     }
 
 
@@ -983,6 +1032,7 @@ def load_football_matches(
             "stage": stage_id,
             "banner": banner,
             "pool_key": pool_key,
+            "selected_source": pool_key,
             "require_odds": require_odds,
             "pools": {k: len(v) for k, v in pools.items()},
         }
@@ -993,6 +1043,7 @@ def load_football_matches(
         "stage": "clean_empty_state",
         "banner": _FALLBACK_MESSAGES["filter_empty_upcoming"],
         "pool_key": "",
+        "selected_source": "clean_empty_state",
         "require_odds": True,
         "pools": {k: len(v) for k, v in pools.items()},
     }
