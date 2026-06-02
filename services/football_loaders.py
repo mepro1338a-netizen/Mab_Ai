@@ -269,7 +269,7 @@ def fetch_premium_dashboard(
     *,
     username: str,
     include_live: bool = False,
-    include_raw_today: bool = False,
+    include_raw: bool = False,
 ) -> dict[str, Any]:
     today_s, tomorrow_s = _local_today_tomorrow()
     errors: list[str] = []
@@ -283,13 +283,11 @@ def fetch_premium_dashboard(
         "raw_tomorrow_count": 0,
         "show_international_prompt": False,
         "include_live": include_live,
-        "include_raw_today": include_raw_today,
+        "include_raw": include_raw,
     }
     if not service.is_configured():
         return empty
 
-    # Page-load rule: default premium view should perform exactly ONE API request.
-    # Everything else (live/raw/analysis endpoints) must be on-demand.
     upcoming_rows = _fetch_rows(
         lambda: service.get_premium_fixtures_upcoming(
             days=FOOTBALL_UPCOMING_HORIZON_DAYS,
@@ -300,6 +298,18 @@ def fetch_premium_dashboard(
     live_rows: list[dict[str, Any]] = []
     if include_live:
         live_rows = _fetch_rows(lambda: service.get_live_fixtures(username=username), errors)
+
+    raw_today: list[dict[str, Any]] = []
+    raw_tomorrow: list[dict[str, Any]] = []
+    if include_raw:
+        raw_today = _fetch_rows(
+            lambda: service.get_fixtures_by_date(today_s, username=username),
+            errors,
+        )
+        raw_tomorrow = _fetch_rows(
+            lambda: service.get_fixtures_by_date(tomorrow_s, username=username),
+            errors,
+        )
 
     load_report = getattr(service, "_premium_load_report", None) or {}
     all_upcoming = filter_betting_core_fixtures(dedupe_fixtures(upcoming_rows))
@@ -337,10 +347,10 @@ def fetch_premium_dashboard(
         "show_international_prompt": show_intl, "show_live_intl_prompt": show_intl and not live_now,
         "non_premium_live_count": max(0, len(live_rows) - len(premium_live)),
         "include_live": include_live,
-        "include_raw_today": include_raw_today,
+        "include_raw": include_raw,
         "today_local": today_s,
         "tomorrow_fixtures": sort_fixtures_by_priority(tomorrow_premium),
         "raw_live": live_rows,
-        "raw_today": [],
-        "raw_tomorrow": [],
+        "raw_today": raw_today,
+        "raw_tomorrow": raw_tomorrow,
     }

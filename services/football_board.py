@@ -5,12 +5,10 @@ from typing import Any
 
 from config import (
     FOOTBALL_DEFAULT_SEASON,
-    FOOTBALL_UPCOMING_HORIZON_DAYS,
     football_plan_rank,
 )
 from services.football_loaders import (
     LIVE_STATUSES,
-    _local_today_tomorrow,
     dedupe_fixtures,
     fetch_premium_dashboard,
     filter_betting_core_fixtures,
@@ -21,52 +19,7 @@ from services.football_loaders import (
 from services.football_service import FootballAPIError, FootballService, fixture_team_names
 
 # ---------------------------------------------------------------------------
-# Region filters (minimal, fixed set)
-# ---------------------------------------------------------------------------
-
-REGION_FILTERS: tuple[tuple[str, str], ...] = (
-    ("alle", "Alle"),
-    ("deutschland", "Deutschland"),
-    ("uefa", "UEFA"),
-    ("topligen", "Topligen"),
-    ("intl", "WM & Euro"),
-)
-
-_REGION_IDS: dict[str, frozenset[int]] = {
-    "deutschland": frozenset({78, 79, 81}),
-    "uefa": frozenset({2, 3, 848}),
-    "topligen": frozenset({39, 140, 135, 61}),
-    "intl": frozenset({1, 4}),
-}
-
-LEAGUE_DISPLAY_ORDER: tuple[int, ...] = (
-    78, 79, 81, 2, 3, 848, 39, 140, 135, 61, 1, 4,
-)
-
-
-def filter_fixtures_by_region(
-    fixtures: list[dict[str, Any]],
-    *,
-    region_filter: str,
-) -> list[dict[str, Any]]:
-    key = (region_filter or "alle").lower().strip()
-    if key in ("", "alle"):
-        return list(fixtures or [])
-    ids = _REGION_IDS.get(key)
-    if not ids:
-        return list(fixtures or [])
-    out: list[dict[str, Any]] = []
-    for fx in fixtures or []:
-        try:
-            lid = int((fx.get("league") or {}).get("id") or 0)
-        except (TypeError, ValueError):
-            continue
-        if lid in ids:
-            out.append(fx)
-    return out
-
-# ---------------------------------------------------------------------------
-# Odds (from football_odds)
+# Odds
 # ---------------------------------------------------------------------------
 
 
@@ -667,10 +620,147 @@ def fetch_board_payload(
     *,
     username: str,
     include_live: bool = False,
+    include_raw: bool = False,
 ) -> dict[str, Any]:
-    # Default premium page-load must do ONE request (premium upcoming, cached).
-    # Live fixtures are optional and only loaded when the user opens the Live tab.
-    return fetch_premium_dashboard(service, username=username, include_live=include_live)
+    return fetch_premium_dashboard(
+        service,
+        username=username,
+        include_live=include_live,
+        include_raw=include_raw,
+    )
+
+
+MSG_NO_PREMIUM = (
+    "Heute keine Topspiele gefunden. Es werden verfügbare Spiele angezeigt."
+)
+MSG_NO_MATCHES = "Aktuell keine Spiele verfügbar. Bitte später erneut prüfen."
+
+
+def _premium_fixtures_for_time(payload: dict[str, Any], time_filter: str) -> list[dict[str, Any]]:
+    today_s = str(payload.get("today") or payload.get("today_local") or "")
+    tf = (time_filter or "heute").lower()
+    if tf == "live":
+        pool = list(payload.get("live_now") or [])
+    elif tf == "morgen":
+        pool = list(payload.get("tomorrow_fixtures") or [])
+    else:
+        pool = list(payload.get("next_matches") or [])
+        if tf == "heute":
+            pool = [fx for fx in pool if _is_live(fx) or _fixture_date(fx) == today_s]
+    return filter_betting_core_fixtures(pool)
+
+
+def _raw_fixtures_for_time(payload: dict[str, Any], time_filter: str) -> list[dict[str, Any]]:
+    today_s = str(payload.get("today") or payload.get("today_local") or "")
+    tf = (time_filter or "heute").lower()
+    raw_live = list(payload.get("raw_live") or [])
+    raw_today = list(payload.get("raw_today") or [])
+    raw_tomorrow = list(payload.get("raw_tomorrow") or [])
+    if tf == "live":
+        pool = raw_live
+    elif tf == "morgen":
+        pool = raw_tomorrow
+    else:
+        pool = dedupe_fixtures(raw_live + raw_today)
+        if tf == "heute":
+            pool = [fx for fx in pool if _is_live(fx) or _fixture_date(fx) == today_s]
+    return sort_fixtures_by_priority(filter_blocked_fixtures(pool))
+
+
+def _log_board_metrics(metrics: dict[str, Any]) -> None:
+    try:
+        from logger import log_info
+
+        log_info(
+            "Football board: "
+            f"premium={metrics.get('premium_count')} "
+            f"raw={metrics.get('raw_count')} "
+            f"displayed={metrics.get('displayed_count')} "
+            f"source={metrics.get('source')}",
+            category="football",
+        )
+    except Exception:
+        pass
+
+
+def resolve_football_board(
+    payload: dict[str, Any],
+    service: FootballService,
+    *,
+    view_mode: str,
+    time_filter: str,
+    username: str,
+    session_plan: str,
+    max_rows: int = 48,
+) -> dict[str, Any]:
+    """Minimal board resolver: premium or raw, with raw fallback when premium empty."""
+    _ = service
+    vm = "raw" if str(view_mode).lower() == "raw" else "premium"
+    tf = str(time_filter or "heute").lower()
+
+    premium_count = int(
+        payload.get("premium_count") or len(payload.get("next_matches") or [])
+    )
+    raw_count = (
+        len(payload.get("raw_live") or [])
+        + len(payload.get("raw_today") or [])
+        + len(payload.get("raw_tomorrow") or [])
+    )
+
+    source = "premium"
+    banner: str | None = None
+    fixtures: list[dict[str, Any]] = []
+
+    if vm == "raw":
+        fixtures = _raw_fixtures_for_time(payload, tf)
+        source = "raw"
+    else:
+        fixtures = _premium_fixtures_for_time(payload, tf)
+        if not fixtures:
+            fixtures = filter_betting_core_fixtures(
+                list(payload.get("next_matches") or [])
+            )
+            source = "premium_upcoming"
+            if fixtures and tf == "heute":
+                banner = MSG_NO_PREMIUM
+
+    rows = build_basic_board_rows(fixtures[:max_rows])
+    displayed_count = len(rows)
+
+    if vm == "premium" and displayed_count == 0 and raw_count > 0:
+        fixtures = _raw_fixtures_for_time(payload, tf)
+        rows = build_raw_board_rows(
+            fixtures[:max_rows],
+            service,
+            username=username,
+            session_plan=session_plan,
+            cache={},
+            max_enrich=max_rows,
+        )
+        source = "raw_fallback"
+        banner = MSG_NO_PREMIUM
+        displayed_count = len(rows)
+
+    if displayed_count == 0:
+        banner = MSG_NO_MATCHES
+
+    metrics = {
+        "premium_count": premium_count,
+        "raw_count": raw_count,
+        "displayed_count": displayed_count,
+        "source": source,
+        "time_filter": tf,
+        "view_mode": vm,
+    }
+    _log_board_metrics(metrics)
+
+    return {
+        "rows": rows,
+        "metrics": metrics,
+        "banner": banner,
+        "source": source,
+        "raw_mode": vm == "raw" or source == "raw_fallback",
+    }
 
 
 def _fixture_date(fixture: dict[str, Any]) -> str:
@@ -680,70 +770,6 @@ def _fixture_date(fixture: dict[str, Any]) -> str:
 def _is_live(fixture: dict[str, Any]) -> bool:
     st = str(((fixture.get("fixture") or {}).get("status") or {}).get("short") or "")
     return st in LIVE_STATUSES
-
-
-def collect_fixtures_for_filters(
-    payload: dict[str, Any],
-    *,
-    time_filter: str,
-    region_filter: str,
-) -> list[dict[str, Any]]:
-    """Premium fixtures only — strict ID whitelist + minimal region filter."""
-    today_s = str(payload.get("today") or payload.get("today_local") or "")
-
-    if time_filter == "live":
-        pool = list(payload.get("live_now") or [])
-    elif time_filter == "morgen":
-        pool = list(payload.get("tomorrow_fixtures") or [])
-    elif time_filter == "upcoming":
-        pool = list(payload.get("next_matches") or [])
-    elif time_filter == "alle":
-        pool = dedupe_fixtures(
-            list(payload.get("live_now") or [])
-            + list(payload.get("next_matches") or payload.get("all_premium") or [])
-        )
-    else:
-        # heute: nur heutige Topspiele (+ laufende)
-        pool = list(payload.get("next_matches") or payload.get("all_premium") or [])
-        pool = [
-            fx
-            for fx in pool
-            if _is_live(fx) or _fixture_date(fx) == today_s
-        ]
-
-    pool = filter_betting_core_fixtures(pool)
-    pool = filter_fixtures_by_region(pool, region_filter=region_filter)
-    return sort_fixtures_by_priority(pool)
-
-
-def collect_raw_fixtures_for_filters(
-    payload: dict[str, Any],
-    *,
-    time_filter: str,
-) -> list[dict[str, Any]]:
-    """All API fixtures for time window — youth/reserve names blocked only."""
-    today_s = str(payload.get("today") or payload.get("today_local") or "")
-    raw_live = list(payload.get("raw_live") or [])
-    raw_today = list(payload.get("raw_today") or [])
-    raw_tomorrow = list(payload.get("raw_tomorrow") or [])
-
-    if time_filter == "live":
-        pool = raw_live
-    elif time_filter == "morgen":
-        pool = raw_tomorrow
-    elif time_filter == "alle":
-        pool = dedupe_fixtures(raw_live + raw_today + raw_tomorrow)
-    else:
-        pool = dedupe_fixtures(raw_live + raw_today)
-        if time_filter == "heute":
-            pool = [
-                fx
-                for fx in pool
-                if _is_live(fx) or _fixture_date(fx) == today_s
-            ]
-
-    pool = filter_blocked_fixtures(pool)
-    return sort_fixtures_by_priority(pool)
 
 
 def build_raw_board_rows(
@@ -778,185 +804,6 @@ def build_raw_board_rows(
     return rows
 
 
-def load_raw_football_matches(
-    payload: dict[str, Any],
-    service: FootballService,
-    *,
-    username: str,
-    session_plan: str,
-    mode: str,
-    cache: dict[int, dict[str, Any]],
-    max_enrich: int = 48,
-) -> dict[str, Any]:
-    """Raw API fixtures for today only (fixtures?date=today) — no premium filter."""
-    _ = mode
-    today_s = str(payload.get("today") or payload.get("today_local") or "") or _local_today_tomorrow()[0]
-    # Raw is on-demand (not loaded on page load).
-    fixtures = filter_blocked_fixtures(service.get_fixtures_by_date(today_s, username=username))
-    fixtures = sort_fixtures_by_priority(fixtures)
-    rows = build_raw_board_rows(
-        fixtures,
-        service,
-        username=username,
-        session_plan=session_plan,
-        cache=cache,
-        max_enrich=max_enrich,
-    )
-    return {
-        "fixtures": fixtures[:max_enrich],
-        "rows": rows,
-        "stage": "raw_all",
-        "banner": None,
-        "raw_mode": True,
-        "pool_key": "raw_api_today",
-        "selected_source": "raw_api_today",
-        "pools": {"raw": len(fixtures)},
-    }
-
-
-def compute_football_board_metrics(
-    payload: dict[str, Any],
-    match_result: dict[str, Any],
-    *,
-    show_raw: bool,
-    time_filter: str,
-    region_filter: str,
-) -> dict[str, Any]:
-    """Exact source counts for Football AI board diagnostics."""
-    premium_count = int(
-        payload.get("premium_count") or len(payload.get("all_premium") or payload.get("next_matches") or [])
-    )
-    raw_live_count = int(
-        payload.get("raw_live_count") or len(payload.get("raw_live") or [])
-    )
-    raw_today_count = int(
-        payload.get("raw_today_count") or len(payload.get("raw_today") or [])
-    )
-    raw_tomorrow_count = int(
-        payload.get("raw_tomorrow_count") or len(payload.get("raw_tomorrow") or [])
-    )
-    if show_raw:
-        raw_today_count = max(
-            raw_today_count,
-            int((match_result.get("pools") or {}).get("raw") or 0),
-        )
-    displayed_count = len(match_result.get("rows") or [])
-    selected_source = str(
-        match_result.get("selected_source")
-        or match_result.get("pool_key")
-        or match_result.get("stage")
-        or ("raw_api_today" if show_raw else "none")
-    )
-    return {
-        "premium_count": premium_count,
-        "raw_today_count": raw_today_count,
-        "raw_live_count": raw_live_count,
-        "raw_tomorrow_count": raw_tomorrow_count,
-        "displayed_count": displayed_count,
-        "selected_source": selected_source,
-        "time_filter": time_filter,
-        "region_filter": region_filter,
-        "view_mode": "raw_api" if show_raw else "premium",
-        "pools": match_result.get("pools") or {},
-    }
-
-
-_FALLBACK_MESSAGES: dict[str, str] = {
-    "today_premium_with_odds": "Heute keine Spiele – nächste Topspiele.",
-    "tomorrow_premium_with_odds": "Keine Spiele im Filter – nächste Topspiele.",
-    "upcoming_premium_with_odds": f"Nächste Topspiele (kommende {FOOTBALL_UPCOMING_HORIZON_DAYS} Tage).",
-    "today_premium_schedule": "Heute keine Spiele – nächste Topspiele.",
-    "tomorrow_premium_schedule": "Keine Spiele im Filter – nächste Topspiele.",
-    "upcoming_premium_schedule": f"Nächste Topspiele (kommende {FOOTBALL_UPCOMING_HORIZON_DAYS} Tage).",
-    "live_empty": "Keine Live-Topspiele – nächste Topspiele.",
-    "filter_empty_upcoming": (
-        "Aktuell keine Spiele im gewählten Filter. Nächste Topspiele werden geladen."
-    ),
-    "api_plan_no_betting": "Quoten aktuell nicht verfügbar.",
-}
-
-
-def _fallback_chain(
-    mode: str,
-    *,
-    today_empty: bool = False,
-    live_empty: bool = True,
-) -> list[tuple[str, str, bool]]:
-    """Return (stage_id, pool_key, require_odds) in priority order."""
-    heute_when_empty = [
-        ("upcoming_premium_with_odds", "upcoming", True),
-        ("upcoming_premium_schedule", "upcoming", False),
-    ]
-    heute_default = [
-        ("today_premium_with_odds", "today", True),
-        ("today_premium_schedule", "today", False),
-        ("upcoming_premium_with_odds", "upcoming", True),
-        ("upcoming_premium_schedule", "upcoming", False),
-    ]
-    chains: dict[str, list[tuple[str, str, bool]]] = {
-        "upcoming": [
-            ("upcoming_premium_with_odds", "upcoming", True),
-            ("upcoming_premium_schedule", "upcoming", False),
-        ],
-        "live": [
-            ("live_premium_with_odds", "live", True),
-            ("live_premium_schedule", "live", False),
-            ("upcoming_premium_with_odds", "upcoming", True),
-            ("upcoming_premium_schedule", "upcoming", False),
-        ],
-        "heute": heute_when_empty if (today_empty and live_empty) else heute_default,
-        "morgen": [
-            ("tomorrow_premium_with_odds", "tomorrow", True),
-            ("today_premium_with_odds", "today", True),
-            ("upcoming_premium_with_odds", "upcoming", True),
-            ("tomorrow_premium_schedule", "tomorrow", False),
-            ("today_premium_schedule", "today", False),
-            ("upcoming_premium_schedule", "upcoming", False),
-        ],
-        "alle": [
-            ("live_premium_with_odds", "live", True),
-            ("today_premium_with_odds", "today", True),
-            ("tomorrow_premium_with_odds", "tomorrow", True),
-            ("upcoming_premium_with_odds", "upcoming", True),
-            ("today_premium_schedule", "today", False),
-            ("tomorrow_premium_schedule", "tomorrow", False),
-            ("upcoming_premium_schedule", "upcoming", False),
-        ],
-    }
-    return chains.get((mode or "upcoming").lower(), chains["upcoming"])
-
-
-def build_board_rows(
-    fixtures: list[dict[str, Any]],
-    service: FootballService,
-    *,
-    username: str,
-    session_plan: str,
-    cache: dict[int, dict[str, Any]],
-    max_enrich: int = 24,
-    allow_no_odds: bool = False,
-    schedule_only: bool = False,
-) -> list[dict[str, Any]]:
-    rank = football_plan_rank(session_plan or "none")
-    if rank < 2:
-        return build_basic_board_rows(fixtures[:max_enrich])
-
-    rows: list[dict[str, Any]] = []
-    for fx in fixtures[:max_enrich]:
-        rows.append(
-            enrich_fixture_row(
-                service,
-                fx,
-                username=username,
-                rank=rank,
-                cache=cache,
-                # Strict: no odds/predictions on page load. Analysis endpoints are on-demand.
-                schedule_only=True,
-            )
-        )
-    return rows
-
-
 def build_basic_board_rows(fixtures: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Starter plan — premium fixtures without odds API."""
     rows: list[dict[str, Any]] = []
@@ -975,103 +822,6 @@ def build_basic_board_rows(fixtures: list[dict[str, Any]]) -> list[dict[str, Any
             }
         )
     return rows
-
-
-def load_football_matches(
-    payload: dict[str, Any],
-    service: FootballService,
-    *,
-    username: str,
-    session_plan: str,
-    mode: str,
-    region_filter: str,
-    cache: dict[int, dict[str, Any]],
-    max_enrich: int = 24,
-) -> dict[str, Any]:
-    """
-    Premium fallback pipeline — never return empty while premium fixtures exist.
-    """
-    mode = (mode or "upcoming").lower().strip()
-
-    def _build_pools(region: str) -> dict[str, list[dict[str, Any]]]:
-        return {
-            "live": collect_fixtures_for_filters(payload, time_filter="live", region_filter=region),
-            "today": collect_fixtures_for_filters(payload, time_filter="heute", region_filter=region),
-            "tomorrow": collect_fixtures_for_filters(payload, time_filter="morgen", region_filter=region),
-            "upcoming": collect_fixtures_for_filters(payload, time_filter="upcoming", region_filter=region),
-        }
-
-    pools = _build_pools(region_filter)
-    region_banner: str | None = None
-    if region_filter not in ("", "alle") and not any(pools.values()):
-        alt = _build_pools("alle")
-        if any(alt.values()):
-            pools = alt
-            region_banner = "Keine Spiele in dieser Region — alle Top-Ligen."
-
-    today_empty = not pools.get("today")
-    live_empty = not pools.get("live")
-    chain = _fallback_chain(mode, today_empty=today_empty, live_empty=live_empty)
-
-    enrich_limit = 48 if any(p == "upcoming" for _, p, _ in chain[:3]) else max_enrich
-
-    for stage_id, pool_key, require_odds in chain:
-        fixtures = pools.get(pool_key) or []
-        if not fixtures:
-            continue
-
-        row_limit = enrich_limit if pool_key == "upcoming" else max_enrich
-        rows = build_board_rows(
-            fixtures,
-            service,
-            username=username,
-            session_plan=session_plan,
-            cache=cache,
-            max_enrich=row_limit,
-            allow_no_odds=True,
-            schedule_only=True,
-        )
-        if not rows:
-            continue
-
-        primary_stage = chain[0][0] if chain else ""
-        banner = region_banner
-        if stage_id != primary_stage:
-            banner = banner or _FALLBACK_MESSAGES.get(stage_id)
-        if not banner:
-            banner = _FALLBACK_MESSAGES.get(stage_id) or _FALLBACK_MESSAGES["api_plan_no_betting"]
-
-        return {
-            "fixtures": fixtures[:row_limit],
-            "rows": rows,
-            "stage": stage_id,
-            "banner": banner,
-            "pool_key": pool_key,
-            "selected_source": pool_key,
-            "require_odds": require_odds,
-            "pools": {k: len(v) for k, v in pools.items()},
-        }
-
-    api_errors = [str(e) for e in (payload.get("errors") or []) if str(e).strip()]
-    banner = _FALLBACK_MESSAGES["filter_empty_upcoming"]
-    if api_errors:
-        banner = api_errors[0]
-    elif int(payload.get("premium_count") or 0) <= 0:
-        banner = (
-            "Keine Topspiele geladen. API-Key oder Saison prüfen — "
-            "Bundesliga, UEFA & WM erscheinen nach erfolgreichem Abruf."
-        )
-
-    return {
-        "fixtures": [],
-        "rows": [],
-        "stage": "clean_empty_state",
-        "banner": banner,
-        "pool_key": "",
-        "selected_source": "clean_empty_state",
-        "require_odds": True,
-        "pools": {k: len(v) for k, v in pools.items()},
-    }
 
 
 def enrich_fixture_row(

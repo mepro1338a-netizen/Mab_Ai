@@ -1,49 +1,22 @@
-"""
-MaByte SaaS OS — zentrale Sidebar-Navigation (via ui.py → render_sidebar).
-"""
+"""MaByte — flat sidebar navigation (single source of truth)."""
 from __future__ import annotations
 
-# (Sektion, [(Label, page_key), ...]) — Reihenfolge = Priorität für B2B-Nutzer
-SIDEBAR_SECTIONS: list[tuple[str, list[tuple[str, str]]]] = [
-    (
-        "Platform",
-        [
-            ("AI Dashboard", "home"),
-            ("AI Chat", "chat"),
-        ],
-    ),
-    (
-        "Intelligence",
-        [
-            ("Football AI", "football"),
-        ],
-    ),
-    (
-        "Create",
-        [
-            ("Image", "image"),
-            ("Video", "video"),
-            ("Music", "music"),
-            ("Code", "coding"),
-        ],
-    ),
-    (
-        "Workspace",
-        [
-            ("Projects", "projects"),
-            ("Automations", "automation_lab"),
-        ],
-    ),
-    (
-        "Account",
-        [
-            ("Profile", "dashboard"),
-            ("Premium", "premium"),
-        ],
-    ),
+SIDEBAR_NAV_ITEMS: list[tuple[str, str]] = [
+    ("Dashboard", "home"),
+    ("Chat", "chat"),
+    ("Football AI", "football"),
+    ("Image", "image"),
+    ("Video", "video"),
+    ("Music", "music"),
+    ("Code", "coding"),
+    ("Projects", "projects"),
+    ("Automations", "automation_lab"),
+    ("Profile", "dashboard"),
+    ("Premium", "premium"),
 ]
 
 LEGACY_PAGE_ALIASES: dict[str, str] = {
     "reels": "video",
     "creator": "video",
+    "automations": "automation_lab",
 }
