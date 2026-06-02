@@ -28,7 +28,7 @@ Railway prüft: `GET /_stcore/health` (Streamlit built-in)
 Lokal (wenn App läuft):
 
 ```bash
-python healthcheck.py --http
+python logger.py --healthcheck --http
 ```
 
 ## Pflicht-ENV (Production)

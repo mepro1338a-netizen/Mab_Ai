@@ -272,7 +272,7 @@ def master_button_css() -> str:
 
 def inject_global_ui(*, force: bool = False) -> None:
     """Inject on every run — Streamlit rebuilds the page each rerun."""
-    from ui.b2b_theme import MB_THEME_VARS, streamlit_force_dark_css
+    from ui.styles import MB_THEME_VARS, streamlit_force_dark_css
     from ui.premium_foundation import BETA_GLOBAL_CSS
     from ui.prompt_ui import MABYTE_PROMPT_CSS
     from ui.sidebar import sidebar_master_css

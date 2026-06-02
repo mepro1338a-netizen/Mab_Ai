@@ -334,6 +334,6 @@ else:
     st.session_state.page = "home"
     st.rerun()
 
-from ui.b2b_theme import inject_theme_lock
+from ui.styles import inject_theme_lock
 
 inject_theme_lock()

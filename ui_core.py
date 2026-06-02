@@ -4,7 +4,7 @@ from pathlib import Path
 import streamlit as st
 
 from ui.app_shell import inject_global_ui
-from ui.b2b_theme import MB_APP_BACKGROUND
+from ui.styles import MB_APP_BACKGROUND
 
 
 ASSET_DIR = Path("assets")
