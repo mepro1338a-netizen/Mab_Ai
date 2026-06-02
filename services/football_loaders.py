@@ -1,0 +1,317 @@
+"""Fixture loading, filtering, and dashboard assembly for football UI."""
+from __future__ import annotations
+
+from datetime import datetime, timedelta
+from typing import Any, Callable
+from zoneinfo import ZoneInfo
+
+from config import (
+    FOOTBALL_BETTING_CORE_LEAGUE_IDS,
+    FOOTBALL_LEAGUE_META,
+    FOOTBALL_LEAGUE_PRIORITY,
+    FOOTBALL_LEAGUE_TIER,
+    FOOTBALL_LIVE_SORT_PRIORITY,
+    FOOTBALL_PREMIUM_LEAGUE_IDS,
+    FOOTBALL_UPCOMING_HORIZON_DAYS,
+)
+from services.football_service import FootballAPIError, FootballService
+
+_FB_TZ = ZoneInfo("Europe/Berlin")
+LIVE_STATUSES = frozenset({"1H", "HT", "2H", "ET", "P", "BT", "LIVE", "INT"})
+FINISHED_STATUSES = frozenset({"FT", "AET", "PEN", "AWD", "WO"})
+_TIER_SCORE = {0: 50_000, 1: 40_000, 2: 30_000, 3: 20_000, 4: 5_000, 5: 1_000}
+_BLOCKED = (
+    "u17", "u-17", " u17", "u19", "u21", "u23", "u20", "u18", "youth", "women",
+    "woman", "feminin", "frauen", "reserve", " ii", "amateur", " usl",
+    "canadian premier", "canada premier", "sudan", "queensland", "tasmania",
+    "regionalliga", "3. liga", "tercera", "fourth", "fourth division",
+    "development league", "premier league 2", "feminine", " frauen", "npl",
+    " 2 team", "reserve league",
+)
+
+
+def _league_id(fixture: dict[str, Any]) -> int | None:
+    try:
+        return int((fixture.get("league") or {}).get("id") or 0) or None
+    except (TypeError, ValueError):
+        return None
+
+
+def is_blocked_league_name(name: str) -> bool:
+    low = (name or "").lower()
+    return any(part in low for part in _BLOCKED)
+
+
+def league_tier(league_id: int | None) -> int:
+    return 99 if league_id is None else int(FOOTBALL_LEAGUE_TIER.get(int(league_id), 99))
+
+
+def is_premium_league(league_id: int | None) -> bool:
+    return bool(league_id) and int(league_id) in FOOTBALL_PREMIUM_LEAGUE_IDS
+
+
+def _names_match_premium(api_name: str, meta_name: str) -> bool:
+    api, meta = (api_name or "").lower().strip(), (meta_name or "").lower().strip()
+    if not api or not meta or (api != meta and meta not in api and api not in meta):
+        return False
+    if meta == "premier league" and "championship" in api:
+        return False
+    if meta == "1. bundesliga" and api.startswith("2."):
+        return False
+    if meta == "2. bundesliga" and "1." in api and "2." not in api:
+        return False
+    return True
+
+
+def _country_matches_premium(api_country: str, meta_country: str) -> bool:
+    api, meta = (api_country or "").lower().strip(), (meta_country or "").lower().strip()
+    if not meta or not api or api == meta:
+        return True
+    groups = ({"germany", "deutschland"}, {"england", "uk"}, {"netherlands", "holland"})
+    return any(meta in g and api in g for g in groups)
+
+
+def is_premium_league_match(league_id: int | None, league_name: str = "", country: str = "") -> bool:
+    low = (league_name or "").lower().strip()
+    if is_blocked_league_name(league_name):
+        return False
+    if any(x in low for x in ("concacaf", "afc ", " caf ", "copa libertadores", "copa sudamericana")):
+        return False
+    if league_id and int(league_id) in FOOTBALL_PREMIUM_LEAGUE_IDS:
+        return True
+    if not low:
+        return False
+    api_country = (country or "").lower().strip()
+    for lid, meta in FOOTBALL_LEAGUE_META.items():
+        if int(lid) not in FOOTBALL_PREMIUM_LEAGUE_IDS:
+            continue
+        meta_name, meta_country = str(meta.get("name") or ""), str(meta.get("country") or "")
+        if not _names_match_premium(low, meta_name) or not _country_matches_premium(api_country, meta_country):
+            continue
+        if "champions league" in low and "uefa" not in low:
+            if meta_country.lower() != "europe" or api_country not in ("europe", ""):
+                continue
+        return True
+    return False
+
+
+def filter_blocked_fixtures(fixtures: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [
+        fx for fx in fixtures or []
+        if not is_blocked_league_name(str((fx.get("league") or {}).get("name") or ""))
+    ]
+
+
+def filter_premium_fixtures(fixtures: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    for fx in fixtures or []:
+        league = fx.get("league") or {}
+        try:
+            lid = int(league.get("id") or 0) or None
+        except (TypeError, ValueError):
+            lid = None
+        if is_premium_league_match(lid, str(league.get("name") or ""), str(league.get("country") or "")):
+            out.append(fx)
+    return out
+
+
+def relevance_score(*, league_id: int | None, live: bool = False, finished: bool = False) -> int:
+    tier = league_tier(league_id)
+    prio = int(FOOTBALL_LEAGUE_PRIORITY.get(int(league_id or 0), 99))
+    score = _TIER_SCORE.get(tier, 0) + (60_000 if live else 0 if finished else 8_000)
+    return score - prio * 50 - tier * 10
+
+
+def is_featured_league(league_id: int | None) -> bool:
+    return bool(league_id) and league_tier(league_id) <= 2
+
+
+def is_betting_core_fixture(fixture: dict[str, Any]) -> bool:
+    league = fixture.get("league") or {}
+    name, country = str(league.get("name") or "").lower(), str(league.get("country") or "").lower()
+    if is_blocked_league_name(name) or any(p in f"{name} {country}" for p in _BLOCKED):
+        return False
+    if "serie a" in name and country in ("brazil", "brasil"):
+        return False
+    return _league_id(fixture) in FOOTBALL_BETTING_CORE_LEAGUE_IDS
+
+
+def filter_betting_core_fixtures(fixtures: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [fx for fx in fixtures or [] if is_betting_core_fixture(fx)]
+
+
+def _local_today_tomorrow() -> tuple[str, str]:
+    today = datetime.now(_FB_TZ).date()
+    return today.isoformat(), (today + timedelta(days=1)).isoformat()
+
+
+def _fixture_date(fixture: dict[str, Any]) -> str:
+    raw = str((fixture.get("fixture") or {}).get("date") or "")
+    if not raw:
+        return ""
+    try:
+        dt = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=_FB_TZ)
+        return dt.astimezone(_FB_TZ).date().isoformat()
+    except ValueError:
+        return raw[:10]
+
+
+def _status_short(fixture: dict[str, Any]) -> str:
+    return str(((fixture.get("fixture") or {}).get("status") or {}).get("short") or "NS")
+
+
+def _elapsed(fixture: dict[str, Any]) -> int | None:
+    val = ((fixture.get("fixture") or {}).get("status") or {}).get("elapsed")
+    try:
+        return int(val) if val is not None else None
+    except (TypeError, ValueError):
+        return None
+
+
+def dedupe_fixtures(fixtures: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    seen: set[int] = set()
+    out: list[dict[str, Any]] = []
+    for fx in fixtures or []:
+        fid = (fx.get("fixture") or {}).get("id")
+        if not fid:
+            continue
+        try:
+            key = int(fid)
+        except (TypeError, ValueError):
+            continue
+        if key not in seen:
+            seen.add(key)
+            out.append(fx)
+    return out
+
+
+def sort_fixtures_priority(fixtures: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    def _key(fx: dict[str, Any]) -> tuple:
+        lid = _league_id(fx)
+        tier = league_tier(lid)
+        st = _status_short(fx)
+        live, finished = st in LIVE_STATUSES, st in FINISHED_STATUSES
+        live_prio = int(FOOTBALL_LIVE_SORT_PRIORITY.get(int(lid or 0), 500 + tier * 10))
+        return (
+            0 if live else 1, live_prio,
+            int(FOOTBALL_LEAGUE_PRIORITY.get(lid or 0, 99)),
+            -relevance_score(league_id=lid, live=live, finished=finished),
+            str((fx.get("fixture") or {}).get("date") or ""),
+        )
+    return sorted(fixtures or [], key=_key)
+
+
+def sort_fixtures_by_priority(fixtures: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return sort_fixtures_priority(fixtures)
+
+
+def parse_match_card(fixture: dict[str, Any]) -> dict[str, Any]:
+    meta, teams = fixture.get("fixture") or {}, fixture.get("teams") or {}
+    goals, league = fixture.get("goals") or {}, fixture.get("league") or {}
+    home, away = teams.get("home") or {}, teams.get("away") or {}
+    status = _status_short(fixture)
+    gh, ga = goals.get("home"), goals.get("away")
+    score = f"{gh} : {ga}" if gh is not None and ga is not None else ("– : –" if status in LIVE_STATUSES else "vs")
+    minute = _elapsed(fixture)
+    status_label = f"{status} {minute}'" if status in LIVE_STATUSES and minute is not None else status
+    date_raw = str(meta.get("date") or "")
+    try:
+        lid_int = int(league.get("id")) if league.get("id") is not None else None
+    except (TypeError, ValueError):
+        lid_int = None
+    live, finished = status in LIVE_STATUSES, status in FINISHED_STATUSES
+    return {
+        "fixture_id": meta.get("id"), "home": home.get("name") or "Home", "away": away.get("name") or "Away",
+        "home_logo": home.get("logo") or "", "away_logo": away.get("logo") or "", "score": score,
+        "status": status, "status_label": status_label, "minute": minute,
+        "league": league.get("name") or "", "league_id": league.get("id"), "league_logo": league.get("logo") or "",
+        "country": league.get("country") or "", "date": _fixture_date(fixture),
+        "time": date_raw[11:16] if "T" in date_raw else "",
+        "venue": (meta.get("venue") or {}).get("name") or "", "city": (meta.get("venue") or {}).get("city") or "",
+        "live": live, "finished": finished, "tier": league_tier(lid_int),
+        "featured": is_featured_league(lid_int), "premium": is_premium_league(lid_int),
+        "relevance_score": relevance_score(league_id=lid_int, live=live, finished=finished),
+    }
+
+
+def classify_fixtures(
+    fixtures: list[dict[str, Any]], *, today: str, tomorrow: str,
+) -> dict[str, list[dict[str, Any]]]:
+    live_now, later_today, finished_today, tomorrow_list = [], [], [], []
+    for fx in fixtures:
+        d, st = _fixture_date(fx), _status_short(fx)
+        if st in LIVE_STATUSES:
+            live_now.append(fx)
+        elif d == tomorrow:
+            tomorrow_list.append(fx)
+        elif d == today:
+            (finished_today if st in FINISHED_STATUSES else later_today).append(fx)
+    return {
+        "live_now": sort_fixtures_by_priority(live_now),
+        "later_today": sort_fixtures_by_priority(later_today),
+        "finished_today": sort_fixtures_by_priority(finished_today),
+        "tomorrow": sort_fixtures_by_priority(tomorrow_list),
+    }
+
+
+def _fetch_rows(fn: Callable[[], list[dict[str, Any]]], errors: list[str]) -> list[dict[str, Any]]:
+    try:
+        return fn()
+    except FootballAPIError as exc:
+        errors.append(str(exc))
+        return []
+
+
+def fetch_premium_dashboard(
+    service: FootballService, *, username: str, include_all_leagues: bool = False,
+) -> dict[str, Any]:
+    today_s, tomorrow_s = _local_today_tomorrow()
+    errors: list[str] = []
+    empty = {
+        "configured": False, "today": today_s,
+        "errors": ["API-Football ist nicht konfiguriert (FOOTBALL_API_KEY)."],
+        "top_matches": [], "live_now": [], "all_premium": [], "next_matches": [], "extended": [],
+        "premium_count": 0, "raw_live_count": 0, "show_international_prompt": False,
+        "include_all_leagues": include_all_leagues,
+    }
+    if not service.is_configured():
+        return empty
+
+    live_rows = _fetch_rows(lambda: service.get_live_fixtures(username=username), errors)
+    today_rows = _fetch_rows(lambda: service.get_fixtures_by_date(today_s, username=username), errors)
+    tomorrow_rows = _fetch_rows(lambda: service.get_fixtures_by_date(tomorrow_s, username=username), errors)
+    upcoming_rows = _fetch_rows(
+        lambda: service.get_premium_fixtures_upcoming(days=FOOTBALL_UPCOMING_HORIZON_DAYS, username=username),
+        errors,
+    )
+
+    today_premium = [fx for fx in upcoming_rows if _fixture_date(fx) == today_s]
+    tomorrow_premium = [fx for fx in upcoming_rows if _fixture_date(fx) == tomorrow_s]
+    premium_live = filter_betting_core_fixtures(filter_premium_fixtures(live_rows))
+    premium_fixtures = filter_betting_core_fixtures(
+        dedupe_fixtures(premium_live + today_premium + tomorrow_premium)
+    )
+
+    sections = classify_fixtures(premium_fixtures, today=today_s, tomorrow=tomorrow_s)
+    live_now = list(sections.get("live_now") or premium_live) or sort_fixtures_by_priority(premium_live)
+    today_pool = dedupe_fixtures(
+        (sections.get("live_now") or []) + (sections.get("later_today") or []) + (sections.get("finished_today") or [])
+    )
+    top_matches = sort_fixtures_by_priority(today_pool)[:5]
+    all_premium = sort_fixtures_by_priority(premium_fixtures)
+    live_now_cards = [parse_match_card(fx) for fx in live_now[:4]]
+    show_intl = False
+
+    return {
+        "configured": True, "today": today_s, "tomorrow": tomorrow_s, "errors": errors,
+        "top_matches": top_matches, "live_now": live_now, "all_premium": all_premium,
+        "next_matches": list(upcoming_rows), "extended": [], "live_now_cards": live_now_cards,
+        "premium_count": len(all_premium), "raw_live_count": len(live_rows),
+        "show_international_prompt": show_intl, "show_live_intl_prompt": show_intl and not live_now,
+        "non_premium_live_count": max(0, len(live_rows) - len(premium_live)),
+        "include_all_leagues": include_all_leagues, "today_local": today_s,
+        "tomorrow_fixtures": sort_fixtures_by_priority(tomorrow_premium),
+        "raw_live": live_rows, "raw_today": today_rows, "raw_tomorrow": tomorrow_rows,
+    }

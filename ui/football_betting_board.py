@@ -7,28 +7,16 @@ from typing import Any
 import streamlit as st
 
 from config import football_plan_rank
-from services.football_api_debug import (
-    build_premium_diagnosis_report,
-    format_admin_endpoint_probe_markdown,
-    format_admin_league_debug_markdown,
-    log_raw_fixtures_sample,
-    probe_football_api_endpoints,
-)
-from services.football_data_debug import football_debug_enabled, log_board_counts
 from services.football_access import usage_summary
-from services.football_betting_board import (
-    build_fallback_debug_stats,
-    build_premium_upcoming_report,
+from services.football_board import (
+    calculate_tip_odds,
     collect_fixtures_for_filters,
     collect_raw_fixtures_for_filters,
     fetch_board_payload,
+    fetch_match_detail,
     load_football_matches,
     load_raw_football_matches,
-    log_displayed_fixtures,
 )
-from services.football_betting_quality import log_fixture_data_sample
-from services.football_match_center import fetch_match_detail
-from services.football_odds import calculate_tip_odds
 from services.football_service import FootballAPIError, get_football_service
 from ui.premium_foundation import BETA_GLOBAL_CSS, render_upgrade_card
 from ui.styles import MB_THEME_VARS, inject_css, page_layout_css
@@ -136,13 +124,13 @@ _VIEW_MODES = (
 )
 
 
-def _show_football_debug() -> bool:
+def _is_admin() -> bool:
     try:
         from services.session_auth import server_is_admin
 
         return server_is_admin()
     except Exception:
-        return football_debug_enabled()
+        return False
 
 
 def _filter_user_errors(errors: list[str]) -> list[str]:
@@ -632,47 +620,20 @@ def render_football_betting_board(
     for err in _filter_user_errors(list(payload.get("errors") or [])):
         st.warning(err)
 
-    today_pool = collect_fixtures_for_filters(
-        payload, time_filter="heute", region_filter="alle"
-    )
-    live_pool = collect_fixtures_for_filters(
-        payload, time_filter="live", region_filter="alle"
-    )
-    tomorrow_pool = collect_fixtures_for_filters(
-        payload, time_filter="morgen", region_filter="alle"
-    )
+    today_pool = collect_fixtures_for_filters(payload, time_filter="heute")
+    live_pool = collect_fixtures_for_filters(payload, time_filter="live")
+    tomorrow_pool = collect_fixtures_for_filters(payload, time_filter="morgen")
     board_counts = {
         "today_matches": len(today_pool),
         "live_matches": len(live_pool),
         "tomorrow_matches": len(tomorrow_pool),
+        "raw_today": len(payload.get("raw_today") or []),
+        "raw_live": len(payload.get("raw_live") or []),
+        "premium_count": payload.get("premium_count"),
     }
-    if _show_football_debug():
-        log_raw_fixtures_sample(
-            list(payload.get("raw_today") or []),
-            label="today",
-            limit=50,
-        )
-        print({"football_premium_diagnosis": build_premium_diagnosis_report(payload)})
-        print({"football_fallback_debug": build_fallback_debug_stats(
-            payload,
-            region_filter="alle",
-            service=service,
-            username=username,
-        )})
-        log_board_counts(board_counts)
-        with st.expander("Admin: Football API Debug", expanded=False):
-            st.markdown(format_admin_league_debug_markdown(build_premium_diagnosis_report(payload)))
-            try:
-                endpoint_probe = probe_football_api_endpoints(service, username=username)
-                st.markdown(format_admin_endpoint_probe_markdown(endpoint_probe))
-            except Exception as exc:
-                st.warning(f"Endpoint-Probe fehlgeschlagen: {exc}")
-            st.json(build_fallback_debug_stats(
-                payload,
-                region_filter="alle",
-                service=service,
-                username=username,
-            ))
+    if _is_admin():
+        print({"football_board_counts": board_counts})
+        st.json(board_counts)
 
     cache: dict[int, dict[str, Any]] = st.session_state.fb_board_cache
 
@@ -700,39 +661,10 @@ def render_football_betting_board(
             username=username,
             session_plan=session_plan,
             mode=board_mode,
-            category="alle",
             cache=cache,
             max_enrich=24,
             force_no_odds=force_no_odds,
         )
-
-    upcoming_report = match_result.get("upcoming_report") or build_premium_upcoming_report(
-        payload, service, username=username
-    )
-    print({"football_premium_upcoming_report": upcoming_report})
-
-    if _show_football_debug():
-        print(
-            {
-                "load_football_matches": {
-                    "stage": match_result.get("stage"),
-                    "rows": len(match_result.get("rows") or []),
-                    "pools": match_result.get("pools"),
-                    "debug_stats": match_result.get("debug_stats"),
-                }
-            }
-        )
-        log_displayed_fixtures(
-            match_result.get("fixtures") or [],
-            region_filter="alle",
-        )
-        log_fixture_data_sample(
-            service,
-            match_result.get("fixtures") or [],
-            username=username,
-            limit=5,
-        )
-        st.json(upcoming_report)
 
     rows = match_result.get("rows") or []
     if match_result.get("banner"):

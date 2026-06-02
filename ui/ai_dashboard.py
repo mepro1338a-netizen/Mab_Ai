@@ -7,7 +7,8 @@ import streamlit as st
 
 from config import DAILY_LIMITS
 from database import recent_activity, usage_summary
-from services.home_football_hub import load_home_football_hub
+from services.football_loaders import fetch_premium_dashboard, parse_match_card
+from services.football_service import get_football_service
 from ui.dashboard_ui import format_num, nav
 from ui.styles import inject_css, page_layout_css
 
@@ -378,6 +379,29 @@ def _hub_cache_key(username: str, fb_plan: str) -> str:
     return f"{username}|{fb_plan}|v1"
 
 
+def _load_home_football_hub(*, username: str, session_plan: str) -> dict:
+    service = get_football_service()
+    payload = fetch_premium_dashboard(service, username=username)
+    top_raw = None
+    for group in (payload.get("live_now"), payload.get("top_matches"), payload.get("next_matches")):
+        for fx in group or []:
+            if fx and (fx.get("fixture") or {}).get("id"):
+                top_raw = fx
+                break
+        if top_raw:
+            break
+    return {
+        "payload": payload,
+        "rank": 0,
+        "top_card": parse_match_card(top_raw) if top_raw else None,
+        "pick_intel": None,
+        "best_intel": None,
+        "injuries": [],
+        "live_cards": [parse_match_card(fx) for fx in (payload.get("live_now") or [])[:6]],
+        "tips": [],
+    }
+
+
 def _get_football_hub(username: str, fb_plan: str) -> dict:
     key = _hub_cache_key(username, fb_plan)
     cached = st.session_state.get("home_fb_hub")
@@ -385,7 +409,7 @@ def _get_football_hub(username: str, fb_plan: str) -> dict:
         return cached
 
     with st.spinner("Football Intelligence wird geladen…"):
-        hub = load_home_football_hub(username=username, session_plan=fb_plan)
+        hub = _load_home_football_hub(username=username, session_plan=fb_plan)
     hub["_key"] = key
     st.session_state.home_fb_hub = hub
     return hub

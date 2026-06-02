@@ -416,40 +416,6 @@ class FootballService:
       )
       return data
 
-  def search_teams(self, name: str, *, username: str = "") -> list[dict[str, Any]]:
-      query = (name or "").strip()
-      if len(query) < 2:
-          raise FootballAPIError("Bitte mindestens 2 Zeichen fuer die Teamsuche eingeben.")
-      return self._request(
-          "teams",
-          {"search": query},
-          feature="api_team_overview",
-          username=username,
-      )
-
-  def get_team(self, team_id: int, *, username: str = "") -> dict[str, Any] | None:
-      rows = self._request(
-          "teams",
-          {"id": int(team_id)},
-          feature="api_team_overview",
-          username=username,
-      )
-      return rows[0] if rows else None
-
-  def get_upcoming_fixtures(
-      self,
-      team_id: int,
-      *,
-      next_count: int = 5,
-      username: str = "",
-  ) -> list[dict[str, Any]]:
-      return self._request(
-          "fixtures",
-          {"team": int(team_id), "next": max(1, min(int(next_count), 15))},
-          feature="api_fixtures",
-          username=username,
-      )
-
   def get_recent_fixtures(
       self,
       team_id: int,
@@ -492,7 +458,7 @@ class FootballService:
       Premium whitelist: fixtures?league=ID&season=current per league.
       From today through the next `days` days, sorted by kickoff.
       """
-      from services.football_leagues import FINISHED_STATUSES, sort_fixtures_priority
+      from services.football_loaders import FINISHED_STATUSES, sort_fixtures_by_priority
 
       tz = ZoneInfo("Europe/Berlin")
       today = datetime.now(tz).date()
@@ -559,45 +525,7 @@ class FootballService:
           seen.add(key)
           deduped.append(fx)
 
-      return sort_fixtures_priority(deduped)
-
-  def get_league_upcoming_fixtures(
-      self,
-      league_id: int,
-      *,
-      next_count: int = 10,
-      season: int | None = None,
-      username: str = "",
-  ) -> list[dict[str, Any]]:
-      return self._request(
-          "fixtures",
-          {
-              "league": int(league_id),
-              "season": int(season or football_api_season() or FOOTBALL_DEFAULT_SEASON),
-              "next": max(1, min(int(next_count), 20)),
-          },
-          feature="api_fixtures",
-          username=username,
-      )
-
-  def get_league_recent_fixtures(
-      self,
-      league_id: int,
-      *,
-      last_count: int = 10,
-      season: int | None = None,
-      username: str = "",
-  ) -> list[dict[str, Any]]:
-      return self._request(
-          "fixtures",
-          {
-              "league": int(league_id),
-              "season": int(season or FOOTBALL_DEFAULT_SEASON),
-              "last": max(1, min(int(last_count), 20)),
-          },
-          feature="api_results",
-          username=username,
-      )
+      return sort_fixtures_by_priority(deduped)
 
   def get_live_fixtures(
       self,
@@ -613,7 +541,7 @@ class FootballService:
           username=username,
       )
       if premium_only:
-          from services.football_leagues import filter_premium_fixtures
+          from services.football_loaders import filter_premium_fixtures
           return filter_premium_fixtures(rows)
       return rows
 
@@ -647,20 +575,6 @@ class FootballService:
           username=username,
       )
       return rows[0] if rows else None
-
-  def get_fixture_statistics(
-      self,
-      fixture_id: int,
-      *,
-      username: str = "",
-  ) -> list[dict[str, Any]]:
-      return self._request(
-          "fixtures/statistics",
-          {"fixture": int(fixture_id)},
-          feature="api_player_stats",
-          live=True,
-          username=username,
-      )
 
   def get_head_to_head(
       self,
@@ -730,106 +644,9 @@ class FootballService:
       username: str = "",
   ) -> dict[str, float | None]:
       """Convenience: 1X2 decimal odds for a fixture."""
-      from services.football_odds import get_odds_for_fixture as _get
+      from services.football_board import get_odds_for_fixture as _get
 
       return _get(self, int(fixture_id), username=username)
-
-  def get_fixture_events(
-      self,
-      fixture_id: int,
-      *,
-      username: str = "",
-  ) -> list[dict[str, Any]]:
-      return self._request(
-          "fixtures/events",
-          {"fixture": int(fixture_id)},
-          feature="api_live_scores",
-          live=True,
-          username=username,
-      )
-
-  def get_fixture_lineups(
-      self,
-      fixture_id: int,
-      *,
-      username: str = "",
-  ) -> list[dict[str, Any]]:
-      return self._request(
-          "fixtures/lineups",
-          {"fixture": int(fixture_id)},
-          feature="api_player_stats",
-          live=True,
-          username=username,
-      )
-
-  def get_team_injuries(
-      self,
-      team_id: int,
-      *,
-      season: int | None = None,
-      username: str = "",
-  ) -> list[dict[str, Any]]:
-      return self._request(
-          "injuries",
-          {
-              "team": int(team_id),
-              "season": int(season or FOOTBALL_DEFAULT_SEASON),
-          },
-          feature="api_injuries",
-          username=username,
-      )
-
-  def get_fixture_injuries(
-      self,
-      fixture_id: int,
-      *,
-      username: str = "",
-  ) -> list[dict[str, Any]]:
-      return self._request(
-          "injuries",
-          {"fixture": int(fixture_id)},
-          feature="api_injuries",
-          live=True,
-          username=username,
-      )
-
-  def get_team_sidelined(
-      self,
-      team_id: int,
-      *,
-      season: int | None = None,
-      username: str = "",
-  ) -> list[dict[str, Any]]:
-      """Injuries + suspensions (API sidelined feed)."""
-      return self._request(
-          "sidelined",
-          {
-              "team": int(team_id),
-              "season": int(season or FOOTBALL_DEFAULT_SEASON),
-          },
-          feature="api_injuries",
-          username=username,
-      )
-
-  def search_leagues(
-      self,
-      name: str,
-      *,
-      country: str = "",
-      username: str = "",
-  ) -> list[dict[str, Any]]:
-      query = (name or "").strip()
-      if len(query) < 2:
-          raise FootballAPIError("Bitte mindestens 2 Zeichen fuer die Ligasuche eingeben.")
-      params: dict[str, Any] = {"search": query}
-      if country.strip():
-          params["country"] = country.strip()
-      return self._request(
-          "leagues",
-          params,
-          feature="api_multi_league",
-          username=username,
-      )
 
 
 def fixture_label(fixture: dict[str, Any]) -> str:
@@ -852,36 +669,11 @@ def fixture_label(fixture: dict[str, Any]) -> str:
   return f"{prefix}{date} | {home} vs {away} ({score})"
 
 
-def team_display_name(team_row: dict[str, Any]) -> str:
-  team = team_row.get("team") or {}
-  country = team_row.get("country") or team.get("country") or ""
-  name = team.get("name") or "Team"
-  if country:
-      return f"{name} ({country})"
-  return name
-
-
 def fixture_team_names(fixture: dict[str, Any]) -> tuple[str, str]:
   teams = fixture.get("teams") or {}
   home = (teams.get("home") or {}).get("name") or ""
   away = (teams.get("away") or {}).get("name") or ""
   return home, away
-
-
-def format_fixture_stats(stats_rows: list[dict[str, Any]]) -> str:
-  if not stats_rows:
-      return "Keine Statistiken verfuegbar."
-
-  lines: list[str] = []
-  for block in stats_rows:
-      team_name = ((block.get("team") or {}).get("name") or "Team")
-      lines.append(f"### {team_name}")
-      for item in block.get("statistics") or []:
-          stat_type = item.get("type") or "Stat"
-          value = item.get("value")
-          lines.append(f"- **{stat_type}:** {value}")
-      lines.append("")
-  return "\n".join(lines).strip()
 
 
 _service: FootballService | None = None

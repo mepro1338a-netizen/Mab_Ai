@@ -7,8 +7,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from services.football_betting_quality import has_complete_odds
-from services.football_odds import get_odds_for_fixture
+from services.football_board import get_odds_for_fixture, has_complete_odds
 from services.football_service import FootballAPIError, get_football_service
 
 
