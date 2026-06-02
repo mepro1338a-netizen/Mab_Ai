@@ -1,9 +1,40 @@
 """Video provider registry — auto wählt günstigste verfügbare KI-API für dich."""
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
+from dataclasses import dataclass
+
 from config import VIDEO_PROVIDER
 
-from services.video_providers.base import BaseVideoProvider, VideoGenRequest, VideoGenResult
+
+@dataclass
+class VideoGenRequest:
+    prompt: str
+    duration_sec: int
+    aspect: str = "9:16"
+    platform: str = "tiktok"
+
+
+@dataclass
+class VideoGenResult:
+    ok: bool
+    file_path: str = ""
+    file_url: str = ""
+    provider: str = ""
+    message: str = ""
+    error: str = ""
+
+
+class BaseVideoProvider(ABC):
+    name: str = "base"
+
+    @abstractmethod
+    def available(self) -> bool:
+        ...
+
+    @abstractmethod
+    def generate(self, request: VideoGenRequest, *, out_path: str) -> VideoGenResult:
+        ...
 
 # ---------------------------------------------------------
 # Inline providers (single consumer: this registry)

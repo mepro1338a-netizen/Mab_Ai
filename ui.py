@@ -13,14 +13,31 @@ from ui.sidebar_nav import LEGACY_PAGE_ALIASES
 from ui_core import load_css, sync_session_user
 
 from pages.auth import render_auth
-from pages.home import render_home
 from pages.chat import render_chat
-from pages.football import render_football
+from ui.ai_dashboard import render_home
+from ui.football_betting_board import render_football_betting_board
 from pages.projects import render_projects
 from pages.automation_lab import render_automation_lab
 from pages.premium import render_premium
 
 from pages.account import render_dashboard
+
+
+def render_football() -> None:
+    if not st.session_state.get("logged_in"):
+        st.session_state.page = "auth"
+        st.rerun()
+        return
+
+    def _open_premium() -> None:
+        st.session_state.page = "premium"
+        st.rerun()
+
+    render_football_betting_board(
+        username=str(st.session_state.get("user") or ""),
+        session_plan=str(st.session_state.get("football_plan") or "none"),
+        open_premium=_open_premium,
+    )
 
 
 # =========================================================

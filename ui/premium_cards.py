@@ -10,13 +10,13 @@ from services.billing_plans import (
     AI_CHECKOUT_KEYS,
     FOOTBALL_CHECKOUT_KEYS,
     football_metrics_text,
+    get_stripe_verify_cache,
     is_plan_active,
     plan_catalog,
     plan_category,
     plan_checkout_ready,
     USER_FRIENDLY_CHECKOUT_ERROR,
 )
-from services.stripe_verify import get_stripe_verify_cache
 
 from payments import create_checkout_session
 

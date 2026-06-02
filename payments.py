@@ -19,11 +19,12 @@ from services.billing_plans import (
     plan_category,
     plan_checkout_ready,
     resolve_stripe_price_id,
+    stripe_field,
     stripe_checkout_cancel_url,
     stripe_checkout_success_url,
     stripe_price_env_name,
+    verify_price_id,
 )
-from services.stripe_verify import stripe_field, verify_price_id
 
 _stripe_key = os.getenv("STRIPE_SECRET_KEY", "").strip()
 stripe.api_key = _stripe_key

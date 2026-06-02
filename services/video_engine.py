@@ -16,7 +16,6 @@ from db.video_engine import (
     update_video_job,
 )
 from pricing import GEN_AI, GEN_AI_HD, GEN_STUDIO, get_video_generation_cost
-from services.access_control import plan_rank
 from services.video_providers import (
     VideoGenRequest,
     ai_provider_available,
@@ -26,6 +25,19 @@ from services.video_providers import (
 )
 
 VIDEO_EXPORT_DIR = DATA_DIR / "video_engine" / "exports"
+
+PLAN_RANK = {"free": 0, "pro": 1, "grand": 2, "elite": 3}
+
+
+def plan_rank(plan_key: str) -> int:
+    return PLAN_RANK.get(str(plan_key or "free").lower(), 0)
+
+
+def can_access_plan_feature(user: dict | None, min_plan: str) -> bool:
+    if not user:
+        return False
+    return plan_rank(str(user.get("plan") or "free")) >= plan_rank(min_plan)
+
 
 _PLATFORM_STYLE = {
     "tiktok": "TikTok native, punchy hook in first second, high energy, mobile-first",

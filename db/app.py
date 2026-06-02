@@ -824,6 +824,162 @@ def list_purchases(username: str | None = None) -> list[dict]:
     return rows_to_dicts(rows)
 
 
+def list_codes() -> list[dict]:
+    conn = get_connection()
+    cur = conn.cursor()
+    rows = cur.execute("SELECT * FROM redeem_codes ORDER BY id DESC").fetchall()
+    conn.close()
+    return rows_to_dicts(rows)
+
+
+def redeem_code(username: str, code: str) -> tuple[bool, str]:
+    username = normalize_username(username)
+    code = (code or "").strip().upper()
+    conn = get_connection()
+    cur = conn.cursor()
+    item = cur.execute(
+        "SELECT * FROM redeem_codes WHERE code = ? AND is_active = 1",
+        (code,),
+    ).fetchone()
+    if not item:
+        conn.close()
+        return False, "Code ungültig."
+    if int(item["used_count"] or 0) >= int(item["max_uses"] or 1):
+        conn.close()
+        return False, "Code wurde bereits zu oft genutzt."
+    if item["expires_at"] and datetime.fromisoformat(item["expires_at"]) < datetime.utcnow():
+        conn.close()
+        return False, "Code ist abgelaufen."
+    if int(item["tokens"] or 0) > 0:
+        cur.execute(
+            "UPDATE users SET tokens = tokens + ? WHERE username = ?",
+            (int(item["tokens"]), username),
+        )
+    if item["plan"]:
+        plan_value = str(item["plan"])
+        if plan_value.startswith("football_"):
+            set_football_plan(username, plan_value)
+        else:
+            cur.execute(
+                "UPDATE users SET plan = ? WHERE username = ?",
+                (plan_value, username),
+            )
+    cur.execute(
+        "UPDATE redeem_codes SET used_count = used_count + 1 WHERE code = ?",
+        (code,),
+    )
+    conn.commit()
+    conn.close()
+    return True, "Code eingelöst."
+
+
+def usage_summary(username: str | None = None, days: int = 7) -> list[dict]:
+    conn = get_connection()
+    cur = conn.cursor()
+    since = (datetime.utcnow() - timedelta(days=int(days))).isoformat()
+    if username:
+        rows = cur.execute(
+            """
+            SELECT tool, COUNT(*) AS runs, SUM(cost_tokens) AS total_tokens
+            FROM usage_logs
+            WHERE username = ? AND created_at >= ?
+            GROUP BY tool
+            ORDER BY runs DESC
+            """,
+            (normalize_username(username), since),
+        ).fetchall()
+    else:
+        rows = cur.execute(
+            """
+            SELECT tool, COUNT(*) AS runs, SUM(cost_tokens) AS total_tokens
+            FROM usage_logs
+            WHERE created_at >= ?
+            GROUP BY tool
+            ORDER BY runs DESC
+            """,
+            (since,),
+        ).fetchall()
+    conn.close()
+    return rows_to_dicts(rows)
+
+
+def recent_activity(username: str | None = None, limit: int = 8) -> list[dict]:
+    conn = get_connection()
+    cur = conn.cursor()
+    if username:
+        rows = cur.execute(
+            """
+            SELECT tool, prompt, cost_tokens, api_provider, status, created_at
+            FROM usage_logs
+            WHERE username = ?
+            ORDER BY id DESC
+            LIMIT ?
+            """,
+            (normalize_username(username), int(limit)),
+        ).fetchall()
+    else:
+        rows = cur.execute(
+            """
+            SELECT tool, prompt, cost_tokens, api_provider, status, created_at
+            FROM usage_logs
+            ORDER BY id DESC
+            LIMIT ?
+            """,
+            (int(limit),),
+        ).fetchall()
+    conn.close()
+    return rows_to_dicts(rows)
+
+
+def record_purchase(
+    username: str,
+    plan: str,
+    amount: int,
+    session_id: str,
+    payment_status: str,
+    status: str,
+) -> None:
+    conn = get_connection()
+    cur = conn.cursor()
+    cur.execute(
+        """
+        INSERT INTO payments (
+            username, plan, amount, stripe_session_id, payment_status, status, created_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            normalize_username(username),
+            plan,
+            int(amount or 0),
+            session_id,
+            payment_status,
+            status,
+            now(),
+        ),
+    )
+    conn.commit()
+    conn.close()
+
+
+def payment_already_paid(session_id: str) -> bool:
+    session_id = str(session_id or "").strip()
+    if not session_id:
+        return False
+    conn = get_connection()
+    cur = conn.cursor()
+    row = cur.execute(
+        """
+        SELECT id FROM payments
+        WHERE stripe_session_id = ? AND payment_status = 'paid'
+        LIMIT 1
+        """,
+        (session_id,),
+    ).fetchone()
+    conn.close()
+    return bool(row)
+
+
 def spend_tokens(username: str, amount: int) -> tuple[bool, str]:
     amount = max(0, int(amount or 0))
     if amount <= 0:
