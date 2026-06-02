@@ -3,7 +3,6 @@ import sys
 
 from db.core import *  # noqa: F403
 from db.audit import *  # noqa: F403
-from db.support import *  # noqa: F403
 from db.billing import *  # noqa: F403
 from db.projects import *  # noqa: F403
 from db.automations import *  # noqa: F403
