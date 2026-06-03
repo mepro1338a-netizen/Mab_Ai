@@ -1,5 +1,5 @@
 """
-MaByte Sidebar — single component (240px, Lucide icons, flat nav).
+MaByte Sidebar — single component (230px, Lucide icons, compact nav).
 """
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ from config import APP_NAME
 from ui.styles import inject_css
 
 _SB = 'section[data-testid="stSidebar"]'
-_WIDTH = "240px"
+_WIDTH = "230px"
 
 NAV_ITEMS: list[tuple[str, str]] = [
     ("Dashboard", "home"),
@@ -56,7 +56,7 @@ _ICONS: dict[str, str] = {
 }
 
 _BRAND_SVG = (
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="32" height="32">'
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="26" height="26">'
     '<defs><linearGradient id="mbs" x1="0" y1="0" x2="1" y2="1">'
     '<stop offset="0%" stop-color="#8b5cf6"/><stop offset="100%" stop-color="#6366f1"/>'
     '</linearGradient></defs><rect width="40" height="40" rx="9" fill="url(#mbs)"/>'
@@ -89,9 +89,9 @@ def sidebar_master_css(active_page: str) -> str:
         key = f"nav_{page}"
         icon_rules.append(
             f'{_SB} .st-key-{key} .stButton>button::before{{'
-            f"content:'';position:absolute;left:12px;top:50%;transform:translateY(-50%);"
-            f"width:18px;height:18px;background-image:{_icon_uri(page, active=page == active)};"
-            f"background-size:18px 18px;background-repeat:no-repeat;}}"
+            f"content:'';position:absolute;left:10px;top:50%;transform:translateY(-50%);"
+            f"width:16px;height:16px;background-image:{_icon_uri(page, active=page == active)};"
+            f"background-size:16px 16px;background-repeat:no-repeat;background-position:center;}}"
         )
     logout_uri = _icon_uri("logout")
     return f"""
@@ -117,47 +117,61 @@ def sidebar_master_css(active_page: str) -> str:
   gap:0!important;padding:0!important;margin:0!important;border:none!important;
   box-shadow:none!important;background:transparent!important;
 }}
-.sb-brand{{display:flex;align-items:center;gap:8px;padding:14px 8px 8px;flex-shrink:0;}}
-.sb-brand span{{color:#fafafa!important;font-size:15px;font-weight:600;}}
-.sb-foot{{margin-top:auto!important;padding-top:8px;flex-shrink:0;border-top:1px solid rgba(255,255,255,.06);}}
-.sb-user{{display:flex;align-items:center;gap:8px;padding:8px 10px;margin:6px 0 4px;border-radius:10px;
-  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);}}
-.sb-av{{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#7c3aed,#6366f1);
-  color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}}
-.sb-un{{color:#fafafa!important;font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}}
-.sb-up{{color:#71717a!important;font-size:11px;}}
-{_SB} div[class*="st-key-nav_"]:not(.st-key-nav_logout) .stButton{{margin:1px 0!important;}}
+.sb-brand{{display:flex;align-items:center;gap:8px;padding:12px 4px 10px;flex-shrink:0;line-height:1;}}
+.sb-brand svg{{display:block;flex-shrink:0;width:26px!important;height:26px!important;}}
+.sb-brand span{{color:#fafafa!important;font-size:14px;font-weight:600;letter-spacing:-.02em;line-height:1;}}
+.sb-nav-wrap{{flex:1 1 auto;min-height:0;overflow:hidden;padding:2px 0;}}
+.sb-foot{{margin-top:auto!important;padding:10px 0 4px;flex-shrink:0;border-top:1px solid rgba(255,255,255,.06);}}
+.sb-user{{display:flex;align-items:center;gap:8px;padding:6px 8px;margin:0 0 6px;border-radius:8px;
+  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);}}
+.sb-av{{width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,#7c3aed,#6366f1);
+  color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}}
+.sb-un{{color:#fafafa!important;font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}}
+.sb-up{{color:#71717a!important;font-size:10px;line-height:1.2;}}
+{_SB} div[class*="st-key-nav_"]:not(.st-key-nav_logout) .stButton{{
+  margin:0 0 6px 0!important;padding:0!important;width:100%!important;
+}}
 {_SB} div[class*="st-key-nav_"]:not(.st-key-nav_logout) .stButton>button{{
-  width:100%!important;height:40px!important;min-height:40px!important;
-  padding:0 10px 0 40px!important;border-radius:8px!important;
+  width:100%!important;height:42px!important;min-height:42px!important;max-height:42px!important;
+  padding:0 12px 0 34px!important;border-radius:10px!important;
   border:1px solid transparent!important;border-left:3px solid transparent!important;
   background:transparent!important;color:#a1a1aa!important;font-size:13px!important;font-weight:500!important;
-  text-align:left!important;position:relative!important;opacity:.75!important;
-  transition:background .15s,color .15s,border-color .15s,transform .15s,opacity .15s!important;
+  text-align:left!important;justify-content:flex-start!important;align-items:center!important;
+  position:relative!important;opacity:.75!important;box-shadow:none!important;
+  transition:background .15s ease,color .15s ease,border-color .15s ease,opacity .15s ease!important;
 }}
 {_SB} div[class*="st-key-nav_"]:not(.st-key-nav_logout) .stButton>button p{{
-  color:inherit!important;font-size:13px!important;margin:0!important;
+  color:inherit!important;font-size:13px!important;font-weight:500!important;margin:0!important;
+  text-align:left!important;width:100%!important;line-height:1!important;
 }}
 {_SB} div[class*="st-key-nav_"]:not(.st-key-nav_logout):not(.st-key-{active_key}) .stButton>button:hover{{
-  opacity:1!important;background:rgba(255,255,255,.06)!important;color:#e4e4e7!important;transform:translateX(2px)!important;
+  opacity:1!important;background:rgba(255,255,255,.05)!important;color:#e4e4e7!important;
 }}
 {_SB} .st-key-{active_key} .stButton>button{{
-  opacity:1!important;background:rgba(124,58,237,.22)!important;color:#fff!important;border-left-color:#8b5cf6!important;
+  opacity:1!important;background:rgba(124,58,237,.2)!important;color:#fff!important;
+  border-left:3px solid #8b5cf6!important;
 }}
 {_SB} .st-key-{active_key} .stButton>button::before{{background-image:{_icon_uri(active, active=True)}!important;}}
 {_SB} .st-key-{active_key} .stButton>button p{{color:#fff!important;}}
 {"".join(icon_rules)}
+{_SB} .st-key-nav_logout .stButton{{margin:0!important;padding:0!important;}}
 {_SB} .st-key-nav_logout .stButton>button{{
-  height:40px!important;min-height:40px!important;padding:0 10px 0 40px!important;border-radius:8px!important;
-  border:1px solid rgba(255,255,255,.08)!important;background:rgba(255,255,255,.03)!important;
-  color:#a1a1aa!important;font-size:13px!important;position:relative!important;opacity:.75!important;
+  width:100%!important;height:42px!important;min-height:42px!important;max-height:42px!important;
+  padding:0 12px 0 34px!important;border-radius:10px!important;
+  border:1px solid rgba(255,255,255,.07)!important;background:rgba(255,255,255,.02)!important;
+  color:#a1a1aa!important;font-size:13px!important;font-weight:500!important;
+  text-align:left!important;justify-content:flex-start!important;align-items:center!important;
+  position:relative!important;opacity:.75!important;box-shadow:none!important;
 }}
 {_SB} .st-key-nav_logout .stButton>button::before{{
-  content:'';position:absolute;left:12px;top:50%;transform:translateY(-50%);
-  width:18px;height:18px;background-image:{logout_uri};background-size:18px 18px;background-repeat:no-repeat;
+  content:'';position:absolute;left:10px;top:50%;transform:translateY(-50%);
+  width:16px;height:16px;background-image:{logout_uri};background-size:16px 16px;background-repeat:no-repeat;
+}}
+{_SB} .st-key-nav_logout .stButton>button p{{
+  text-align:left!important;margin:0!important;font-size:13px!important;
 }}
 {_SB} .st-key-nav_logout .stButton>button:hover{{
-  opacity:1!important;background:rgba(255,255,255,.06)!important;transform:translateX(2px)!important;
+  opacity:1!important;background:rgba(255,255,255,.05)!important;color:#fafafa!important;
 }}
 """
 

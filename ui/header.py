@@ -29,7 +29,7 @@ def header_css() -> str:
     max-height: {HEADER_HEIGHT}px !important;
     display: flex !important;
     align-items: center !important;
-    padding: 0 1rem 0 calc(var(--sb-width, 240px) + 0.75rem) !important;
+    padding: 0 1rem 0 calc(var(--sb-width, 230px) + 0.75rem) !important;
     box-sizing: border-box !important;
     background: rgba(9, 9, 11, 0.92) !important;
     background-image: none !important;
