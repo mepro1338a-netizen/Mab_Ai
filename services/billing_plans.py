@@ -347,7 +347,7 @@ def get_stripe_verify_cache() -> dict[str, dict[str, Any]]:
 
         if STRIPE_VERIFY_CACHE_KEY not in st.session_state:
             st.session_state[STRIPE_VERIFY_CACHE_KEY] = verify_all_checkout_plans()
-        return st.session_state[STRIPE_VERIFY_CACHE_KEY]
+        return st.session_state.get(STRIPE_VERIFY_CACHE_KEY) or verify_all_checkout_plans()
     except Exception:
         return verify_all_checkout_plans()
 

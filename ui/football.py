@@ -16,6 +16,29 @@ from services.football_feed import (
 from ui.premium_foundation import BETA_GLOBAL_CSS, render_upgrade_card
 from ui.styles import MB_THEME_VARS, inject_css, page_layout_css
 
+_FB_SESSION_DEFAULTS: dict[str, Any] = {
+    "fb_v": 8,
+    "fb_mode": "premium",
+    "fb_time": "heute",
+    "fb_payload": None,
+    "fb_detail": None,
+    "fb_sel": None,
+    "fb_displayed_topspiele_count": 0,
+    "fb_displayed_allspiele_count": 0,
+}
+
+
+def _ensure_football_session() -> None:
+    if st.session_state.get("fb_v") != _FB_SESSION_DEFAULTS["fb_v"]:
+        st.session_state["fb_v"] = _FB_SESSION_DEFAULTS["fb_v"]
+        st.session_state["fb_payload"] = None
+        st.session_state["fb_detail"] = None
+        st.session_state["fb_sel"] = None
+    for key, value in _FB_SESSION_DEFAULTS.items():
+        if key not in st.session_state:
+            st.session_state[key] = value
+
+
 _CSS = """
 .fb-page { max-width: 1080px; margin: 0 auto; }
 .fb-h1 { margin: 0; font-size: 22px; color: #f8fafc; font-weight: 800; }
@@ -168,11 +191,7 @@ def render_football_betting_board(
         st.markdown("</div>", unsafe_allow_html=True)
         return
 
-    if st.session_state.get("fb_v") != 8:
-        st.session_state.fb_v = 8
-        st.session_state.fb_payload = None
-        st.session_state.fb_detail = None
-        st.session_state.fb_sel = None
+    _ensure_football_session()
 
     mode = str(st.session_state.get("fb_mode") or "premium")
     time_f = str(st.session_state.get("fb_time") or "heute")
@@ -180,8 +199,8 @@ def render_football_betting_board(
     c0, c1 = st.columns([1, 9])
     with c0:
         if st.button("↻", key="fb_ref"):
-            st.session_state.fb_payload = None
-            st.session_state.fb_detail = None
+            st.session_state["fb_payload"] = None
+            st.session_state["fb_detail"] = None
             st.rerun()
 
     mc = st.columns(2)
@@ -197,14 +216,14 @@ def render_football_betting_board(
                 nt = k
 
     if nm != mode or nt != time_f:
-        st.session_state.fb_mode = nm
-        st.session_state.fb_time = nt
-        st.session_state.fb_payload = None
-        st.session_state.fb_detail = None
-        st.session_state.fb_sel = None
+        st.session_state["fb_mode"] = nm
+        st.session_state["fb_time"] = nt
+        st.session_state["fb_payload"] = None
+        st.session_state["fb_detail"] = None
+        st.session_state["fb_sel"] = None
         st.rerun()
-    mode = str(st.session_state.fb_mode)
-    time_f = str(st.session_state.fb_time)
+    mode = str(st.session_state.get("fb_mode") or "premium")
+    time_f = str(st.session_state.get("fb_time") or "heute")
 
     is_raw = mode == "raw"
     st.markdown(
@@ -215,7 +234,7 @@ def render_football_betting_board(
     if st.session_state.get("fb_payload") is None:
         with st.spinner("Lade Spiele…"):
             try:
-                st.session_state.fb_payload = fetch_board_payload(
+                st.session_state["fb_payload"] = fetch_board_payload(
                     service, username=username, time_filter=time_f
                 )
             except FootballAPIError as exc:
@@ -223,7 +242,7 @@ def render_football_betting_board(
                 st.markdown("</div>", unsafe_allow_html=True)
                 return
 
-    payload = st.session_state.fb_payload or {}
+    payload = st.session_state.get("fb_payload") or {}
     for err in payload.get("errors") or []:
         if "rate limit" not in str(err).lower():
             st.warning(str(err))
@@ -244,8 +263,8 @@ def render_football_betting_board(
     top_n = int(result.get("displayed_topspiele_count") or 0)
     all_n = int(result.get("displayed_allspiele_count") or 0)
 
-    st.session_state.fb_displayed_topspiele_count = top_n
-    st.session_state.fb_displayed_allspiele_count = all_n
+    st.session_state["fb_displayed_topspiele_count"] = top_n
+    st.session_state["fb_displayed_allspiele_count"] = all_n
 
     if is_raw and banner:
         st.markdown(f'<p class="fb-banner raw">{html.escape(banner)}</p>', unsafe_allow_html=True)
@@ -274,8 +293,8 @@ def render_football_betting_board(
         can = bool(row.get("analysis_available")) and bool(fid)
         if can:
             if st.button("Analyse", key=f"fb_a_{fid}", use_container_width=True):
-                st.session_state.fb_sel = int(fid)
-                st.session_state.fb_detail = None
+                st.session_state["fb_sel"] = int(fid)
+                st.session_state["fb_detail"] = None
                 st.rerun()
         else:
             st.caption("Analyse nicht verfügbar")
@@ -289,7 +308,7 @@ def render_football_betting_board(
                     service, int(sel), username=username, session_plan=session_plan
                 )
                 detail["_ck"] = ck
-                st.session_state.fb_detail = detail
+                st.session_state["fb_detail"] = detail
         _render_analysis(detail or {})
 
     st.markdown("</div>", unsafe_allow_html=True)

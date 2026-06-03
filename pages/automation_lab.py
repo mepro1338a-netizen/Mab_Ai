@@ -38,6 +38,8 @@ def render_agent_card(icon, title, desc, agent_type):
 def render_create_automation():
     st.subheader("Workflow erstellen")
 
+    st.session_state.setdefault("selected_agent_type", "football_content_agent")
+
     options = project_options()
 
     with st.container(border=True):

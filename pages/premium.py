@@ -160,16 +160,17 @@ def render_premium():
     )
 
     st.session_state.setdefault("billing_interval", "monthly")
+    billing_interval = str(st.session_state.get("billing_interval") or "monthly")
     b1, b2, b3 = st.columns([1, 1, 2])
     with b1:
         st.markdown('<div class="mb-btn-gold">', unsafe_allow_html=True)
         if st.button(
             "Monatlich",
             width="stretch",
-            type="primary" if st.session_state.billing_interval == "monthly" else "secondary",
+            type="primary" if billing_interval == "monthly" else "secondary",
             key="bill_monthly",
         ):
-            st.session_state.billing_interval = "monthly"
+            st.session_state["billing_interval"] = "monthly"
             st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
     with b2:
@@ -177,14 +178,14 @@ def render_premium():
         if st.button(
             "Jährlich",
             width="stretch",
-            type="primary" if st.session_state.billing_interval == "yearly" else "secondary",
+            type="primary" if billing_interval == "yearly" else "secondary",
             key="bill_yearly",
         ):
-            st.session_state.billing_interval = "yearly"
+            st.session_state["billing_interval"] = "yearly"
             st.rerun()
         st.markdown("</div>", unsafe_allow_html=True)
     with b3:
-        if st.session_state.billing_interval == "yearly":
+        if billing_interval == "yearly":
             st.caption("Jährliche Stripe-Preise — Coming Soon. Checkout nutzt vorerst Monatspreise.")
         else:
             st.caption("Monatliche Abrechnung · Stripe Checkout")
