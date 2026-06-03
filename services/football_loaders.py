@@ -426,7 +426,20 @@ def fetch_premium_dashboard(
         )
 
     load_report = getattr(service, "_premium_load_report", None) or {}
-    all_upcoming = filter_betting_core_fixtures(dedupe_fixtures(upcoming_rows))
+    from config import FOOTBALL_TOPSPIELE_LEAGUE_IDS
+
+    def _topspiele_only(items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        out: list[dict[str, Any]] = []
+        for fx in items or []:
+            try:
+                lid = int((fx.get("league") or {}).get("id") or 0)
+            except (TypeError, ValueError):
+                continue
+            if lid in FOOTBALL_TOPSPIELE_LEAGUE_IDS:
+                out.append(fx)
+        return out
+
+    all_upcoming = _topspiele_only(dedupe_fixtures(upcoming_rows))
     if not all_upcoming and int(load_report.get("date_fallback") or 0) > 0:
         errors.append(
             "Heute keine Spiele in Bundesliga, UEFA oder Top-Ligen im gewählten Zeitraum. "
@@ -434,7 +447,7 @@ def fetch_premium_dashboard(
         )
     today_premium = [fx for fx in all_upcoming if _fixture_date(fx) == today_s]
     tomorrow_premium = [fx for fx in all_upcoming if _fixture_date(fx) == tomorrow_s]
-    premium_live = filter_betting_core_fixtures(filter_premium_fixtures(live_rows))
+    premium_live = _topspiele_only(live_rows)
     premium_fixtures = dedupe_fixtures(premium_live + all_upcoming)
 
     sections = classify_fixtures(premium_fixtures, today=today_s, tomorrow=tomorrow_s)

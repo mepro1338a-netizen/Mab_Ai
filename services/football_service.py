@@ -735,9 +735,11 @@ class FootballService:
       seasons = football_api_seasons_to_try()[:3]
 
       # Composite cache: avoid re-fetching 12 leagues on every page load.
+      from config import FOOTBALL_TOPSPIELE_LEAGUE_IDS
+
       composite_key = self._cache_key(
-          "premium_upcoming_v3",
-          {"days": int(days), "core_ids": sorted(int(x) for x in FOOTBALL_BETTING_CORE_LEAGUE_IDS)},
+          "premium_upcoming_v4",
+          {"days": int(days), "top_ids": sorted(int(x) for x in FOOTBALL_TOPSPIELE_LEAGUE_IDS)},
       )
       composite_ttl = 21_600  # 6 hours
       cached = self._read_cache(composite_key, composite_ttl)
@@ -789,26 +791,7 @@ class FootballService:
       date_from = today.isoformat()
       date_to = horizon.isoformat()
 
-      scan_days = min(max(1, int(days)), 14)
-      for offset in range(scan_days):
-          day = today + timedelta(days=offset)
-          try:
-              rows.extend(
-                  self.get_fixtures_by_date(
-                      day.isoformat(),
-                      username=username,
-                      ttl_override=3600,
-                  )
-              )
-          except FootballAPIError:
-              break
-      if rows:
-          load_report["date_fallback"] = len(rows)
-          rows = [fx for fx in rows if _in_window(fx)]
-
-      core_so_far = filter_betting_core_fixtures(rows)
-      if len(core_so_far) < 20:
-          for lid in sorted(FOOTBALL_BETTING_CORE_LEAGUE_IDS):
+      for lid in sorted(FOOTBALL_TOPSPIELE_LEAGUE_IDS):
               league_in_window: list[dict[str, Any]] = []
               season_used: int | None = None
               for season in seasons:

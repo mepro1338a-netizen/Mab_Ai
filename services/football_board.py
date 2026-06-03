@@ -717,59 +717,18 @@ def resolve_football_board(
     username: str,
     session_plan: str,
 ) -> dict[str, Any]:
-    """Topspiele = PREMIUM_LEAGUE_IDS only; Alle Spiele = curated raw (max 50)."""
-    _ = service, username, session_plan
-    vm = "raw" if str(view_mode).lower() == "raw" else "premium"
-    tf = str(time_filter or "heute").lower()
+    """Delegates to services.football_feed (strict Topspiele / raw API)."""
+    from services.football_feed import resolve_football_feed
 
-    premium_count = len(
-        _filter_topspiele_fixtures(
-            list(payload.get("next_matches") or payload.get("all_premium") or [])
-        )
+    return resolve_football_feed(
+        payload,
+        service,
+        view_mode=view_mode,
+        time_filter=time_filter,
+        username=username,
+        session_plan=session_plan,
+        probe_analysis=str(view_mode).lower() != "raw",
     )
-    raw_pool = _raw_fixtures_for_time(payload, tf)
-    raw_count = len(dedupe_fixtures(raw_pool))
-
-    source = "premium"
-    banner: str | None = None
-    fixtures: list[dict[str, Any]] = []
-
-    if vm == "raw":
-        fixtures = curate_feed_fixtures(
-            raw_pool,
-            min_score=FEED_MIN_SCORE_RAW,
-            max_count=FEED_CAP_RAW,
-        )
-        source = "raw"
-    else:
-        fixtures = _premium_fixtures_for_time(payload, tf)
-        source = "premium"
-        if not fixtures:
-            banner = _empty_topspiele_message(tf)
-
-    rows = build_basic_board_rows(fixtures)
-    displayed_count = len(rows)
-
-    if displayed_count == 0 and not banner:
-        banner = MSG_NO_MATCHES if vm == "raw" else _empty_topspiele_message(tf)
-
-    metrics = {
-        "premium_count": premium_count,
-        "raw_count": raw_count,
-        "displayed_count": displayed_count,
-        "source": source,
-        "time_filter": tf,
-        "view_mode": vm,
-    }
-    _log_board_metrics(metrics)
-
-    return {
-        "rows": rows,
-        "metrics": metrics,
-        "banner": banner,
-        "source": source,
-        "raw_mode": vm == "raw",
-    }
 
 
 def _fixture_date(fixture: dict[str, Any]) -> str:
