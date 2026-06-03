@@ -10,7 +10,7 @@ from database import recent_activity
 from ui.components import format_num, nav
 from ui.styles import inject_css, page_layout_css
 
-_TOPBAR = 88
+_TOPBAR = 64
 _ACCENT = "#8b5cf6"
 
 _HOME_CSS = f"""

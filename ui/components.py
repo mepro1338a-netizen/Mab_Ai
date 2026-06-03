@@ -9,7 +9,7 @@ from config import DAILY_LIMITS
 from database import list_usage, recent_activity
 from ui.styles import inject_css, page_layout_css
 
-_DASH_TOPBAR = 88
+_DASH_TOPBAR = 64
 
 
 def nav(page: str) -> None:

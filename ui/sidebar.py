@@ -32,19 +32,24 @@ LEGACY_PAGE_ALIASES: dict[str, str] = {
     "automations": "automation_lab",
 }
 
+# Lucide icons (stroke 2, 24×24) — https://lucide.dev
+_LUCIDE = (
+    'xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" '
+    'stroke="{c}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"'
+)
 _ICON: dict[str, str] = {
-    "home": '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="{c}" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
-    "chat": '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="{c}" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>',
-    "football": '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="{c}" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>',
-    "image": '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="{c}" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>',
-    "video": '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="{c}" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m16 13 5.223 3.482A.5.5 0 0 0 22 16.07V7.93a.5.5 0 0 0-.777-.416L16 11"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg>',
-    "music": '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="{c}" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>',
-    "coding": '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="{c}" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></svg>',
-    "projects": '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="{c}" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>',
-    "automation_lab": '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="{c}" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>',
-    "dashboard": '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="{c}" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
-    "premium": '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="{c}" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"/></svg>',
-    "logout": '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="{c}" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>',
+    "home": f"<svg {_LUCIDE}><rect width=\"7\" height=\"9\" x=\"3\" y=\"3\" rx=\"1\"/><rect width=\"7\" height=\"5\" x=\"14\" y=\"3\" rx=\"1\"/><rect width=\"7\" height=\"9\" x=\"14\" y=\"12\" rx=\"1\"/><rect width=\"7\" height=\"5\" x=\"3\" y=\"16\" rx=\"1\"/></svg>",
+    "chat": f"<svg {_LUCIDE}><path d=\"M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z\"/></svg>",
+    "projects": f"<svg {_LUCIDE}><path d=\"M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.07 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z\"/><path d=\"M8 10v4\"/><path d=\"M12 10v2\"/><path d=\"M16 10v6\"/></svg>",
+    "automation_lab": f"<svg {_LUCIDE}><rect width=\"8\" height=\"8\" x=\"3\" y=\"3\" rx=\"2\"/><path d=\"M7 11v4a2 2 0 0 0 2 2h4\"/><rect width=\"8\" height=\"8\" x=\"13\" y=\"13\" rx=\"2\"/></svg>",
+    "image": f"<svg {_LUCIDE}><rect width=\"18\" height=\"18\" x=\"3\" y=\"3\" rx=\"2\" ry=\"2\"/><circle cx=\"9\" cy=\"9\" r=\"2\"/><path d=\"m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21\"/></svg>",
+    "video": f"<svg {_LUCIDE}><path d=\"M20 2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2Z\"/><path d=\"m8 2 2 3\"/><path d=\"m16 2-2 3\"/></svg>",
+    "music": f"<svg {_LUCIDE}><path d=\"M9 18V5l12-2v13\"/><circle cx=\"6\" cy=\"18\" r=\"3\"/><circle cx=\"18\" cy=\"16\" r=\"3\"/></svg>",
+    "coding": f"<svg {_LUCIDE}><path d=\"m18 16 4-4-4-4\"/><path d=\"m6 8-4 4 4 4\"/><path d=\"M10.5 4 8 16\"/><path d=\"m14.5 4 7 16\"/></svg>",
+    "football": f"<svg {_LUCIDE}><path d=\"M6 9H4.5a2.5 2.5 0 0 1 0-5H6\"/><path d=\"M18 9h1.5a2.5 2.5 0 0 0 0-5H18\"/><path d=\"M4 22h16\"/><path d=\"M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.7 7 22\"/><path d=\"M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.7 17 22\"/><path d=\"M18 2H6v7a6 6 0 0 0 12 0V2Z\"/></svg>",
+    "dashboard": f"<svg {_LUCIDE}><path d=\"M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2\"/><circle cx=\"12\" cy=\"7\" r=\"4\"/></svg>",
+    "premium": f"<svg {_LUCIDE}><path d=\"M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z\"/></svg>",
+    "logout": f"<svg {_LUCIDE}><path d=\"M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4\"/><polyline points=\"16 17 21 12 16 7\"/><line x1=\"21\" x2=\"9\" y1=\"12\" y2=\"12\"/></svg>",
 }
 
 _BRAND_MARK = (
@@ -60,7 +65,7 @@ _BRAND_MARK = (
 
 
 def _icon_uri(page: str, *, active: bool = False) -> str:
-    color = "%23A78BFA" if active else "%23a1a1aa"
+    color = "%23ffffff" if active else "%23a1a1aa"
     tpl = _ICON.get(page) or _ICON["home"]
     return f'url("data:image/svg+xml,{quote(tpl.format(c=color))}")'
 
@@ -174,29 +179,42 @@ def sidebar_master_css(active_page: str = "home") -> str:
 {_SB} div[class*="st-key-nav_"]:not(.st-key-nav_logout) .stButton > button {{
     width:100%!important;min-height:44px!important;height:44px!important;
     margin:0!important;padding:0 12px 0 46px!important;border-radius:10px!important;
-    border:1px solid transparent!important;border-left:4px solid transparent!important;
+    border:1px solid transparent!important;border-left:3px solid transparent!important;
     background:transparent!important;color:#a1a1aa!important;
     font-size:14px!important;font-weight:500!important;line-height:1!important;
     text-align:left!important;position:relative!important;
     white-space:nowrap!important;overflow:visible!important;box-shadow:none!important;
-    transition:background 200ms ease,color 200ms ease,border-color 200ms ease!important;
+    opacity:.75!important;
+    transition:background 180ms ease,color 180ms ease,border-color 180ms ease,
+        transform 180ms ease,opacity 180ms ease!important;
 }}
 {_SB} div[class*="st-key-nav_"]:not(.st-key-nav_logout) .stButton > button p {{
     color:inherit!important;font-size:14px!important;font-weight:500!important;
     margin:0!important;line-height:1!important;white-space:nowrap!important;
 }}
-{_SB} div[class*="st-key-nav_"]:not(.st-key-nav_logout) .stButton > button:hover {{
-    background:rgba(255,255,255,.05)!important;color:#e4e4e7!important;
+{_SB} div[class*="st-key-nav_"]:not(.st-key-nav_logout):not(.st-key-{active_key}) .stButton > button:hover {{
+    opacity:1!important;
+    background:rgba(255,255,255,.06)!important;
+    color:#e4e4e7!important;
+    transform:translateX(2px)!important;
 }}
 {_SB} .st-key-{active_key} .stButton > button {{
-    background:rgba(124,58,237,.15)!important;color:#ffffff!important;
-    border-left:4px solid #8B5CF6!important;
+    opacity:1!important;
+    background:rgba(124,58,237,.2)!important;
+    color:#ffffff!important;
+    border-left:3px solid #8B5CF6!important;
+    transform:none!important;
 }}
 {_SB} .st-key-{active_key} .stButton > button::before {{
     background-image:{_icon_uri(active, active=True)}!important;
 }}
 {_SB} .st-key-{active_key} .stButton > button p {{
     color:#ffffff!important;font-weight:500!important;
+}}
+{_SB} .st-key-{active_key} .stButton > button:hover {{
+    background:rgba(124,58,237,.26)!important;
+    color:#ffffff!important;
+    transform:none!important;
 }}
 {"".join(icon_rules)}
 {_SB} .st-key-nav_logout .stButton {{
@@ -208,7 +226,8 @@ def sidebar_master_css(active_page: str = "home") -> str:
     border:1px solid rgba(255,255,255,.08)!important;
     background:rgba(255,255,255,.03)!important;color:#a1a1aa!important;
     font-size:14px!important;font-weight:500!important;position:relative!important;
-    transition:background 200ms ease,color 200ms ease,border-color 200ms ease!important;
+    opacity:.75!important;
+    transition:background 180ms ease,color 180ms ease,transform 180ms ease,opacity 180ms ease!important;
 }}
 {_SB} .st-key-nav_logout .stButton > button::before {{
     content:"";position:absolute;left:14px;top:50%;transform:translateY(-50%);
@@ -219,7 +238,10 @@ def sidebar_master_css(active_page: str = "home") -> str:
     color:inherit!important;font-size:14px!important;font-weight:500!important;margin:0!important;
 }}
 {_SB} .st-key-nav_logout .stButton > button:hover {{
-    background:rgba(255,255,255,.05)!important;color:#fafafa!important;
+    opacity:1!important;
+    background:rgba(255,255,255,.06)!important;
+    color:#fafafa!important;
+    transform:translateX(2px)!important;
 }}
 """
 

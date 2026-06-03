@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import streamlit as st
 
-_UI_VERSION = 12
+_UI_VERSION = 13
 
 
 GLOBAL_DESIGN_CSS = """
@@ -288,7 +288,7 @@ def inject_global_ui(*, force: bool = False) -> None:
         + streamlit_force_dark_css()
         + BETA_GLOBAL_CSS
         + header_css()
-        + page_layout_css(1480, 88, 42)
+        + page_layout_css(1480, 64, 42)
         + GLOBAL_DESIGN_CSS
         + core_app_css()
         + master_button_css()

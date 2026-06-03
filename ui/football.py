@@ -62,7 +62,7 @@ _MODES = (("premium", "Topspiele"), ("raw", "Alle Spiele"))
 
 
 def _inject_css() -> None:
-    inject_css(MB_THEME_VARS + page_layout_css(1100, 88, 28) + BETA_GLOBAL_CSS + _CSS)
+    inject_css(MB_THEME_VARS + page_layout_css(1100, 64, 28) + BETA_GLOBAL_CSS + _CSS)
 
 
 def _format_quote(row: dict[str, Any]) -> str:
