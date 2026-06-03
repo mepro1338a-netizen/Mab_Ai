@@ -36,7 +36,6 @@ _LEGACY_SKIP = frozenset({
 
 _PLATFORM_LABEL = {k: label for k, label, _ in _PLATFORMS}
 _FREQ_LABEL = {k: label for k, label in _FREQUENCIES}
-_CONTENT_LABEL = {k: label for k, label in _CONTENT_TYPES}
 
 
 _CSS = """
@@ -251,16 +250,14 @@ def _render_create_form(username: str) -> None:
     st.markdown('<p class="ca-section">Create New Automation</p>', unsafe_allow_html=True)
 
     st.session_state.setdefault("ca_platform", "instagram")
-    st.session_state.setdefault("ca_content_type", "ai")
-    st.session_state.setdefault("ca_frequency", "daily")
+    st.session_state.setdefault("ca_form_platform", st.session_state.get("ca_platform", "instagram"))
 
     platform_keys = [p[0] for p in _PLATFORMS]
     content_keys = [c[0] for c in _CONTENT_TYPES]
     freq_keys = [f[0] for f in _FREQUENCIES]
 
-    default_platform = str(st.session_state.get("ca_platform") or "instagram")
-    if default_platform not in platform_keys:
-        default_platform = "instagram"
+    if st.session_state.get("ca_form_platform") not in platform_keys:
+        st.session_state["ca_form_platform"] = "instagram"
 
     with st.container():
         st.markdown('<div class="ca-form">', unsafe_allow_html=True)
@@ -270,7 +267,6 @@ def _render_create_form(username: str) -> None:
             platform = st.selectbox(
                 "Platform",
                 platform_keys,
-                index=platform_keys.index(default_platform),
                 format_func=lambda x: _platform_label(x),
                 key="ca_form_platform",
             )
@@ -291,7 +287,6 @@ def _render_create_form(username: str) -> None:
 
         prompt = st.text_area(
             "Prompt",
-            value=str(st.session_state.get("ca_prompt") or ""),
             placeholder="Create one motivational AI reel every day.",
             height=120,
             key="ca_form_prompt",
@@ -312,7 +307,7 @@ def _render_create_form(username: str) -> None:
                     target_workspace=frequency,
                     trigger_text=text,
                 )
-                st.session_state["ca_prompt"] = ""
+                st.session_state.pop("ca_form_prompt", None)
                 st.success(f"Automation gestartet: {name}")
                 st.rerun()
 

@@ -207,6 +207,9 @@ DEFAULTS = {
     "fb_cache_key": "",
     "fb_displayed_topspiele_count": 0,
     "fb_displayed_allspiele_count": 0,
+    # Content Automation workspace
+    "ca_platform": "instagram",
+    "ca_form_platform": "instagram",
 }
 
 for key, value in DEFAULTS.items():
