@@ -196,13 +196,15 @@ DEFAULTS = {
     "role": "user",
     "admin_level": 0,
     "active_project_id": None,
-    # Football AI workspace (KeyError if missing — dot access in ui/football.py)
-    "fb_v": 8,
-    "fb_mode": "premium",
+    # Football AI workspace
+    "fb_v": 9,
+    "fb_mode": "curated",
+    "fb_competition": "deutschland",
     "fb_time": "heute",
     "fb_payload": None,
     "fb_detail": None,
     "fb_sel": None,
+    "fb_cache_key": "",
     "fb_displayed_topspiele_count": 0,
     "fb_displayed_allspiele_count": 0,
 }

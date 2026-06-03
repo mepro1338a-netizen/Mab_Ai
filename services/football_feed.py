@@ -1,12 +1,17 @@
 """
-Football feed — strict Topspiele (league ID whitelist) vs Alle API-Spiele (raw).
-No curated fallback into Topspiele. No fake analysis signals.
+Football feed — competition browser (league-ID queries) + Alle API (raw global).
+No global fixtures?date as primary source for curated view.
 """
 from __future__ import annotations
 
 from typing import Any
 
-from config import FOOTBALL_TOPSPIELE_LEAGUE_IDS, football_plan_rank
+from config import (
+    FOOTBALL_COMPETITION_GROUPS,
+    FOOTBALL_FRIENDLIES_LEAGUE_ID,
+    FOOTBALL_TOPSPIELE_LEAGUE_IDS,
+    football_plan_rank,
+)
 from services.football_board import (
     fetch_match_detail,
     get_odds_for_fixture,
@@ -15,6 +20,7 @@ from services.football_board import (
 )
 from services.football_loaders import (
     LIVE_STATUSES,
+    _local_today_tomorrow,
     dedupe_fixtures,
     filter_blocked_fixtures,
     parse_match_card,
@@ -22,13 +28,15 @@ from services.football_loaders import (
 )
 from services.football_service import FootballAPIError, FootballService
 
-TOPSPIELE_CAP = 10
+MATCH_CAP = 20
 ALL_API_CAP = 50
-
-MSG_TOP_EMPTY = "Heute keine Topspiele verfügbar."
-MSG_TOP_EMPTY_LIVE = "Keine Live-Topspiele verfügbar."
-MSG_TOP_EMPTY_TOMORROW = "Morgen keine Topspiele verfügbar."
+MSG_NEXT = "Nächste Spiele"
 MSG_ALL_API_LABEL = "Alle API-Spiele (max. 50) — inkl. untergeordnete Ligen."
+
+_CLUB_MARKERS = (
+    " fc", " cf", " sc", " united", " city", " bayern", " borussia",
+    " athletic", " atletico", " real ", " inter ", " ac ", " as ",
+)
 
 
 def _league_id(fixture: dict[str, Any]) -> int | None:
@@ -36,6 +44,11 @@ def _league_id(fixture: dict[str, Any]) -> int | None:
         return int((fixture.get("league") or {}).get("id") or 0) or None
     except (TypeError, ValueError):
         return None
+
+
+def league_ids_for_competition(competition: str) -> frozenset[int]:
+    key = (competition or "deutschland").strip().lower()
+    return FOOTBALL_COMPETITION_GROUPS.get(key, FOOTBALL_COMPETITION_GROUPS["deutschland"])
 
 
 def is_topspiele_fixture(fixture: dict[str, Any]) -> bool:
@@ -47,6 +60,34 @@ def filter_topspiele_fixtures(fixtures: list[dict[str, Any]]) -> list[dict[str, 
     return [fx for fx in fixtures or [] if is_topspiele_fixture(fx)]
 
 
+def _is_national_team_fixture(fixture: dict[str, Any]) -> bool:
+    teams = fixture.get("teams") or {}
+    home = teams.get("home") or {}
+    away = teams.get("away") or {}
+    if home.get("national") is True or away.get("national") is True:
+        return True
+    lid = _league_id(fixture)
+    if lid != FOOTBALL_FRIENDLIES_LEAGUE_ID:
+        return lid in {1, 4, 5}
+    hname = str(home.get("name") or "").strip()
+    aname = str(away.get("name") or "").strip()
+    if not hname or not aname:
+        return False
+    hl, al = hname.lower(), aname.lower()
+    if any(m in hl or m in al for m in _CLUB_MARKERS):
+        return False
+    return True
+
+
+def _matches_competition(fixture: dict[str, Any], competition: str, league_ids: frozenset[int]) -> bool:
+    lid = _league_id(fixture)
+    if lid not in league_ids:
+        return False
+    if (competition or "").lower() == "nationalteams" and lid == FOOTBALL_FRIENDLIES_LEAGUE_ID:
+        return _is_national_team_fixture(fixture)
+    return True
+
+
 def _fixture_date(fixture: dict[str, Any]) -> str:
     return parse_match_card(fixture).get("date") or ""
 
@@ -56,55 +97,271 @@ def _is_live(fixture: dict[str, Any]) -> bool:
     return st in LIVE_STATUSES
 
 
-def _topspiele_empty_message(time_filter: str) -> str:
+def _filter_competition_pool(
+    fixtures: list[dict[str, Any]],
+    *,
+    competition: str,
+    league_ids: frozenset[int],
+) -> list[dict[str, Any]]:
+    return [
+        fx
+        for fx in dedupe_fixtures(fixtures or [])
+        if _matches_competition(fx, competition, league_ids)
+    ]
+
+
+def _fetch_league_today(
+    service: FootballService,
+    league_id: int,
+    today: str,
+    *,
+    username: str,
+) -> list[dict[str, Any]]:
+    try:
+        return service.get_fixtures_by_league_range(
+            league_id,
+            date_from=today,
+            date_to=today,
+            username=username,
+        )
+    except FootballAPIError:
+        return []
+
+
+def _fetch_league_tomorrow(
+    service: FootballService,
+    league_id: int,
+    tomorrow: str,
+    *,
+    username: str,
+) -> list[dict[str, Any]]:
+    try:
+        return service.get_fixtures_by_league_range(
+            league_id,
+            date_from=tomorrow,
+            date_to=tomorrow,
+            username=username,
+        )
+    except FootballAPIError:
+        return []
+
+
+def _fetch_league_next(
+    service: FootballService,
+    league_id: int,
+    *,
+    username: str,
+    count: int = 15,
+) -> list[dict[str, Any]]:
+    try:
+        return service.get_fixtures_by_league_next(
+            league_id, next_count=count, username=username
+        )
+    except FootballAPIError:
+        return []
+
+
+def _fetch_league_live(
+    service: FootballService,
+    league_ids: frozenset[int],
+    *,
+    username: str,
+) -> list[dict[str, Any]]:
+    try:
+        rows = service.get_live_fixtures(username=username)
+    except FootballAPIError:
+        return []
+    return [fx for fx in rows if _league_id(fx) in league_ids]
+
+
+def _collect_by_leagues(
+    service: FootballService,
+    league_ids: frozenset[int],
+    *,
+    username: str,
+    fetch_fn,
+) -> list[dict[str, Any]]:
+    pool: list[dict[str, Any]] = []
+    for lid in sorted(league_ids):
+        pool.extend(fetch_fn(service, int(lid), username=username))
+    return pool
+
+
+def fetch_competition_fixtures(
+    service: FootballService,
+    *,
+    username: str,
+    competition: str,
+    time_filter: str,
+) -> dict[str, Any]:
+    """
+    Query fixtures per league ID for the selected competition group.
+    Heute: today → live → tomorrow → next (banner: Nächste Spiele).
+    """
+    league_ids = league_ids_for_competition(competition)
+    today, tomorrow = _local_today_tomorrow()
     tf = (time_filter or "heute").lower()
-    if tf == "morgen":
-        return MSG_TOP_EMPTY_TOMORROW
+    errors: list[str] = []
+    banner: str | None = None
+    effective_filter = tf
+
+    def _today_fetch(svc: FootballService, lid: int, *, username: str) -> list[dict[str, Any]]:
+        return _fetch_league_today(svc, lid, today, username=username)
+
+    def _tomorrow_fetch(svc: FootballService, lid: int, *, username: str) -> list[dict[str, Any]]:
+        return _fetch_league_tomorrow(svc, lid, tomorrow, username=username)
+
+    def _next_fetch(svc: FootballService, lid: int, *, username: str) -> list[dict[str, Any]]:
+        return _fetch_league_next(svc, lid, username=username)
+
+    pool: list[dict[str, Any]] = []
+
     if tf == "live":
-        return MSG_TOP_EMPTY_LIVE
-    return MSG_TOP_EMPTY
+        live_rows = _fetch_league_live(service, league_ids, username=username)
+        pool = _filter_competition_pool(live_rows, competition=competition, league_ids=league_ids)
+        if not pool:
+            pool = _filter_competition_pool(
+                _collect_by_leagues(service, league_ids, username=username, fetch_fn=_next_fetch),
+                competition=competition,
+                league_ids=league_ids,
+            )
+            if pool:
+                banner = MSG_NEXT
+                effective_filter = "naechste"
+    elif tf == "morgen":
+        pool = _filter_competition_pool(
+            _collect_by_leagues(service, league_ids, username=username, fetch_fn=_tomorrow_fetch),
+            competition=competition,
+            league_ids=league_ids,
+        )
+        if not pool:
+            pool = _filter_competition_pool(
+                _collect_by_leagues(service, league_ids, username=username, fetch_fn=_next_fetch),
+                competition=competition,
+                league_ids=league_ids,
+            )
+            if pool:
+                banner = MSG_NEXT
+                effective_filter = "naechste"
+    elif tf == "naechste":
+        pool = _filter_competition_pool(
+            _collect_by_leagues(service, league_ids, username=username, fetch_fn=_next_fetch),
+            competition=competition,
+            league_ids=league_ids,
+        )
+        if pool:
+            banner = MSG_NEXT
+    else:  # heute
+        pool = _filter_competition_pool(
+            _collect_by_leagues(service, league_ids, username=username, fetch_fn=_today_fetch),
+            competition=competition,
+            league_ids=league_ids,
+        )
+        if not pool:
+            live_rows = _fetch_league_live(service, league_ids, username=username)
+            pool = _filter_competition_pool(live_rows, competition=competition, league_ids=league_ids)
+            if pool:
+                effective_filter = "live"
+        if not pool:
+            pool = _filter_competition_pool(
+                _collect_by_leagues(service, league_ids, username=username, fetch_fn=_tomorrow_fetch),
+                competition=competition,
+                league_ids=league_ids,
+            )
+            if pool:
+                effective_filter = "morgen"
+        if not pool:
+            pool = _filter_competition_pool(
+                _collect_by_leagues(service, league_ids, username=username, fetch_fn=_next_fetch),
+                competition=competition,
+                league_ids=league_ids,
+            )
+            if pool:
+                banner = MSG_NEXT
+                effective_filter = "naechste"
+
+    pool = sort_fixtures_by_priority(pool)[:MATCH_CAP]
+
+    return {
+        "fixtures": pool,
+        "banner": banner,
+        "errors": errors,
+        "competition": competition,
+        "time_filter": tf,
+        "effective_filter": effective_filter,
+        "today": today,
+        "tomorrow": tomorrow,
+    }
+
+
+def fetch_all_api_payload(
+    service: FootballService,
+    *,
+    username: str,
+) -> dict[str, Any]:
+    """Raw global API lists — only for Alle Spiele mode."""
+    today, tomorrow = _local_today_tomorrow()
+    errors: list[str] = []
+
+    def _fetch(fn) -> list[dict[str, Any]]:
+        try:
+            return fn()
+        except FootballAPIError as exc:
+            errors.append(str(exc))
+            return []
+
+    raw_live = _fetch(lambda: service.get_live_fixtures(username=username))
+    raw_today = _fetch(lambda: service.get_fixtures_by_date(today, username=username))
+    raw_tomorrow = _fetch(lambda: service.get_fixtures_by_date(tomorrow, username=username))
+
+    return {
+        "today": today,
+        "tomorrow": tomorrow,
+        "errors": errors,
+        "raw_live": raw_live,
+        "raw_today": raw_today,
+        "raw_tomorrow": raw_tomorrow,
+    }
 
 
 def _all_api_sort_key(fixture: dict[str, Any]) -> tuple:
     lid = _league_id(fixture) or 0
     in_top = 0 if lid in FOOTBALL_TOPSPIELE_LEAGUE_IDS else 1
-    tier_penalty = 0 if in_top == 0 else 1
-    return (in_top, tier_penalty, str((fixture.get("fixture") or {}).get("date") or ""))
+    return (in_top, str((fixture.get("fixture") or {}).get("date") or ""))
 
 
-def _pool_for_time(payload: dict[str, Any], time_filter: str, *, raw_only: bool) -> list[dict[str, Any]]:
-    today_s = str(payload.get("today") or payload.get("today_local") or "")
+def _pool_for_time_raw(payload: dict[str, Any], time_filter: str) -> list[dict[str, Any]]:
+    today_s = str(payload.get("today") or "")
     tf = (time_filter or "heute").lower()
-
-    if raw_only:
-        raw_live = list(payload.get("raw_live") or [])
-        raw_today = list(payload.get("raw_today") or [])
-        raw_tomorrow = list(payload.get("raw_tomorrow") or [])
-        if tf == "live":
-            pool = raw_live
-        elif tf == "morgen":
-            pool = raw_tomorrow
-        else:
-            pool = dedupe_fixtures(raw_live + raw_today)
-            if tf == "heute":
-                pool = [fx for fx in pool if _is_live(fx) or _fixture_date(fx) == today_s]
-        return filter_blocked_fixtures(pool)
-
     raw_live = list(payload.get("raw_live") or [])
     raw_today = list(payload.get("raw_today") or [])
     raw_tomorrow = list(payload.get("raw_tomorrow") or [])
-    upcoming = list(payload.get("next_matches") or payload.get("all_premium") or [])
 
     if tf == "live":
-        pool = dedupe_fixtures(raw_live + list(payload.get("live_now") or []))
+        pool = raw_live
     elif tf == "morgen":
-        pool = dedupe_fixtures(raw_tomorrow + list(payload.get("tomorrow_fixtures") or []))
+        pool = raw_tomorrow
+    elif tf == "naechste":
+        pool = sorted(
+            dedupe_fixtures(raw_today + raw_tomorrow + raw_live),
+            key=_all_api_sort_key,
+        )
     else:
-        pool = dedupe_fixtures(raw_live + raw_today + upcoming)
+        pool = dedupe_fixtures(raw_live + raw_today)
         if tf == "heute":
             pool = [fx for fx in pool if _is_live(fx) or _fixture_date(fx) == today_s]
 
-    return pool
+    return filter_blocked_fixtures(pool)
+
+
+def format_quote_label(row: dict[str, Any]) -> str:
+    if row.get("home_odd") and row.get("draw_odd") and row.get("away_odd"):
+        try:
+            h, d, a = float(row["home_odd"]), float(row["draw_odd"]), float(row["away_odd"])
+            return f"1 {h:.2f} · X {d:.2f} · 2 {a:.2f}"
+        except (TypeError, ValueError):
+            pass
+    return "nicht verfügbar"
 
 
 def build_row(fixture: dict[str, Any], *, raw_mode: bool = False) -> dict[str, Any]:
@@ -118,10 +375,13 @@ def build_row(fixture: dict[str, Any], *, raw_mode: bool = False) -> dict[str, A
         "fixture_id": fid_int,
         "card": card,
         "raw_mode": raw_mode,
-        "schedule_only": True,
         "analysis_available": False,
         "has_odds": False,
         "has_predictions": False,
+        "home_odd": None,
+        "draw_odd": None,
+        "away_odd": None,
+        "quote_label": "nicht verfügbar",
     }
 
 
@@ -131,22 +391,22 @@ def probe_analysis_available(
     *,
     username: str,
     session_plan: str,
-) -> tuple[bool, bool]:
-    """Return (has_odds, has_predictions) — real API only."""
+) -> tuple[bool, bool, dict[str, float | None]]:
     rank = football_plan_rank(session_plan or "none")
-    has_odds = False
-    has_pred = False
+    odds = {"home": None, "draw": None, "away": None}
+    has_odds = has_pred = False
     if rank < 1 or not fixture_id:
-        return has_odds, has_pred
+        return has_odds, has_pred, odds
 
     try:
         o1x2 = get_odds_for_fixture(service, int(fixture_id), username=username)
+        odds = {
+            "home": o1x2.get("home"),
+            "draw": o1x2.get("draw"),
+            "away": o1x2.get("away"),
+        }
         has_odds = has_complete_odds(
-            {
-                "home_odd": o1x2.get("home"),
-                "draw_odd": o1x2.get("draw"),
-                "away_odd": o1x2.get("away"),
-            }
+            {"home_odd": odds["home"], "draw_odd": odds["draw"], "away_odd": odds["away"]}
         )
     except FootballAPIError:
         pass
@@ -160,7 +420,7 @@ def probe_analysis_available(
         except FootballAPIError:
             pass
 
-    return has_odds, has_pred
+    return has_odds, has_pred, odds
 
 
 def enrich_rows_analysis_flags(
@@ -177,44 +437,63 @@ def enrich_rows_analysis_flags(
         r = dict(row)
         fid = r.get("fixture_id")
         if fid and probed < max_probe:
-            has_odds, has_pred = probe_analysis_available(
+            has_odds, has_pred, odds = probe_analysis_available(
                 service, int(fid), username=username, session_plan=session_plan
             )
             r["has_odds"] = has_odds
             r["has_predictions"] = has_pred
             r["analysis_available"] = has_odds or has_pred
+            r["home_odd"] = odds.get("home")
+            r["draw_odd"] = odds.get("draw")
+            r["away_odd"] = odds.get("away")
+            r["quote_label"] = format_quote_label(r)
             probed += 1
         else:
             r["has_odds"] = False
             r["has_predictions"] = False
             r["analysis_available"] = False
+            r["quote_label"] = "nicht verfügbar"
         out.append(r)
     return out
 
 
-def resolve_topspiele_board(
-    payload: dict[str, Any],
+def resolve_competition_board(
+    service: FootballService,
     *,
+    username: str,
+    session_plan: str,
+    competition: str,
     time_filter: str,
+    probe_analysis: bool = True,
 ) -> dict[str, Any]:
-    pool = _pool_for_time(payload, time_filter, raw_only=False)
-    fixtures = filter_topspiele_fixtures(pool)
-    fixtures = sort_fixtures_by_priority(fixtures)[:TOPSPIELE_CAP]
+    payload = fetch_competition_fixtures(
+        service,
+        username=username,
+        competition=competition,
+        time_filter=time_filter,
+    )
+    fixtures = payload.get("fixtures") or []
     rows = [build_row(fx, raw_mode=False) for fx in fixtures]
-    banner = _topspiele_empty_message(time_filter) if not rows else None
+    if probe_analysis and rows:
+        rows = enrich_rows_analysis_flags(
+            rows, service, username=username, session_plan=session_plan
+        )
+
+    banner = payload.get("banner")
+    if not rows and not banner:
+        banner = MSG_NEXT
+
     return {
         "rows": rows,
         "banner": banner,
-        "source": "topspiele",
+        "source": "competition",
         "raw_mode": False,
+        "competition": competition,
+        "time_filter": time_filter,
+        "effective_filter": payload.get("effective_filter"),
         "displayed_topspiele_count": len(rows),
         "displayed_allspiele_count": 0,
-        "metrics": {
-            "topspiele_pool": len(filter_topspiele_fixtures(pool)),
-            "displayed_count": len(rows),
-            "view_mode": "premium",
-            "time_filter": time_filter,
-        },
+        "errors": payload.get("errors") or [],
     }
 
 
@@ -223,10 +502,9 @@ def resolve_all_api_board(
     *,
     time_filter: str,
 ) -> dict[str, Any]:
-    pool = _pool_for_time(payload, time_filter, raw_only=True)
-    pool = sorted(pool, key=_all_api_sort_key)
-    fixtures = pool[:ALL_API_CAP]
-    rows = [build_row(fx, raw_mode=True) for fx in fixtures]
+    pool = _pool_for_time_raw(payload, time_filter)
+    pool = sorted(pool, key=_all_api_sort_key)[:ALL_API_CAP]
+    rows = [build_row(fx, raw_mode=True) for fx in pool]
     return {
         "rows": rows,
         "banner": MSG_ALL_API_LABEL if rows else "Aktuell keine API-Spiele für diesen Zeitraum.",
@@ -234,54 +512,56 @@ def resolve_all_api_board(
         "raw_mode": True,
         "displayed_topspiele_count": 0,
         "displayed_allspiele_count": len(rows),
-        "metrics": {
-            "raw_pool": len(pool),
-            "displayed_count": len(rows),
-            "view_mode": "raw",
-            "time_filter": time_filter,
-        },
     }
 
 
 def resolve_football_feed(
-    payload: dict[str, Any],
+    payload: dict[str, Any] | None,
     service: FootballService,
     *,
     view_mode: str,
     time_filter: str,
     username: str,
     session_plan: str,
+    competition: str = "deutschland",
     probe_analysis: bool = True,
 ) -> dict[str, Any]:
-    vm = "raw" if str(view_mode).lower() == "raw" else "premium"
+    vm = "raw" if str(view_mode).lower() in ("raw", "alle", "alle_spiele") else "curated"
     if vm == "raw":
-        result = resolve_all_api_board(payload, time_filter=time_filter)
-    else:
-        result = resolve_topspiele_board(payload, time_filter=time_filter)
-
-    rows = result.get("rows") or []
-    if probe_analysis and vm == "premium" and rows:
-        rows = enrich_rows_analysis_flags(
-            rows, service, username=username, session_plan=session_plan
-        )
-        result["rows"] = rows
-
-    return result
-
-
-def fetch_board_payload(
-    service: FootballService,
-    *,
-    username: str,
-    time_filter: str,
-) -> dict[str, Any]:
-    """Always load raw + live so Topspiele can filter by league ID reliably."""
-    from services.football_loaders import fetch_premium_dashboard
-
-    tf = (time_filter or "heute").lower()
-    return fetch_premium_dashboard(
+        raw_payload = payload or fetch_all_api_payload(service, username=username)
+        return resolve_all_api_board(raw_payload, time_filter=time_filter)
+    return resolve_competition_board(
         service,
         username=username,
-        include_live=True,
-        include_raw=True,
+        session_plan=session_plan,
+        competition=competition,
+        time_filter=time_filter,
+        probe_analysis=probe_analysis,
     )
+
+
+# Backward-compatible aliases
+def resolve_topspiele_board(payload, *, time_filter: str) -> dict[str, Any]:
+    _ = payload, time_filter
+    return {"rows": [], "banner": MSG_NEXT, "displayed_topspiele_count": 0}
+
+
+def fetch_board_payload(service, *, username: str, time_filter: str) -> dict[str, Any]:
+    _ = time_filter
+    return fetch_all_api_payload(service, username=username)
+
+
+__all__ = [
+    "fetch_all_api_payload",
+    "fetch_board_payload",
+    "fetch_competition_fixtures",
+    "fetch_match_detail",
+    "filter_topspiele_fixtures",
+    "format_quote_label",
+    "is_topspiele_fixture",
+    "league_ids_for_competition",
+    "resolve_all_api_board",
+    "resolve_competition_board",
+    "resolve_football_feed",
+    "resolve_topspiele_board",
+]

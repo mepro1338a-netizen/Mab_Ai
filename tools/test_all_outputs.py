@@ -7,8 +7,10 @@ import traceback
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-WHITELIST = {78, 79, 81, 2, 3, 848, 39, 140, 135, 61}
-TIME_FILTERS = ("heute", "live", "morgen")
+WHITELIST = set()
+for _ids in __import__("config", fromlist=["FOOTBALL_COMPETITION_GROUPS"]).FOOTBALL_COMPETITION_GROUPS.values():
+    WHITELIST.update(_ids)
+TIME_FILTERS = ("heute", "live", "morgen", "naechste")
 
 
 def section(title: str) -> None:
@@ -63,10 +65,12 @@ def test_session_defaults() -> bool:
     required = {
         "fb_v",
         "fb_mode",
+        "fb_competition",
         "fb_time",
         "fb_payload",
         "fb_detail",
         "fb_sel",
+        "fb_cache_key",
         "fb_displayed_topspiele_count",
         "fb_displayed_allspiele_count",
     }
@@ -108,10 +112,11 @@ def _print_rows(label: str, rows: list, limit: int = 5) -> None:
 def test_football_feed_all() -> bool:
     from services.football_api import get_football_service
     from services.football_feed import (
-        fetch_board_payload,
+        fetch_all_api_payload,
+        league_ids_for_competition,
         resolve_all_api_board,
+        resolve_competition_board,
         resolve_football_feed,
-        resolve_topspiele_board,
     )
 
     svc = get_football_service()
@@ -120,76 +125,69 @@ def test_football_feed_all() -> bool:
         return True
 
     ok = True
-    for tf in TIME_FILTERS:
-        section(f"Zeitfilter: {tf.upper()}")
+    for comp in ("deutschland", "uefa", "topligen"):
+        section(f"Wettbewerb: {comp.upper()}")
+        allowed = league_ids_for_competition(comp)
         try:
-            payload = fetch_board_payload(svc, username="test", time_filter=tf)
-            errors = payload.get("errors") or []
-            if errors:
-                print("  API-Warnungen:", errors[:3])
-
-            top = resolve_topspiele_board(payload, time_filter=tf)
-            all_ = resolve_all_api_board(payload, time_filter=tf)
-            top_rows = top.get("rows") or []
-            all_rows = all_.get("rows") or []
-
-            print(f"  topspiele_banner: {top.get('banner')!r}")
-            print(f"  all_banner: {all_.get('banner')!r}")
-            print(f"  displayed_topspiele_count: {len(top_rows)}")
-            print(f"  displayed_allspiele_count: {len(all_rows)}")
-
+            result = resolve_competition_board(
+                svc,
+                username="test",
+                session_plan="football_elite",
+                competition=comp,
+                time_filter="heute",
+                probe_analysis=False,
+            )
+            rows = result.get("rows") or []
+            print(f"  banner: {result.get('banner')!r}")
+            print(f"  rows: {len(rows)}")
             bad = []
-            for row in top_rows:
+            for row in rows:
                 lid = (row.get("card") or {}).get("league_id")
                 try:
-                    if int(lid or 0) not in WHITELIST:
+                    if int(lid or 0) not in allowed:
                         bad.append(lid)
                 except (TypeError, ValueError):
                     bad.append(lid)
             if bad:
-                print("  FAIL Whitelist-Verletzung:", bad[:5])
+                print("  FAIL Whitelist:", bad[:5])
                 ok = False
             else:
                 print("  OK Whitelist-only")
-
-            _print_rows("Topspiele", top_rows)
-            _print_rows("Alle API", all_rows, limit=3)
-
-            # resolve_football_feed (wie UI)
-            for mode in ("premium", "raw"):
-                result = resolve_football_feed(
-                    payload,
-                    svc,
-                    view_mode=mode,
-                    time_filter=tf,
-                    username="test",
-                    session_plan="football_elite",
-                    probe_analysis=(mode == "premium"),
-                )
-                print(
-                    f"  resolve_football_feed({mode}): "
-                    f"rows={len(result.get('rows') or [])} "
-                    f"banner={result.get('banner')!r}"
-                )
+            _print_rows(comp, rows, limit=3)
         except Exception as exc:
             print("  FAIL:", exc)
             traceback.print_exc()
             ok = False
+
+    section("Alle API")
+    try:
+        payload = fetch_all_api_payload(svc, username="test")
+        all_ = resolve_all_api_board(payload, time_filter="heute")
+        print(f"  rows: {len(all_.get('rows') or [])}")
+    except Exception as exc:
+        print("  FAIL:", exc)
+        ok = False
     return ok
 
 
 def test_match_detail_sample() -> bool:
     from services.football_api import get_football_service
     from services.football_board import fetch_match_detail
-    from services.football_feed import fetch_board_payload, resolve_topspiele_board
+    from services.football_feed import resolve_competition_board
 
     svc = get_football_service()
     if not svc.is_configured():
         print("SKIP")
         return True
 
-    payload = fetch_board_payload(svc, username="test", time_filter="heute")
-    top = resolve_topspiele_board(payload, time_filter="heute")
+    top = resolve_competition_board(
+        svc,
+        username="test",
+        session_plan="football_elite",
+        competition="deutschland",
+        time_filter="heute",
+        probe_analysis=False,
+    )
     rows = top.get("rows") or []
     if not rows:
         print("SKIP — keine Topspiele für Detail-Test")

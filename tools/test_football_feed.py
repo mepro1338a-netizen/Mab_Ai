@@ -1,4 +1,4 @@
-"""Smoke test football feed counts (no Streamlit)."""
+"""Smoke test football feed — competition groups + Alle API."""
 from __future__ import annotations
 
 import os
@@ -8,11 +8,24 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from services.football_api import get_football_service
 from services.football_feed import (
-    filter_topspiele_fixtures,
-    fetch_board_payload,
+    fetch_all_api_payload,
+    league_ids_for_competition,
     resolve_all_api_board,
-    resolve_topspiele_board,
+    resolve_competition_board,
 )
+
+
+def _check_whitelist(rows: list, allowed: frozenset) -> list:
+    bad = []
+    for row in rows:
+        card = row.get("card") or {}
+        lid = card.get("league_id")
+        try:
+            if int(lid or 0) not in allowed:
+                bad.append(f"{card.get('league')} id={lid}")
+        except (TypeError, ValueError):
+            bad.append(str(card.get("league")))
+    return bad
 
 
 def main() -> None:
@@ -21,36 +34,28 @@ def main() -> None:
         print("SKIP: FOOTBALL_API_KEY not set")
         return
 
-    payload = fetch_board_payload(svc, username="test", time_filter="heute")
-    top = resolve_topspiele_board(payload, time_filter="heute")
+    for comp in ("deutschland", "uefa", "topligen", "nationalteams"):
+        allowed = league_ids_for_competition(comp)
+        result = resolve_competition_board(
+            svc,
+            username="test",
+            session_plan="football_elite",
+            competition=comp,
+            time_filter="heute",
+            probe_analysis=False,
+        )
+        rows = result.get("rows") or []
+        bad = _check_whitelist(rows, allowed)
+        print(f"[{comp}] rows={len(rows)} banner={result.get('banner')!r}")
+        if bad:
+            print(f"  FAIL whitelist:", bad[:3])
+        else:
+            print("  OK whitelist")
+
+    payload = fetch_all_api_payload(svc, username="test")
     all_ = resolve_all_api_board(payload, time_filter="heute")
-
-    top_rows = top.get("rows") or []
     all_rows = all_.get("rows") or []
-
-    bad_top = []
-    for row in top_rows:
-        card = row.get("card") or {}
-        lid = card.get("league_id")
-        league = card.get("league") or ""
-        country = card.get("country") or ""
-        try:
-            if int(lid or 0) not in {78, 79, 81, 2, 3, 848, 39, 140, 135, 61}:
-                bad_top.append(f"{league} ({country}) id={lid}")
-        except (TypeError, ValueError):
-            bad_top.append(f"{league} ({country})")
-
-    print(f"displayed_topspiele_count={len(top_rows)}")
-    print(f"displayed_allspiele_count={len(all_rows)}")
-    print(f"topspiele_banner={top.get('banner')!r}")
-    print(f"all_banner={all_.get('banner')!r}")
-    if bad_top:
-        print("FAIL topspiele non-whitelist:", bad_top[:5])
-    else:
-        print("OK topspiele whitelist only")
-    raw_pool = payload.get("raw_today") or []
-    print(f"raw_today_total={len(raw_pool)}")
-    print(f"raw_topspiele_in_pool={len(filter_topspiele_fixtures(raw_pool))}")
+    print(f"alle_api rows={len(all_rows)} banner={all_.get('banner')!r}")
 
 
 if __name__ == "__main__":

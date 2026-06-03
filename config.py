@@ -262,21 +262,23 @@ FOOTBALL_PREMIUM_LEAGUE_IDS = frozenset(
     for _lid in (int(_lg["id"]),)
 )
 
-# Football AI Topspiele — strict premium whitelist
+# Football AI competition browser — strict league whitelists per filter
+FOOTBALL_COMPETITION_GROUPS: dict[str, frozenset[int]] = {
+    "deutschland": frozenset({78, 79, 81}),
+    "uefa": frozenset({2, 3, 848}),
+    "topligen": frozenset({39, 140, 135, 61, 88, 94}),
+    "nationalteams": frozenset({1, 4, 5, 10}),
+}
+
+FOOTBALL_FRIENDLIES_LEAGUE_ID = 10
+
+# Football AI Topspiele — union of curated competition leagues (excl. friendlies id 10)
 FOOTBALL_TOPSPIELE_LEAGUE_IDS = frozenset(
-    {
-        78,   # 1. Bundesliga
-        79,   # 2. Bundesliga
-        81,   # DFB Pokal
-        2,    # Champions League
-        3,    # Europa League
-        848,  # Conference League
-        39,   # Premier League
-        140,  # La Liga
-        135,  # Serie A
-        61,   # Ligue 1
-    }
-)
+    lid
+    for grp, ids in FOOTBALL_COMPETITION_GROUPS.items()
+    for lid in ids
+    if lid != FOOTBALL_FRIENDLIES_LEAGUE_ID
+) | frozenset({1, 4, 5})
 
 # Football AI betting board — top-tier whitelist (+ WM/Euro for curated feed)
 FOOTBALL_BETTING_CORE_LEAGUE_IDS = frozenset(
