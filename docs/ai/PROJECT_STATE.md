@@ -1,10 +1,10 @@
 # MaByte — PROJECT_STATE
 
 > **Single Source of Truth** für externe AI-Systeme  
-> **Letzte Aktualisierung:** 2026-06-02 · Branch `main` · UI-Version **16**  
+> **Letzte Aktualisierung:** 2026-06-03 · Branch `main` · UI-Version **16**  
 > **Einstieg:** `main.py` → `ui.py` (Streamlit)
 
-**Verwandte Docs:** [AI_HANDOVER](AI_HANDOVER.md) · [INFRASTRUCTURE](INFRASTRUCTURE.md) · [TECH_DEBT](TECH_DEBT_REPORT.md) · [ROADMAP](ROADMAP.md) · [DECISIONS](DECISIONS.md)
+**Verwandte Docs:** [AI_HANDOVER](AI_HANDOVER.md) · [INFRASTRUCTURE](INFRASTRUCTURE.md) · [TECH_DEBT](TECH_DEBT_REPORT.md) · [ROADMAP](ROADMAP.md) · [DECISIONS](DECISIONS.md) · [CLEANUP_REPORT](CLEANUP_REPORT.md)
 
 ---
 
@@ -51,8 +51,7 @@ mab_upload/
 │   ├── premium_cards.py
 │   ├── prompt_ui.py        # Chat-Input-Styling
 │   ├── video_engine_ui.py  # Video/Reels Studio UI
-│   ├── ai_dashboard.py     # Shim → dashboard + components
-│   └── football_betting_board.py  # Shim → ui.football
+│   └── football.py         # Football AI Board (einzige UI-Datei)
 │
 ├── pages/                  # Streamlit-Seiten (von ui.py geroutet)
 │   ├── auth.py             # Login, Register, Google OAuth
@@ -71,7 +70,6 @@ mab_upload/
 │   ├── football_loaders.py # Filter, parse_match_card, fetch_premium_dashboard
 │   ├── football_board.py   # Odds, Predictions, fetch_match_detail, Analyse-Eligibility
 │   ├── football_api.py     # Re-export football_service
-│   ├── football_logic.py   # Re-export feed + board
 │   ├── video_engine.py     # Video-Job-Orchestrierung
 │   ├── video_providers/    # Replicate, fal, OpenAI
 │   ├── billing_plans.py    # Stripe/Railway Billing-Checks
@@ -279,8 +277,8 @@ flowchart TB
 
 | Metrik | Wert |
 |--------|------|
-| Python-Dateien (ohne `__pycache__`) | **59** |
-| Python-Zeilen | **~17.389** |
+| Python-Dateien (ohne `__pycache__`) | **58** |
+| Python-Zeilen | **~17.698** |
 | JS/TS / standalone CSS | **0** |
 | DB-Tabellen | **23** |
 | Streamlit Workspaces | **11** |
@@ -299,7 +297,7 @@ flowchart TB
 | Großes Slogan-Banner | → 64px Header |
 | Überladenes Home | → `ui/dashboard.py` minimal |
 
-**Shims:** `ai_dashboard.py`, `football_betting_board.py`, `football_api.py`, `football_logic.py`
+**Shim (Backward-compat):** `services/football_api.py` only — andere Shims entfernt 2026-06-03
 
 ---
 

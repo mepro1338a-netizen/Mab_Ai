@@ -47,7 +47,7 @@
 | TD-021 | Session-Modell | Kein HttpOnly-Cookie; Streamlit `session_state` | `services/session_auth.py` |
 | TD-022 | `pages/media.py` Größe | ~1200+ Zeilen, schwer wartbar | `pages/media.py` |
 | TD-023 | `db/app.py` Größe | Monolith — Domänen-Trennung offen | `db/app.py` |
-| TD-024 | Legacy Shims | Doppelte Import-Pfade | `ai_dashboard.py`, `football_*` shims |
+| TD-024 | Legacy Shims | Nur noch `football_api.py` | `services/football_api.py` |
 | TD-025 | Kein E2E | Nur `tools/test_football_feed.py` Smoke | `tools/` |
 | TD-026 | SEO OG Image | `static/og-preview.png` fehlt / Platzhalter | `ui.py` SEO-Injection |
 | TD-027 | `football_loaders` | `fetch_premium_dashboard` noch komplex; Teil-Overlap mit `football_feed` | `football_loaders.py` |
@@ -75,7 +75,8 @@
 | TD-DONE-05 | Großes Slogan-Banner Header | 64px `ui/header.py` |
 | TD-DONE-06 | Überladenes Home Command Center | `ui/dashboard.py` minimal |
 | TD-DONE-07 | Doppelte Sidebar-CSS in `app_shell` | Sidebar owned by `sidebar.py` |
-| TD-DONE-08 | `psycopg2` in requirements | Entfernt (unused) |
+| TD-DONE-09 | Legacy Shims ohne Imports | 2026-06-03 — `ai_dashboard`, `football_betting_board`, `football_logic` |
+| TD-DONE-10 | `streamlit-autorefresh` unused in requirements | 2026-06-03 |
 
 ---
 

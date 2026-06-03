@@ -47,9 +47,19 @@ def test_db() -> bool:
 
 
 def test_session_defaults() -> bool:
-    """Prüft ui.py DEFAULTS — Football-Keys ohne Streamlit."""
-    import ui as ui_mod
+    """Prüft ui.py DEFAULTS — Football-Keys (ohne Streamlit-Import)."""
+    import ast
+    from pathlib import Path
 
+    ui_path = Path(__file__).resolve().parents[1] / "ui.py"
+    tree = ast.parse(ui_path.read_text(encoding="utf-8-sig"))
+    defaults: dict = {}
+    for node in tree.body:
+        if isinstance(node, ast.Assign):
+            for target in node.targets:
+                if isinstance(target, ast.Name) and target.id == "DEFAULTS":
+                    defaults = ast.literal_eval(node.value)
+                    break
     required = {
         "fb_v",
         "fb_mode",
@@ -60,7 +70,6 @@ def test_session_defaults() -> bool:
         "fb_displayed_topspiele_count",
         "fb_displayed_allspiele_count",
     }
-    defaults = getattr(ui_mod, "DEFAULTS", {})
     missing = required - set(defaults.keys())
     if missing:
         print("FAIL fehlende DEFAULTS:", sorted(missing))

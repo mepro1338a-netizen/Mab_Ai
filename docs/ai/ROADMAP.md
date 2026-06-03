@@ -56,8 +56,8 @@
 | 3.1 | `pages/media.py` in Studio-Module splitten | `pages/media.py` |
 | 3.2 | `football_board.py` verkleinern (nur Detail/Odds) | `services/football_*` |
 | 3.3 | `db/app.py` nach Domänen trennen | `db/` |
-| 3.4 | Legacy Shims entfernen wenn Imports bereinigt | `ui/ai_dashboard.py`, `football_*` shims |
-| 3.5 | Global Cleanup: ungenutzte `tools/tests` | `tools/` |
+| 3.4 | Legacy Shims entfernen wenn Imports bereinigt | **Erledigt** 2026-06-03 (`ai_dashboard`, `football_betting_board`, `football_logic`) |
+| 3.5 | Global Cleanup: ungenutzte tools/tests | **Erledigt** — siehe [CLEANUP_REPORT.md](CLEANUP_REPORT.md) |
 
 ---
 
