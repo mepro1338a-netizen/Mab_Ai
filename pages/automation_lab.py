@@ -1,458 +1,339 @@
-﻿import streamlit as st
+﻿"""Content Automation — Instagram, TikTok, YouTube Shorts."""
+from __future__ import annotations
 
-from database import (
-    list_projects,
-    create_automation,
-    list_automations,
-    list_automation_runs,
+import html
+
+import streamlit as st
+
+from database import create_automation, list_automations
+from ui.styles import MB_THEME_VARS, inject_css, page_layout_css
+
+_PLATFORMS = (
+    ("instagram", "Instagram", "Instagram Reels"),
+    ("tiktok", "TikTok", "TikTok"),
+    ("youtube", "YouTube", "YouTube Shorts"),
 )
 
-def current_user():
-    return st.session_state.get("user")
+_CONTENT_TYPES = (
+    ("ai", "AI"),
+    ("news", "News"),
+    ("business", "Business"),
+    ("marketing", "Marketing"),
+    ("custom", "Custom"),
+)
+
+_FREQUENCIES = (
+    ("daily", "Daily"),
+    ("weekly", "Weekly"),
+    ("manual", "Manual"),
+)
+
+_VALID_PLATFORMS = frozenset({"instagram", "tiktok", "youtube"})
+_LEGACY_SKIP = frozenset({
+    "football", "football_content_agent", "content_repurpose_agent",
+    "developer_report_agent", "creative_asset_agent", "social_posting_agent",
+})
+
+_PLATFORM_LABEL = {k: label for k, label, _ in _PLATFORMS}
+_FREQ_LABEL = {k: label for k, label in _FREQUENCIES}
+_CONTENT_LABEL = {k: label for k, label in _CONTENT_TYPES}
 
 
-def project_options():
-    projects = list_projects(current_user())
-    options = {"Kein Projekt": 0}
+_CSS = """
+.ca-page { max-width: 1080px; margin: 0 auto; padding-bottom: 48px; }
+.ca-h1 { margin: 0; font-size: 26px; font-weight: 800; color: #fafafa; letter-spacing: -.02em; }
+.ca-tagline { margin: 6px 0 0; font-size: 14px; color: #a78bfa; font-weight: 600; }
+.ca-sub { margin: 8px 0 28px; font-size: 14px; color: #94a3b8; line-height: 1.5; }
+.ca-section {
+  font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  color: #71717a; margin: 32px 0 14px;
+}
+.ca-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+@media (max-width: 900px) { .ca-grid { grid-template-columns: 1fr; } }
+.ca-card {
+  padding: 22px 20px; border-radius: 16px;
+  background: linear-gradient(145deg, rgba(24,24,27,.92), rgba(15,15,20,.88));
+  border: 1px solid rgba(255,255,255,.08);
+  box-shadow: 0 12px 40px rgba(0,0,0,.35);
+  min-height: 220px;
+}
+.ca-card:hover { border-color: rgba(139,92,246,.35); }
+.ca-card-icon {
+  width: 40px; height: 40px; border-radius: 12px;
+  background: rgba(124,58,237,.18); border: 1px solid rgba(139,92,246,.3);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; margin-bottom: 14px;
+}
+.ca-card h3 { margin: 0 0 8px; font-size: 17px; color: #f8fafc; font-weight: 700; }
+.ca-feat { list-style: none; padding: 0; margin: 0 0 16px; }
+.ca-feat li {
+  font-size: 13px; color: #94a3b8; padding: 4px 0 4px 18px; position: relative;
+}
+.ca-feat li::before {
+  content: ""; position: absolute; left: 0; top: 11px; width: 6px; height: 6px;
+  border-radius: 50%; background: #8b5cf6;
+}
+.ca-table-wrap {
+  border-radius: 14px; overflow: hidden;
+  border: 1px solid rgba(255,255,255,.08);
+  background: rgba(15,23,42,.55);
+}
+.ca-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.ca-table th {
+  text-align: left; padding: 12px 16px; color: #71717a; font-weight: 600;
+  font-size: 11px; text-transform: uppercase; letter-spacing: .06em;
+  background: rgba(0,0,0,.25); border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.ca-table td {
+  padding: 14px 16px; color: #e2e8f0; border-bottom: 1px solid rgba(255,255,255,.05);
+}
+.ca-table tr:last-child td { border-bottom: none; }
+.ca-status {
+  display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 600;
+}
+.ca-status.active { background: rgba(34,197,94,.15); color: #4ade80; }
+.ca-status.paused { background: rgba(113,113,122,.2); color: #a1a1aa; }
+.ca-form {
+  padding: 24px 22px; border-radius: 16px;
+  background: linear-gradient(145deg, rgba(24,24,27,.94), rgba(15,15,20,.9));
+  border: 1px solid rgba(139,92,246,.2);
+  box-shadow: 0 16px 48px rgba(0,0,0,.4);
+}
+.ca-empty {
+  padding: 28px 20px; text-align: center; color: #64748b; font-size: 14px;
+  border: 1px dashed rgba(255,255,255,.1); border-radius: 14px;
+}
+"""
 
-    for p in projects:
-        options[f"{p.get('title')} · {p.get('workspace')}"] = p.get("id")
 
-    return options
-
-
-def render_agent_card(icon, title, desc, agent_type):
-    with st.container(border=True):
-        st.markdown(f"### {icon} {title}")
-        st.caption(desc)
-
-        if st.button(
-            "Agent auswählen",
-            key=f"agent_{agent_type}",
-            width="stretch",
-        ):
-            st.session_state.selected_agent_type = agent_type
-            st.success(f"{title} ausgewählt")
+def _css() -> None:
+    inject_css(MB_THEME_VARS + page_layout_css(1080, 64, 36) + _CSS)
 
 
-def render_create_automation():
-    st.subheader("Workflow erstellen")
+def _is_content_automation(item: dict) -> bool:
+    atype = str(item.get("automation_type") or "").lower()
+    src = str(item.get("source_workspace") or "").lower()
+    if atype in _LEGACY_SKIP or src in _LEGACY_SKIP:
+        return False
+    return atype in _VALID_PLATFORMS
 
-    st.session_state.setdefault("selected_agent_type", "football_content_agent")
 
-    options = project_options()
+def _row_platform(item: dict) -> str:
+    return _platform_label(item.get("automation_type"))
 
-    with st.container(border=True):
-        name = st.text_input(
-            "Workflow Name",
-            placeholder="z.B. Wöchentlicher Content-Workflow",
-        )
 
-        project_label = st.selectbox("Projekt", list(options.keys()))
-        project_id = options[project_label]
+def _platform_label(key: str) -> str:
+    return _PLATFORM_LABEL.get(str(key or "").lower(), str(key or "—"))
 
-        selected_agent = st.session_state.get(
-            "selected_agent_type",
-            "football_content_agent",
-        )
 
-        agent_options = [
-            "football_content_agent",
-            "content_repurpose_agent",
-            "developer_report_agent",
-            "creative_asset_agent",
-            "social_posting_agent",
-        ]
+def _freq_label(key: str) -> str:
+    return _FREQ_LABEL.get(str(key or "").lower(), str(key or "—"))
 
-        default_index = (
-            agent_options.index(selected_agent)
-            if selected_agent in agent_options
-            else 0
-        )
 
-        automation_type = st.selectbox(
-            "Agent Type",
-            agent_options,
-            index=default_index,
-            format_func=lambda x: x.replace("_", " ").title(),
-        )
+def _row_frequency(item: dict) -> str:
+    key = str(item.get("target_workspace") or "").lower()
+    if key in _FREQ_LABEL:
+        return _freq_label(key)
+    return "Manual"
 
-        source = st.selectbox(
-            "Source Workspace",
-            [
-                "football",
-                "content_engine",
-                "developer_os",
-                "creative_workspace",
-                "media_studio",
-                "ai_assistant",
-            ],
-        )
 
-        target = st.selectbox(
-            "Target Workspace",
-            [
-                "content_engine",
-                "automation_lab",
-                "media_studio",
-                "projects",
-                "ai_assistant",
-            ],
-        )
+def _automation_name(platform: str, content_type: str) -> str:
+    pl = _platform_label(platform)
+    ct = next((lbl for k, lbl in _CONTENT_TYPES if k == content_type), content_type.title())
+    return f"{pl} · {ct}"
 
-        from ui.prompt_ui import prompt_text_area
-        trigger = prompt_text_area(
-            placeholder="Trigger und Anweisung beschreiben…",
-            label="Automation",
-            key="auto_lab_trigger",
-            height=140,
-        )
 
-        if st.button("Automation erstellen", width="stretch"):
-            if not name or not trigger:
-                st.warning("Bitte Name und Trigger ausfüllen.")
-                return
+def _render_header() -> None:
+    st.markdown(
+        """
+<div class="ca-page">
+  <h1 class="ca-h1">Content Automation</h1>
+  <p class="ca-tagline">Instagram · TikTok · YouTube Shorts</p>
+  <p class="ca-sub">Create, schedule and publish content automatically.</p>
+""",
+        unsafe_allow_html=True,
+    )
 
-            if project_id == 0:
-                st.warning("Bitte ein Projekt auswählen.")
-                return
 
-            automation_id = create_automation(
-                username=current_user(),
-                project_id=project_id,
-                name=name,
-                automation_type=automation_type,
-                source_workspace=source,
-                target_workspace=target,
-                trigger_text=trigger,
+def _render_available_cards() -> None:
+    st.markdown('<p class="ca-section">Available Automations</p>', unsafe_allow_html=True)
+
+    cards = (
+        (
+            "instagram",
+            "📸",
+            "Instagram Reels",
+            ("AI Caption", "Hashtags", "Scheduling", "Auto Publish"),
+        ),
+        (
+            "tiktok",
+            "🎵",
+            "TikTok",
+            ("Hook Generator", "Caption", "Scheduling", "Auto Publish"),
+        ),
+        (
+            "youtube",
+            "▶",
+            "YouTube Shorts",
+            ("Title Generator", "Description", "Hashtags", "Auto Publish"),
+        ),
+    )
+
+    cols = st.columns(3)
+    for col, (pid, icon, title, feats) in zip(cols, cards):
+        feats_html = "".join(f"<li>{html.escape(f)}</li>" for f in feats)
+        with col:
+            st.markdown(
+                f"""
+<div class="ca-card">
+  <div class="ca-card-icon">{html.escape(icon)}</div>
+  <h3>{html.escape(title)}</h3>
+  <ul class="ca-feat">{feats_html}</ul>
+</div>
+                """,
+                unsafe_allow_html=True,
             )
+            if st.button(
+                "Create Automation",
+                key=f"ca_card_{pid}",
+                use_container_width=True,
+                type="primary",
+            ):
+                st.session_state["ca_platform"] = pid
+                st.session_state["ca_form_platform"] = pid
+                st.rerun()
 
-            st.success(f"Automation erstellt: #{automation_id}")
-            st.rerun()
 
+def _render_active_table(username: str) -> None:
+    st.markdown('<p class="ca-section">Active Automations</p>', unsafe_allow_html=True)
+    rows = [r for r in list_automations(username) if _is_content_automation(r)]
 
-def render_automations():
-    st.subheader("Aktive Automations")
-
-    automations = list_automations(current_user())
-
-    if not automations:
-        st.info("Noch keine Automationen vorhanden.")
+    if not rows:
+        st.markdown(
+            '<div class="ca-empty">Noch keine aktiven Automationen. '
+            "Wähle eine Vorlage oder erstelle eine neue Automation unten.</div>",
+            unsafe_allow_html=True,
+        )
         return
 
-    for item in automations:
-        with st.container(border=True):
-            st.markdown(f"### {item.get('name')}")
-            st.caption(
-                f"{item.get('source_workspace')} -> {item.get('target_workspace')}"
+    body = []
+    for item in rows[:20]:
+        platform = _row_platform(item)
+        freq = _row_frequency(item)
+        status = str(item.get("status") or "active").lower()
+        status_cls = "active" if status == "active" else "paused"
+        status_lbl = "Active" if status == "active" else status.title()
+        body.append(
+            "<tr>"
+            f"<td>{html.escape(str(item.get('name') or 'Automation'))}</td>"
+            f"<td>{html.escape(platform)}</td>"
+            f"<td>{html.escape(freq)}</td>"
+            f'<td><span class="ca-status {status_cls}">{html.escape(status_lbl)}</span></td>'
+            "</tr>"
+        )
+
+    st.markdown(
+        f"""
+<div class="ca-table-wrap">
+  <table class="ca-table">
+    <thead><tr>
+      <th>Automation</th><th>Platform</th><th>Frequency</th><th>Status</th>
+    </tr></thead>
+    <tbody>{"".join(body)}</tbody>
+  </table>
+</div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def _render_create_form(username: str) -> None:
+    st.markdown('<p class="ca-section">Create New Automation</p>', unsafe_allow_html=True)
+
+    st.session_state.setdefault("ca_platform", "instagram")
+    st.session_state.setdefault("ca_content_type", "ai")
+    st.session_state.setdefault("ca_frequency", "daily")
+
+    platform_keys = [p[0] for p in _PLATFORMS]
+    content_keys = [c[0] for c in _CONTENT_TYPES]
+    freq_keys = [f[0] for f in _FREQUENCIES]
+
+    default_platform = str(st.session_state.get("ca_platform") or "instagram")
+    if default_platform not in platform_keys:
+        default_platform = "instagram"
+
+    with st.container():
+        st.markdown('<div class="ca-form">', unsafe_allow_html=True)
+
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            platform = st.selectbox(
+                "Platform",
+                platform_keys,
+                index=platform_keys.index(default_platform),
+                format_func=lambda x: _platform_label(x),
+                key="ca_form_platform",
             )
-            st.write(item.get("trigger_text", ""))
+        with c2:
+            content_type = st.selectbox(
+                "Content Type",
+                content_keys,
+                format_func=lambda x: next(l for k, l in _CONTENT_TYPES if k == x),
+                key="ca_form_content",
+            )
+        with c3:
+            frequency = st.selectbox(
+                "Frequency",
+                freq_keys,
+                format_func=lambda x: _freq_label(x),
+                key="ca_form_frequency",
+            )
 
-            c1, c2, c3 = st.columns(3)
+        prompt = st.text_area(
+            "Prompt",
+            value=str(st.session_state.get("ca_prompt") or ""),
+            placeholder="Create one motivational AI reel every day.",
+            height=120,
+            key="ca_form_prompt",
+        )
 
-            with c1:
-                st.write(f"Type: {item.get('automation_type')}")
+        if st.button("Start Automation", type="primary", use_container_width=True, key="ca_start"):
+            text = (prompt or "").strip()
+            if not text:
+                st.warning("Bitte einen Prompt eingeben.")
+            else:
+                name = _automation_name(platform, content_type)
+                create_automation(
+                    username=username,
+                    project_id=0,
+                    name=name,
+                    automation_type=platform,
+                    source_workspace=content_type,
+                    target_workspace=frequency,
+                    trigger_text=text,
+                )
+                st.session_state["ca_prompt"] = ""
+                st.success(f"Automation gestartet: {name}")
+                st.rerun()
 
-            with c2:
-                st.write(f"Status: {item.get('status')}")
-
-            with c3:
-                if st.button(
-                    "Agent starten",
-                    key=f"run_{item.get('id')}",
-                    width="stretch",
-                ):
-                    with st.spinner("Agent läuft..."):
-                        result = run_automation(item)
-
-                    if result.get("success"):
-                        st.success(
-                            f"Agent Run abgeschlossen: #{result.get('run_id')}"
-                        )
-                    else:
-                        st.error(result.get("result"))
-
-                    st.rerun()
-
-
-def render_runs():
-    st.subheader("Automation Runs")
-
-    runs = list_automation_runs(current_user(), limit=50)
-
-    if not runs:
-        st.info("Noch keine Runs vorhanden.")
-        return
-
-    for run in runs:
-        with st.container(border=True):
-            st.markdown(f"### Run #{run.get('id')}")
-            st.caption(run.get("created_at", "")[:16])
-            st.write(f"Automation ID: {run.get('automation_id')}")
-            st.write(f"Status: {run.get('status')}")
-            st.write(run.get("result", ""))
+        st.markdown("</div>", unsafe_allow_html=True)
 
 
-def render_automation_lab():
+def render_automation_lab() -> None:
     if not st.session_state.get("logged_in"):
         st.session_state.page = "auth"
         st.rerun()
         return
 
-    st.title("Automation Lab")
-    st.caption("AI Agents, Workflow Chains und Cross-Workspace Intelligence.")
+    username = str(st.session_state.get("user") or "")
+    if not username:
+        st.session_state.page = "auth"
+        st.rerun()
+        return
 
-    k1, k2, k3 = st.columns(3)
-
-    with k1:
-        st.metric("Agent Engine", "Ready")
-
-    with k2:
-        st.metric("Workflow Router", "Online")
-
-    with k3:
-        st.metric("Cross-Workspace", "Enabled")
-
-    st.divider()
-
-    st.subheader("AI Agents")
-
-    a, b, c = st.columns(3)
-
-    with a:
-        render_agent_card(
-            "FB",
-            "Football Content Agent",
-            "Match Analysis -> Reels, Shorts, Threads und Commentary.",
-            "football_content_agent",
-        )
-
-    with b:
-        render_agent_card(
-            "CE",
-            "Content Repurpose Agent",
-            "Aus einem Output mehrere Social Formate erstellen.",
-            "content_repurpose_agent",
-        )
-
-    with c:
-        render_agent_card(
-            "DEV",
-            "Developer Report Agent",
-            "Code-Änderungen analysieren und Reports erstellen.",
-            "developer_report_agent",
-        )
-
-    st.divider()
-
-    left, right = st.columns([1, 1], gap="large")
-
-    with left:
-        render_create_automation()
-
-    with right:
-        render_automations()
-
-    st.divider()
-
-    render_runs()
-
-
-# ---------------------------------------------------------------------------
-# Inline: agent_runner (single consumer)
-# ---------------------------------------------------------------------------
-
-from openai import OpenAI
-
-from config import OPENAI_API_KEY, OPENAI_TEXT_MODEL
-from database import (
-    create_automation_run,
-    get_project,
-    list_project_memory,
-    save_project_memory,
-)
-
-_agent_client = OpenAI(api_key=OPENAI_API_KEY)
-
-
-def _project_context(project_id):
-    project = get_project(project_id)
-    if not project:
-        return "Kein Projekt gefunden."
-    memories = list_project_memory(project_id)
-    memory_text = ""
-    for memory in memories[:20]:
-        memory_text += f"""
-[{memory.get('memory_type')}]
-{memory.get('content')}
-"""
-    return f"""
-PROJEKT:
-{project.get('title')}
-WORKSPACE:
-{project.get('workspace')}
-BESCHREIBUNG:
-{project.get('description')}
-MEMORY:
-{memory_text}
-"""
-
-
-def _ai_generate(system_prompt, user_prompt):
-    if not OPENAI_API_KEY:
-        return "OPENAI_API_KEY fehlt."
-    response = _agent_client.chat.completions.create(
-        model=OPENAI_TEXT_MODEL,
-        temperature=0.7,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt},
-        ],
-    )
-    return response.choices[0].message.content
-
-
-def _football_content_agent(automation, project):
-    trigger = automation.get("trigger_text", "")
-    prompt = f"""
-{_project_context(project.get('id'))}
-AUFGABE:
-{trigger}
-Erstelle:
-1. Match Analyse
-2. Viral Hook
-3. TikTok Reel Script
-4. Caption
-5. Hashtags
-6. Posting Strategie
-7. Shortform Content Ideen
-"""
-    result = _ai_generate(
-        "Du bist ein professioneller Football Content AI Agent.",
-        prompt,
-    )
-    save_project_memory(
-        project_id=project.get("id"),
-        username=project.get("username"),
-        workspace=project.get("workspace"),
-        memory_type="football_agent_output",
-        content=result,
-    )
-    return result
-
-
-def _content_repurpose_agent(automation, project):
-    trigger = automation.get("trigger_text", "")
-    prompt = f"""
-{_project_context(project.get('id'))}
-AUFGABE:
-{trigger}
-Erstelle:
-- Twitter/X Thread
-- TikTok Hook
-- Instagram Caption
-- LinkedIn Version
-- Newsletter Idee
-"""
-    result = _ai_generate(
-        "Du bist ein Content Repurpose AI Agent.",
-        prompt,
-    )
-    save_project_memory(
-        project_id=project.get("id"),
-        username=project.get("username"),
-        workspace=project.get("workspace"),
-        memory_type="repurpose_output",
-        content=result,
-    )
-    return result
-
-
-def _developer_report_agent(automation, project):
-    trigger = automation.get("trigger_text", "")
-    prompt = f"""
-{_project_context(project.get('id'))}
-AUFGABE:
-{trigger}
-Erstelle:
-- Dev Summary
-- Architektur Analyse
-- Verbesserungsvorschläge
-- Security Hinweise
-- Skalierungsplan
-"""
-    result = _ai_generate(
-        "Du bist ein Senior AI Software Architect.",
-        prompt,
-    )
-    save_project_memory(
-        project_id=project.get("id"),
-        username=project.get("username"),
-        workspace=project.get("workspace"),
-        memory_type="developer_report",
-        content=result,
-    )
-    return result
-
-
-def _creative_asset_agent(automation, project):
-    trigger = automation.get("trigger_text", "")
-    prompt = f"""
-{_project_context(project.get('id'))}
-AUFGABE:
-{trigger}
-Erstelle:
-- Branding Ideen
-- Image Prompts
-- Visual Direction
-- Color Direction
-- Creative Concepts
-"""
-    result = _ai_generate(
-        "Du bist ein Creative Director AI Agent.",
-        prompt,
-    )
-    save_project_memory(
-        project_id=project.get("id"),
-        username=project.get("username"),
-        workspace=project.get("workspace"),
-        memory_type="creative_output",
-        content=result,
-    )
-    return result
-
-
-def run_automation(automation):
-    project = get_project(
-        automation.get("project_id"),
-        username=automation.get("username"),
-    )
-    if not project:
-        return {"success": False, "result": "Projekt nicht gefunden."}
-    agent_type = automation.get("automation_type")
-    try:
-        if agent_type == "football_content_agent":
-            result = _football_content_agent(automation, project)
-        elif agent_type == "content_repurpose_agent":
-            result = _content_repurpose_agent(automation, project)
-        elif agent_type == "developer_report_agent":
-            result = _developer_report_agent(automation, project)
-        elif agent_type == "creative_asset_agent":
-            result = _creative_asset_agent(automation, project)
-        else:
-            result = "Unbekannter Agent."
-        run_id = create_automation_run(
-            automation_id=automation.get("id"),
-            username=automation.get("username"),
-            status="success",
-            result=result[:4000],
-        )
-        return {"success": True, "run_id": run_id, "result": result}
-    except Exception as e:
-        create_automation_run(
-            automation_id=automation.get("id"),
-            username=automation.get("username"),
-            status="failed",
-            result=str(e),
-        )
-        return {"success": False, "result": str(e)}
+    _css()
+    _render_header()
+    _render_available_cards()
+    _render_active_table(username)
+    _render_create_form(username)
+    st.markdown("</div>", unsafe_allow_html=True)
