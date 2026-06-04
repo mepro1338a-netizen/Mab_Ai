@@ -42,7 +42,12 @@ _CSS = """
 .ca-page { max-width: 1080px; margin: 0 auto; padding-bottom: 48px; }
 .ca-h1 { margin: 0; font-size: 26px; font-weight: 800; color: #fafafa; letter-spacing: -.02em; }
 .ca-tagline { margin: 6px 0 0; font-size: 14px; color: #a78bfa; font-weight: 600; }
-.ca-sub { margin: 8px 0 28px; font-size: 14px; color: #94a3b8; line-height: 1.5; }
+.ca-sub { margin: 8px 0 8px; font-size: 14px; color: #94a3b8; line-height: 1.5; }
+.ca-beta-note {
+  margin: 0 0 28px; font-size: 12px; color: #a78bfa;
+  padding: 8px 12px; border-radius: 8px;
+  background: rgba(139,92,246,.08); border: 1px solid rgba(139,92,246,.2);
+}
 .ca-section {
   font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
   color: #71717a; margin: 32px 0 14px;
@@ -147,33 +152,34 @@ def _render_header() -> None:
         """
 <div class="ca-page">
   <h1 class="ca-h1">Content Automation</h1>
-  <p class="ca-sub">Create, schedule and publish content automatically.</p>
+  <p class="ca-sub">Plattformen und Prompts speichern — automatisches Veröffentlichen folgt in der Beta.</p>
+  <p class="ca-beta-note">Status: Konfiguration aktiv · Ausführung (Posting) noch nicht live</p>
 """,
         unsafe_allow_html=True,
     )
 
 
 def _render_available_cards() -> None:
-    st.markdown('<p class="ca-section">Available Platforms</p>', unsafe_allow_html=True)
+    st.markdown('<p class="ca-section">Verfügbare Plattformen</p>', unsafe_allow_html=True)
 
     cards = (
         (
             "instagram",
             "📸",
             "Instagram",
-            ("Generate Content", "Schedule Post", "Auto Publish"),
+            ("Plattform wählen", "Prompt speichern", "Posting folgt in Beta"),
         ),
         (
             "tiktok",
             "🎵",
             "TikTok",
-            ("Generate Content", "Schedule Post", "Auto Publish"),
+            ("Plattform wählen", "Prompt speichern", "Posting folgt in Beta"),
         ),
         (
             "youtube",
             "▶",
             "YouTube Shorts",
-            ("Generate Content", "Schedule Post", "Auto Publish"),
+            ("Plattform wählen", "Prompt speichern", "Posting folgt in Beta"),
         ),
     )
 
@@ -192,7 +198,7 @@ def _render_available_cards() -> None:
                 unsafe_allow_html=True,
             )
             if st.button(
-                "Create Automation",
+                "Plattform wählen",
                 key=f"ca_card_{pid}",
                 use_container_width=True,
                 type="primary",
@@ -203,13 +209,14 @@ def _render_available_cards() -> None:
 
 
 def _render_active_table(username: str) -> None:
-    st.markdown('<p class="ca-section">Active Automations</p>', unsafe_allow_html=True)
+    st.markdown('<p class="ca-section">Gespeicherte Automationen</p>', unsafe_allow_html=True)
     rows = [r for r in list_automations(username) if _is_content_automation(r)]
 
     if not rows:
         st.markdown(
-            '<div class="ca-empty">Noch keine aktiven Automationen. '
-            "Wähle eine Vorlage oder erstelle eine neue Automation unten.</div>",
+            '<div class="ca-empty">Noch keine Automation gespeichert. '
+            "Wähle eine Plattform und lege unten eine Konfiguration an — "
+            "die Ausführung startet in der Beta noch nicht automatisch.</div>",
             unsafe_allow_html=True,
         )
         return
@@ -220,7 +227,7 @@ def _render_active_table(username: str) -> None:
         freq = _row_frequency(item)
         status = str(item.get("status") or "active").lower()
         status_cls = "active" if status == "active" else "paused"
-        status_lbl = "Active" if status == "active" else status.title()
+        status_lbl = "Gespeichert" if status == "active" else status.title()
         body.append(
             "<tr>"
             f"<td>{html.escape(str(item.get('name') or 'Automation'))}</td>"
@@ -246,7 +253,11 @@ def _render_active_table(username: str) -> None:
 
 
 def _render_create_form(username: str) -> None:
-    st.markdown('<p class="ca-section">New Automation</p>', unsafe_allow_html=True)
+    st.markdown('<p class="ca-section">Neue Automation</p>', unsafe_allow_html=True)
+    st.caption(
+        "Speichert Plattform, Rhythmus und Prompt in deinem Account. "
+        "Automatisches Posten ist in dieser Beta-Version noch nicht aktiv."
+    )
 
     st.session_state.setdefault("ca_platform", "instagram")
     st.session_state.setdefault("ca_form_platform", st.session_state.get("ca_platform", "instagram"))
@@ -291,7 +302,7 @@ def _render_create_form(username: str) -> None:
             key="ca_form_prompt",
         )
 
-        if st.button("Start Automation", type="primary", use_container_width=True, key="ca_start"):
+        if st.button("Automation speichern", type="primary", use_container_width=True, key="ca_start"):
             text = (prompt or "").strip()
             if not text:
                 st.warning("Bitte einen Prompt eingeben.")
@@ -307,7 +318,10 @@ def _render_create_form(username: str) -> None:
                     trigger_text=text,
                 )
                 st.session_state.pop("ca_form_prompt", None)
-                st.success(f"Automation gestartet: {name}")
+                st.success(
+                    f"Konfiguration gespeichert: {name}. "
+                    "Automatische Ausführung folgt in einem späteren Beta-Update."
+                )
                 st.rerun()
 
         st.markdown("</div>", unsafe_allow_html=True)

@@ -196,11 +196,11 @@ DEFAULTS = {
     "role": "user",
     "admin_level": 0,
     "active_project_id": None,
-    # Football AI workspace
-    "fb_v": 9,
-    "fb_mode": "curated",
+    # Football AI V2
+    "fb_v": 10,
     "fb_competition": "deutschland",
     "fb_time": "heute",
+    "fb_league_id": 0,
     "fb_payload": None,
     "fb_detail": None,
     "fb_sel": None,

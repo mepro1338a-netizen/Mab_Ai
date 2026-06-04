@@ -4,6 +4,7 @@ from __future__ import annotations
 import os
 import sys
 import traceback
+from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -64,9 +65,9 @@ def test_session_defaults() -> bool:
                     break
     required = {
         "fb_v",
-        "fb_mode",
         "fb_competition",
         "fb_time",
+        "fb_league_id",
         "fb_payload",
         "fb_detail",
         "fb_sel",
@@ -212,6 +213,59 @@ def test_match_detail_sample() -> bool:
     return True
 
 
+def test_beta_routes() -> bool:
+    """Smoke: beta page handlers + Football V2 package (no Streamlit UI)."""
+    ok = True
+    try:
+        from ui.dashboard import render_home
+        from ui.football import render_football_betting_board
+        from pages.automation_lab import render_automation_lab
+        from pages.account import render_dashboard
+        from pages.chat import render_chat
+        from pages.premium import render_premium
+
+        for key, fn in (
+            ("home", render_home),
+            ("chat", render_chat),
+            ("football", render_football_betting_board),
+            ("automation_lab", render_automation_lab),
+            ("dashboard", render_dashboard),
+            ("premium", render_premium),
+        ):
+            if not callable(fn):
+                print(f"  FAIL handler not callable: {key}")
+                ok = False
+            else:
+                print(f"  OK handler: {key}")
+
+        ui_path = Path(__file__).resolve().parents[1] / "ui.py"
+        ui_src = ui_path.read_text(encoding="utf-8")
+        for needle in (
+            "from ui.football import render_football_betting_board",
+            '"football": ("Football AI", render_football)',
+            '"automation_lab": ("Content Automation", render_automation_lab)',
+        ):
+            if needle not in ui_src:
+                print(f"  FAIL ui.py missing: {needle!r}")
+                ok = False
+            else:
+                print(f"  OK ui.py route: {needle[:48]}…")
+    except Exception as exc:
+        print("  FAIL", exc)
+        traceback.print_exc()
+        ok = False
+    return ok
+
+
+def test_env_football() -> bool:
+    """C2 — log required env vars (informational; does not fail CI without keys)."""
+    football_key = bool(os.getenv("FOOTBALL_API_KEY", "").strip())
+    print(f"  FOOTBALL_API_KEY: {'OK' if football_key else 'MISSING — Football AI leer auf Prod'}")
+    for name in ("APP_BASE_URL", "DATA_DIR", "OAUTH_STATE_SECRET"):
+        print(f"  {name}: {'OK' if os.getenv(name, '').strip() else 'missing'}")
+    return True
+
+
 def main() -> None:
     results: list[tuple[str, bool]] = []
 
@@ -223,6 +277,12 @@ def main() -> None:
 
     section("3. Session DEFAULTS (Football Keys)")
     results.append(("session_defaults", test_session_defaults()))
+
+    section("3b. Beta routes (Dashboard, Chat, Football, Content, Profile, Elite)")
+    results.append(("beta_routes", test_beta_routes()))
+
+    section("3c. Environment (Football / Railway)")
+    results.append(("env_football", test_env_football()))
 
     section("4. Football Service")
     results.append(("football_service", test_football_service()))
