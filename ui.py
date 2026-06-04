@@ -15,7 +15,6 @@ from pages.auth import render_auth
 from pages.chat import render_chat
 from ui.dashboard import render_home
 from ui.football import render_football_betting_board
-from pages.projects import render_projects
 from pages.automation_lab import render_automation_lab
 from pages.premium import render_premium
 
@@ -218,20 +217,7 @@ for key, value in DEFAULTS.items():
 
 
 # =========================================================
-# LOCAL FALLBACK PAGE
-# =========================================================
-
-def render_automations():
-    st.title("Automations")
-    st.caption("Geplante Abläufe, Posting Flows und System Actions.")
-
-    with st.container(border=True):
-        st.subheader("Automation Center")
-        st.info("Noch keine Automationen aktiv.")
-
-
-# =========================================================
-# AUTH CHECK
+# ROUTER
 # =========================================================
 
 logged_in = bool(
@@ -324,17 +310,15 @@ render_sidebar(page)
 PAGE_HANDLERS = {
     "social_oauth": ("Social Connect", lambda: None),
     "home": ("Dashboard", render_home),
-    "chat": ("AI Assistant", render_chat),
-    "projects": ("Projects", render_projects),
+    "chat": ("AI Chat", render_chat),
     "football": ("Football AI", render_football),
-    "automation_lab": ("Automations", render_automation_lab),
-    "automations": ("Automations", render_automations),
-    "coding": ("Code Studio", lambda: render_media("coding")),
-    "image": ("Image Studio", lambda: render_media("image")),
-    "music": ("Music Studio", lambda: render_media("music")),
-    "video": ("Video Studio", lambda: render_media("video")),
-    "dashboard": ("Dashboard", render_dashboard),
-    "premium": ("Premium", render_premium),
+    "automation_lab": ("Content Automation", render_automation_lab),
+    "coding": ("Code", lambda: render_media("coding")),
+    "image": ("Image", lambda: render_media("image")),
+    "music": ("Music", lambda: render_media("music")),
+    "video": ("Video", lambda: render_media("video")),
+    "dashboard": ("Profile", render_dashboard),
+    "premium": ("Elite", render_premium),
 }
 
 if page == "auth":

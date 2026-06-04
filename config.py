@@ -438,7 +438,7 @@ WORKSPACES = {
     },
 
     "automation_lab": {
-        "label": "Automation Lab",
+        "label": "Content Automation",
         "feature": "automation",
         "min_plan": "grand",
     },
@@ -529,7 +529,7 @@ PLANS = {
             "5.000 Tokens / Monat",
             "Content Engine",
             "Media Studio",
-            "Automation Lab",
+            "Content Automation",
             "Auto-Posting möglich",
         ],
     },

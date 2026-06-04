@@ -43,15 +43,14 @@ def _osg_detect_nav_target(query: str) -> str | None:
         "premium": ["premium", "upgrade", "stripe", "zahlung", "abo"],
         "support": ["support", "ticket", "hilfe", "bug", "problem"],
         "redeem": ["redeem", "code", "einlösen", "gutschein"],
-        "dashboard": ["dashboard", "account", "tokens", "plan", "profil"],
-        "projects": ["project", "projekte"],
+        "dashboard": ["dashboard", "account", "tokens", "plan", "profil", "profile"],
         "image": ["bild", "image"],
         "creator": ["creator", "studio", "shorts", "video"],
         "video": ["video studio", "video"],
         "reels": ["reels", "tiktok", "short"],
         "music": ["music", "musik", "song"],
         "coding": ["code", "coding", "developer"],
-        "automation_lab": ["automation", "agent", "workflow"],
+        "automation_lab": ["content automation", "automation", "instagram", "schedule", "publish"],
     }
     for page, keys in aliases.items():
         for k in keys:
@@ -80,21 +79,20 @@ def _osg_build_guide_reply(
 ) -> dict:
     """Returns {text, navigate, page} — never executes privileged ops."""
     NAV_PAGES: dict[str, dict[str, str]] = {
-        "home": {"label": "Mission Control", "hint": "Startseite und Workspace-Übersicht."},
-        "chat": {"label": "AI Assistant", "hint": "Chat mit Mab AI — Tokens werden verbraucht."},
-        "projects": {"label": "Projects", "hint": "Projekte und gespeicherte Outputs."},
-        "football": {"label": "Football AI", "hint": "Match Center, AI Engine, Odds Lab (Elite)."},
-        "premium": {"label": "Premium", "hint": "Pläne upgraden — Stripe Checkout."},
-        "dashboard": {"label": "Dashboard", "hint": "Account, Tokens, Limits."},
+        "home": {"label": "Dashboard", "hint": "Startseite und Workspace-Übersicht."},
+        "chat": {"label": "AI Chat", "hint": "Chat mit Mab AI — Tokens werden verbraucht."},
+        "football": {"label": "Football AI", "hint": "Spiele, Analysen und Football Intelligence."},
+        "premium": {"label": "Elite", "hint": "Pläne upgraden — Stripe Checkout."},
+        "dashboard": {"label": "Profile", "hint": "Account, Tokens, Limits."},
         "support": {"label": "Support", "hint": "Tickets für Bugs, Zahlung, Football."},
         "redeem": {"label": "Redeem", "hint": "Codes für Tokens oder Plan-Upgrades."},
-        "image": {"label": "Image Studio", "hint": "Bildgenerierung — Token-Kosten beachten."},
-        "creator": {"label": "Creator Studio", "hint": "Shorts & Video — ein Workspace."},
-        "video": {"label": "Creator Studio", "hint": "Shorts & Video — Video-Modus."},
-        "reels": {"label": "Creator Studio", "hint": "Shorts & Video — Shorts-Modus."},
-        "music": {"label": "Music Studio", "hint": "Musik / Audio-Generierung."},
-        "coding": {"label": "Code Studio", "hint": "Developer OS — Coding mit AI."},
-        "automation_lab": {"label": "Automations", "hint": "Agent-Flows und Automation Lab."},
+        "image": {"label": "Image", "hint": "Bildgenerierung — Token-Kosten beachten."},
+        "creator": {"label": "Video", "hint": "Shorts und Video im Creator Studio."},
+        "video": {"label": "Video", "hint": "Shorts und Video im Creator Studio."},
+        "reels": {"label": "Video", "hint": "Shorts und Video im Creator Studio."},
+        "music": {"label": "Music", "hint": "Musik und Audio-Generierung."},
+        "coding": {"label": "Code", "hint": "Code mit AI im Creator Studio."},
+        "automation_lab": {"label": "Content Automation", "hint": "Instagram, TikTok und YouTube Shorts automatisieren."},
     }
 
     BETA_TIPS = [

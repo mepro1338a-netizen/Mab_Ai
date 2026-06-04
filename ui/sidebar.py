@@ -1,5 +1,5 @@
 """
-MaByte Sidebar — single component (230px, Lucide icons, compact nav).
+MaByte Sidebar — grouped SaaS navigation (230px, Lucide icons).
 """
 from __future__ import annotations
 
@@ -14,24 +14,31 @@ from ui.styles import inject_css
 _SB = 'section[data-testid="stSidebar"]'
 _WIDTH = "230px"
 
+NAV_SECTIONS: list[tuple[str, list[tuple[str, str]]]] = [
+    ("Workspace", [("Dashboard", "home"), ("AI Chat", "chat")]),
+    ("Football Intelligence", [("Football AI", "football")]),
+    (
+        "Creator Studio",
+        [
+            ("Image", "image"),
+            ("Video", "video"),
+            ("Music", "music"),
+            ("Code", "coding"),
+        ],
+    ),
+    ("Content Automation", [("Content Automation", "automation_lab")]),
+    ("Account", [("Profile", "dashboard"), ("Elite", "premium")]),
+]
+
 NAV_ITEMS: list[tuple[str, str]] = [
-    ("Dashboard", "home"),
-    ("AI Chat", "chat"),
-    ("Football AI", "football"),
-    ("Image", "image"),
-    ("Video", "video"),
-    ("Music", "music"),
-    ("Code", "coding"),
-    ("Projects", "projects"),
-    ("Automations", "automation_lab"),
-    ("Profile", "dashboard"),
-    ("Premium", "premium"),
+    item for _title, items in NAV_SECTIONS for item in items
 ]
 
 LEGACY_PAGE_ALIASES: dict[str, str] = {
     "reels": "video",
     "creator": "video",
     "automations": "automation_lab",
+    "projects": "home",
 }
 
 SIDEBAR_NAV_ITEMS = NAV_ITEMS
@@ -48,7 +55,6 @@ _ICONS: dict[str, str] = {
     "video": f"<svg {_LUCIDE}><path d=\"M20 2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2Z\"/><path d=\"m8 2 2 3\"/><path d=\"m16 2-2 3\"/></svg>",
     "music": f"<svg {_LUCIDE}><path d=\"M9 18V5l12-2v13\"/><circle cx=\"6\" cy=\"18\" r=\"3\"/><circle cx=\"18\" cy=\"16\" r=\"3\"/></svg>",
     "coding": f"<svg {_LUCIDE}><path d=\"m18 16 4-4-4-4\"/><path d=\"m6 8-4 4 4 4\"/><path d=\"M10.5 4 8 16\"/><path d=\"m14.5 4 7 16\"/></svg>",
-    "projects": f"<svg {_LUCIDE}><path d=\"M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.07 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z\"/><path d=\"M8 10v4\"/><path d=\"M12 10v2\"/><path d=\"M16 10v6\"/></svg>",
     "automation_lab": f"<svg {_LUCIDE}><rect width=\"8\" height=\"8\" x=\"3\" y=\"3\" rx=\"2\"/><path d=\"M7 11v4a2 2 0 0 0 2 2h4\"/><rect width=\"8\" height=\"8\" x=\"13\" y=\"13\" rx=\"2\"/></svg>",
     "dashboard": f"<svg {_LUCIDE}><path d=\"M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2\"/><circle cx=\"12\" cy=\"7\" r=\"4\"/></svg>",
     "premium": f"<svg {_LUCIDE}><path d=\"M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z\"/></svg>",
@@ -73,7 +79,11 @@ def _icon_uri(page: str, *, active: bool = False) -> str:
 
 def _plan_label(plan: str) -> str:
     key = (plan or "free").strip().lower()
-    return "Free" if key in ("none", "") else key.replace("_", " ").title()
+    if key in ("none", ""):
+        return "Free"
+    if key == "elite":
+        return "Elite"
+    return key.replace("_", " ").title()
 
 
 def _user_initial(username: str) -> str:
@@ -118,9 +128,13 @@ def sidebar_master_css(active_page: str) -> str:
   gap:0!important;padding:0!important;margin:0!important;border:none!important;
   box-shadow:none!important;background:transparent!important;
 }}
-.sb-brand{{display:flex;align-items:center;gap:7px;padding:10px 2px 8px;flex-shrink:0;line-height:1;}}
+.sb-brand{{display:flex;align-items:center;gap:7px;padding:10px 2px 6px;flex-shrink:0;line-height:1;}}
 .sb-brand svg{{display:block;flex-shrink:0;width:24px!important;height:24px!important;}}
 .sb-brand span{{color:#fafafa!important;font-size:13px;font-weight:600;letter-spacing:-.02em;line-height:1;}}
+.sb-section{{
+  color:#52525b!important;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  padding:12px 8px 4px;margin:0;line-height:1.2;
+}}
 .sb-foot{{padding:8px 0 2px;flex-shrink:0;border-top:1px solid rgba(255,255,255,.06);}}
 .sb-user{{display:flex;align-items:center;gap:7px;padding:5px 6px;margin:0 0 6px;border-radius:8px;
   background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.04);}}
@@ -133,10 +147,10 @@ def sidebar_master_css(active_page: str) -> str:
   box-shadow:none!important;outline:none!important;
 }}
 {_SB} div[class*="st-key-nav_"]:not(.st-key-nav_logout) .stButton{{
-  margin:0 0 6px 0!important;padding:0!important;width:100%!important;min-height:0!important;
+  margin:0 0 4px 0!important;padding:0!important;width:100%!important;min-height:0!important;
 }}
 {_SB} div[class*="st-key-nav_"]:not(.st-key-nav_logout) .stButton>button{{
-  width:100%!important;height:42px!important;min-height:42px!important;max-height:42px!important;
+  width:100%!important;height:40px!important;min-height:40px!important;max-height:40px!important;
   padding:0 10px 0 36px!important;border-radius:10px!important;
   border:1px solid transparent!important;border-left:4px solid transparent!important;
   background:transparent!important;background-color:transparent!important;
@@ -167,7 +181,7 @@ def sidebar_master_css(active_page: str) -> str:
 {"".join(icon_rules)}
 {_SB} .st-key-nav_logout .stButton{{margin:0!important;padding:0!important;}}
 {_SB} .st-key-nav_logout .stButton>button{{
-  width:100%!important;height:42px!important;min-height:42px!important;max-height:42px!important;
+  width:100%!important;height:40px!important;min-height:40px!important;max-height:40px!important;
   padding:0 12px 0 34px!important;border-radius:10px!important;
   border:1px solid rgba(255,255,255,.07)!important;background:rgba(255,255,255,.02)!important;
   color:#a1a1aa!important;font-size:13px!important;font-weight:500!important;
@@ -211,10 +225,15 @@ def render_sidebar(active_page: str | None = None) -> None:
 
     with st.sidebar:
         st.markdown(brand, unsafe_allow_html=True)
-        for label, page in NAV_ITEMS:
-            if st.button(label, key=f"nav_{page}", width="stretch", type="secondary"):
-                st.session_state.page = page
-                st.rerun()
+        for section_title, items in NAV_SECTIONS:
+            st.markdown(
+                f'<p class="sb-section">{html.escape(section_title)}</p>',
+                unsafe_allow_html=True,
+            )
+            for label, page in items:
+                if st.button(label, key=f"nav_{page}", width="stretch", type="secondary"):
+                    st.session_state.page = page
+                    st.rerun()
         st.markdown(foot, unsafe_allow_html=True)
         if st.button("Abmelden", key="nav_logout", width="stretch", type="secondary"):
             from services.session_auth import logout_session

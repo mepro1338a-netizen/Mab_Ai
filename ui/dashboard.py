@@ -148,10 +148,10 @@ def render_home() -> None:
             st.session_state.creator_format = "Shorts"
             nav("video")
     with c4:
-        if st.button("Projects", key="home_qa_projects", use_container_width=True):
-            nav("projects")
+        if st.button("Content", key="home_qa_content", use_container_width=True):
+            nav("automation_lab")
     with c5:
-        if st.button("Premium", key="home_qa_premium", use_container_width=True):
+        if st.button("Elite", key="home_qa_elite", use_container_width=True):
             nav("premium")
 
     activity = _activity_snippet(user)

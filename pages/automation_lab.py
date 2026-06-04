@@ -147,7 +147,6 @@ def _render_header() -> None:
         """
 <div class="ca-page">
   <h1 class="ca-h1">Content Automation</h1>
-  <p class="ca-tagline">Instagram · TikTok · YouTube Shorts</p>
   <p class="ca-sub">Create, schedule and publish content automatically.</p>
 """,
         unsafe_allow_html=True,
@@ -155,26 +154,26 @@ def _render_header() -> None:
 
 
 def _render_available_cards() -> None:
-    st.markdown('<p class="ca-section">Available Automations</p>', unsafe_allow_html=True)
+    st.markdown('<p class="ca-section">Available Platforms</p>', unsafe_allow_html=True)
 
     cards = (
         (
             "instagram",
             "📸",
-            "Instagram Reels",
-            ("AI Caption", "Hashtags", "Scheduling", "Auto Publish"),
+            "Instagram",
+            ("Generate Content", "Schedule Post", "Auto Publish"),
         ),
         (
             "tiktok",
             "🎵",
             "TikTok",
-            ("Hook Generator", "Caption", "Scheduling", "Auto Publish"),
+            ("Generate Content", "Schedule Post", "Auto Publish"),
         ),
         (
             "youtube",
             "▶",
             "YouTube Shorts",
-            ("Title Generator", "Description", "Hashtags", "Auto Publish"),
+            ("Generate Content", "Schedule Post", "Auto Publish"),
         ),
     )
 
@@ -236,7 +235,7 @@ def _render_active_table(username: str) -> None:
 <div class="ca-table-wrap">
   <table class="ca-table">
     <thead><tr>
-      <th>Automation</th><th>Platform</th><th>Frequency</th><th>Status</th>
+      <th>Name</th><th>Platform</th><th>Frequency</th><th>Status</th>
     </tr></thead>
     <tbody>{"".join(body)}</tbody>
   </table>
@@ -247,7 +246,7 @@ def _render_active_table(username: str) -> None:
 
 
 def _render_create_form(username: str) -> None:
-    st.markdown('<p class="ca-section">Create New Automation</p>', unsafe_allow_html=True)
+    st.markdown('<p class="ca-section">New Automation</p>', unsafe_allow_html=True)
 
     st.session_state.setdefault("ca_platform", "instagram")
     st.session_state.setdefault("ca_form_platform", st.session_state.get("ca_platform", "instagram"))
