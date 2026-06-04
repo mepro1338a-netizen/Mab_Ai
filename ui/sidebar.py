@@ -91,12 +91,11 @@ def _nav_link(label: str, page: str, *, active: str) -> str:
 
 
 def _build_nav_html(active: str) -> str:
-    parts: list[str] = ['<nav class="sb-nav" aria-label="Hauptnavigation">']
+    parts: list[str] = []
     for section_title, items in NAV_SECTIONS:
         parts.append(f'<p class="sb-section">{html.escape(section_title)}</p>')
         for label, page in items:
             parts.append(_nav_link(label, page, active=active))
-    parts.append("</nav>")
     return "".join(parts)
 
 
@@ -114,8 +113,24 @@ def _user_initial(username: str) -> str:
     return (u[0] or "U").upper()
 
 
+def _sidebar_shell_html(*, active: str, user: str, plan: str) -> str:
+    return (
+        f'<div class="sb-shell">'
+        f'<div class="sb-brand">{_BRAND_SVG}<span>{html.escape(APP_NAME)}</span></div>'
+        f'<div class="sb-scroll"><nav class="sb-nav" aria-label="Hauptnavigation">'
+        f"{_build_nav_html(active)}"
+        f"</nav></div>"
+        f'<div class="sb-foot">'
+        f'<div class="sb-user">'
+        f'<div class="sb-av">{html.escape(_user_initial(user))}</div>'
+        f'<div><div class="sb-un">{html.escape(user)}</div>'
+        f'<div class="sb-up">{html.escape(plan)}</div></div>'
+        f"</div></div></div>"
+    )
+
+
 def sidebar_master_css(active_page: str) -> str:
-    active = active_page or "home"
+    _ = active_page
     logout_uri = _icon_uri("logout")
     return f"""
 :root{{--sb-width:{_WIDTH};}}
@@ -123,30 +138,55 @@ def sidebar_master_css(active_page: str) -> str:
   width:var(--sb-width)!important;min-width:var(--sb-width)!important;max-width:var(--sb-width)!important;
   background:#09090b!important;border-right:1px solid rgba(255,255,255,.06)!important;
 }}
-{_SB}>div{{padding:0 10px 10px!important;height:100vh!important;box-sizing:border-box!important;
-  display:flex!important;flex-direction:column!important;overflow:hidden!important;}}
+{_SB}>div{{
+  padding:0 8px 8px!important;background:#09090b!important;
+  height:100dvh!important;max-height:100dvh!important;
+  display:flex!important;flex-direction:column!important;overflow:hidden!important;
+  box-sizing:border-box!important;
+}}
 {_SB} [data-testid="stSidebarContent"],
 {_SB} [data-testid="stSidebarUserContent"]{{
-  padding:0!important;background:#09090b!important;display:flex!important;flex-direction:column!important;
+  padding:0!important;background:#09090b!important;
+  display:flex!important;flex-direction:column!important;
   flex:1!important;min-height:0!important;overflow:hidden!important;
 }}
 {_SB} [data-testid="stSidebarNav"]{{display:none!important;}}
 {_SB} [data-testid="stVerticalBlock"],
-{_SB} [data-testid="stVerticalBlockBorderWrapper"],
+{_SB} [data-testid="stVerticalBlockBorderWrapper"]{{
+  gap:0!important;padding:0!important;margin:0!important;border:none!important;
+  box-shadow:none!important;background:transparent!important;
+  display:flex!important;flex-direction:column!important;
+  flex:1!important;min-height:0!important;overflow:hidden!important;
+}}
 {_SB} [data-testid="stElementContainer"]{{
   gap:0!important;padding:0!important;margin:0!important;border:none!important;
   box-shadow:none!important;background:transparent!important;
 }}
-.sb-brand{{display:flex;align-items:center;gap:8px;padding:12px 4px 10px;flex-shrink:0;}}
+{_SB} [data-testid="stElementContainer"]:has(.sb-shell){{
+  flex:1!important;min-height:0!important;overflow:hidden!important;
+  display:flex!important;flex-direction:column!important;
+}}
+.sb-shell{{
+  display:flex;flex-direction:column;flex:1;min-height:0;width:100%;
+  padding:8px 0 4px;box-sizing:border-box;overflow:hidden;
+}}
+.sb-brand{{display:flex;align-items:center;gap:8px;padding:6px 4px 12px;flex-shrink:0;}}
 .sb-brand svg{{width:24px!important;height:24px!important;flex-shrink:0;}}
 .sb-brand span{{color:#fafafa!important;font-size:14px;font-weight:600;letter-spacing:-.02em;}}
-.sb-nav-wrap{{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding:0 2px;
-  scrollbar-width:thin;scrollbar-color:#3f3f46 transparent;}}
+.sb-scroll{{
+  flex:1 1 auto;min-height:0;overflow-y:auto!important;overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;overscroll-behavior:contain;
+  padding:0 2px;margin:0 -2px;
+  scrollbar-width:thin;scrollbar-color:#52525b transparent;
+}}
+.sb-scroll::-webkit-scrollbar{{width:5px;}}
+.sb-scroll::-webkit-scrollbar-thumb{{background:#52525b;border-radius:8px;}}
+.sb-scroll::-webkit-scrollbar-track{{background:transparent;}}
 .sb-section{{
   color:#52525b!important;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
-  padding:14px 8px 5px;margin:0;line-height:1.2;
+  padding:12px 8px 4px;margin:0;line-height:1.2;
 }}
-.sb-nav{{display:flex;flex-direction:column;gap:2px;padding-bottom:8px;}}
+.sb-nav{{display:flex;flex-direction:column;gap:2px;padding-bottom:12px;}}
 .sb-nav-item{{
   display:flex;align-items:center;gap:10px;height:40px;padding:0 10px;border-radius:10px;
   text-decoration:none!important;border-left:4px solid transparent;box-sizing:border-box;
@@ -160,13 +200,14 @@ def sidebar_master_css(active_page: str) -> str:
 .sb-nav-ico svg{{width:18px;height:18px;display:block;}}
 .sb-nav-label{{color:#a1a1aa!important;font-size:13px;font-weight:500;line-height:1;}}
 .sb-nav-item.is-active .sb-nav-label{{color:#ffffff!important;font-weight:600;}}
-.sb-foot{{padding:10px 0 4px;flex-shrink:0;border-top:1px solid rgba(255,255,255,.06);margin-top:auto;}}
-.sb-user{{display:flex;align-items:center;gap:8px;padding:8px 8px;margin:0 0 8px;border-radius:10px;
-  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);}}
+.sb-foot{{flex-shrink:0;padding-top:8px;border-top:1px solid rgba(255,255,255,.06);}}
+.sb-user{{display:flex;align-items:center;gap:8px;padding:8px;border-radius:10px;
+  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);margin-bottom:8px;}}
 .sb-av{{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#7c3aed,#6366f1);
   color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}}
 .sb-un{{color:#e4e4e7!important;font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}}
 .sb-up{{color:#71717a!important;font-size:10px;line-height:1.2;margin-top:1px;}}
+{_SB} .st-key-nav_logout{{flex-shrink:0!important;margin-top:0!important;}}
 {_SB} .st-key-nav_logout .stButton{{margin:0!important;padding:0!important;width:100%!important;}}
 {_SB} .st-key-nav_logout .stButton>button{{
   width:100%!important;height:40px!important;min-height:40px!important;padding:0 12px 0 38px!important;
@@ -193,24 +234,8 @@ def render_sidebar(active_page: str | None = None) -> None:
     user = str(st.session_state.get("user") or "User")
     plan = _plan_label(str(st.session_state.get("plan") or "free"))
 
-    brand = (
-        f'<div class="sb-brand">{_BRAND_SVG}'
-        f'<span>{html.escape(APP_NAME)}</span></div>'
-    )
-    foot = (
-        f'<div class="sb-foot">'
-        f'<div class="sb-user"><div class="sb-av">{html.escape(_user_initial(user))}</div>'
-        f'<div><div class="sb-un">{html.escape(user)}</div>'
-        f'<div class="sb-up">{html.escape(plan)}</div></div></div></div>'
-    )
-
     with st.sidebar:
-        st.markdown(brand, unsafe_allow_html=True)
-        st.markdown(
-            f'<div class="sb-nav-wrap">{_build_nav_html(active)}</div>',
-            unsafe_allow_html=True,
-        )
-        st.markdown(foot, unsafe_allow_html=True)
+        st.markdown(_sidebar_shell_html(active=active, user=user, plan=plan), unsafe_allow_html=True)
         if st.button("Abmelden", key="nav_logout", width="stretch", type="secondary"):
             from services.session_auth import logout_session
             logout_session()

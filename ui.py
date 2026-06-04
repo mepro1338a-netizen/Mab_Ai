@@ -324,7 +324,8 @@ PAGE_LABELS = {
 }
 
 if st.session_state.get("logged_in"):
-    render_app_header(page_label=PAGE_LABELS.get(page, ""))
+    header_label = "" if page == "home" else PAGE_LABELS.get(page, "")
+    render_app_header(page_label=header_label)
 
 PAGE_HANDLERS = {
     "social_oauth": ("Social Connect", lambda: None),
