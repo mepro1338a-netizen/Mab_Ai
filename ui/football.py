@@ -88,7 +88,7 @@ _CSS = """
 
 
 def _css() -> None:
-    inject_css(MB_THEME_VARS + page_layout_css(1080, 64, 28) + _CSS)
+    inject_css(MB_THEME_VARS + page_layout_css(1080, 0, 28) + _CSS)
 
 
 def _card_html(row: dict[str, Any]) -> str:
@@ -164,15 +164,12 @@ def render_football_betting_board(
     _css()
     st.markdown('<div class="fb-page">', unsafe_allow_html=True)
     st.markdown('<h1 class="fb-h1">Football AI</h1>', unsafe_allow_html=True)
-    st.markdown(
-        '<p class="fb-sub">Kuratiert · Top-Ligen · Live · Nächste Spiele</p>',
-        unsafe_allow_html=True,
-    )
+    st.markdown('<p class="fb-sub">Spiele und Ergebnisse auf einen Blick.</p>', unsafe_allow_html=True)
 
     rank = football_plan_rank(session_plan or "none")
     if rank < 1 or session_plan in ("none", ""):
         st.markdown(
-            '<div class="fb-gate">Football AI erfordert einen aktiven Football-Plan.</div>',
+            '<div class="fb-gate">Football AI ist mit deinem Plan noch nicht aktiv.</div>',
             unsafe_allow_html=True,
         )
         st.markdown("</div>", unsafe_allow_html=True)
@@ -180,68 +177,50 @@ def render_football_betting_board(
 
     service = get_football_service()
     if not service.is_configured():
-        st.error("FOOTBALL_API_KEY fehlt.")
+        st.error("Football-Daten sind gerade nicht verfügbar.")
         st.markdown("</div>", unsafe_allow_html=True)
         return
 
     _ensure_football_session()
 
-    mode = str(st.session_state.get("fb_mode") or "curated")
-    comp = str(st.session_state.get("fb_competition") or "deutschland")
-    time_f = str(st.session_state.get("fb_time") or "heute")
+    comp_keys = [k for k, _ in _COMPETITIONS]
+    time_keys = [k for k, _ in _TIME]
+    mode_keys = [k for k, _ in _MODES]
+    comp_lbl = {k: v for k, v in _COMPETITIONS}
+    time_lbl = {k: v for k, v in _TIME}
+    mode_lbl = {k: v for k, v in _MODES}
 
-    ref_col, _ = st.columns([1, 11])
-    with ref_col:
-        if st.button("↻", key="fb_ref"):
+    f1, f2, f3, f4 = st.columns([2, 2, 2, 1])
+    with f1:
+        st.selectbox(
+            "Wettbewerb",
+            comp_keys,
+            format_func=lambda x: comp_lbl[x],
+            key="fb_competition",
+            label_visibility="collapsed",
+        )
+    with f2:
+        st.selectbox(
+            "Zeitraum",
+            time_keys,
+            format_func=lambda x: time_lbl[x],
+            key="fb_time",
+            label_visibility="collapsed",
+        )
+    with f3:
+        st.selectbox(
+            "Ansicht",
+            mode_keys,
+            format_func=lambda x: mode_lbl[x],
+            key="fb_mode",
+            label_visibility="collapsed",
+        )
+    with f4:
+        if st.button("↻", key="fb_ref", use_container_width=True):
             st.session_state["fb_payload"] = None
             st.session_state["fb_detail"] = None
+            st.session_state["fb_sel"] = None
             st.rerun()
-
-    st.markdown('<div class="fb-label">Wettbewerb</div>', unsafe_allow_html=True)
-    mc = st.columns(4)
-    nc, nm, nt = comp, mode, time_f
-    for col, (k, lbl) in zip(mc, _COMPETITIONS):
-        with col:
-            if st.button(
-                lbl,
-                key=f"fb_c_{k}",
-                type="primary" if comp == k else "secondary",
-                use_container_width=True,
-            ):
-                nc = k
-
-    st.markdown('<div class="fb-label">Zeitraum</div>', unsafe_allow_html=True)
-    tc = st.columns(4)
-    for col, (k, lbl) in zip(tc, _TIME):
-        with col:
-            if st.button(
-                lbl,
-                key=f"fb_t_{k}",
-                type="primary" if time_f == k else "secondary",
-                use_container_width=True,
-            ):
-                nt = k
-
-    st.markdown('<div class="fb-label">Ansicht</div>', unsafe_allow_html=True)
-    vc = st.columns(2)
-    for col, (k, lbl) in zip(vc, _MODES):
-        with col:
-            if st.button(
-                lbl,
-                key=f"fb_m_{k}",
-                type="primary" if mode == k else "secondary",
-                use_container_width=True,
-            ):
-                nm = k
-
-    if nc != comp or nm != mode or nt != time_f:
-        st.session_state["fb_competition"] = nc
-        st.session_state["fb_mode"] = nm
-        st.session_state["fb_time"] = nt
-        st.session_state["fb_payload"] = None
-        st.session_state["fb_detail"] = None
-        st.session_state["fb_sel"] = None
-        st.rerun()
 
     comp = str(st.session_state.get("fb_competition") or "deutschland")
     mode = str(st.session_state.get("fb_mode") or "curated")
@@ -251,6 +230,8 @@ def render_football_betting_board(
     cache_key = f"{mode}|{comp}|{time_f}"
     if st.session_state.get("fb_cache_key") != cache_key:
         st.session_state["fb_payload"] = None
+        st.session_state["fb_detail"] = None
+        st.session_state["fb_sel"] = None
         st.session_state["fb_cache_key"] = cache_key
 
     if st.session_state.get("fb_payload") is None and is_raw:

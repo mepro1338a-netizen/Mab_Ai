@@ -106,7 +106,7 @@ _CSS = """
 
 
 def _css() -> None:
-    inject_css(MB_THEME_VARS + page_layout_css(1080, 64, 36) + _CSS)
+    inject_css(MB_THEME_VARS + page_layout_css(1080, 0, 36) + _CSS)
 
 
 def _is_content_automation(item: dict) -> bool:

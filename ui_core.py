@@ -51,20 +51,8 @@ html, body, .stApp, .main,
 }}
 
 .custom-topbar {{
-    display: block !important;
+    display: flex !important;
     visibility: visible !important;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 64px;
-    min-height: 64px;
-    max-height: 64px;
-    z-index: 999999;
-    background: linear-gradient(90deg, rgba(9,8,24,.97), rgba(25,8,42,.97));
-    border-bottom: 1px solid rgba(255,255,255,.08);
-    backdrop-filter: blur(18px);
-    box-shadow: 0 2px 16px rgba(0,0,0,.2);
 }}
 
 h1, h2, h3, h4, h5, h6 {{

@@ -8,6 +8,7 @@ from config import APP_BASE_URL, APP_NAME, APP_TAGLINE
 from database import ensure_db_ready, get_user
 from payments import confirm_checkout_session
 from services.session_auth import enforce_active_session
+from ui.chrome import apply_nav_from_query, render_app_header
 from ui.sidebar import LEGACY_PAGE_ALIASES, render_sidebar
 from ui_core import load_css, sync_session_user
 
@@ -276,6 +277,7 @@ handle_payment_callback()
 enforce_active_session()
 
 load_css()
+apply_nav_from_query()
 inject_seo_meta()
 
 
@@ -306,6 +308,23 @@ if page in LEGACY_PAGE_ALIASES:
 # =========================================================
 
 render_sidebar(page)
+
+PAGE_LABELS = {
+    "social_oauth": "Social Connect",
+    "home": "Dashboard",
+    "chat": "AI Chat",
+    "football": "Football AI",
+    "automation_lab": "Content Automation",
+    "coding": "Code",
+    "image": "Image",
+    "music": "Music",
+    "video": "Video",
+    "dashboard": "Profile",
+    "premium": "Elite",
+}
+
+if st.session_state.get("logged_in"):
+    render_app_header(page_label=PAGE_LABELS.get(page, ""))
 
 PAGE_HANDLERS = {
     "social_oauth": ("Social Connect", lambda: None),

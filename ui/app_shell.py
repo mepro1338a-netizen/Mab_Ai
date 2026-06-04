@@ -272,27 +272,22 @@ def master_button_css() -> str:
 
 def inject_global_ui(*, force: bool = False) -> None:
     """Inject on every run — Streamlit rebuilds the page each rerun."""
-    from ui.header import header_css, render_header_bar
+    from ui.chrome import chrome_css
     from ui.premium_foundation import BETA_GLOBAL_CSS
     from ui.prompt_ui import MABYTE_PROMPT_CSS
     from ui.styles import MB_THEME_VARS, inject_css, page_layout_css, streamlit_force_dark_css
     from ui_core import core_app_css
-
-    _page = str(st.session_state.get("page") or "home").strip()
-    if _page in ("reels", "video"):
-        _page = "creator"
 
     inject_css(
         f"/* mb-ui-v{_UI_VERSION} */\n"
         + MB_THEME_VARS
         + streamlit_force_dark_css()
         + BETA_GLOBAL_CSS
-        + header_css()
-        + page_layout_css(1480, 64, 42)
+        + chrome_css()
+        + page_layout_css(1480, 0, 42)
         + GLOBAL_DESIGN_CSS
         + core_app_css()
         + master_button_css()
         + MABYTE_PROMPT_CSS
     )
-    render_header_bar()
     st.session_state["_mb_ui_version"] = _UI_VERSION
