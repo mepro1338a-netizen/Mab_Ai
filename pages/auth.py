@@ -38,37 +38,51 @@ html, body, .stApp,
 
 [data-testid="stMain"] .block-container,
 [data-testid="stMainBlockContainer"] {
-    max-width: 400px !important;
+    max-width: 460px !important;
+    width: 100% !important;
     margin: 0 auto !important;
-    padding: 0 1rem 2rem !important;
+    padding: 1.25rem 1.15rem 2rem !important;
 }
 
-[data-testid="stVerticalBlock"]:has(.auth-marker) { gap: 0 !important; }
+[data-testid="stVerticalBlock"]:has(.auth-marker) {
+    gap: 0 !important;
+    position: relative !important;
+}
 
-.auth-hero {
-    width: 100vw; position: relative; left: 50%; margin-left: -50vw;
-    margin-bottom: 1rem; padding: 0.4rem 0.75rem 0.75rem;
-    border-bottom: 1px solid rgba(255,255,255,.06);
+.auth-shell {
+    width: 100%;
+    margin: 0 0 1.25rem;
+    padding-bottom: 1.1rem;
+    border-bottom: 1px solid #27272a;
 }
 .auth-main-header {
-    height: 50px; display: flex; align-items: center; justify-content: center;
-    margin: 0 0 0.65rem; overflow: hidden;
+    width: 100%;
+    margin: 0 0 1rem;
+    line-height: 0;
 }
 .auth-main-header img {
-    width: min(1180px, calc(100vw - 1rem)); height: 50px;
-    object-fit: cover; object-position: center 42%;
+    width: 100%;
+    max-height: 44px;
+    height: auto;
+    display: block;
+    object-fit: contain;
+    object-position: center;
 }
 .auth-brand-row {
-    display: flex; align-items: center; justify-content: center; gap: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
 }
 .auth-logo-mark {
-    width: 48px; height: 48px; border-radius: 11px;
+    width: 46px; height: 46px; border-radius: 10px;
     display: inline-flex; align-items: center; justify-content: center;
-    font-weight: 800; font-size: 20px; color: #fff;
+    font-weight: 800; font-size: 19px; color: #fff;
     background: linear-gradient(135deg, #8b5cf6, #6366f1);
+    flex-shrink: 0;
 }
 .auth-topbar-name {
-    display: block; font-size: 1.75rem; font-weight: 800; color: #fafafa;
+    display: block; font-size: 1.65rem; font-weight: 800; color: #fafafa;
     line-height: 1.05; letter-spacing: -0.03em;
 }
 .auth-topbar-tag {
@@ -76,14 +90,22 @@ html, body, .stApp,
 }
 
 [data-testid="stVerticalBlock"]:has(.auth-form-marker) {
-    padding: 1.25rem 1.1rem !important;
-    border-radius: 12px !important;
-    background: #18181b !important;
-    border: 1px solid #27272a !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    gap: 0.4rem !important;
+}
+[data-testid="stVerticalBlock"]:has(.auth-form-marker) [data-testid="stVerticalBlock"] {
     gap: 0.35rem !important;
 }
+[data-testid="stVerticalBlock"]:has(.auth-form-marker) [data-testid="stTextInput"] label p,
+[data-testid="stVerticalBlock"]:has(.auth-form-marker) [data-testid="stWidgetLabel"] p {
+    color: #d4d4d8 !important;
+}
 [data-testid="stVerticalBlock"]:has(.auth-form-marker) [data-testid="stTextInput"] input {
-    background: #09090b !important; color: #fafafa !important;
+    background: #18181b !important; color: #fafafa !important;
     border: 1px solid #3f3f46 !important; border-radius: 8px !important;
     min-height: 44px !important;
 }
@@ -99,13 +121,25 @@ html, body, .stApp,
 [data-testid="stVerticalBlock"]:has(.auth-form-marker) .st-key-auth_mode_switch .stButton>button {
     background: transparent !important; border: none !important; box-shadow: none !important;
     color: #a78bfa !important; font-size: 0.85rem !important; font-weight: 600 !important;
-    padding: 0 !important; min-height: auto !important;
+    padding: 0 !important; min-height: auto !important; width: 100% !important;
 }
 [data-testid="stVerticalBlock"]:has(.auth-form-marker) .st-key-auth_mode_switch .stButton>button p {
     color: #a78bfa !important;
 }
+[data-testid="stVerticalBlock"]:has(.auth-form-marker) [data-testid="stAlert"] {
+    margin-bottom: 0.5rem !important;
+}
+.auth-form-title {
+    margin: 0 0 0.85rem; font-size: 0.95rem; font-weight: 600; color: #e4e4e7;
+}
 .auth-ssl-note {
-    text-align: center; margin-top: 0.85rem; font-size: 0.72rem; color: #52525b;
+    text-align: center; margin-top: 1rem; font-size: 0.72rem; color: #52525b;
+}
+
+@media (max-width: 480px) {
+    [data-testid="stMain"] .block-container { padding: 1rem 0.9rem 1.75rem !important; }
+    .auth-main-header img { max-height: 38px; }
+    .auth-topbar-name { font-size: 1.45rem; }
 }
 """
 
@@ -297,7 +331,7 @@ def _hero_html() -> str:
             "</header>"
         )
     return (
-        '<div class="auth-hero">'
+        '<div class="auth-shell">'
         f"{slogan}"
         '<div class="auth-brand-row">'
         f'<span class="auth-logo-mark">{_INITIAL}</span>'
@@ -309,7 +343,7 @@ def _hero_html() -> str:
 
 
 def _render_login_form() -> None:
-    st.markdown('<p style="margin:0 0 0.75rem;font-weight:600;">Anmelden</p>', unsafe_allow_html=True)
+    st.markdown('<p class="auth-form-title">Anmelden</p>', unsafe_allow_html=True)
     with st.form("auth_login_form", clear_on_submit=False, border=False):
         username = st.text_input("Benutzername")
         password = st.text_input("Passwort", type="password")
@@ -322,7 +356,7 @@ def _render_login_form() -> None:
 
 
 def _render_register_form() -> None:
-    st.markdown('<p style="margin:0 0 0.75rem;font-weight:600;">Registrieren</p>', unsafe_allow_html=True)
+    st.markdown('<p class="auth-form-title">Registrieren</p>', unsafe_allow_html=True)
     with st.form("auth_register_form", clear_on_submit=False, border=False):
         username = st.text_input("Benutzername")
         email = st.text_input("E-Mail")
