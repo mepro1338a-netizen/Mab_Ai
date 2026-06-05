@@ -22,7 +22,7 @@ _SLOGAN_HEADER = Path(__file__).resolve().parent.parent / "assets" / "sloganhead
 
 _LOGO_SVG = (
     '<svg class="auth-logo-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 44" '
-    'width="44" height="44" aria-hidden="true">'
+    'width="52" height="52" aria-hidden="true">'
     '<defs><linearGradient id="authLogo" x1="0" y1="0" x2="1" y2="1">'
     '<stop offset="0%" stop-color="#a78bfa"/><stop offset="50%" stop-color="#7c3aed"/>'
     '<stop offset="100%" stop-color="#6366f1"/></linearGradient></defs>'
@@ -36,16 +36,19 @@ _LOGO_SVG = (
 _AUTH_CSS = """
 :root {
     --auth-bg: #030712;
-    --auth-surface: rgba(12, 12, 18, 0.72);
-    --auth-border: rgba(255, 255, 255, 0.08);
-    --auth-border-focus: rgba(167, 139, 250, 0.55);
-    --auth-input: rgba(9, 9, 11, 0.92);
+    --auth-surface: rgba(14, 14, 22, 0.78);
+    --auth-surface-2: rgba(255, 255, 255, 0.03);
+    --auth-border: rgba(255, 255, 255, 0.09);
+    --auth-border-focus: rgba(167, 139, 250, 0.65);
+    --auth-input: rgba(255, 255, 255, 0.04);
+    --auth-input-hover: rgba(255, 255, 255, 0.06);
     --auth-muted: #71717a;
+    --auth-placeholder: #6b7280;
     --auth-text: #fafafa;
     --auth-soft: #d4d4d8;
-    --auth-violet: #7c3aed;
+    --auth-violet: #8b5cf6;
     --auth-indigo: #6366f1;
-    --auth-ring: rgba(124, 58, 237, 0.35);
+    --auth-ring: rgba(139, 92, 246, 0.38);
     --auth-ease: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -70,19 +73,32 @@ html, body, .stApp,
 .auth-glow::before {
     content: "";
     position: absolute;
-    width: 680px; height: 680px;
-    top: -220px; left: 50%;
+    width: 820px; height: 820px;
+    top: -280px; left: 50%;
     transform: translateX(-50%);
-    background: radial-gradient(circle, rgba(124, 58, 237, 0.22) 0%, transparent 68%);
-    animation: authGlowPulse 9s var(--auth-ease) infinite;
+    background: radial-gradient(circle, rgba(139, 92, 246, 0.26) 0%, rgba(99, 102, 241, 0.08) 42%, transparent 68%);
+    animation: authGlowPulse 10s var(--auth-ease) infinite;
 }
 .auth-glow::after {
     content: "";
     position: absolute;
-    width: 520px; height: 520px;
-    bottom: -180px; right: -120px;
-    background: radial-gradient(circle, rgba(99, 102, 241, 0.14) 0%, transparent 70%);
-    animation: authGlowDrift 12s var(--auth-ease) infinite alternate;
+    width: 640px; height: 640px;
+    bottom: -220px; left: 50%;
+    transform: translateX(-42%);
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.16) 0%, transparent 72%);
+    animation: authGlowDrift 14s var(--auth-ease) infinite alternate;
+}
+.auth-glow-mid {
+    position: absolute;
+    width: 420px; height: 420px;
+    top: 38%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle, rgba(124, 58, 237, 0.08) 0%, transparent 70%);
+    animation: authGlowMid 11s var(--auth-ease) infinite alternate;
+}
+@keyframes authGlowMid {
+    from { opacity: 0.45; transform: translate(-50%, -50%) scale(0.95); }
+    to { opacity: 0.85; transform: translate(-50%, -50%) scale(1.05); }
 }
 @keyframes authGlowPulse {
     0%, 100% { opacity: 0.55; transform: translateX(-50%) scale(1); }
@@ -99,98 +115,112 @@ html, body, .stApp,
 }
 [data-testid="stMain"] .block-container,
 [data-testid="stMainBlockContainer"] {
-    max-width: 440px !important;
-    width: 100% !important;
+    max-width: 560px !important;
+    width: min(560px, 100%) !important;
     margin: 0 auto !important;
-    padding: clamp(1.75rem, 7vh, 3.5rem) 1.15rem 2rem !important;
+    padding: clamp(2rem, 8vh, 4rem) 1.35rem 2.5rem !important;
 }
 
 [data-testid="stVerticalBlock"]:has(.auth-marker) { gap: 0 !important; }
 
 [data-testid="stVerticalBlock"]:has(.auth-glass-marker) {
     padding: 0 !important;
-    border-radius: 20px !important;
+    border-radius: 22px !important;
     background: var(--auth-surface) !important;
     border: 1px solid var(--auth-border) !important;
-    backdrop-filter: blur(24px) saturate(1.25) !important;
-    -webkit-backdrop-filter: blur(24px) saturate(1.25) !important;
+    backdrop-filter: blur(28px) saturate(1.3) !important;
+    -webkit-backdrop-filter: blur(28px) saturate(1.3) !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.06),
-        0 0 0 1px rgba(139, 92, 246, 0.1),
-        0 24px 56px rgba(0, 0, 0, 0.42) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.07),
+        0 0 0 1px rgba(139, 92, 246, 0.12),
+        0 4px 24px rgba(0, 0, 0, 0.28),
+        0 32px 64px rgba(0, 0, 0, 0.38) !important;
     overflow: hidden !important;
     gap: 0 !important;
 }
 
 .auth-card-head {
-    padding: 1.35rem 1.35rem 1.1rem;
+    padding: 1.5rem 1.75rem 1.35rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    background: linear-gradient(180deg, rgba(255,255,255,0.03) 0%, transparent 100%);
+    background: linear-gradient(180deg, var(--auth-surface-2) 0%, transparent 100%);
 }
 .auth-slogan {
-    margin: 0 0 1rem;
+    margin: 0 0 1.15rem;
     line-height: 0;
     text-align: center;
 }
 .auth-slogan img {
     width: 100%;
-    max-height: 40px;
+    max-height: 44px;
     height: auto;
     object-fit: contain;
     display: inline-block;
-    opacity: 0.95;
+    opacity: 0.92;
 }
 .auth-brand {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 14px;
+    gap: 16px;
+}
+.auth-brand-copy {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 52px;
 }
 .auth-logo-wrap {
     position: relative;
     flex-shrink: 0;
     line-height: 0;
+    display: flex;
+    align-items: center;
 }
 .auth-logo-wrap::after {
     content: "";
     position: absolute;
-    inset: -6px;
-    border-radius: 16px;
-    background: radial-gradient(circle, rgba(124, 58, 237, 0.35), transparent 70%);
-    filter: blur(8px);
+    inset: -8px;
+    border-radius: 18px;
+    background: radial-gradient(circle, rgba(139, 92, 246, 0.4), transparent 72%);
+    filter: blur(10px);
     z-index: -1;
 }
-.auth-logo-svg { display: block; filter: drop-shadow(0 6px 16px rgba(124, 58, 237, 0.35)); }
+.auth-logo-svg {
+    display: block;
+    width: 52px;
+    height: 52px;
+    filter: drop-shadow(0 8px 20px rgba(124, 58, 237, 0.4));
+}
 .auth-brand-name {
     margin: 0;
-    font-size: 1.5rem;
+    font-size: 1.625rem;
     font-weight: 700;
-    letter-spacing: -0.035em;
-    line-height: 1.1;
+    letter-spacing: -0.04em;
+    line-height: 1.05;
     color: var(--auth-text);
 }
 .auth-brand-tag {
-    margin: 4px 0 0;
-    font-size: 0.6875rem;
+    margin: 5px 0 0;
+    font-size: 0.625rem;
     font-weight: 500;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.1em;
     text-transform: uppercase;
-    color: var(--auth-muted);
+    color: #52525b;
 }
 
 .auth-card-body {
-    padding: 1.15rem 1.35rem 1.25rem;
+    padding: 1.5rem 1.75rem 1.35rem;
 }
 
-.auth-mode-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    margin-bottom: 1.1rem;
-    padding: 4px;
-    border-radius: 12px;
-    background: rgba(9, 9, 11, 0.65);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+/* Segmented Control — Tabs */
+[data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stHorizontalBlock"]:has(.st-key-auth_tab_login) {
+    background: rgba(9, 9, 14, 0.72) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-radius: 14px !important;
+    padding: 5px !important;
+    gap: 6px !important;
+    margin-bottom: 1.35rem !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
 }
 [data-testid="stVerticalBlock"]:has(.auth-glass-marker) .st-key-auth_tab_login,
 [data-testid="stVerticalBlock"]:has(.auth-glass-marker) .st-key-auth_tab_register {
@@ -199,38 +229,43 @@ html, body, .stApp,
 [data-testid="stVerticalBlock"]:has(.auth-glass-marker) .st-key-auth_tab_login .stButton>button,
 [data-testid="stVerticalBlock"]:has(.auth-glass-marker) .st-key-auth_tab_register .stButton>button {
     width: 100% !important;
-    min-height: 38px !important;
-    border-radius: 9px !important;
+    min-height: 40px !important;
+    border-radius: 10px !important;
     border: 1px solid transparent !important;
     background: transparent !important;
     color: var(--auth-muted) !important;
     font-size: 0.8125rem !important;
     font-weight: 600 !important;
-    transition: color 0.2s var(--auth-ease), background 0.2s var(--auth-ease),
-                border-color 0.2s var(--auth-ease), box-shadow 0.2s var(--auth-ease) !important;
-}
-[data-testid="stVerticalBlock"]:has(.auth-glass-marker) .st-key-auth_tab_login .stButton>button p,
-[data-testid="stVerticalBlock"]:has(.auth-glass-marker) .st-key-auth_tab_register .stButton>button p {
-    color: inherit !important;
+    transition: color 0.22s var(--auth-ease), background 0.22s var(--auth-ease),
+                border-color 0.22s var(--auth-ease), box-shadow 0.22s var(--auth-ease),
+                transform 0.22s var(--auth-ease) !important;
 }
 [data-testid="stVerticalBlock"]:has(.auth-glass-marker) .st-key-auth_tab_login .stButton>button:hover,
 [data-testid="stVerticalBlock"]:has(.auth-glass-marker) .st-key-auth_tab_register .stButton>button:hover {
     color: var(--auth-soft) !important;
-    border-color: rgba(255, 255, 255, 0.08) !important;
+    background: rgba(255, 255, 255, 0.04) !important;
+    border-color: rgba(255, 255, 255, 0.06) !important;
+    transform: translateY(-0.5px) !important;
+}
+
+[data-testid="stVerticalBlock"]:has(.auth-glass-marker) .st-key-auth_tab_login .stButton>button p,
+[data-testid="stVerticalBlock"]:has(.auth-glass-marker) .st-key-auth_tab_register .stButton>button p {
+    color: inherit !important;
 }
 
 .auth-form-title {
-    margin: 0 0 0.35rem;
-    font-size: 1.0625rem;
+    margin: 0 0 0.625rem;
+    font-size: 1.1875rem;
     font-weight: 600;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.025em;
+    line-height: 1.25;
     color: var(--auth-text);
 }
 .auth-form-sub {
-    margin: 0 0 1rem;
-    font-size: 0.8125rem;
+    margin: 0 0 1.35rem;
+    font-size: 0.875rem;
     color: var(--auth-muted);
-    line-height: 1.45;
+    line-height: 1.5;
 }
 
 [data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stVerticalBlock"] {
@@ -249,27 +284,38 @@ html, body, .stApp,
     background: var(--auth-input) !important;
     background-color: var(--auth-input) !important;
     color: var(--auth-text) !important;
-    border: 1px solid rgba(63, 63, 70, 0.85) !important;
-    border-radius: 10px !important;
-    min-height: 46px !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 11px !important;
+    min-height: 48px !important;
     font-size: 0.9375rem !important;
     caret-color: #c4b5fd !important;
-    transition: border-color 0.2s var(--auth-ease), box-shadow 0.2s var(--auth-ease),
-                background 0.2s var(--auth-ease) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 1px 2px rgba(0, 0, 0, 0.12) !important;
+    backdrop-filter: blur(8px) !important;
+    transition: border-color 0.22s var(--auth-ease), box-shadow 0.22s var(--auth-ease),
+                background 0.22s var(--auth-ease) !important;
+}
+[data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stTextInput"] input::placeholder {
+    color: var(--auth-placeholder) !important;
+    opacity: 1 !important;
 }
 [data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stTextInput"] input:hover {
-    border-color: rgba(113, 113, 122, 0.95) !important;
+    background: var(--auth-input-hover) !important;
+    border-color: rgba(255, 255, 255, 0.14) !important;
 }
 [data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stTextInput"] input:focus,
 [data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stTextInput"] input:focus-visible {
+    background: rgba(139, 92, 246, 0.06) !important;
     border-color: var(--auth-border-focus) !important;
-    box-shadow: 0 0 0 3px var(--auth-ring) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.05),
+        0 0 0 3px var(--auth-ring),
+        0 0 20px rgba(139, 92, 246, 0.15) !important;
     outline: none !important;
 }
 [data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stTextInput"] input:-webkit-autofill,
 [data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stTextInput"] input:-webkit-autofill:hover,
 [data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stTextInput"] input:-webkit-autofill:focus {
-    -webkit-box-shadow: 0 0 0 1000px #09090b inset !important;
+    -webkit-box-shadow: 0 0 0 1000px rgba(18, 18, 24, 0.95) inset !important;
     -webkit-text-fill-color: #fafafa !important;
     transition: background-color 9999s ease-out 0s !important;
 }
@@ -291,28 +337,37 @@ html, body, .stApp,
 [data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stFormSubmitButton"] button,
 [data-testid="stVerticalBlock"]:has(.auth-glass-marker) .stButton > button[kind="primary"] {
     width: 100% !important;
-    min-height: 46px !important;
-    margin-top: 0.35rem !important;
-    border-radius: 10px !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 48%, #6366f1 100%) !important;
+    min-height: 48px !important;
+    margin-top: 0.5rem !important;
+    border-radius: 11px !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 42%, #6366f1 100%) !important;
     color: #fff !important;
     font-size: 0.9375rem !important;
     font-weight: 600 !important;
-    letter-spacing: 0.01em !important;
-    box-shadow: 0 8px 24px rgba(124, 58, 237, 0.32) !important;
-    transition: transform 0.18s var(--auth-ease), box-shadow 0.18s var(--auth-ease),
-                filter 0.18s var(--auth-ease) !important;
+    letter-spacing: 0.015em !important;
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.15) inset,
+        0 10px 28px rgba(139, 92, 246, 0.35),
+        0 0 0 1px rgba(139, 92, 246, 0.2) !important;
+    transition: transform 0.2s var(--auth-ease), box-shadow 0.2s var(--auth-ease),
+                filter 0.2s var(--auth-ease) !important;
 }
 [data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stFormSubmitButton"] button:hover,
 [data-testid="stVerticalBlock"]:has(.auth-glass-marker) .stButton > button[kind="primary"]:hover {
     transform: translateY(-1px) !important;
-    box-shadow: 0 12px 28px rgba(124, 58, 237, 0.42) !important;
-    filter: brightness(1.04) !important;
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.18) inset,
+        0 14px 36px rgba(139, 92, 246, 0.48),
+        0 0 32px rgba(139, 92, 246, 0.22) !important;
+    filter: brightness(1.05) !important;
 }
 [data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stFormSubmitButton"] button:active,
 [data-testid="stVerticalBlock"]:has(.auth-glass-marker) .stButton > button[kind="primary"]:active {
-    transform: translateY(0) !important;
+    transform: translateY(0) scale(0.995) !important;
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.1) inset,
+        0 6px 18px rgba(139, 92, 246, 0.3) !important;
 }
 [data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stFormSubmitButton"] button p,
 [data-testid="stVerticalBlock"]:has(.auth-glass-marker) .stButton > button[kind="primary"] p {
@@ -327,31 +382,41 @@ html, body, .stApp,
 }
 
 .auth-card-foot {
-    padding: 0.85rem 1.35rem 1.1rem;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 0.65rem 1.75rem 0.85rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
     text-align: center;
-    background: rgba(0, 0, 0, 0.15);
+    background: transparent;
 }
 .auth-ssl {
     margin: 0;
-    font-size: 0.6875rem;
+    font-size: 0.625rem;
     font-weight: 500;
-    letter-spacing: 0.04em;
-    color: #52525b;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #3f3f46;
+    opacity: 0.85;
 }
 
+@media (max-width: 640px) {
+    [data-testid="stMain"] .block-container {
+        max-width: 100% !important;
+        padding: 1.5rem 1rem 2rem !important;
+    }
+}
 @media (max-width: 480px) {
     [data-testid="stMain"] .block-container {
         padding: 1.25rem 0.85rem 1.75rem !important;
     }
-    .auth-card-head { padding: 1.1rem 1rem 0.95rem; }
-    .auth-card-body { padding: 1rem 1rem 1.1rem; }
-    .auth-brand-name { font-size: 1.3rem; }
-    .auth-slogan img { max-height: 34px; }
+    .auth-card-head { padding: 1.2rem 1.15rem 1.1rem; }
+    .auth-card-body { padding: 1.1rem 1.15rem 1.15rem; }
+    .auth-brand-name { font-size: 1.375rem; }
+    .auth-logo-svg { width: 46px; height: 46px; }
+    .auth-brand-copy { min-height: 46px; }
+    .auth-slogan img { max-height: 36px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .auth-glow::before, .auth-glow::after { animation: none !important; }
+    .auth-glow::before, .auth-glow::after, .auth-glow-mid { animation: none !important; }
     [data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stTextInput"] input,
     [data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stFormSubmitButton"] button {
         transition: none !important;
@@ -550,7 +615,7 @@ def _card_head_html() -> str:
         f"{slogan}"
         '<div class="auth-brand">'
         f'<div class="auth-logo-wrap">{_LOGO_SVG}</div>'
-        "<div>"
+        '<div class="auth-brand-copy">'
         f'<p class="auth-brand-name">{_APP}</p>'
         '<p class="auth-brand-tag">Enterprise AI Platform</p>'
         "</div></div></div>"
@@ -567,10 +632,14 @@ def _tab_highlight_css(mode: str) -> str:
     )
     return f"""
 {active} {{
-    background: linear-gradient(135deg, rgba(124, 58, 237, 0.28), rgba(99, 102, 241, 0.18)) !important;
-    border: 1px solid rgba(167, 139, 250, 0.35) !important;
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.32), rgba(99, 102, 241, 0.2)) !important;
+    border: 1px solid rgba(167, 139, 250, 0.45) !important;
     color: #fafafa !important;
-    box-shadow: 0 4px 14px rgba(124, 58, 237, 0.2) !important;
+    box-shadow:
+        0 0 0 1px rgba(139, 92, 246, 0.15),
+        0 4px 16px rgba(139, 92, 246, 0.28),
+        0 0 24px rgba(139, 92, 246, 0.12) !important;
+    transform: translateY(-0.5px) !important;
 }}
 {active} p {{ color: #fafafa !important; }}
 """
@@ -597,8 +666,8 @@ def _render_login_form() -> None:
         unsafe_allow_html=True,
     )
     with st.form("auth_login_form", clear_on_submit=False, border=False):
-        username = st.text_input("Benutzername", key="auth_user")
-        password = st.text_input("Passwort", type="password", key="auth_pass")
+        username = st.text_input("Benutzername", key="auth_user", placeholder="Dein Benutzername")
+        password = st.text_input("Passwort", type="password", key="auth_pass", placeholder="••••••••")
         submitted = st.form_submit_button("Anmelden", type="primary", use_container_width=True)
     if submitted:
         do_login(username, password)
@@ -611,10 +680,10 @@ def _render_register_form() -> None:
         unsafe_allow_html=True,
     )
     with st.form("auth_register_form", clear_on_submit=False, border=False):
-        username = st.text_input("Benutzername", key="reg_user")
-        email = st.text_input("E-Mail", key="reg_email")
-        password = st.text_input("Passwort", type="password", key="reg_pass")
-        password2 = st.text_input("Passwort bestätigen", type="password", key="reg_pass2")
+        username = st.text_input("Benutzername", key="reg_user", placeholder="Dein Benutzername")
+        email = st.text_input("E-Mail", key="reg_email", placeholder="name@beispiel.de")
+        password = st.text_input("Passwort", type="password", key="reg_pass", placeholder="Min. 8 Zeichen")
+        password2 = st.text_input("Passwort bestätigen", type="password", key="reg_pass2", placeholder="Passwort wiederholen")
         terms = st.checkbox("AGB und Datenschutz akzeptieren", key="reg_terms")
         submitted = st.form_submit_button("Registrieren", type="primary", use_container_width=True)
     if submitted:
@@ -637,16 +706,17 @@ def render_auth() -> None:
     mode = _get_mode()
     inject_css(_tab_highlight_css(mode))
 
-    st.markdown('<div class="auth-glow" aria-hidden="true"></div>', unsafe_allow_html=True)
+    st.markdown(
+        '<div class="auth-glow" aria-hidden="true"><div class="auth-glow-mid"></div></div>',
+        unsafe_allow_html=True,
+    )
     st.markdown('<span class="auth-marker" hidden aria-hidden="true"></span>', unsafe_allow_html=True)
 
     with st.container():
         st.markdown('<span class="auth-glass-marker" hidden aria-hidden="true"></span>', unsafe_allow_html=True)
         st.markdown(_card_head_html(), unsafe_allow_html=True)
         st.markdown('<div class="auth-card-body">', unsafe_allow_html=True)
-        st.markdown('<div class="auth-mode-row">', unsafe_allow_html=True)
         _render_mode_tabs(mode)
-        st.markdown("</div>", unsafe_allow_html=True)
         _show_notice()
         if mode == "register":
             _render_register_form()
@@ -655,7 +725,7 @@ def render_auth() -> None:
         st.markdown("</div>", unsafe_allow_html=True)
         st.markdown(
             '<div class="auth-card-foot">'
-            '<p class="auth-ssl">🔒 SSL-verschlüsselte Verbindung</p>'
+            '<p class="auth-ssl">SSL-verschlüsselt</p>'
             "</div>",
             unsafe_allow_html=True,
         )
