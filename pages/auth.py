@@ -1,7 +1,9 @@
 ﻿"""MaByte Auth — premium login (username + password)."""
 from __future__ import annotations
 
+import base64
 import html
+from pathlib import Path
 
 import streamlit as st
 
@@ -24,6 +26,7 @@ _DEFAULT_USE_CASE = "Sonstiges"
 _DEFAULT_COUNTRY = "Deutschland"
 _APP = html.escape(APP_NAME or "MaByte")
 _INITIAL = html.escape(APP_NAME[:1] if APP_NAME else "M")
+_SLOGAN_HEADER = Path(__file__).resolve().parent.parent / "assets" / "sloganheader.png"
 
 _AUTH_CSS = """
 html, body, .stApp,
@@ -102,14 +105,14 @@ html, body, .stApp,
     line-height: 1.3; margin-top: 2px; letter-spacing: 0.01em;
 }
 
-.auth-hero-title {
-    margin: 0 0 1.1rem; font-size: 1.42rem; font-weight: 800;
-    color: #f4f4f5; line-height: 1.22; letter-spacing: -0.035em;
-    text-align: center;
+.auth-header-slogan {
+    display: flex; justify-content: center; align-items: center;
+    margin: 0 0 1.15rem; padding: 0 0.25rem;
 }
-.auth-hero-title span {
-    background: linear-gradient(92deg, #c4b5fd 0%, #8b5cf6 42%, #6366f1 100%);
-    -webkit-background-clip: text; background-clip: text; color: transparent;
+.auth-header-slogan img {
+    width: 100%; max-width: 360px; height: auto; display: block;
+    object-fit: contain;
+    filter: drop-shadow(0 8px 28px rgba(124,58,237,.18));
 }
 
 [data-testid="stVerticalBlock"]:has(.auth-v2-card-marker) {
@@ -240,7 +243,7 @@ a.auth-v2-google:hover {
 @media (max-width: 480px) {
     [data-testid="stMain"] .block-container { padding-left: 0.9rem !important; padding-right: 0.9rem !important; }
     [data-testid="stVerticalBlock"]:has(.auth-v2-card-marker) { padding: 1.25rem 1.05rem 1rem !important; }
-    .auth-hero-title { font-size: 1.22rem; }
+    .auth-header-slogan img { max-width: 300px; }
 }
 """
 
@@ -473,9 +476,21 @@ def _topbar_html() -> str:
     )
 
 
-def _hero_slogan_html() -> str:
+def _img_base64(path: Path) -> str:
+    if not path.is_file():
+        return ""
+    return base64.b64encode(path.read_bytes()).decode("utf-8")
+
+
+def _header_slogan_html() -> str:
+    encoded = _img_base64(_SLOGAN_HEADER)
+    if not encoded:
+        return ""
     return (
-        '<h1 class="auth-hero-title">One System. <span>Infinite Intelligence.</span></h1>'
+        '<div class="auth-header-slogan">'
+        '<img src="data:image/png;base64,'
+        f'{encoded}" alt="One System. Infinite Intelligence." />'
+        "</div>"
     )
 
 
@@ -562,7 +577,7 @@ def render_auth() -> None:
     st.markdown('<div class="auth-v2-ambient"></div>', unsafe_allow_html=True)
     st.markdown('<span class="auth-v2-marker" hidden aria-hidden="true"></span>', unsafe_allow_html=True)
     st.markdown(_topbar_html(), unsafe_allow_html=True)
-    st.markdown(_hero_slogan_html(), unsafe_allow_html=True)
+    st.markdown(_header_slogan_html(), unsafe_allow_html=True)
 
     with st.container():
         st.markdown('<span class="auth-v2-card-marker" hidden aria-hidden="true"></span>', unsafe_allow_html=True)
