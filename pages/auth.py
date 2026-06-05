@@ -142,15 +142,21 @@ html, body, .stApp,
 }
 .auth-card-title {
     color: #fafafa !important;
-    font-size: 1.6rem !important;
-    font-weight: 700 !important;
-    margin: 0 0 0.35rem 0 !important;
+    font-size: 1.75rem !important;
+    font-weight: 800 !important;
+    margin: 0 0 0.4rem 0 !important;
+    letter-spacing: -0.02em !important;
 }
 .auth-card-sub {
     color: #a1a1aa !important;
-    font-size: 0.9rem !important;
-    margin: 0 0 1.1rem 0 !important;
+    font-size: 0.92rem !important;
+    margin: 0 0 1.35rem 0 !important;
     line-height: 1.5 !important;
+}
+.auth-login-foot {
+    display: flex !important;
+    justify-content: flex-end !important;
+    margin: 0.35rem 0 0.85rem 0 !important;
 }
 
 [data-testid="stColumn"]:has(.auth-glass-marker) [data-testid="stTextInput"] input {
@@ -158,7 +164,16 @@ html, body, .stApp,
     color: #fafafa !important;
     border: 1px solid #3f3f46 !important;
     border-radius: 10px !important;
-    min-height: 44px !important;
+    min-height: 46px !important;
+    font-size: 15px !important;
+}
+[data-testid="stColumn"]:has(.auth-glass-marker) [data-testid="stTextInput"] input::placeholder {
+    color: #52525b !important;
+    opacity: 1 !important;
+}
+[data-testid="stColumn"]:has(.auth-glass-marker) [data-testid="stTextInput"] input:focus {
+    border-color: rgba(139, 92, 246, 0.55) !important;
+    box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.18) !important;
 }
 [data-testid="stColumn"]:has(.auth-glass-marker) div[data-baseweb="input"] {
     background: #27272a !important;
@@ -214,6 +229,12 @@ html, body, .stApp,
     background: #3f3f46 !important;
 }
 
+[data-testid="stColumn"]:has(.auth-glass-marker) .st-key-auth_forgot_pw {
+    display: flex !important;
+    justify-content: flex-end !important;
+    margin: 0.2rem 0 0.75rem 0 !important;
+}
+[data-testid="stColumn"]:has(.auth-glass-marker) .st-key-auth_forgot_pw button,
 [data-testid="stColumn"]:has(.auth-glass-marker) .auth-forgot-btn button {
     color: #8b5cf6 !important;
     background: transparent !important;
@@ -350,29 +371,29 @@ def _show_notice() -> None:
         st.info(message)
 
 
-def do_login(identifier: str, password: str) -> None:
-    identifier = (identifier or "").strip()
+def do_login(username: str, password: str) -> None:
+    username = (username or "").strip()
     password = password or ""
-    if not identifier or not password:
-        _set_notice("error", "Bitte Benutzername/E-Mail und Passwort eingeben.")
+    if not username or not password:
+        _set_notice("error", "Bitte Benutzername und Passwort eingeben.")
         return
 
-    allowed, msg = check_login_rate(identifier)
+    allowed, msg = check_login_rate(username)
     if not allowed:
         _set_notice("error", msg)
         return
 
-    ok, login_msg, user = verify_login_identifier(identifier, password)
+    ok, login_msg, user = verify_login_identifier(username, password)
     if ok and user:
         ip_address, user_agent = client_meta()
-        record_login_event(user.get("username") or identifier, ip_address, user_agent, success=True)
+        record_login_event(user.get("username") or username, ip_address, user_agent, success=True)
         rotate_session_on_login(user)
-        log_auth(f"Login: {identifier}")
+        log_auth(f"Login: {username}")
         st.rerun()
         return
 
-    record_login_failure(identifier)
-    _set_notice("error", login_msg or "Benutzername/E-Mail oder Passwort falsch.")
+    record_login_failure(username)
+    _set_notice("error", login_msg or "Benutzername oder Passwort falsch.")
 
 
 def _refresh_register_captcha() -> tuple[int, int]:
@@ -523,27 +544,20 @@ def _render_google_button() -> None:
 
 def _render_login_panel() -> None:
     with st.form("auth_login_form", clear_on_submit=False, border=False):
-        identifier = st.text_input("Benutzername oder E-Mail", placeholder="name@firma.de")
+        username = st.text_input("Benutzername", placeholder="")
         password = st.text_input(
             "Passwort",
             type="default" if st.session_state.get("auth_show_password") else "password",
-            placeholder="Passwort",
+            placeholder="",
         )
         st.checkbox("Passwort anzeigen", key="auth_show_password", value=False)
-        opt_l, opt_r = st.columns([1, 1])
-        with opt_l:
-            st.checkbox("Angemeldet bleiben", key="auth_remember")
-        with opt_r:
-            st.empty()
         submitted = st.form_submit_button("Anmelden", type="primary", use_container_width=True)
 
-    _, forgot_col = st.columns([1.15, 1])
-    with forgot_col:
-        if st.button("Passwort vergessen?", key="auth_forgot_pw", type="tertiary"):
-            _set_notice("info", "Passwort-Reset folgt in Kürze. Bitte Support kontaktieren.")
+    if st.button("Passwort vergessen?", key="auth_forgot_pw", type="tertiary"):
+        _set_notice("info", "Passwort-Reset folgt in Kürze. Bitte Support kontaktieren.")
 
     if submitted:
-        do_login(identifier, password)
+        do_login(username, password)
 
     _render_google_button()
 
@@ -557,7 +571,7 @@ def _render_register_panel() -> None:
     cap_a, cap_b = _register_captcha_values()
     with st.form("auth_register_form", clear_on_submit=False, border=False):
         username = st.text_input("Benutzername", placeholder="dein_name")
-        email = st.text_input("E-Mail", placeholder="name@firma.de")
+        email = st.text_input("E-Mail", placeholder="")
         password = st.text_input("Passwort", type="password", placeholder="Min. 8 Zeichen")
         password2 = st.text_input("Passwort bestätigen", type="password", placeholder="Wiederholen")
         captcha = st.text_input(
@@ -612,9 +626,9 @@ def render_auth() -> None:
                     unsafe_allow_html=True,
                 )
             else:
-                st.markdown('<p class="auth-card-title">Willkommen zurück</p>', unsafe_allow_html=True)
+                st.markdown('<p class="auth-card-title">Anmelden</p>', unsafe_allow_html=True)
                 st.markdown(
-                    '<p class="auth-card-sub">Melden Sie sich an, um auf Ihren Workspace zuzugreifen.</p>',
+                    '<p class="auth-card-sub">Benutzername und Passwort — dann geht es in deinen Workspace.</p>',
                     unsafe_allow_html=True,
                 )
 
