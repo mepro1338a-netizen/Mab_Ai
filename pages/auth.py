@@ -29,7 +29,7 @@ _AUTH_CSS = """
 html, body, .stApp,
 [data-testid="stAppViewContainer"],
 [data-testid="stAppViewBlockContainer"] {
-    background: linear-gradient(180deg, #09090b 0%, #121214 50%, #09090b 100%) !important;
+    background: #07070a !important;
     color: #fafafa !important;
     overflow-x: hidden !important;
 }
@@ -41,12 +41,37 @@ html, body, .stApp,
     display: none !important;
 }
 
+.auth-v2-ambient {
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background:
+        radial-gradient(ellipse 70% 50% at 12% 8%, rgba(124,58,237,.18), transparent 58%),
+        radial-gradient(ellipse 55% 42% at 92% 92%, rgba(99,102,241,.12), transparent 52%),
+        linear-gradient(180deg, #07070a 0%, #0f0f14 48%, #07070a 100%);
+}
+.auth-v2-ambient::before {
+    content: ""; position: absolute; inset: 0; opacity: .045;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 180px 180px;
+}
+.auth-v2-ambient::after {
+    content: ""; position: absolute; inset: 0; opacity: .22;
+    background-image:
+        linear-gradient(rgba(255,255,255,.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.03) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(ellipse 65% 55% at 50% 38%, #000 15%, transparent 72%);
+}
+
+[data-testid="stMain"] {
+    position: relative !important;
+    z-index: 1 !important;
+}
 [data-testid="stMain"] .block-container,
 [data-testid="stMainBlockContainer"] {
-    max-width: 440px !important;
+    max-width: 420px !important;
     width: 100% !important;
     margin: 0 auto !important;
-    padding: clamp(1.75rem, 6vh, 3.5rem) 1.25rem 2rem !important;
+    padding: clamp(1.5rem, 5vh, 2.75rem) 1.15rem 2rem !important;
 }
 
 [data-testid="stVerticalBlock"]:has(.auth-v2-marker) {
@@ -54,193 +79,168 @@ html, body, .stApp,
 }
 
 .auth-topbar {
-    display: flex;
-    align-items: center;
-    margin-bottom: 1.75rem;
-    padding-bottom: 1.25rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex; align-items: center;
+    margin-bottom: 1.35rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255,255,255,.07);
 }
-.auth-topbar-brand {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
+.auth-topbar-brand { display: flex; align-items: center; gap: 11px; }
 .auth-logo-mark {
-    width: 40px;
-    height: 40px;
-    border-radius: 10px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 800;
-    font-size: 17px;
-    color: #fff;
-    background: linear-gradient(135deg, #8b5cf6, #6366f1);
+    width: 38px; height: 38px; border-radius: 10px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 16px; color: #fff;
+    background: linear-gradient(145deg, #9b6dff 0%, #7c3aed 48%, #5b5ef7 100%);
+    box-shadow: 0 4px 14px rgba(124,58,237,.35), inset 0 1px 0 rgba(255,255,255,.22);
     flex-shrink: 0;
 }
 .auth-topbar-name {
-    display: block;
-    font-size: 18px;
-    font-weight: 800;
-    color: #fafafa;
-    line-height: 1.2;
-    letter-spacing: -0.02em;
+    display: block; font-size: 17px; font-weight: 800; color: #fafafa;
+    line-height: 1.15; letter-spacing: -0.02em;
 }
 .auth-topbar-tag {
-    display: block;
-    font-size: 11px;
-    font-weight: 500;
-    color: #a1a1aa;
-    line-height: 1.35;
-    margin-top: 2px;
+    display: block; font-size: 10.5px; font-weight: 500; color: #8b8b96;
+    line-height: 1.3; margin-top: 2px; letter-spacing: 0.01em;
 }
 
 .auth-hero-title {
-    margin: 0 0 1.5rem;
-    font-size: 1.5rem;
-    font-weight: 800;
-    color: #fafafa;
-    line-height: 1.25;
-    letter-spacing: -0.03em;
+    margin: 0 0 1.1rem; font-size: 1.42rem; font-weight: 800;
+    color: #f4f4f5; line-height: 1.22; letter-spacing: -0.035em;
     text-align: center;
 }
 .auth-hero-title span {
-    color: #8b5cf6;
+    background: linear-gradient(92deg, #c4b5fd 0%, #8b5cf6 42%, #6366f1 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
 }
 
-.auth-v2-card {
-    width: 100%;
-    padding: 1.75rem 1.5rem 1.35rem;
-    border-radius: 16px;
-    background: rgba(24, 24, 27, 0.72);
-    border: 1px solid rgba(255, 255, 255, 0.09);
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.32);
-    box-sizing: border-box;
+[data-testid="stVerticalBlock"]:has(.auth-v2-card-marker) {
+    margin-top: 0 !important;
+    padding: 1.5rem 1.35rem 1.2rem !important;
+    border-radius: 18px !important;
+    background:
+        linear-gradient(165deg, rgba(32,32,38,.92) 0%, rgba(18,18,22,.88) 100%) !important;
+    border: 1px solid rgba(255,255,255,.09) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,.06),
+        0 0 0 1px rgba(139,92,246,.07),
+        0 20px 44px rgba(0,0,0,.38) !important;
+    backdrop-filter: blur(18px) saturate(1.15) !important;
+    gap: 0.45rem !important;
 }
-.auth-v2-title {
-    margin: 0 0 1.25rem;
-    font-size: 1rem;
-    font-weight: 700;
-    color: #e4e4e7;
-    letter-spacing: -0.01em;
+[data-testid="stVerticalBlock"]:has(.auth-v2-card-marker) [data-testid="stVerticalBlock"] {
+    gap: 0.35rem !important;
 }
 
-[data-testid="stVerticalBlock"]:has(.auth-v2-marker) [data-testid="stTextInput"] label p,
-[data-testid="stVerticalBlock"]:has(.auth-v2-marker) [data-testid="stWidgetLabel"] p {
-    font-size: 0.875rem !important;
+[data-testid="stVerticalBlock"]:has(.auth-v2-card-marker) [data-testid="stTextInput"] label p,
+[data-testid="stVerticalBlock"]:has(.auth-v2-card-marker) [data-testid="stWidgetLabel"] p {
+    font-size: 0.8125rem !important;
     font-weight: 500 !important;
-    color: #d4d4d8 !important;
-    margin-bottom: 4px !important;
+    color: #c8c8d0 !important;
+    margin-bottom: 5px !important;
 }
-[data-testid="stVerticalBlock"]:has(.auth-v2-marker) [data-testid="stTextInput"] input {
-    background: #18181b !important;
+[data-testid="stVerticalBlock"]:has(.auth-v2-card-marker) [data-testid="stTextInput"] input {
+    background: linear-gradient(180deg, #1c1c22 0%, #141418 100%) !important;
     color: #fafafa !important;
-    border: 1px solid #3f3f46 !important;
-    border-radius: 10px !important;
+    border: 1px solid rgba(82,82,91,.75) !important;
+    border-radius: 11px !important;
     min-height: 46px !important;
     font-size: 15px !important;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.04) !important;
 }
-[data-testid="stVerticalBlock"]:has(.auth-v2-marker) [data-testid="stTextInput"] input:focus {
-    border-color: rgba(139, 92, 246, 0.55) !important;
-    box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.14) !important;
+[data-testid="stVerticalBlock"]:has(.auth-v2-card-marker) [data-testid="stTextInput"] input:focus {
+    border-color: rgba(167,139,250,.7) !important;
+    box-shadow:
+        inset 0 1px 2px rgba(0,0,0,.3),
+        0 0 0 3px rgba(139,92,246,.16) !important;
     outline: none !important;
 }
-[data-testid="stVerticalBlock"]:has(.auth-v2-marker) div[data-baseweb="input"] {
-    background: transparent !important;
-    border: none !important;
+[data-testid="stVerticalBlock"]:has(.auth-v2-card-marker) div[data-baseweb="input"] {
+    background: transparent !important; border: none !important;
 }
-[data-testid="stVerticalBlock"]:has(.auth-v2-marker) [data-testid="stTextInput"] {
-    margin-bottom: 2px !important;
+[data-testid="stVerticalBlock"]:has(.auth-v2-card-marker) [data-testid="stTextInput"] {
+    margin-bottom: 0 !important;
 }
-[data-testid="stVerticalBlock"]:has(.auth-v2-marker) [data-testid="stCheckbox"] label p {
-    font-size: 0.84rem !important;
+[data-testid="stVerticalBlock"]:has(.auth-v2-card-marker) [data-testid="stTextInput"] button {
     color: #a1a1aa !important;
 }
+[data-testid="stVerticalBlock"]:has(.auth-v2-card-marker) .st-key-auth_show_password {
+    margin: -0.15rem 0 0.2rem !important;
+}
+[data-testid="stVerticalBlock"]:has(.auth-v2-card-marker) [data-testid="stCheckbox"] label p {
+    font-size: 0.8rem !important; color: #94949e !important;
+}
 
-[data-testid="stVerticalBlock"]:has(.auth-v2-marker) [data-testid="stForm"] {
-    border: none !important;
-    padding: 0 !important;
-    background: transparent !important;
+[data-testid="stVerticalBlock"]:has(.auth-v2-card-marker) [data-testid="stForm"] {
+    border: none !important; padding: 0 !important; background: transparent !important;
 }
-[data-testid="stVerticalBlock"]:has(.auth-v2-marker) [data-testid="stFormSubmitButton"] button,
-[data-testid="stVerticalBlock"]:has(.auth-v2-marker) .stButton > button[kind="primary"] {
-    width: 100% !important;
-    min-height: 46px !important;
-    margin-top: 6px !important;
-    border-radius: 10px !important;
-    border: none !important;
-    background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 50%, #6366f1 100%) !important;
-    color: #fff !important;
-    font-size: 15px !important;
-    font-weight: 700 !important;
-    box-shadow: 0 4px 16px rgba(139, 92, 246, 0.32) !important;
+[data-testid="stVerticalBlock"]:has(.auth-v2-card-marker) [data-testid="stFormSubmitButton"] button,
+[data-testid="stVerticalBlock"]:has(.auth-v2-card-marker) .stButton > button[kind="primary"] {
+    width: 100% !important; min-height: 46px !important;
+    margin-top: 0.45rem !important; border-radius: 11px !important;
+    border: 1px solid rgba(255,255,255,.1) !important;
+    background: linear-gradient(135deg, #9b6dff 0%, #7c3aed 46%, #5b5ef7 100%) !important;
+    color: #fff !important; font-size: 15px !important; font-weight: 700 !important;
+    box-shadow: 0 6px 20px rgba(124,58,237,.38), inset 0 1px 0 rgba(255,255,255,.18) !important;
 }
-[data-testid="stVerticalBlock"]:has(.auth-v2-marker) [data-testid="stFormSubmitButton"] button p,
-[data-testid="stVerticalBlock"]:has(.auth-v2-marker) .stButton > button[kind="primary"] p {
-    color: #fff !important;
-    font-weight: 700 !important;
+[data-testid="stVerticalBlock"]:has(.auth-v2-card-marker) [data-testid="stFormSubmitButton"] button p,
+[data-testid="stVerticalBlock"]:has(.auth-v2-card-marker) .stButton > button[kind="primary"] p {
+    color: #fff !important; font-weight: 700 !important;
 }
 
 .auth-v2-divider {
-    display: flex; align-items: center; gap: 12px;
-    margin: 1rem 0 0.75rem; color: #52525b; font-size: 12px;
+    display: flex; align-items: center; gap: 10px;
+    margin: 0.9rem 0 0.7rem; color: #5c5c66; font-size: 11px; font-weight: 500;
 }
 .auth-v2-divider::before, .auth-v2-divider::after {
-    content: ""; flex: 1; height: 1px; background: rgba(255,255,255,.08);
+    content: ""; flex: 1; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,.1), transparent);
 }
 a.auth-v2-google {
-    display: flex; align-items: center; justify-content: center; gap: 10px;
-    width: 100%; min-height: 44px; padding: 0 16px; border-radius: 10px;
-    background: #18181b; border: 1px solid #3f3f46;
-    color: #e4e4e7 !important; text-decoration: none !important;
-    font-size: 14px; font-weight: 600; box-sizing: border-box;
+    display: flex; align-items: center; justify-content: center; gap: 9px;
+    width: 100%; min-height: 44px; padding: 0 14px; border-radius: 11px;
+    background: linear-gradient(180deg, #1a1a20 0%, #121216 100%);
+    border: 1px solid rgba(82,82,91,.7);
+    color: #e8e8ec !important; text-decoration: none !important;
+    font-size: 13.5px; font-weight: 600; box-sizing: border-box;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
 }
 a.auth-v2-google:hover {
-    background: #27272a; border-color: #52525b;
+    border-color: rgba(113,113,122,.85);
+    background: linear-gradient(180deg, #222228 0%, #18181e 100%);
 }
 
 .auth-v2-foot {
-    text-align: center; margin-top: 1.15rem; padding-top: 1rem;
+    text-align: center; margin-top: 1rem; padding-top: 0.95rem;
     border-top: 1px solid rgba(255,255,255,.06);
 }
-.auth-v2-foot p {
-    margin: 0 0 0.4rem; font-size: 0.85rem; color: #71717a;
+.auth-v2-foot p { margin: 0 0 0.35rem; font-size: 0.84rem; color: #71717a; }
+
+[data-testid="stVerticalBlock"]:has(.auth-v2-card-marker) .st-key-auth_v2_switch .stButton>button,
+[data-testid="stVerticalBlock"]:has(.auth-v2-card-marker) .st-key-auth_v2_forgot .stButton>button {
+    background: transparent !important; border: none !important; box-shadow: none !important;
+    color: #a78bfa !important; font-size: 0.8125rem !important; font-weight: 600 !important;
+    padding: 0 !important; min-height: auto !important; height: auto !important;
 }
-[data-testid="stVerticalBlock"]:has(.auth-v2-marker) .st-key-auth_v2_switch .stButton>button,
-[data-testid="stVerticalBlock"]:has(.auth-v2-marker) .st-key-auth_v2_forgot .stButton>button {
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    color: #8b5cf6 !important;
-    font-size: 0.84rem !important;
-    font-weight: 600 !important;
-    padding: 0 !important;
-    min-height: auto !important;
-    height: auto !important;
+[data-testid="stVerticalBlock"]:has(.auth-v2-card-marker) .st-key-auth_v2_forgot {
+    display: flex; justify-content: flex-end; margin: 0.05rem 0 0.15rem;
 }
-[data-testid="stVerticalBlock"]:has(.auth-v2-marker) .st-key-auth_v2_forgot {
-    display: flex; justify-content: flex-end; margin: 0.1rem 0 0.35rem;
-}
-[data-testid="stVerticalBlock"]:has(.auth-v2-marker) .st-key-auth_v2_switch .stButton>button p,
-[data-testid="stVerticalBlock"]:has(.auth-v2-marker) .st-key-auth_v2_forgot .stButton>button p {
-    color: #8b5cf6 !important;
+[data-testid="stVerticalBlock"]:has(.auth-v2-card-marker) .st-key-auth_v2_switch .stButton>button p,
+[data-testid="stVerticalBlock"]:has(.auth-v2-card-marker) .st-key-auth_v2_forgot .stButton>button p {
+    color: #a78bfa !important;
 }
 
-[data-testid="stVerticalBlock"]:has(.auth-v2-marker) [data-testid="stAlert"] {
-    margin-bottom: 0.85rem !important;
-    border-radius: 10px !important;
-    font-size: 0.88rem !important;
+[data-testid="stVerticalBlock"]:has(.auth-v2-card-marker) [data-testid="stAlert"] {
+    margin-bottom: 0.65rem !important; border-radius: 10px !important; font-size: 0.86rem !important;
 }
 
 .auth-v2-copy {
-    text-align: center; margin-top: 1.25rem;
-    font-size: 0.72rem; color: #52525b;
+    text-align: center; margin-top: 1.1rem;
+    font-size: 0.7rem; color: #45454d; letter-spacing: 0.03em;
 }
 
 @media (max-width: 480px) {
-    [data-testid="stMain"] .block-container { padding-left: 1rem !important; padding-right: 1rem !important; }
-    .auth-v2-card { padding: 1.35rem 1.15rem 1.15rem; }
-    .auth-hero-title { font-size: 1.3rem; }
+    [data-testid="stMain"] .block-container { padding-left: 0.9rem !important; padding-right: 0.9rem !important; }
+    [data-testid="stVerticalBlock"]:has(.auth-v2-card-marker) { padding: 1.25rem 1.05rem 1rem !important; }
+    .auth-hero-title { font-size: 1.22rem; }
 }
 """
 
@@ -494,8 +494,6 @@ def _render_google_button() -> None:
 
 
 def _render_login_form() -> None:
-    st.markdown('<p class="auth-v2-title">Anmelden</p>', unsafe_allow_html=True)
-
     with st.form("auth_login_form", clear_on_submit=False, border=False):
         username = st.text_input("Benutzername", key="auth_v2_user")
         password = st.text_input(
@@ -524,7 +522,6 @@ def _render_login_form() -> None:
 
 def _render_register_form() -> None:
     cap_a, cap_b = _register_captcha_values()
-    st.markdown('<p class="auth-v2-title">Registrieren</p>', unsafe_allow_html=True)
 
     with st.form("auth_register_form", clear_on_submit=False, border=False):
         username = st.text_input("Benutzername", key="reg_v2_user")
@@ -562,17 +559,17 @@ def render_auth() -> None:
     inject_css(_AUTH_CSS)
     mode = _get_mode()
 
+    st.markdown('<div class="auth-v2-ambient"></div>', unsafe_allow_html=True)
     st.markdown('<span class="auth-v2-marker" hidden aria-hidden="true"></span>', unsafe_allow_html=True)
     st.markdown(_topbar_html(), unsafe_allow_html=True)
     st.markdown(_hero_slogan_html(), unsafe_allow_html=True)
-    st.markdown('<div class="auth-v2-card">', unsafe_allow_html=True)
 
-    _show_notice()
+    with st.container():
+        st.markdown('<span class="auth-v2-card-marker" hidden aria-hidden="true"></span>', unsafe_allow_html=True)
+        _show_notice()
+        if mode == "register":
+            _render_register_form()
+        else:
+            _render_login_form()
 
-    if mode == "register":
-        _render_register_form()
-    else:
-        _render_login_form()
-
-    st.markdown("</div>", unsafe_allow_html=True)
     st.markdown('<p class="auth-v2-copy">© 2026 MaByte</p>', unsafe_allow_html=True)
