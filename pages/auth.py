@@ -74,45 +74,60 @@ html, body, .stApp,
     max-width: 420px !important;
     width: 100% !important;
     margin: 0 auto !important;
-    padding: clamp(1.5rem, 5vh, 2.75rem) 1.15rem 2rem !important;
+    padding: 0 1.15rem 2rem !important;
 }
 
 [data-testid="stVerticalBlock"]:has(.auth-v2-marker) {
     gap: 0 !important;
 }
 
-.auth-topbar {
-    display: flex; align-items: center;
-    margin-bottom: 1.35rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid rgba(255,255,255,.07);
+.auth-main-header {
+    width: 100vw;
+    position: relative;
+    left: 50%;
+    margin-left: -50vw;
+    margin-right: -50vw;
+    margin-bottom: 1.75rem;
+    padding: clamp(1rem, 3vh, 1.75rem) clamp(1rem, 4vw, 2.5rem) clamp(1.1rem, 2.5vh, 1.5rem);
+    box-sizing: border-box;
+    background:
+        linear-gradient(180deg, rgba(14,14,20,.96) 0%, rgba(10,10,14,.55) 72%, transparent 100%);
+    border-bottom: 1px solid rgba(255,255,255,.06);
 }
-.auth-topbar-brand { display: flex; align-items: center; gap: 11px; }
-.auth-logo-mark {
-    width: 38px; height: 38px; border-radius: 10px;
-    display: inline-flex; align-items: center; justify-content: center;
-    font-weight: 800; font-size: 16px; color: #fff;
-    background: linear-gradient(145deg, #9b6dff 0%, #7c3aed 48%, #5b5ef7 100%);
-    box-shadow: 0 4px 14px rgba(124,58,237,.35), inset 0 1px 0 rgba(255,255,255,.22);
-    flex-shrink: 0;
-}
-.auth-topbar-name {
-    display: block; font-size: 17px; font-weight: 800; color: #fafafa;
-    line-height: 1.15; letter-spacing: -0.02em;
-}
-.auth-topbar-tag {
-    display: block; font-size: 10.5px; font-weight: 500; color: #8b8b96;
-    line-height: 1.3; margin-top: 2px; letter-spacing: 0.01em;
+.auth-main-header img {
+    width: 100%;
+    max-width: min(920px, 96vw);
+    height: auto;
+    display: block;
+    margin: 0 auto;
+    object-fit: contain;
+    filter: drop-shadow(0 10px 32px rgba(124,58,237,.2));
 }
 
-.auth-header-slogan {
-    display: flex; justify-content: center; align-items: center;
-    margin: 0 0 1.15rem; padding: 0 0.25rem;
+.auth-brand-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin: 0 0 1.35rem;
+    padding-top: 0.25rem;
 }
-.auth-header-slogan img {
-    width: 100%; max-width: 360px; height: auto; display: block;
-    object-fit: contain;
-    filter: drop-shadow(0 8px 28px rgba(124,58,237,.18));
+.auth-logo-mark {
+    width: 52px; height: 52px; border-radius: 12px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: 22px; color: #fff;
+    background: linear-gradient(145deg, #9b6dff 0%, #7c3aed 48%, #5b5ef7 100%);
+    box-shadow: 0 6px 18px rgba(124,58,237,.38), inset 0 1px 0 rgba(255,255,255,.22);
+    flex-shrink: 0;
+}
+.auth-brand-text { text-align: left; }
+.auth-topbar-name {
+    display: block; font-size: 2rem; font-weight: 800; color: #fafafa;
+    line-height: 1.05; letter-spacing: -0.03em;
+}
+.auth-topbar-tag {
+    display: block; font-size: 12px; font-weight: 500; color: #8b8b96;
+    line-height: 1.35; margin-top: 4px; letter-spacing: 0.02em;
 }
 
 [data-testid="stVerticalBlock"]:has(.auth-v2-card-marker) {
@@ -243,7 +258,9 @@ a.auth-v2-google:hover {
 @media (max-width: 480px) {
     [data-testid="stMain"] .block-container { padding-left: 0.9rem !important; padding-right: 0.9rem !important; }
     [data-testid="stVerticalBlock"]:has(.auth-v2-card-marker) { padding: 1.25rem 1.05rem 1rem !important; }
-    .auth-header-slogan img { max-width: 300px; }
+    .auth-topbar-name { font-size: 1.65rem; }
+    .auth-logo-mark { width: 46px; height: 46px; font-size: 19px; }
+    .auth-main-header { margin-bottom: 1.35rem; padding-top: 0.85rem; }
 }
 """
 
@@ -431,7 +448,7 @@ def handle_google_oauth_callback() -> None:
     _set_mode("login")
     inject_css(_AUTH_CSS)
     st.markdown('<span class="auth-v2-marker" hidden></span>', unsafe_allow_html=True)
-    st.markdown(_topbar_html(), unsafe_allow_html=True)
+    st.markdown(_main_header_html(), unsafe_allow_html=True)
 
     if error:
         st.error(friendly_oauth_error(error, error_desc))
@@ -464,15 +481,14 @@ def handle_google_oauth_callback() -> None:
         st.rerun()
 
 
-def _topbar_html() -> str:
+def _brand_html() -> str:
     return (
-        '<header class="auth-topbar">'
-        '<div class="auth-topbar-brand">'
+        '<div class="auth-brand-row">'
         f'<span class="auth-logo-mark">{_INITIAL}</span>'
-        "<div>"
+        '<div class="auth-brand-text">'
         f'<span class="auth-topbar-name">{_APP}</span>'
         '<span class="auth-topbar-tag">Enterprise AI Platform</span>'
-        "</div></div></header>"
+        "</div></div>"
     )
 
 
@@ -482,15 +498,15 @@ def _img_base64(path: Path) -> str:
     return base64.b64encode(path.read_bytes()).decode("utf-8")
 
 
-def _header_slogan_html() -> str:
+def _main_header_html() -> str:
     encoded = _img_base64(_SLOGAN_HEADER)
     if not encoded:
         return ""
     return (
-        '<div class="auth-header-slogan">'
+        '<header class="auth-main-header">'
         '<img src="data:image/png;base64,'
         f'{encoded}" alt="One System. Infinite Intelligence." />'
-        "</div>"
+        "</header>"
     )
 
 
@@ -576,8 +592,8 @@ def render_auth() -> None:
 
     st.markdown('<div class="auth-v2-ambient"></div>', unsafe_allow_html=True)
     st.markdown('<span class="auth-v2-marker" hidden aria-hidden="true"></span>', unsafe_allow_html=True)
-    st.markdown(_topbar_html(), unsafe_allow_html=True)
-    st.markdown(_header_slogan_html(), unsafe_allow_html=True)
+    st.markdown(_main_header_html(), unsafe_allow_html=True)
+    st.markdown(_brand_html(), unsafe_allow_html=True)
 
     with st.container():
         st.markdown('<span class="auth-v2-card-marker" hidden aria-hidden="true"></span>', unsafe_allow_html=True)
