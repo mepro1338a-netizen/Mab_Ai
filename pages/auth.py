@@ -14,9 +14,8 @@ _DEFAULT_USE_CASE = "Sonstiges"
 _DEFAULT_COUNTRY = "Deutschland"
 
 # Scoped CSS — values extracted from auth-reference.png
+# All rules scoped under html:has(.auth-marker) for reliable override of Streamlit defaults.
 _AUTH_CSS = """
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
 :root {
     --auth-bg: #020617;
     --auth-card: rgba(15, 23, 42, 0.6);
@@ -30,23 +29,34 @@ _AUTH_CSS = """
     --auth-byte: #e9d5ff;
     --auth-violet: #8b5cf6;
     --auth-blue: #3b82f6;
-    --auth-purple-wave: #a855f7;
     --auth-ssl: #64748b;
     --auth-ease: cubic-bezier(0.4, 0, 0.2, 1);
+    --auth-pad-x: 2.5rem;
 }
 
-html, body, .stApp,
-[data-testid="stAppViewContainer"],
-[data-testid="stAppViewBlockContainer"] {
+html:has(.auth-marker),
+html:has(.auth-marker) body,
+html:has(.auth-marker) .stApp,
+html:has(.auth-marker) [data-testid="stAppViewContainer"],
+html:has(.auth-marker) [data-testid="stAppViewBlockContainer"],
+html:has(.auth-marker) section.main,
+html:has(.auth-marker) [data-testid="stMain"],
+html:has(.auth-marker) [data-testid="stMainBlockContainer"],
+html:has(.auth-marker) section.main .block-container,
+html:has(.auth-marker) [data-testid="stMain"] .block-container {
     background: var(--auth-bg) !important;
+    background-color: var(--auth-bg) !important;
+    background-image: none !important;
     color: var(--auth-text) !important;
     font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
 }
-#MainMenu, footer,
-[data-testid="stToolbar"],
-[data-testid="stDecoration"],
-[data-testid="stSidebar"],
-[data-testid="stHeader"] {
+
+html:has(.auth-marker) #MainMenu,
+html:has(.auth-marker) footer,
+html:has(.auth-marker) [data-testid="stToolbar"],
+html:has(.auth-marker) [data-testid="stDecoration"],
+html:has(.auth-marker) [data-testid="stSidebar"],
+html:has(.auth-marker) [data-testid="stHeader"] {
     display: none !important;
 }
 
@@ -114,22 +124,25 @@ html, body, .stApp,
     to { transform: rotate(18deg) translateY(-20px); opacity: 0.58; }
 }
 
-[data-testid="stMain"] {
+html:has(.auth-marker) [data-testid="stMain"] {
     position: relative !important;
     z-index: 1 !important;
 }
-[data-testid="stMain"] .block-container,
-[data-testid="stMainBlockContainer"] {
+html:has(.auth-marker) [data-testid="stMain"] .block-container,
+html:has(.auth-marker) [data-testid="stMainBlockContainer"] {
     max-width: 500px !important;
     width: min(500px, 100%) !important;
     margin: 0 auto !important;
     padding: clamp(2rem, 6vh, 3.5rem) 1.25rem 2.5rem !important;
 }
 
-[data-testid="stVerticalBlock"]:has(.auth-marker) { gap: 0 !important; }
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-marker) {
+    gap: 0 !important;
+}
 
-/* ── Glass card with gradient rim ── */
-[data-testid="stVerticalBlock"]:has(.auth-glass-marker) {
+/* ── Glass card (container + border wrapper, Streamlit 1.50) ── */
+html:has(.auth-marker) [data-testid="stVerticalBlockBorderWrapper"]:has(.auth-glass-marker),
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) {
     position: relative !important;
     padding: 0 !important;
     border-radius: 24px !important;
@@ -146,7 +159,8 @@ html, body, .stApp,
     overflow: hidden !important;
     gap: 0 !important;
 }
-[data-testid="stVerticalBlock"]:has(.auth-glass-marker)::before {
+html:has(.auth-marker) [data-testid="stVerticalBlockBorderWrapper"]:has(.auth-glass-marker)::before,
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker)::before {
     content: "";
     position: absolute;
     inset: 0;
@@ -155,104 +169,129 @@ html, body, .stApp,
     background: linear-gradient(135deg, var(--auth-card-border-tl) 0%, rgba(255,255,255,0.06) 50%, var(--auth-card-border-br) 100%);
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     mask-composite: exclude;
     pointer-events: none;
     z-index: 0;
 }
+html:has(.auth-marker) [data-testid="stVerticalBlockBorderWrapper"]:has(.auth-glass-marker) > [data-testid="stVerticalBlock"] {
+    gap: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+}
 
-/* ── Wordmark header (reference: Ma white, Byte lavender) ── */
-.auth-card-head {
+html:has(.auth-marker) .auth-card-head {
     position: relative;
     z-index: 1;
-    padding: 2.75rem 2.5rem 0;
+    padding: 2.75rem var(--auth-pad-x) 0;
     text-align: center;
     background: transparent;
     border: none;
 }
-.auth-wordmark {
+html:has(.auth-marker) .auth-wordmark {
     margin: 0;
     font-size: 1.75rem;
     font-weight: 700;
     letter-spacing: -0.03em;
     line-height: 1;
     text-shadow: 0 0 24px rgba(255, 255, 255, 0.12);
+    color: var(--auth-text) !important;
 }
-.auth-wordmark-ma { color: #ffffff; }
-.auth-wordmark-byte { color: var(--auth-byte); }
+html:has(.auth-marker) .auth-wordmark-ma { color: #ffffff !important; }
+html:has(.auth-marker) .auth-wordmark-byte { color: var(--auth-byte) !important; }
 
-.auth-card-body {
-    position: relative;
-    z-index: 1;
-    padding: 1.75rem 2.5rem 1.5rem;
+/* Card body padding via scoped widget margins (no broken HTML wrappers) */
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stHorizontalBlock"]:has(.st-key-auth_tab_login),
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stAlert"],
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stForm"],
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stMarkdownContainer"]:has(.auth-form-title),
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="element-container"]:has(.auth-form-title) {
+    margin-left: var(--auth-pad-x) !important;
+    margin-right: var(--auth-pad-x) !important;
+}
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stForm"] {
+    padding-bottom: 0.25rem !important;
 }
 
 /* ── Segmented tabs ── */
-[data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stHorizontalBlock"]:has(.st-key-auth_tab_login) {
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stHorizontalBlock"]:has(.st-key-auth_tab_login) {
     background: rgba(2, 6, 23, 0.55) !important;
     border: 1px solid rgba(255, 255, 255, 0.08) !important;
     border-radius: 12px !important;
     padding: 4px !important;
     gap: 4px !important;
+    margin-top: 1.75rem !important;
     margin-bottom: 1.75rem !important;
 }
-[data-testid="stVerticalBlock"]:has(.auth-glass-marker) .st-key-auth_tab_login,
-[data-testid="stVerticalBlock"]:has(.auth-glass-marker) .st-key-auth_tab_register {
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) .st-key-auth_tab_login,
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) .st-key-auth_tab_register {
     margin: 0 !important;
 }
-[data-testid="stVerticalBlock"]:has(.auth-glass-marker) .st-key-auth_tab_login .stButton>button,
-[data-testid="stVerticalBlock"]:has(.auth-glass-marker) .st-key-auth_tab_register .stButton>button {
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) .st-key-auth_tab_login .stButton > button,
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) .st-key-auth_tab_register .stButton > button,
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) .st-key-auth_tab_login button[data-testid="baseButton-secondary"],
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) .st-key-auth_tab_register button[data-testid="baseButton-secondary"] {
     width: 100% !important;
     min-height: 42px !important;
     border-radius: 9px !important;
     border: 1px solid transparent !important;
     background: transparent !important;
+    background-color: transparent !important;
     color: #64748b !important;
     font-size: 0.875rem !important;
     font-weight: 500 !important;
+    box-shadow: none !important;
     transition: color 0.2s var(--auth-ease), background 0.2s var(--auth-ease),
                 border-color 0.2s var(--auth-ease), box-shadow 0.2s var(--auth-ease) !important;
 }
-[data-testid="stVerticalBlock"]:has(.auth-glass-marker) .st-key-auth_tab_login .stButton>button:hover,
-[data-testid="stVerticalBlock"]:has(.auth-glass-marker) .st-key-auth_tab_register .stButton>button:hover {
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) .st-key-auth_tab_login .stButton > button:hover,
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) .st-key-auth_tab_register .stButton > button:hover,
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) .st-key-auth_tab_login button[data-testid="baseButton-secondary"]:hover,
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) .st-key-auth_tab_register button[data-testid="baseButton-secondary"]:hover {
     color: var(--auth-muted) !important;
     background: rgba(255, 255, 255, 0.03) !important;
+    background-color: rgba(255, 255, 255, 0.03) !important;
 }
-[data-testid="stVerticalBlock"]:has(.auth-glass-marker) .st-key-auth_tab_login .stButton>button p,
-[data-testid="stVerticalBlock"]:has(.auth-glass-marker) .st-key-auth_tab_register .stButton>button p {
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) .st-key-auth_tab_login .stButton > button p,
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) .st-key-auth_tab_register .stButton > button p,
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) .st-key-auth_tab_login button[data-testid="baseButton-secondary"] p,
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) .st-key-auth_tab_register button[data-testid="baseButton-secondary"] p {
     color: inherit !important;
 }
 
-.auth-form-title {
+html:has(.auth-marker) .auth-form-title {
     margin: 0 0 0.5rem;
     font-size: 1.5rem;
     font-weight: 700;
     letter-spacing: -0.025em;
     line-height: 1.2;
-    color: var(--auth-text);
+    color: var(--auth-text) !important;
 }
-.auth-form-sub {
+html:has(.auth-marker) .auth-form-sub {
     margin: 0 0 1.25rem;
     font-size: 0.875rem;
     font-weight: 400;
-    color: var(--auth-muted);
+    color: var(--auth-muted) !important;
     line-height: 1.5;
 }
 
-[data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stVerticalBlock"] {
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stVerticalBlock"] {
     gap: 1.1rem !important;
 }
-[data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stTextInput"] label p,
-[data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stWidgetLabel"] p {
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stTextInput"] label p,
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stWidgetLabel"] p {
     font-size: 0.8125rem !important;
     font-weight: 500 !important;
     color: var(--auth-muted) !important;
     margin-bottom: 8px !important;
 }
-[data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stTextInput"] input,
-[data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stTextInput"] textarea {
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stTextInput"] input,
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stTextInput"] textarea,
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) .stTextInput input {
     background: var(--auth-input-bg) !important;
     background-color: var(--auth-input-bg) !important;
     color: var(--auth-text) !important;
+    -webkit-text-fill-color: var(--auth-text) !important;
     border: 1px solid var(--auth-input-border) !important;
     border-radius: 8px !important;
     min-height: 46px !important;
@@ -261,32 +300,37 @@ html, body, .stApp,
     box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2) !important;
     transition: border-color 0.2s var(--auth-ease), box-shadow 0.2s var(--auth-ease) !important;
 }
-[data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stTextInput"] input::placeholder {
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stTextInput"] input::placeholder,
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) .stTextInput input::placeholder {
     color: var(--auth-placeholder) !important;
     opacity: 1 !important;
 }
-[data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stTextInput"] input:focus,
-[data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stTextInput"] input:focus-visible {
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stTextInput"] input:focus,
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stTextInput"] input:focus-visible,
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) .stTextInput input:focus {
     border-color: rgba(139, 92, 246, 0.45) !important;
     box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15) !important;
     outline: none !important;
 }
-[data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stTextInput"] input:-webkit-autofill,
-[data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stTextInput"] input:-webkit-autofill:hover,
-[data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stTextInput"] input:-webkit-autofill:focus {
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stTextInput"] input:-webkit-autofill,
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stTextInput"] input:-webkit-autofill:hover,
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stTextInput"] input:-webkit-autofill:focus {
     -webkit-box-shadow: 0 0 0 1000px rgba(15, 23, 42, 0.95) inset !important;
     -webkit-text-fill-color: #fafafa !important;
     transition: background-color 9999s ease-out 0s !important;
 }
-[data-testid="stVerticalBlock"]:has(.auth-glass-marker) div[data-baseweb="input"],
-[data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stTextInput"] > div {
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) div[data-baseweb="input"],
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stTextInput"] > div,
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stTextInput"] div[data-baseweb="base-input"] {
     background: transparent !important;
+    background-color: transparent !important;
     border: none !important;
+    box-shadow: none !important;
 }
 
-/* Input icons — reference left user/lock, password eye right */
-[data-testid="stVerticalBlock"]:has(.auth-glass-marker) .st-key-auth_user input,
-[data-testid="stVerticalBlock"]:has(.auth-glass-marker) .st-key-reg_user input {
+/* Input icons */
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) .st-key-auth_user input,
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) .st-key-reg_user input {
     padding-left: 42px !important;
     background-color: var(--auth-input-bg) !important;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2'/%3E%3Ccircle cx='12' cy='7' r='4'/%3E%3C/svg%3E") !important;
@@ -294,9 +338,9 @@ html, body, .stApp,
     background-position: 14px center !important;
     background-size: 18px 18px !important;
 }
-[data-testid="stVerticalBlock"]:has(.auth-glass-marker) .st-key-auth_pass input,
-[data-testid="stVerticalBlock"]:has(.auth-glass-marker) .st-key-reg_pass input,
-[data-testid="stVerticalBlock"]:has(.auth-glass-marker) .st-key-reg_pass2 input {
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) .st-key-auth_pass input,
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) .st-key-reg_pass input,
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) .st-key-reg_pass2 input {
     padding-left: 42px !important;
     padding-right: 42px !important;
     background-color: var(--auth-input-bg) !important;
@@ -307,7 +351,7 @@ html, body, .stApp,
     background-position: 14px center, calc(100% - 14px) center !important;
     background-size: 18px 18px, 18px 18px !important;
 }
-[data-testid="stVerticalBlock"]:has(.auth-glass-marker) .st-key-reg_email input {
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) .st-key-reg_email input {
     padding-left: 42px !important;
     background-color: var(--auth-input-bg) !important;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='2' y='4' width='20' height='16' rx='2'/%3E%3Cpath d='m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7'/%3E%3C/svg%3E") !important;
@@ -316,24 +360,28 @@ html, body, .stApp,
     background-size: 18px 18px !important;
 }
 
-[data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stCheckbox"] label p {
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stCheckbox"] label p {
     font-size: 0.8125rem !important;
     color: var(--auth-muted) !important;
 }
 
-[data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stForm"] {
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stForm"] {
     border: none !important;
     padding: 0 !important;
     background: transparent !important;
 }
-[data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stFormSubmitButton"] button,
-[data-testid="stVerticalBlock"]:has(.auth-glass-marker) .stButton > button[kind="primary"] {
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stFormSubmitButton"] button,
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stFormSubmitButton"] button[data-testid="baseButton-primary"],
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) .stButton > button[kind="primary"],
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) .stButton > button[data-testid="baseButton-primary"] {
     width: 100% !important;
     min-height: 48px !important;
     margin-top: 0.25rem !important;
     border-radius: 10px !important;
     border: none !important;
     background: linear-gradient(90deg, #8b5cf6 0%, #3b82f6 100%) !important;
+    background-color: transparent !important;
+    background-image: linear-gradient(90deg, #8b5cf6 0%, #3b82f6 100%) !important;
     color: #fff !important;
     font-size: 0.9375rem !important;
     font-weight: 600 !important;
@@ -341,22 +389,25 @@ html, body, .stApp,
     transition: transform 0.2s var(--auth-ease), box-shadow 0.2s var(--auth-ease), filter 0.2s var(--auth-ease) !important;
     position: relative !important;
 }
-[data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stFormSubmitButton"] button:hover,
-[data-testid="stVerticalBlock"]:has(.auth-glass-marker) .stButton > button[kind="primary"]:hover {
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stFormSubmitButton"] button:hover,
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) .stButton > button[kind="primary"]:hover,
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) button[data-testid="baseButton-primary"]:hover {
     transform: translateY(-1px) !important;
     box-shadow: 0 12px 32px rgba(139, 92, 246, 0.45), 0 0 32px rgba(59, 130, 246, 0.2) !important;
     filter: brightness(1.04) !important;
+    background-image: linear-gradient(90deg, #8b5cf6 0%, #3b82f6 100%) !important;
 }
-[data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stFormSubmitButton"] button:active,
-[data-testid="stVerticalBlock"]:has(.auth-glass-marker) .stButton > button[kind="primary"]:active {
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stFormSubmitButton"] button:active,
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) .stButton > button[kind="primary"]:active {
     transform: translateY(0) scale(0.995) !important;
 }
-[data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stFormSubmitButton"] button p,
-[data-testid="stVerticalBlock"]:has(.auth-glass-marker) .stButton > button[kind="primary"] p {
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stFormSubmitButton"] button p,
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) .stButton > button[kind="primary"] p,
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) button[data-testid="baseButton-primary"] p {
     color: #fff !important;
     font-weight: 600 !important;
 }
-[data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stFormSubmitButton"] button::after {
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stFormSubmitButton"] button::after {
     content: "→";
     position: absolute;
     right: 1.25rem;
@@ -368,21 +419,21 @@ html, body, .stApp,
     pointer-events: none;
 }
 
-[data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stAlert"] {
+html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stAlert"] {
     margin-bottom: 0.75rem !important;
     border-radius: 10px !important;
     font-size: 0.875rem !important;
 }
 
-.auth-card-foot {
+html:has(.auth-marker) .auth-card-foot {
     position: relative;
     z-index: 1;
-    padding: 0.75rem 2.5rem 1.25rem;
+    padding: 0.75rem var(--auth-pad-x) 1.25rem;
     border-top: 1px solid rgba(255, 255, 255, 0.05);
     text-align: center;
     background: transparent;
 }
-.auth-ssl {
+html:has(.auth-marker) .auth-ssl {
     margin: 0;
     display: inline-flex;
     align-items: center;
@@ -390,32 +441,75 @@ html, body, .stApp,
     gap: 6px;
     font-size: 0.75rem;
     font-weight: 400;
-    color: var(--auth-ssl);
+    color: var(--auth-ssl) !important;
 }
-.auth-ssl svg {
+html:has(.auth-marker) .auth-ssl svg {
     flex-shrink: 0;
     opacity: 0.85;
 }
 
 @media (max-width: 640px) {
-    [data-testid="stMain"] .block-container,
-    [data-testid="stMainBlockContainer"] {
+    html:has(.auth-marker) {
+        --auth-pad-x: 1.5rem;
+    }
+    html:has(.auth-marker) [data-testid="stMain"] .block-container,
+    html:has(.auth-marker) [data-testid="stMainBlockContainer"] {
         max-width: 100% !important;
         padding: 1.5rem 1rem 2rem !important;
     }
-    .auth-card-head { padding: 2rem 1.5rem 0; }
-    .auth-card-body { padding: 1.5rem 1.5rem 1.25rem; }
-    .auth-card-foot { padding: 0.75rem 1.5rem 1rem; }
+    html:has(.auth-marker) .auth-card-head { padding-top: 2rem; }
 }
 @media (max-width: 480px) {
-    .auth-wordmark { font-size: 1.5rem; }
-    .auth-form-title { font-size: 1.375rem; }
+    html:has(.auth-marker) {
+        --auth-pad-x: 1.25rem;
+    }
+    html:has(.auth-marker) .auth-wordmark { font-size: 1.5rem; }
+    html:has(.auth-marker) .auth-form-title { font-size: 1.375rem; }
+}
+
+html:has(.auth-marker) [data-testid="stVerticalBlockBorderWrapper"]:has(.st-key-auth_card),
+html:has(.auth-marker) .st-key-auth_card[data-testid="stVerticalBlockBorderWrapper"] {
+    position: relative !important;
+    padding: 0 !important;
+    border-radius: 24px !important;
+    background: var(--auth-card) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    backdrop-filter: blur(20px) saturate(1.2) !important;
+    -webkit-backdrop-filter: blur(20px) saturate(1.2) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.08),
+        0 0 0 1px rgba(139, 92, 246, 0.08),
+        0 0 48px rgba(139, 92, 246, 0.12),
+        0 0 80px rgba(59, 130, 246, 0.08),
+        0 24px 64px rgba(0, 0, 0, 0.45) !important;
+    overflow: hidden !important;
+}
+
+html:has(.auth-marker) .stApp {
+    --background-color: #020617 !important;
+    --secondary-background-color: rgba(15, 23, 42, 0.6) !important;
+    --text-color: #ffffff !important;
+    --primary-color: #8b5cf6 !important;
+    --border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Final lock — beat Streamlit widget defaults on auth route */
+html:has(.auth-marker) section.main .stTextInput input,
+html:has(.auth-marker) section.main div[data-baseweb="input"] input {
+    background-color: var(--auth-input-bg) !important;
+    color: var(--auth-text) !important;
+    border-color: var(--auth-input-border) !important;
+}
+html:has(.auth-marker) section.main [data-testid="stFormSubmitButton"] button,
+html:has(.auth-marker) section.main button[data-testid="baseButton-primary"] {
+    background-image: linear-gradient(90deg, #8b5cf6 0%, #3b82f6 100%) !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .auth-wave--purple, .auth-wave--blue { animation: none !important; }
-    [data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stTextInput"] input,
-    [data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stFormSubmitButton"] button {
+    html:has(.auth-marker) .auth-wave--purple,
+    html:has(.auth-marker) .auth-wave--blue { animation: none !important; }
+    html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stTextInput"] input,
+    html:has(.auth-marker) [data-testid="stVerticalBlock"]:has(.auth-glass-marker) [data-testid="stFormSubmitButton"] button {
         transition: none !important;
     }
 }
@@ -610,21 +704,22 @@ def _card_head_html() -> str:
 
 
 def _tab_highlight_css(mode: str) -> str:
-    active = (
-        ".st-key-auth_tab_login button[kind=\"secondary\"],"
-        ".st-key-auth_tab_login button[kind=\"tertiary\"]"
-        if mode == "login"
-        else ".st-key-auth_tab_register button[kind=\"secondary\"],"
-        ".st-key-auth_tab_register button[kind=\"tertiary\"]"
-    )
+    active_key = "auth_tab_login" if mode == "login" else "auth_tab_register"
     return f"""
-{active} {{
+html:has(.auth-marker) .st-key-{active_key} .stButton > button,
+html:has(.auth-marker) .st-key-{active_key} button[kind="secondary"],
+html:has(.auth-marker) .st-key-{active_key} button[kind="tertiary"],
+html:has(.auth-marker) .st-key-{active_key} button[data-testid="baseButton-secondary"] {{
     background: rgba(139, 92, 246, 0.12) !important;
+    background-color: rgba(139, 92, 246, 0.12) !important;
     border: 1px solid rgba(139, 92, 246, 0.45) !important;
     color: #ffffff !important;
     box-shadow: 0 0 16px rgba(139, 92, 246, 0.2), inset 0 1px 0 rgba(255,255,255,0.06) !important;
 }}
-{active} p {{ color: #ffffff !important; }}
+html:has(.auth-marker) .st-key-{active_key} .stButton > button p,
+html:has(.auth-marker) .st-key-{active_key} button[data-testid="baseButton-secondary"] p {{
+    color: #ffffff !important;
+}}
 """
 
 
@@ -685,6 +780,10 @@ def render_auth() -> None:
     elif "gate_mode" not in st.session_state:
         _set_mode("login")
 
+    st.markdown(
+        '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">',
+        unsafe_allow_html=True,
+    )
     inject_css(_AUTH_CSS)
     mode = _get_mode()
     inject_css(_tab_highlight_css(mode))
@@ -700,17 +799,15 @@ def render_auth() -> None:
     )
     st.markdown('<span class="auth-marker" hidden aria-hidden="true"></span>', unsafe_allow_html=True)
 
-    with st.container():
+    with st.container(key="auth_card", border=False):
         st.markdown('<span class="auth-glass-marker" hidden aria-hidden="true"></span>', unsafe_allow_html=True)
         st.markdown(_card_head_html(), unsafe_allow_html=True)
-        st.markdown('<div class="auth-card-body">', unsafe_allow_html=True)
         _render_mode_tabs(mode)
         _show_notice()
         if mode == "register":
             _render_register_form()
         else:
             _render_login_form()
-        st.markdown("</div>", unsafe_allow_html=True)
         st.markdown(
             '<div class="auth-card-foot">'
             f'<p class="auth-ssl">{_SSL_LOCK_SVG}SSL-verschlüsselte Verbindung</p>'
