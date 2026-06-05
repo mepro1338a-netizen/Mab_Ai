@@ -81,36 +81,40 @@ html, body, .stApp,
     gap: 0 !important;
 }
 
-.auth-main-header {
+.auth-hero {
     width: 100vw;
     position: relative;
     left: 50%;
     margin-left: -50vw;
-    margin-right: -50vw;
-    margin-bottom: 1.75rem;
-    padding: clamp(1rem, 3vh, 1.75rem) clamp(1rem, 4vw, 2.5rem) clamp(1.1rem, 2.5vh, 1.5rem);
+    margin-bottom: 1rem;
+    padding: 0.45rem clamp(0.5rem, 1.5vw, 0.85rem) 0.8rem;
     box-sizing: border-box;
-    background:
-        linear-gradient(180deg, rgba(14,14,20,.96) 0%, rgba(10,10,14,.55) 72%, transparent 100%);
     border-bottom: 1px solid rgba(255,255,255,.06);
 }
-.auth-main-header img {
+.auth-main-header {
     width: 100%;
-    max-width: min(920px, 96vw);
-    height: auto;
+    height: 54px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 0 0.7rem;
+    padding: 0;
+    overflow: hidden;
+}
+.auth-main-header img {
+    width: min(1180px, calc(100vw - 1rem));
+    height: 54px;
     display: block;
-    margin: 0 auto;
-    object-fit: contain;
-    filter: drop-shadow(0 10px 32px rgba(124,58,237,.2));
+    object-fit: cover;
+    object-position: center 42%;
 }
 
 .auth-brand-row {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 14px;
-    margin: 0 0 1.35rem;
-    padding-top: 0.25rem;
+    gap: 12px;
+    margin: 0;
 }
 .auth-logo-mark {
     width: 52px; height: 52px; border-radius: 12px;
@@ -132,17 +136,12 @@ html, body, .stApp,
 
 [data-testid="stVerticalBlock"]:has(.auth-v2-card-marker) {
     margin-top: 0 !important;
-    padding: 1.5rem 1.35rem 1.2rem !important;
-    border-radius: 18px !important;
-    background:
-        linear-gradient(165deg, rgba(32,32,38,.92) 0%, rgba(18,18,22,.88) 100%) !important;
-    border: 1px solid rgba(255,255,255,.09) !important;
-    box-shadow:
-        inset 0 1px 0 rgba(255,255,255,.06),
-        0 0 0 1px rgba(139,92,246,.07),
-        0 20px 44px rgba(0,0,0,.38) !important;
-    backdrop-filter: blur(18px) saturate(1.15) !important;
-    gap: 0.45rem !important;
+    padding: 1.35rem 1.25rem 1.1rem !important;
+    border-radius: 14px !important;
+    background: rgba(20,20,24,.78) !important;
+    border: 1px solid rgba(255,255,255,.08) !important;
+    box-shadow: 0 12px 32px rgba(0,0,0,.28) !important;
+    gap: 0.4rem !important;
 }
 [data-testid="stVerticalBlock"]:has(.auth-v2-card-marker) [data-testid="stVerticalBlock"] {
     gap: 0.35rem !important;
@@ -260,7 +259,8 @@ a.auth-v2-google:hover {
     [data-testid="stVerticalBlock"]:has(.auth-v2-card-marker) { padding: 1.25rem 1.05rem 1rem !important; }
     .auth-topbar-name { font-size: 1.65rem; }
     .auth-logo-mark { width: 46px; height: 46px; font-size: 19px; }
-    .auth-main-header { margin-bottom: 1.35rem; padding-top: 0.85rem; }
+    .auth-main-header { height: 46px; }
+    .auth-main-header img { height: 46px; width: calc(100vw - 0.75rem); }
 }
 """
 
@@ -448,7 +448,7 @@ def handle_google_oauth_callback() -> None:
     _set_mode("login")
     inject_css(_AUTH_CSS)
     st.markdown('<span class="auth-v2-marker" hidden></span>', unsafe_allow_html=True)
-    st.markdown(_main_header_html(), unsafe_allow_html=True)
+    st.markdown(_hero_shell_html(), unsafe_allow_html=True)
 
     if error:
         st.error(friendly_oauth_error(error, error_desc))
@@ -481,32 +481,31 @@ def handle_google_oauth_callback() -> None:
         st.rerun()
 
 
-def _brand_html() -> str:
-    return (
-        '<div class="auth-brand-row">'
-        f'<span class="auth-logo-mark">{_INITIAL}</span>'
-        '<div class="auth-brand-text">'
-        f'<span class="auth-topbar-name">{_APP}</span>'
-        '<span class="auth-topbar-tag">Enterprise AI Platform</span>'
-        "</div></div>"
-    )
-
-
 def _img_base64(path: Path) -> str:
     if not path.is_file():
         return ""
     return base64.b64encode(path.read_bytes()).decode("utf-8")
 
 
-def _main_header_html() -> str:
+def _hero_shell_html() -> str:
     encoded = _img_base64(_SLOGAN_HEADER)
-    if not encoded:
-        return ""
+    slogan = ""
+    if encoded:
+        slogan = (
+            '<header class="auth-main-header">'
+            '<img src="data:image/png;base64,'
+            f'{encoded}" alt="One System. Infinite Intelligence." />'
+            "</header>"
+        )
     return (
-        '<header class="auth-main-header">'
-        '<img src="data:image/png;base64,'
-        f'{encoded}" alt="One System. Infinite Intelligence." />'
-        "</header>"
+        '<div class="auth-hero">'
+        f"{slogan}"
+        '<div class="auth-brand-row">'
+        f'<span class="auth-logo-mark">{_INITIAL}</span>'
+        '<div class="auth-brand-text">'
+        f'<span class="auth-topbar-name">{_APP}</span>'
+        '<span class="auth-topbar-tag">Enterprise AI Platform</span>'
+        "</div></div></div>"
     )
 
 
@@ -592,8 +591,7 @@ def render_auth() -> None:
 
     st.markdown('<div class="auth-v2-ambient"></div>', unsafe_allow_html=True)
     st.markdown('<span class="auth-v2-marker" hidden aria-hidden="true"></span>', unsafe_allow_html=True)
-    st.markdown(_main_header_html(), unsafe_allow_html=True)
-    st.markdown(_brand_html(), unsafe_allow_html=True)
+    st.markdown(_hero_shell_html(), unsafe_allow_html=True)
 
     with st.container():
         st.markdown('<span class="auth-v2-card-marker" hidden aria-hidden="true"></span>', unsafe_allow_html=True)
