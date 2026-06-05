@@ -13,7 +13,13 @@ from config import (
     football_plan_rank,
 )
 from services.football_board import (
+    _standing_summary,
+    _team_standing_row,
+    build_league_standings_cache,
     fetch_match_detail,
+    format_form_display,
+    form_from_standing_row,
+    format_standing_chip,
     get_odds_for_fixture,
     has_complete_odds,
     parse_prediction_insights,
@@ -32,6 +38,7 @@ MATCH_CAP = 20
 ALL_API_CAP = 50
 MSG_NEXT = "Nächste Spiele"
 MSG_ALL_API_LABEL = "Alle API-Spiele (max. 50) — inkl. untergeordnete Ligen."
+MSG_QUOTE_IN_ANALYSIS = "Quote in Analyse verfügbar"
 
 _CLUB_MARKERS = (
     " fc", " cf", " sc", " united", " city", " bayern", " borussia",
@@ -354,14 +361,54 @@ def _pool_for_time_raw(payload: dict[str, Any], time_filter: str) -> list[dict[s
     return filter_blocked_fixtures(pool)
 
 
-def format_quote_label(row: dict[str, Any]) -> str:
+def format_quote_label(row: dict[str, Any], *, deferred: bool = False) -> str:
+    _ = deferred
     if row.get("home_odd") and row.get("draw_odd") and row.get("away_odd"):
         try:
             h, d, a = float(row["home_odd"]), float(row["draw_odd"]), float(row["away_odd"])
             return f"1 {h:.2f} · X {d:.2f} · 2 {a:.2f}"
         except (TypeError, ValueError):
             pass
-    return "nicht verfügbar"
+    return MSG_QUOTE_IN_ANALYSIS
+
+
+def enrich_rows_standings(
+    rows: list[dict[str, Any]],
+    standings_cache: dict[int, list[dict[str, Any]]],
+) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    for row in rows:
+        r = dict(row)
+        card = r.get("card") or {}
+        try:
+            lid = int(card.get("league_id") or 0)
+        except (TypeError, ValueError):
+            lid = 0
+        payload = standings_cache.get(lid) or []
+        home_id = card.get("home_id")
+        away_id = card.get("away_id")
+        home_row = away_row = None
+        if home_id:
+            home_row = _team_standing_row(payload, int(home_id))
+            r["home_standing_chip"] = format_standing_chip(_standing_summary(home_row))
+            hf = form_from_standing_row(home_row)
+            if hf:
+                r["home_form"] = hf
+        else:
+            r["home_standing_chip"] = ""
+        if away_id:
+            away_row = _team_standing_row(payload, int(away_id))
+            r["away_standing_chip"] = format_standing_chip(_standing_summary(away_row))
+            af = form_from_standing_row(away_row)
+            if af:
+                r["away_form"] = af
+        else:
+            r["away_standing_chip"] = ""
+        r["has_standing_context"] = bool(
+            r.get("home_standing_chip") or r.get("away_standing_chip")
+        )
+        out.append(r)
+    return out
 
 
 def build_row(fixture: dict[str, Any], *, raw_mode: bool = False) -> dict[str, Any]:
@@ -381,7 +428,7 @@ def build_row(fixture: dict[str, Any], *, raw_mode: bool = False) -> dict[str, A
         "home_odd": None,
         "draw_odd": None,
         "away_odd": None,
-        "quote_label": "nicht verfügbar",
+        "quote_label": "",
     }
 
 
@@ -391,12 +438,13 @@ def probe_analysis_available(
     *,
     username: str,
     session_plan: str,
-) -> tuple[bool, bool, dict[str, float | None]]:
+) -> tuple[bool, bool, dict[str, float | None], str, str]:
     rank = football_plan_rank(session_plan or "none")
     odds = {"home": None, "draw": None, "away": None}
     has_odds = has_pred = False
+    form_home = form_away = ""
     if rank < 1 or not fixture_id:
-        return has_odds, has_pred, odds
+        return has_odds, has_pred, odds, form_home, form_away
 
     try:
         o1x2 = get_odds_for_fixture(service, int(fixture_id), username=username)
@@ -417,10 +465,22 @@ def probe_analysis_available(
             if rows:
                 ins = parse_prediction_insights(rows[0])
                 has_pred = ins.get("home_pct") is not None or bool(ins.get("advice"))
+                form_home = format_form_display(str(ins.get("form_home") or ""))
+                form_away = format_form_display(str(ins.get("form_away") or ""))
         except FootballAPIError:
             pass
 
-    return has_odds, has_pred, odds
+    return has_odds, has_pred, odds, form_home, form_away
+
+
+def _row_analysis_available(row: dict[str, Any]) -> bool:
+    return bool(
+        row.get("has_odds")
+        or row.get("has_predictions")
+        or row.get("has_standing_context")
+        or row.get("home_form")
+        or row.get("away_form")
+    )
 
 
 def enrich_rows_analysis_flags(
@@ -429,30 +489,37 @@ def enrich_rows_analysis_flags(
     *,
     username: str,
     session_plan: str,
-    max_probe: int = 10,
+    max_probe: int = MATCH_CAP,
 ) -> list[dict[str, Any]]:
+    rank = football_plan_rank(session_plan or "none")
     out: list[dict[str, Any]] = []
     probed = 0
     for row in rows:
         r = dict(row)
         fid = r.get("fixture_id")
-        if fid and probed < max_probe:
-            has_odds, has_pred, odds = probe_analysis_available(
+        probed_this = bool(fid and probed < max_probe and rank >= 1)
+        if probed_this:
+            has_odds, has_pred, odds, pf_home, pf_away = probe_analysis_available(
                 service, int(fid), username=username, session_plan=session_plan
             )
             r["has_odds"] = has_odds
             r["has_predictions"] = has_pred
-            r["analysis_available"] = has_odds or has_pred
             r["home_odd"] = odds.get("home")
             r["draw_odd"] = odds.get("draw")
             r["away_odd"] = odds.get("away")
-            r["quote_label"] = format_quote_label(r)
+            if pf_home and not r.get("home_form"):
+                r["home_form"] = pf_home
+            if pf_away and not r.get("away_form"):
+                r["away_form"] = pf_away
+            r["quote_label"] = format_quote_label(r, deferred=not has_odds)
             probed += 1
         else:
-            r["has_odds"] = False
-            r["has_predictions"] = False
-            r["analysis_available"] = False
-            r["quote_label"] = "nicht verfügbar"
+            r.setdefault("has_odds", False)
+            r.setdefault("has_predictions", False)
+            r["quote_label"] = (
+                MSG_QUOTE_IN_ANALYSIS if rank >= 1 and fid else ""
+            )
+        r["analysis_available"] = _row_analysis_available(r)
         out.append(r)
     return out
 
@@ -474,6 +541,11 @@ def resolve_competition_board(
     )
     fixtures = payload.get("fixtures") or []
     rows = [build_row(fx, raw_mode=False) for fx in fixtures]
+    if rows and football_plan_rank(session_plan or "none") >= 1:
+        standings_cache = build_league_standings_cache(
+            service, fixtures, username=username
+        )
+        rows = enrich_rows_standings(rows, standings_cache)
     if probe_analysis and rows:
         rows = enrich_rows_analysis_flags(
             rows, service, username=username, session_plan=session_plan

@@ -22,6 +22,7 @@ VOLATILE_SESSION_KEYS = (
     "admin_level",
     "session_token",
     "session_issued_at",
+    "_session_user_cache",
     "checkout_url",
     "checkout_plan",
     "oauth_notice",
@@ -54,10 +55,12 @@ def logout_session() -> None:
         log_auth("logout", username=str(st.session_state.get("user") or ""), success=True)
     except Exception:
         pass
+    keep_page = st.session_state.get("page")
     for key in list(st.session_state.keys()):
         del st.session_state[key]
     st.session_state.page = "auth"
     st.session_state.logged_in = False
+    _ = keep_page
 
 
 def rotate_session_on_login(user: dict) -> None:
@@ -79,6 +82,7 @@ def sync_from_user_record(user: dict | None) -> None:
     st.session_state.tokens = int(user.get("tokens", 0) or 0)
     st.session_state.role = user.get("role", "user")
     st.session_state.admin_level = int(user.get("admin_level", 0) or 0)
+    st.session_state["_session_user_cache"] = dict(user)
     # Never store password_hash in session
     for sensitive in ("password_hash", "oauth_sub", "oauth_provider"):
         if sensitive in st.session_state:
@@ -87,36 +91,78 @@ def sync_from_user_record(user: dict | None) -> None:
 
 def load_server_user() -> dict | None:
     """Always load fresh user from DB — do not trust session alone."""
-    username = str(st.session_state.get("user") or "").strip().lower()
+    username = str(st.session_state.get("user") or "").strip()
     if not username:
         return None
     return get_user(username)
 
 
+def _cached_session_user() -> dict[str, Any] | None:
+    cached = st.session_state.get("_session_user_cache")
+    if isinstance(cached, dict) and cached.get("username"):
+        return cached
+    username = str(st.session_state.get("user") or "").strip()
+    if not username:
+        return None
+    return {
+        "username": username,
+        "email": st.session_state.get("email", ""),
+        "plan": st.session_state.get("plan", "free"),
+        "football_plan": st.session_state.get("football_plan", "none"),
+        "tokens": st.session_state.get("tokens", 0),
+        "role": st.session_state.get("role", "user"),
+        "admin_level": st.session_state.get("admin_level", 0),
+        "is_banned": 0,
+    }
+
+
 def enforce_active_session() -> dict | None:
     """
     Validate session against DB (banned, exists).
-    Returns user dict or None; clears session if invalid.
+    Keeps session on transient DB errors (Railway cold start / SQLite lock).
     """
     if not st.session_state.get("logged_in"):
         return None
-    if not st.session_state.get("session_token"):
-        issue_session_token()
-    user = load_server_user()
-    if not user or int(user.get("is_banned") or 0) == 1:
+    if not st.session_state.get("user"):
         logout_session()
         return None
+    if not st.session_state.get("session_token"):
+        issue_session_token()
+
+    user: dict | None = None
+    try:
+        user = load_server_user()
+    except Exception as exc:
+        try:
+            from logger import log_warning
+            log_warning(f"Session DB check failed (session kept): {exc}", category="auth")
+        except Exception:
+            pass
+        return _cached_session_user()
+
+    if not user:
+        # Missing row — often ephemeral DB on redeploy; keep recent Streamlit session.
+        issued = float(st.session_state.get("session_issued_at") or 0)
+        if issued and (time.time() - issued) < 86_400:
+            return _cached_session_user()
+        logout_session()
+        return None
+
+    if int(user.get("is_banned") or 0) == 1:
+        logout_session()
+        return None
+
     sync_from_user_record(user)
     return user
 
 
 def server_is_admin() -> bool:
-    user = load_server_user()
+    user = load_server_user() or _cached_session_user()
     return db_is_admin(user)
 
 
 def server_is_supporter() -> bool:
-    user = load_server_user()
+    user = load_server_user() or _cached_session_user()
     if not user:
         return False
     role = str(user.get("role") or "user").lower()

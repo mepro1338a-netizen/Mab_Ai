@@ -341,7 +341,7 @@ PAGE_HANDLERS = {
     "premium": ("Elite", render_premium),
 }
 
-if page == "auth":
+if page == "auth" and st.session_state.get("logged_in"):
     st.session_state.page = "home"
     st.rerun()
 elif page in PAGE_HANDLERS:

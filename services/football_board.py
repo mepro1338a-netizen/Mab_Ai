@@ -255,17 +255,69 @@ def is_analysis_eligible(
     has_standing: bool = False,
     has_form: bool = False,
 ) -> bool:
-    """Analysis only when fixture, teams, (form|standing), and (odds|prediction) exist."""
+    """Analysis when fixture + teams + at least one of: standing, form, odds, prediction."""
     if not fixture_id:
         return False
     if not str(home or "").strip() or not str(away or "").strip():
         return False
-    form_or_standing = has_standing or has_form or _has_form_data(pred_insights)
-    if not form_or_standing:
-        return False
-    if not (has_odds or _has_prediction_data(pred_insights)):
-        return False
-    return True
+    return bool(
+        has_standing
+        or has_form
+        or _has_form_data(pred_insights)
+        or has_odds
+        or _has_prediction_data(pred_insights)
+    )
+
+
+def format_standing_chip(summary: dict[str, Any] | None) -> str:
+    if not summary:
+        return ""
+    rank, pts = summary.get("rank"), summary.get("points")
+    parts: list[str] = []
+    if rank is not None:
+        parts.append(f"#{rank}")
+    if pts is not None:
+        parts.append(f"{pts} Punkte")
+    return " · ".join(parts)
+
+
+def format_form_display(raw: str) -> str:
+    s = str(raw or "").strip().upper().replace(" ", "")
+    if not s or s == "—":
+        return ""
+    return " ".join(ch for ch in s if ch in "WDL")
+
+
+def form_from_standing_row(row: dict[str, Any] | None) -> str:
+    if not row:
+        return ""
+    return format_form_display(str(row.get("form") or ""))
+
+
+def build_league_standings_cache(
+    service: FootballService,
+    fixtures: list[dict[str, Any]],
+    *,
+    username: str,
+) -> dict[int, list[dict[str, Any]]]:
+    """One standings request per league in the fixture pool."""
+    from config import FOOTBALL_DEFAULT_SEASON
+
+    leagues: dict[int, int] = {}
+    for fx in fixtures or []:
+        lid = _fixture_league_id(fx)
+        if not lid:
+            continue
+        season = int((fx.get("league") or {}).get("season") or FOOTBALL_DEFAULT_SEASON)
+        leagues[int(lid)] = season
+
+    cache: dict[int, list[dict[str, Any]]] = {}
+    for lid, season in leagues.items():
+        try:
+            cache[lid] = service.get_standings(lid, season=season, username=username)
+        except FootballAPIError:
+            cache[lid] = []
+    return cache
 
 
 def empty_betting_signal() -> dict[str, Any]:
@@ -537,6 +589,12 @@ def fetch_match_detail(
             )
             detail["away_standing_summary"] = _standing_summary(detail.get("away_standing"))
 
+    if rank >= 1:
+        try:
+            detail["odds"] = get_odds_for_fixture(service, fixture_id, username=username)
+        except FootballAPIError:
+            detail["missing"].append("odds")
+
     if rank >= 2:
         try:
             pred_rows = service.get_fixture_predictions(fixture_id, username=username)
@@ -578,9 +636,6 @@ def fetch_match_detail(
                 )
             except FootballAPIError:
                 detail["missing"].append("form")
-
-        o1x2 = get_odds_for_fixture(service, fixture_id, username=username)
-        detail["odds"] = o1x2
 
         hf, af = detail.get("home_form"), detail.get("away_form")
         if (hf and str(hf).strip() != "—") or (af and str(af).strip() != "—"):

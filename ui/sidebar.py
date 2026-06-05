@@ -1,5 +1,5 @@
 """
-MaByte Sidebar — grouped SaaS navigation with inline icons (HTML links).
+MaByte Sidebar — grouped SaaS navigation (Streamlit buttons, session-safe).
 """
 from __future__ import annotations
 
@@ -71,32 +71,9 @@ _BRAND_SVG = (
 )
 
 
-def _icon_svg(page: str, *, active: bool) -> str:
-    color = "#ffffff" if active else "#a1a1aa"
-    return (_ICONS.get(page) or _ICONS["home"]).format(c=color)
-
-
 def _icon_uri(page: str) -> str:
     svg = (_ICONS.get(page) or _ICONS["home"]).format(c="%23a1a1aa")
     return f'url("data:image/svg+xml,{quote(svg)}")'
-
-
-def _nav_link(label: str, page: str, *, active: str) -> str:
-    cls = "sb-nav-item is-active" if page == active else "sb-nav-item"
-    return (
-        f'<a class="{cls}" href="?nav={html.escape(page)}" target="_self">'
-        f'<span class="sb-nav-ico">{_icon_svg(page, active=page == active)}</span>'
-        f'<span class="sb-nav-label">{html.escape(label)}</span></a>'
-    )
-
-
-def _build_nav_html(active: str) -> str:
-    parts: list[str] = []
-    for section_title, items in NAV_SECTIONS:
-        parts.append(f'<p class="sb-section">{html.escape(section_title)}</p>')
-        for label, page in items:
-            parts.append(_nav_link(label, page, active=active))
-    return "".join(parts)
 
 
 def _plan_label(plan: str) -> str:
@@ -113,24 +90,43 @@ def _user_initial(username: str) -> str:
     return (u[0] or "U").upper()
 
 
-def _sidebar_shell_html(*, active: str, user: str, plan: str) -> str:
-    return (
-        f'<div class="sb-shell">'
-        f'<div class="sb-brand">{_BRAND_SVG}<span>{html.escape(APP_NAME)}</span></div>'
-        f'<div class="sb-scroll"><nav class="sb-nav" aria-label="Hauptnavigation">'
-        f"{_build_nav_html(active)}"
-        f"</nav></div>"
-        f'<div class="sb-foot">'
-        f'<div class="sb-user">'
-        f'<div class="sb-av">{html.escape(_user_initial(user))}</div>'
-        f'<div><div class="sb-un">{html.escape(user)}</div>'
-        f'<div class="sb-up">{html.escape(plan)}</div></div>'
-        f"</div></div></div>"
-    )
+def _nav_button_css(active: str) -> str:
+    rules: list[str] = []
+    for _label, page in NAV_ITEMS:
+        uri = _icon_uri(page)
+        rules.append(
+            f"""
+{_SB} .st-key-nav_go_{page} {{ margin:0 0 2px!important; flex-shrink:0!important; }}
+{_SB} .st-key-nav_go_{page} .stButton {{ margin:0!important; padding:0!important; width:100%!important; }}
+{_SB} .st-key-nav_go_{page} .stButton>button {{
+  width:100%!important;height:40px!important;min-height:40px!important;
+  padding:0 12px 0 38px!important;border-radius:10px!important;
+  border:1px solid transparent!important;background:transparent!important;
+  color:#a1a1aa!important;font-size:13px!important;font-weight:500!important;
+  text-align:left!important;position:relative!important;
+  border-left:4px solid transparent!important;box-shadow:none!important;
+}}
+{_SB} .st-key-nav_go_{page} .stButton>button:hover {{
+  background:rgba(255,255,255,.04)!important;border-color:transparent!important;
+}}
+{_SB} .st-key-nav_go_{page} .stButton>button::before {{
+  content:'';position:absolute;left:12px;top:50%;transform:translateY(-50%);
+  width:16px;height:16px;background-image:{uri};
+  background-size:16px;background-repeat:no-repeat;
+}}"""
+        )
+        if page == active:
+            rules.append(
+                f"""
+{_SB} .st-key-nav_go_{page} .stButton>button {{
+  background:rgba(124,58,237,.18)!important;border-left-color:#8b5cf6!important;
+  color:#ffffff!important;font-weight:600!important;
+}}"""
+            )
+    return "".join(rules)
 
 
 def sidebar_master_css(active_page: str) -> str:
-    _ = active_page
     logout_uri = _icon_uri("logout")
     return f"""
 :root{{--sb-width:{_WIDTH};}}
@@ -158,56 +154,36 @@ def sidebar_master_css(active_page: str) -> str:
   display:flex!important;flex-direction:column!important;
   flex:1!important;min-height:0!important;overflow:hidden!important;
 }}
-{_SB} [data-testid="stElementContainer"]{{
-  gap:0!important;padding:0!important;margin:0!important;border:none!important;
-  box-shadow:none!important;background:transparent!important;
+{_SB} .st-key-sb_brand,
+{_SB} .st-key-sb_scroll,
+{_SB} .st-key-sb_foot,
+{_SB} .st-key-nav_logout {{
+  flex-shrink:0!important;
 }}
-{_SB} [data-testid="stElementContainer"]:has(.sb-shell){{
-  flex:1!important;min-height:0!important;overflow:hidden!important;
-  display:flex!important;flex-direction:column!important;
+{_SB} .st-key-sb_scroll {{
+  flex:1 1 auto!important;min-height:0!important;overflow-y:auto!important;
+  overflow-x:hidden!important;margin:0 -2px;padding:0 2px!important;
 }}
-.sb-shell{{
-  display:flex;flex-direction:column;flex:1;min-height:0;width:100%;
-  padding:8px 0 4px;box-sizing:border-box;overflow:hidden;
-}}
-.sb-brand{{display:flex;align-items:center;gap:8px;padding:6px 4px 12px;flex-shrink:0;}}
-.sb-brand svg{{width:24px!important;height:24px!important;flex-shrink:0;}}
-.sb-brand span{{color:#fafafa!important;font-size:14px;font-weight:600;letter-spacing:-.02em;}}
-.sb-scroll{{
-  flex:1 1 auto;min-height:0;overflow-y:auto!important;overflow-x:hidden;
-  -webkit-overflow-scrolling:touch;overscroll-behavior:contain;
-  padding:0 2px;margin:0 -2px;
-  scrollbar-width:thin;scrollbar-color:#52525b transparent;
-}}
-.sb-scroll::-webkit-scrollbar{{width:5px;}}
-.sb-scroll::-webkit-scrollbar-thumb{{background:#52525b;border-radius:8px;}}
-.sb-scroll::-webkit-scrollbar-track{{background:transparent;}}
-.sb-section{{
+.sb-brand-wrap {{ display:flex; align-items:center; gap:8px; padding:6px 4px 12px; }}
+.sb-brand-wrap svg {{ width:24px!important;height:24px!important;flex-shrink:0; }}
+.sb-brand-wrap span {{ color:#fafafa!important;font-size:14px;font-weight:600;letter-spacing:-.02em; }}
+.sb-section {{
   color:#52525b!important;font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
   padding:12px 8px 4px;margin:0;line-height:1.2;
 }}
-.sb-nav{{display:flex;flex-direction:column;gap:2px;padding-bottom:12px;}}
-.sb-nav-item{{
-  display:flex;align-items:center;gap:10px;height:40px;padding:0 10px;border-radius:10px;
-  text-decoration:none!important;border-left:4px solid transparent;box-sizing:border-box;
-  transition:background .12s ease,color .12s ease,border-color .12s ease;
+.sb-user {{
+  display:flex;align-items:center;gap:8px;padding:8px;border-radius:10px;
+  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);margin-bottom:8px;
 }}
-.sb-nav-item:hover{{background:rgba(255,255,255,.04);}}
-.sb-nav-item.is-active{{
-  background:rgba(124,58,237,.18)!important;border-left-color:#8b5cf6!important;
+.sb-av {{
+  width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#7c3aed,#6366f1);
+  color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;
 }}
-.sb-nav-ico{{display:flex;align-items:center;justify-content:center;width:18px;height:18px;flex-shrink:0;}}
-.sb-nav-ico svg{{width:18px;height:18px;display:block;}}
-.sb-nav-label{{color:#a1a1aa!important;font-size:13px;font-weight:500;line-height:1;}}
-.sb-nav-item.is-active .sb-nav-label{{color:#ffffff!important;font-weight:600;}}
-.sb-foot{{flex-shrink:0;padding-top:8px;border-top:1px solid rgba(255,255,255,.06);}}
-.sb-user{{display:flex;align-items:center;gap:8px;padding:8px;border-radius:10px;
-  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);margin-bottom:8px;}}
-.sb-av{{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#7c3aed,#6366f1);
-  color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}}
-.sb-un{{color:#e4e4e7!important;font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}}
-.sb-up{{color:#71717a!important;font-size:10px;line-height:1.2;margin-top:1px;}}
-{_SB} .st-key-nav_logout{{flex-shrink:0!important;margin-top:0!important;}}
+.sb-un {{ color:#e4e4e7!important;font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }}
+.sb-up {{ color:#71717a!important;font-size:10px;line-height:1.2;margin-top:1px; }}
+.sb-foot {{ padding-top:8px;border-top:1px solid rgba(255,255,255,.06); }}
+{_nav_button_css(active_page)}
+{_SB} .st-key-nav_logout{{margin-top:0!important;}}
 {_SB} .st-key-nav_logout .stButton{{margin:0!important;padding:0!important;width:100%!important;}}
 {_SB} .st-key-nav_logout .stButton>button{{
   width:100%!important;height:40px!important;min-height:40px!important;padding:0 12px 0 38px!important;
@@ -228,6 +204,13 @@ def _resolve_active(active_page: str | None) -> str:
     return LEGACY_PAGE_ALIASES.get(p, p)
 
 
+def _go_page(page: str) -> None:
+    target = LEGACY_PAGE_ALIASES.get(page, page)
+    if st.session_state.get("page") != target:
+        st.session_state.page = target
+        st.rerun()
+
+
 def render_sidebar(active_page: str | None = None) -> None:
     active = _resolve_active(active_page)
     inject_css(sidebar_master_css(active))
@@ -235,8 +218,43 @@ def render_sidebar(active_page: str | None = None) -> None:
     plan = _plan_label(str(st.session_state.get("plan") or "free"))
 
     with st.sidebar:
-        st.markdown(_sidebar_shell_html(active=active, user=user, plan=plan), unsafe_allow_html=True)
-        if st.button("Abmelden", key="nav_logout", width="stretch", type="secondary"):
-            from services.session_auth import logout_session
-            logout_session()
-            st.rerun()
+        with st.container(key="sb_brand"):
+            st.markdown(
+                f'<div class="sb-brand-wrap">{_BRAND_SVG}<span>{html.escape(APP_NAME)}</span></div>',
+                unsafe_allow_html=True,
+            )
+
+        with st.container(key="sb_scroll"):
+            for section_title, items in NAV_SECTIONS:
+                st.markdown(
+                    f'<p class="sb-section">{html.escape(section_title)}</p>',
+                    unsafe_allow_html=True,
+                )
+                for label, page in items:
+                    if st.button(
+                        label,
+                        key=f"nav_go_{page}",
+                        use_container_width=True,
+                        type="secondary",
+                    ):
+                        _go_page(page)
+
+        with st.container(key="sb_foot"):
+            st.markdown(
+                f"""
+<div class="sb-foot">
+  <div class="sb-user">
+    <div class="sb-av">{html.escape(_user_initial(user))}</div>
+    <div>
+      <div class="sb-un">{html.escape(user)}</div>
+      <div class="sb-up">{html.escape(plan)}</div>
+    </div>
+  </div>
+</div>
+                """,
+                unsafe_allow_html=True,
+            )
+            if st.button("Abmelden", key="nav_logout", use_container_width=True, type="secondary"):
+                from services.session_auth import logout_session
+                logout_session()
+                st.rerun()

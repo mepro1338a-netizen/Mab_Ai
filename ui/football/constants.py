@@ -47,3 +47,5 @@ LEAGUE_NAV: dict[str, list[tuple[int, str]]] = {
 MSG_NO_ANALYSIS = (
     "Für dieses Spiel stehen aktuell keine ausreichenden Analysedaten zur Verfügung."
 )
+MSG_EMPTY_TODAY = "Heute sind keine Spiele verfügbar."
+MSG_NEXT_SECTION = "Nächste Spiele"

@@ -130,7 +130,7 @@ def _clear_query_key(key: str) -> None:
 
 
 def apply_nav_from_query() -> None:
-    """Handle ?nav=page from sidebar HTML links."""
+    """Handle ?nav=page bookmarks — in-app only, no full page reload."""
     if not st.session_state.get("logged_in"):
         return
     raw = _qp_first(st.query_params.get("nav"))

@@ -327,7 +327,13 @@ def parse_match_card(fixture: dict[str, Any]) -> dict[str, Any]:
     home, away = teams.get("home") or {}, teams.get("away") or {}
     status = _status_short(fixture)
     gh, ga = goals.get("home"), goals.get("away")
-    score = f"{gh} : {ga}" if gh is not None and ga is not None else ("– : –" if status in LIVE_STATUSES else "vs")
+    live, finished = status in LIVE_STATUSES, status in FINISHED_STATUSES
+    if gh is not None and ga is not None:
+        score = f"{gh}:{ga}"
+    elif live or finished:
+        score = "–:–"
+    else:
+        score = ""
     minute = _elapsed(fixture)
     status_label = f"{status} {minute}'" if status in LIVE_STATUSES and minute is not None else status
     date_raw = str(meta.get("date") or "")
@@ -335,9 +341,21 @@ def parse_match_card(fixture: dict[str, Any]) -> dict[str, Any]:
         lid_int = int(league.get("id")) if league.get("id") is not None else None
     except (TypeError, ValueError):
         lid_int = None
-    live, finished = status in LIVE_STATUSES, status in FINISHED_STATUSES
+    try:
+        home_id = int(home.get("id")) if home.get("id") is not None else None
+    except (TypeError, ValueError):
+        home_id = None
+    try:
+        away_id = int(away.get("id")) if away.get("id") is not None else None
+    except (TypeError, ValueError):
+        away_id = None
+    try:
+        season = int(league.get("season")) if league.get("season") is not None else None
+    except (TypeError, ValueError):
+        season = None
     return {
         "fixture_id": meta.get("id"), "home": home.get("name") or "Home", "away": away.get("name") or "Away",
+        "home_id": home_id, "away_id": away_id, "season": season,
         "home_logo": home.get("logo") or "", "away_logo": away.get("logo") or "", "score": score,
         "status": status, "status_label": status_label, "minute": minute,
         "league": league.get("name") or "", "league_id": league.get("id"), "league_logo": league.get("logo") or "",

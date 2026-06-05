@@ -114,12 +114,30 @@ def _build_ai_summary(detail: dict[str, Any], signal: dict[str, Any] | None) -> 
     return f'<div class="fb2-summary">{"".join(parts)}</div>'
 
 
+def _header_meta(card: dict[str, Any], detail: dict[str, Any]) -> str:
+    parts: list[str] = []
+    league = str(card.get("league") or "").strip()
+    if league:
+        parts.append(league)
+    venue = str(card.get("venue") or "").strip()
+    if not venue:
+        venue = str((detail.get("summary") or {}).get("venue") or "").strip()
+    if venue:
+        parts.append(venue)
+    date_s = str(card.get("date") or "").strip()
+    time_s = str(card.get("time") or "").strip()
+    if date_s:
+        parts.append(date_s)
+    if time_s:
+        parts.append(time_s)
+    return " · ".join(parts) if parts else "Spielanalyse"
+
+
 def render_analysis(detail: dict[str, Any]) -> None:
     card = detail.get("card") or {}
     home = html.escape(str(card.get("home") or "Heim"))
     away = html.escape(str(card.get("away") or "Auswärts"))
-    league = html.escape(str(card.get("league") or ""))
-    meta = f"{league}" if league else "Spielanalyse"
+    meta = html.escape(_header_meta(card, detail))
 
     if not detail.get("analysis_available"):
         st.markdown(

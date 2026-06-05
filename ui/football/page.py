@@ -11,7 +11,7 @@ from services.football_api import FootballAPIError, get_football_service
 from services.football_feed import fetch_match_detail, resolve_competition_board
 from ui.football.analysis import render_analysis
 from ui.football.cards import filter_rows_by_league, match_card_html
-from ui.football.constants import LEAGUE_NAV, TIME_NAV, TOP_NAV
+from ui.football.constants import LEAGUE_NAV, MSG_EMPTY_TODAY, MSG_NEXT_SECTION, TIME_NAV, TOP_NAV
 from ui.football.session import ensure_football_session
 from ui.styles import MB_THEME_VARS, inject_css, page_layout_css
 from ui.football.styles import FOOTBALL_CSS
@@ -186,11 +186,38 @@ def render_football_betting_board(
             st.markdown("</div>", unsafe_allow_html=True)
             return
 
-    rows = filter_rows_by_league(result.get("rows") or [], league_id)
+    all_rows = result.get("rows") or []
+    rows = filter_rows_by_league(all_rows, league_id)
     banner = str(result.get("banner") or "").strip()
+    show_empty_today = False
+
+    if not rows and time_f == "heute" and not all_rows:
+        show_empty_today = True
+        with st.spinner("Nächste Spiele laden…"):
+            try:
+                next_result = resolve_competition_board(
+                    service,
+                    username=username,
+                    session_plan=session_plan,
+                    competition=comp,
+                    time_filter="naechste",
+                    probe_analysis=True,
+                )
+                all_rows = next_result.get("rows") or []
+                rows = filter_rows_by_league(all_rows, league_id)
+                if rows:
+                    banner = MSG_NEXT_SECTION
+            except FootballAPIError:
+                pass
 
     st.session_state["fb_displayed_topspiele_count"] = len(rows)
     st.session_state["fb_displayed_allspiele_count"] = 0
+
+    if show_empty_today and rows:
+        st.markdown(
+            f'<p class="fb2-empty-note">{html.escape(MSG_EMPTY_TODAY)}</p>',
+            unsafe_allow_html=True,
+        )
 
     if banner:
         st.markdown(
@@ -199,8 +226,9 @@ def render_football_betting_board(
         )
 
     if not rows:
+        empty_text = MSG_EMPTY_TODAY if time_f == "heute" else "Keine Spiele in dieser Auswahl."
         st.markdown(
-            f'<div class="fb2-empty">{html.escape(banner or "Keine Spiele in dieser Auswahl.")}</div>',
+            f'<div class="fb2-empty">{html.escape(empty_text)}</div>',
             unsafe_allow_html=True,
         )
         st.markdown("</div>", unsafe_allow_html=True)
@@ -208,7 +236,9 @@ def render_football_betting_board(
 
     for row in rows:
         fid = row.get("fixture_id")
+        st.markdown('<div class="fb2-card-wrap">', unsafe_allow_html=True)
         st.markdown(match_card_html(row), unsafe_allow_html=True)
+        st.markdown('<div class="fb2-card-actions">', unsafe_allow_html=True)
         can = bool(row.get("analysis_available")) and bool(fid)
         if can:
             if st.button("Analyse", key=f"fb2_a_{fid}", use_container_width=True):
@@ -216,7 +246,11 @@ def render_football_betting_board(
                 st.session_state["fb_detail"] = None
                 st.rerun()
         else:
-            st.caption("Analyse nicht verfügbar")
+            st.markdown(
+                '<div class="fb2-no-analysis">Analyse nicht verfügbar</div>',
+                unsafe_allow_html=True,
+            )
+        st.markdown("</div></div>", unsafe_allow_html=True)
 
     st.markdown("</div>", unsafe_allow_html=True)
 
