@@ -18,25 +18,25 @@ _DEFAULT_COUNTRY = "Deutschland"
 _APP = html.escape(APP_NAME or "MaByte")
 
 _AUTH_CSS = """
-/* ── Compact Enterprise Auth (8px grid) ── */
+/* ── MaByte Auth v3 — refined enterprise ── */
 :root {
     --auth-bg: #09090b;
-    --auth-card: rgba(24, 24, 27, 0.96);
-    --auth-border: rgba(255, 255, 255, 0.1);
+    --auth-card: rgba(24, 24, 27, 0.98);
+    --auth-border: rgba(255, 255, 255, 0.09);
     --auth-text: #fafafa;
     --auth-muted: #a1a1aa;
     --auth-hint: #71717a;
-    --auth-field: rgba(9, 9, 11, 0.9);
-    --auth-field-border: rgba(255, 255, 255, 0.12);
+    --auth-field: #0c0c0f;
+    --auth-field-border: rgba(255, 255, 255, 0.11);
     --auth-accent: #7c3aed;
-    --auth-accent-2: #6366f1;
+    --auth-accent-hover: #6d28d9;
     --s-1: 8px;
     --s-2: 16px;
     --s-3: 24px;
-    --auth-pad: 40px;
-    --auth-radius: 10px;
-    --auth-input-h: 44px;
-    --auth-max: 440px;
+    --auth-pad: 36px;
+    --auth-radius: 8px;
+    --auth-input-h: 42px;
+    --auth-max: 420px;
 }
 
 html:has(.auth-marker),
@@ -53,6 +53,7 @@ html:has(.auth-marker) [data-testid="stMain"] .block-container {
     color: var(--auth-text) !important;
     font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
     -webkit-font-smoothing: antialiased !important;
+    -moz-osx-font-smoothing: grayscale !important;
 }
 
 html:has(.auth-marker) #MainMenu,
@@ -70,8 +71,8 @@ html:has(.auth-marker) [data-testid="stHeader"] {
     z-index: 0;
     pointer-events: none;
     background:
-        radial-gradient(ellipse 90% 60% at 50% -15%, rgba(124, 58, 237, 0.14), transparent 58%),
-        radial-gradient(ellipse 50% 40% at 100% 100%, rgba(99, 102, 241, 0.06), transparent 50%),
+        radial-gradient(ellipse 70% 50% at 50% -20%, rgba(124, 58, 237, 0.16), transparent 62%),
+        radial-gradient(ellipse 40% 30% at 0% 100%, rgba(99, 102, 241, 0.05), transparent 55%),
         var(--auth-bg);
 }
 
@@ -87,9 +88,9 @@ html:has(.auth-marker) [data-testid="stMain"] {
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
-    justify-content: flex-start !important;
-    padding-top: clamp(24px, 6vh, 56px) !important;
-    padding-bottom: var(--s-3) !important;
+    justify-content: center !important;
+    padding: var(--s-3) var(--s-2) !important;
+    overflow-y: auto !important;
 }
 
 html:has(.auth-marker) [data-testid="stMain"] .block-container,
@@ -97,43 +98,47 @@ html:has(.auth-marker) [data-testid="stMainBlockContainer"] {
     max-width: var(--auth-max) !important;
     width: min(var(--auth-max), 100%) !important;
     margin: 0 auto !important;
-    padding: 0 var(--s-2) !important;
+    padding: 0 !important;
     flex: 0 0 auto !important;
 }
 
-/* ── Card shell (works with border=False container) ── */
+/* ── Card (direct child only) ── */
 html:has(.auth-marker) .st-key-auth_card {
     width: 100% !important;
 }
 
-html:has(.auth-marker) .st-key-auth_card > [data-testid="stVerticalBlock"],
-html:has(.auth-marker) .st-key-auth_card[data-testid="stVerticalBlockBorderWrapper"] > [data-testid="stVerticalBlock"],
-html:has(.auth-marker) [data-testid="stVerticalBlockBorderWrapper"]:has(.auth-card-marker) > [data-testid="stVerticalBlock"] {
-    border-radius: 14px !important;
+html:has(.auth-marker) .st-key-auth_card > [data-testid="stVerticalBlock"]:has(.auth-card-marker),
+html:has(.auth-marker) .st-key-auth_card[data-testid="stVerticalBlockBorderWrapper"] > [data-testid="stVerticalBlock"]:has(.auth-card-marker) {
+    position: relative !important;
+    border-radius: 16px !important;
     border: 1px solid var(--auth-border) !important;
     background: var(--auth-card) !important;
-    backdrop-filter: blur(24px) !important;
-    -webkit-backdrop-filter: blur(24px) !important;
+    backdrop-filter: blur(28px) saturate(140%) !important;
+    -webkit-backdrop-filter: blur(28px) saturate(140%) !important;
     box-shadow:
-        0 0 0 1px rgba(255, 255, 255, 0.04) inset,
-        0 1px 0 rgba(255, 255, 255, 0.06) inset,
-        0 20px 40px rgba(0, 0, 0, 0.45) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.07),
+        0 0 0 1px rgba(0, 0, 0, 0.35),
+        0 24px 48px -12px rgba(0, 0, 0, 0.55) !important;
     padding: var(--auth-pad) !important;
     gap: 0 !important;
     align-items: stretch !important;
+    overflow: hidden !important;
 }
 
-html:has(.auth-marker) .st-key-auth_card[data-testid="stVerticalBlockBorderWrapper"],
-html:has(.auth-marker) [data-testid="stVerticalBlockBorderWrapper"]:has(.auth-card-marker) {
-    border: none !important;
-    background: transparent !important;
-    box-shadow: none !important;
-    padding: 0 !important;
+html:has(.auth-marker) .st-key-auth_card > [data-testid="stVerticalBlock"]:has(.auth-card-marker)::before,
+html:has(.auth-marker) .st-key-auth_card[data-testid="stVerticalBlockBorderWrapper"] > [data-testid="stVerticalBlock"]:has(.auth-card-marker)::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 12%;
+    right: 12%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(167, 139, 250, 0.55), transparent);
+    pointer-events: none;
 }
 
 html:has(.auth-marker) .st-key-auth_card [data-testid="stVerticalBlock"] {
     gap: 0 !important;
-    align-items: stretch !important;
 }
 
 html:has(.auth-marker) .st-key-auth_card [data-testid="stElementContainer"] {
@@ -142,20 +147,32 @@ html:has(.auth-marker) .st-key-auth_card [data-testid="stElementContainer"] {
     width: 100% !important;
 }
 
-/* ── Brand ── */
-.auth-brand {
-    margin: 0 0 var(--s-2);
+/* ── Header ── */
+.auth-header {
+    margin: 0 0 var(--s-3);
     text-align: center;
-    font-size: 28px;
+}
+
+.auth-brand {
+    margin: 0;
+    font-size: 26px;
     font-weight: 700;
-    letter-spacing: -0.03em;
-    line-height: 1.15;
+    letter-spacing: -0.035em;
+    line-height: 1.1;
     color: var(--auth-text) !important;
 }
 
-/* ── Segmented control ── */
+.auth-tagline {
+    margin: 6px 0 0;
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 1.4;
+    color: var(--auth-hint) !important;
+}
+
+/* ── Tabs ── */
 html:has(.auth-marker) .st-key-auth_seg_wrap {
-    margin: 0 0 var(--s-2) !important;
+    margin: 0 0 var(--s-3) !important;
     width: 100% !important;
 }
 
@@ -171,56 +188,52 @@ html:has(.auth-marker) .st-key-auth_mode_seg [data-testid="stWidgetLabel"] {
 html:has(.auth-marker) .st-key-auth_mode_seg [data-testid="stSegmentedControl"],
 html:has(.auth-marker) .st-key-auth_seg_wrap [data-testid="stSegmentedControl"] {
     width: 100% !important;
-    background: rgba(0, 0, 0, 0.4) !important;
-    border: 1px solid rgba(255, 255, 255, 0.07) !important;
+    background: rgba(0, 0, 0, 0.45) !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
     border-radius: var(--auth-radius) !important;
     padding: 3px !important;
-    gap: 3px !important;
+    gap: 2px !important;
 }
 
 html:has(.auth-marker) .st-key-auth_mode_seg [data-testid="stSegmentedControl"] button,
 html:has(.auth-marker) .st-key-auth_seg_wrap [data-testid="stSegmentedControl"] button {
     flex: 1 !important;
-    min-height: 38px !important;
-    height: 38px !important;
+    min-height: 36px !important;
+    height: 36px !important;
     border: none !important;
     outline: none !important;
-    border-radius: 7px !important;
+    border-radius: 6px !important;
     font-size: 13px !important;
     font-weight: 600 !important;
     color: var(--auth-muted) !important;
     box-shadow: none !important;
+    transition: background 0.15s ease, color 0.15s ease !important;
 }
 
 html:has(.auth-marker) .st-key-auth_mode_seg [data-testid="stSegmentedControl"] button[aria-selected="true"],
 html:has(.auth-marker) .st-key-auth_seg_wrap [data-testid="stSegmentedControl"] button[aria-selected="true"] {
-    background: rgba(255, 255, 255, 0.1) !important;
+    background: rgba(255, 255, 255, 0.11) !important;
     color: var(--auth-text) !important;
-    border: none !important;
-    outline: none !important;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25) !important;
 }
 
 /* ── Intro ── */
 .auth-intro {
     margin: 0 0 var(--s-2);
     text-align: center;
-    width: 100%;
 }
 
 .auth-headline {
-    margin: 0 0 var(--s-1);
-    font-size: 22px;
-    font-weight: 700;
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
     letter-spacing: -0.02em;
-    line-height: 1.25;
+    line-height: 1.3;
     color: var(--auth-text) !important;
 }
 
 .auth-desc {
-    margin: 0 auto;
-    max-width: 34ch;
-    font-size: 14px;
+    margin: 6px 0 0;
+    font-size: 13px;
     font-weight: 400;
     line-height: 1.45;
     color: var(--auth-muted) !important;
@@ -231,7 +244,7 @@ html:has(.auth-marker) .st-key-auth_card [data-testid="stForm"] {
     border: none !important;
     padding: 0 !important;
     background: transparent !important;
-    gap: var(--s-2) !important;
+    gap: 12px !important;
     width: 100% !important;
 }
 
@@ -240,32 +253,25 @@ html:has(.auth-marker) .st-key-auth_card [data-testid="stCheckbox"] {
     width: 100% !important;
 }
 
-html:has(.auth-marker) .st-key-auth_card [data-testid="stTextInput"] label p,
-html:has(.auth-marker) .st-key-auth_card [data-testid="stWidgetLabel"] p {
-    font-size: 13px !important;
-    font-weight: 500 !important;
-    color: var(--auth-muted) !important;
-    margin: 0 0 6px !important;
-    line-height: 1.35 !important;
-    text-align: left !important;
+html:has(.auth-marker) .st-key-auth_card [data-testid="stTextInput"] [data-testid="stWidgetLabel"],
+html:has(.auth-marker) .st-key-auth_card [data-testid="stTextInput"] label[data-testid="stWidgetLabel"] {
+    display: none !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
 }
 
 html:has(.auth-marker) .st-key-auth_card [data-testid="stTextInput"] > div:last-of-type {
     position: relative !important;
 }
 
-html:has(.auth-marker) .st-key-auth_card [data-testid="stTextInput"] > div[data-baseweb="input"],
-html:has(.auth-marker) .st-key-auth_card [data-testid="stTextInput"] > div {
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
-    margin: 0 !important;
-}
-
+html:has(.auth-marker) .st-key-auth_card [data-testid="stTextInput"] > div,
 html:has(.auth-marker) .st-key-auth_card div[data-baseweb="input"] {
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
+    margin: 0 !important;
 }
 
 html:has(.auth-marker) .st-key-auth_card [data-testid="stTextInput"] input {
@@ -277,17 +283,17 @@ html:has(.auth-marker) .st-key-auth_card [data-testid="stTextInput"] input {
     border-radius: var(--auth-radius) !important;
     min-height: var(--auth-input-h) !important;
     height: var(--auth-input-h) !important;
-    font-size: 15px !important;
+    font-size: 14px !important;
     line-height: 1.4 !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
-    padding: 0 44px 0 14px !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03) !important;
+    padding: 0 40px 0 12px !important;
     transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
 }
 
 html:has(.auth-marker) .st-key-auth_card .st-key-auth_user input,
 html:has(.auth-marker) .st-key-auth_card .st-key-reg_user input,
 html:has(.auth-marker) .st-key-auth_card .st-key-reg_email input {
-    padding-right: 14px !important;
+    padding-right: 12px !important;
 }
 
 html:has(.auth-marker) .st-key-auth_card [data-testid="stTextInput"] input::placeholder {
@@ -295,34 +301,34 @@ html:has(.auth-marker) .st-key-auth_card [data-testid="stTextInput"] input::plac
     opacity: 1 !important;
 }
 
+html:has(.auth-marker) .st-key-auth_card [data-testid="stTextInput"] input:hover {
+    border-color: rgba(255, 255, 255, 0.16) !important;
+}
+
 html:has(.auth-marker) .st-key-auth_card [data-testid="stTextInput"] input:focus {
-    border-color: rgba(124, 58, 237, 0.55) !important;
-    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.14) !important;
+    border-color: rgba(124, 58, 237, 0.6) !important;
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15) !important;
     outline: none !important;
 }
 
 html:has(.auth-marker) .st-key-auth_card [data-testid="stTextInput"] [data-testid="stButton"] {
     position: absolute !important;
-    right: 4px !important;
+    right: 3px !important;
     top: 50% !important;
     transform: translateY(-50%) !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
     margin: 0 !important;
-    height: auto !important;
 }
 
 html:has(.auth-marker) .st-key-auth_card [data-testid="stTextInput"] [data-testid="stButton"] button {
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    width: 32px !important;
-    height: 32px !important;
-    min-height: 32px !important;
+    width: 30px !important;
+    height: 30px !important;
+    min-height: 30px !important;
     padding: 0 !important;
     border: none !important;
-    border-radius: 6px !important;
+    border-radius: 5px !important;
     background: transparent !important;
     color: var(--auth-muted) !important;
     box-shadow: none !important;
@@ -334,20 +340,19 @@ html:has(.auth-marker) .st-key-auth_card [data-testid="stTextInput"] [data-testi
 }
 
 html:has(.auth-marker) .st-key-auth_card [data-testid="stTextInput"] [data-testid="stButton"] button svg {
-    width: 16px !important;
-    height: 16px !important;
+    width: 15px !important;
+    height: 15px !important;
 }
 
 html:has(.auth-marker) .st-key-auth_card [data-testid="stCheckbox"] {
-    margin: var(--s-1) 0 0 !important;
+    margin: 4px 0 0 !important;
 }
 
 html:has(.auth-marker) .st-key-auth_card [data-testid="stCheckbox"] label p {
-    font-size: 13px !important;
+    font-size: 12px !important;
     font-weight: 400 !important;
     color: var(--auth-muted) !important;
-    line-height: 1.45 !important;
-    text-align: left !important;
+    line-height: 1.4 !important;
 }
 
 html:has(.auth-marker) .st-key-auth_card [data-testid="stFormSubmitButton"] {
@@ -363,26 +368,27 @@ html:has(.auth-marker) .st-key-auth_card button[data-testid="baseButton-primary"
     height: var(--auth-input-h) !important;
     border: none !important;
     border-radius: var(--auth-radius) !important;
-    background: linear-gradient(180deg, #8b5cf6 0%, var(--auth-accent) 100%) !important;
-    background-image: linear-gradient(180deg, #8b5cf6 0%, var(--auth-accent) 100%) !important;
+    background: var(--auth-accent) !important;
+    background-image: none !important;
     color: #fff !important;
-    font-size: 15px !important;
+    font-size: 14px !important;
     font-weight: 600 !important;
     letter-spacing: -0.01em !important;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25), 0 6px 20px rgba(124, 58, 237, 0.28) !important;
-    transition: transform 0.12s ease, box-shadow 0.12s ease !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+    transition: background 0.15s ease, transform 0.12s ease !important;
 }
 
 html:has(.auth-marker) .st-key-auth_card [data-testid="stFormSubmitButton"] button:hover,
 html:has(.auth-marker) .st-key-auth_card button[data-testid="baseButton-primary"]:hover {
+    background: var(--auth-accent-hover) !important;
+    background-image: none !important;
     transform: translateY(-1px) !important;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25), 0 10px 24px rgba(124, 58, 237, 0.35) !important;
 }
 
 html:has(.auth-marker) .st-key-auth_card [data-testid="stFormSubmitButton"] button p,
 html:has(.auth-marker) .st-key-auth_card button[data-testid="baseButton-primary"] p {
     color: #fff !important;
-    font-size: 15px !important;
+    font-size: 14px !important;
     font-weight: 600 !important;
 }
 
@@ -396,12 +402,12 @@ html:has(.auth-marker) .st-key-auth_card [data-testid="stAlert"] {
 .auth-footer {
     margin: var(--s-2) 0 0;
     padding-top: var(--s-2);
-    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
     text-align: center;
-    width: 100%;
     font-size: 11px;
     font-weight: 400;
-    line-height: 1.45;
+    line-height: 1.4;
+    letter-spacing: 0.01em;
     color: var(--auth-hint) !important;
 }
 
@@ -418,11 +424,12 @@ html:has(.auth-marker) .stApp {
 
 @media (max-width: 640px) {
     html:has(.auth-marker) {
-        --auth-pad: 28px;
+        --auth-pad: 24px;
     }
-    html:has(.auth-marker) .auth-brand { font-size: 24px; }
-    html:has(.auth-marker) .auth-headline { font-size: 20px; }
+    html:has(.auth-marker) .auth-brand { font-size: 22px; }
+    html:has(.auth-marker) .auth-headline { font-size: 18px; }
     html:has(.auth-marker) [data-testid="stMain"] {
+        justify-content: flex-start !important;
         padding-top: var(--s-2) !important;
     }
 }
@@ -600,13 +607,23 @@ def _render_login_form() -> None:
     st.markdown(
         '<div class="auth-intro">'
         '<p class="auth-headline">Willkommen zurück</p>'
-        '<p class="auth-desc">Melde dich mit deinem Konto an.</p>'
         "</div>",
         unsafe_allow_html=True,
     )
     with st.form("auth_login_form", clear_on_submit=False, border=False):
-        username = st.text_input("Benutzername", placeholder="Dein Benutzername", key="auth_user")
-        password = st.text_input("Passwort", type="password", placeholder="Dein Passwort", key="auth_pass")
+        username = st.text_input(
+            "Benutzername",
+            placeholder="Benutzername",
+            key="auth_user",
+            label_visibility="collapsed",
+        )
+        password = st.text_input(
+            "Passwort",
+            type="password",
+            placeholder="Passwort",
+            key="auth_pass",
+            label_visibility="collapsed",
+        )
         submitted = st.form_submit_button("Anmelden", type="primary", use_container_width=True)
     if submitted:
         do_login(username, password)
@@ -616,23 +633,36 @@ def _render_register_form() -> None:
     st.markdown(
         '<div class="auth-intro">'
         '<p class="auth-headline">Konto erstellen</p>'
-        '<p class="auth-desc">Kostenlos registrieren und direkt starten.</p>'
+        '<p class="auth-desc">Kostenlos starten — in unter einer Minute.</p>'
         "</div>",
         unsafe_allow_html=True,
     )
     with st.form("auth_register_form", clear_on_submit=False, border=False):
         username = st.text_input(
             "Benutzername",
-            placeholder="z. B. max_mustermann",
+            placeholder="Benutzername",
             key="reg_user",
+            label_visibility="collapsed",
         )
-        email = st.text_input("E-Mail", placeholder="name@beispiel.de", key="reg_email")
-        password = st.text_input("Passwort", type="password", placeholder="Sicheres Passwort", key="reg_pass")
+        email = st.text_input(
+            "E-Mail",
+            placeholder="name@beispiel.de",
+            key="reg_email",
+            label_visibility="collapsed",
+        )
+        password = st.text_input(
+            "Passwort",
+            type="password",
+            placeholder="Passwort",
+            key="reg_pass",
+            label_visibility="collapsed",
+        )
         password2 = st.text_input(
             "Passwort bestätigen",
             type="password",
-            placeholder="Passwort wiederholen",
+            placeholder="Passwort bestätigen",
             key="reg_pass2",
+            label_visibility="collapsed",
         )
         terms = st.checkbox("Ich akzeptiere die AGB und die Datenschutzerklärung", key="reg_terms")
         submitted = st.form_submit_button("Kostenlos registrieren", type="primary", use_container_width=True)
@@ -668,7 +698,13 @@ def render_auth() -> None:
     with st.container(key="auth_card", border=False):
         st.markdown('<span class="auth-card-marker" hidden aria-hidden="true"></span>', unsafe_allow_html=True)
 
-        st.markdown(f'<p class="auth-brand">{_APP}</p>', unsafe_allow_html=True)
+        st.markdown(
+            f'<div class="auth-header">'
+            f'<p class="auth-brand">{_APP}</p>'
+            f'<p class="auth-tagline">Dein KI-Workspace</p>'
+            f"</div>",
+            unsafe_allow_html=True,
+        )
 
         with st.container(key="auth_seg_wrap"):
             choice = st.segmented_control(
@@ -689,6 +725,6 @@ def render_auth() -> None:
             _render_login_form()
 
         st.markdown(
-            '<p class="auth-footer">Deine Daten werden verschlüsselt übertragen.</p>',
+            '<p class="auth-footer">&#128274; Verschlüsselte Übertragung</p>',
             unsafe_allow_html=True,
         )
