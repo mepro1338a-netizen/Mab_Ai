@@ -18,26 +18,25 @@ _DEFAULT_COUNTRY = "Deutschland"
 _APP = html.escape(APP_NAME or "MaByte")
 
 _AUTH_CSS = """
-/* ── 8px Grid Design System (Enterprise SaaS) ── */
+/* ── Compact Enterprise Auth (8px grid) ── */
 :root {
     --auth-bg: #09090b;
-    --auth-card: rgba(24, 24, 27, 0.92);
-    --auth-border: rgba(255, 255, 255, 0.08);
+    --auth-card: rgba(24, 24, 27, 0.96);
+    --auth-border: rgba(255, 255, 255, 0.1);
     --auth-text: #fafafa;
     --auth-muted: #a1a1aa;
     --auth-hint: #71717a;
-    --auth-field: rgba(9, 9, 11, 0.85);
-    --auth-field-border: rgba(255, 255, 255, 0.1);
-    --auth-accent: #8b5cf6;
+    --auth-field: rgba(9, 9, 11, 0.9);
+    --auth-field-border: rgba(255, 255, 255, 0.12);
+    --auth-accent: #7c3aed;
     --auth-accent-2: #6366f1;
     --s-1: 8px;
     --s-2: 16px;
     --s-3: 24px;
-    --s-4: 32px;
-    --s-5: 40px;
-    --s-6: 48px;
-    --auth-pad: 44px;
-    --auth-radius: 12px;
+    --auth-pad: 40px;
+    --auth-radius: 10px;
+    --auth-input-h: 44px;
+    --auth-max: 440px;
 }
 
 html:has(.auth-marker),
@@ -71,7 +70,8 @@ html:has(.auth-marker) [data-testid="stHeader"] {
     z-index: 0;
     pointer-events: none;
     background:
-        radial-gradient(ellipse 80% 55% at 50% -10%, rgba(139, 92, 246, 0.09), transparent 55%),
+        radial-gradient(ellipse 90% 60% at 50% -15%, rgba(124, 58, 237, 0.14), transparent 58%),
+        radial-gradient(ellipse 50% 40% at 100% 100%, rgba(99, 102, 241, 0.06), transparent 50%),
         var(--auth-bg);
 }
 
@@ -87,129 +87,152 @@ html:has(.auth-marker) [data-testid="stMain"] {
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
-    justify-content: center !important;
+    justify-content: flex-start !important;
+    padding-top: clamp(24px, 6vh, 56px) !important;
+    padding-bottom: var(--s-3) !important;
 }
 
 html:has(.auth-marker) [data-testid="stMain"] .block-container,
 html:has(.auth-marker) [data-testid="stMainBlockContainer"] {
-    max-width: 560px !important;
-    width: min(560px, 100%) !important;
+    max-width: var(--auth-max) !important;
+    width: min(var(--auth-max), 100%) !important;
     margin: 0 auto !important;
-    padding: var(--s-4) var(--s-3) !important;
+    padding: 0 var(--s-2) !important;
     flex: 0 0 auto !important;
 }
 
-/* ── Card ── */
-html:has(.auth-marker) .st-key-auth_card[data-testid="stVerticalBlockBorderWrapper"],
-html:has(.auth-marker) [data-testid="stVerticalBlockBorderWrapper"]:has(.auth-card-marker) {
-    border-radius: var(--auth-radius) !important;
-    border: 1px solid var(--auth-border) !important;
-    background: var(--auth-card) !important;
-    backdrop-filter: blur(20px) !important;
-    -webkit-backdrop-filter: blur(20px) !important;
-    box-shadow:
-        0 0 0 1px rgba(255, 255, 255, 0.04) inset,
-        0 24px 48px rgba(0, 0, 0, 0.4) !important;
-    overflow: hidden !important;
-    padding: 0 !important;
+/* ── Card shell (works with border=False container) ── */
+html:has(.auth-marker) .st-key-auth_card {
+    width: 100% !important;
 }
 
+html:has(.auth-marker) .st-key-auth_card > [data-testid="stVerticalBlock"],
 html:has(.auth-marker) .st-key-auth_card[data-testid="stVerticalBlockBorderWrapper"] > [data-testid="stVerticalBlock"],
 html:has(.auth-marker) [data-testid="stVerticalBlockBorderWrapper"]:has(.auth-card-marker) > [data-testid="stVerticalBlock"] {
+    border-radius: 14px !important;
+    border: 1px solid var(--auth-border) !important;
+    background: var(--auth-card) !important;
+    backdrop-filter: blur(24px) !important;
+    -webkit-backdrop-filter: blur(24px) !important;
+    box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.04) inset,
+        0 1px 0 rgba(255, 255, 255, 0.06) inset,
+        0 20px 40px rgba(0, 0, 0, 0.45) !important;
     padding: var(--auth-pad) !important;
     gap: 0 !important;
-    align-items: center !important;
-    text-align: center !important;
+    align-items: stretch !important;
+}
+
+html:has(.auth-marker) .st-key-auth_card[data-testid="stVerticalBlockBorderWrapper"],
+html:has(.auth-marker) [data-testid="stVerticalBlockBorderWrapper"]:has(.auth-card-marker) {
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
 }
 
 html:has(.auth-marker) .st-key-auth_card [data-testid="stVerticalBlock"] {
     gap: 0 !important;
-    align-items: center !important;
-    text-align: center !important;
+    align-items: stretch !important;
 }
 
 html:has(.auth-marker) .st-key-auth_card [data-testid="stElementContainer"] {
     margin: 0 !important;
     padding: 0 !important;
     width: 100% !important;
-    max-width: 100% !important;
 }
 
-/* ── Brand (36px) ── */
+/* ── Brand ── */
 .auth-brand {
-    margin: 0 0 var(--s-4);
+    margin: 0 0 var(--s-2);
     text-align: center;
-    font-size: 36px;
+    font-size: 28px;
     font-weight: 700;
     letter-spacing: -0.03em;
-    line-height: 1.1;
+    line-height: 1.15;
     color: var(--auth-text) !important;
 }
 
 /* ── Segmented control ── */
 html:has(.auth-marker) .st-key-auth_seg_wrap {
-    margin: 0 0 var(--s-4) !important;
+    margin: 0 0 var(--s-2) !important;
     width: 100% !important;
-    max-width: 100% !important;
 }
+
+html:has(.auth-marker) .st-key-auth_seg_wrap [data-testid="stWidgetLabel"],
+html:has(.auth-marker) .st-key-auth_mode_seg [data-testid="stWidgetLabel"] {
+    display: none !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+}
+
 html:has(.auth-marker) .st-key-auth_mode_seg [data-testid="stSegmentedControl"],
 html:has(.auth-marker) .st-key-auth_seg_wrap [data-testid="stSegmentedControl"] {
     width: 100% !important;
-    background: rgba(0, 0, 0, 0.35) !important;
-    border: 1px solid rgba(255, 255, 255, 0.06) !important;
-    border-radius: 10px !important;
-    padding: 4px !important;
-    gap: 4px !important;
+    background: rgba(0, 0, 0, 0.4) !important;
+    border: 1px solid rgba(255, 255, 255, 0.07) !important;
+    border-radius: var(--auth-radius) !important;
+    padding: 3px !important;
+    gap: 3px !important;
 }
+
 html:has(.auth-marker) .st-key-auth_mode_seg [data-testid="stSegmentedControl"] button,
 html:has(.auth-marker) .st-key-auth_seg_wrap [data-testid="stSegmentedControl"] button {
     flex: 1 !important;
-    min-height: 44px !important;
-    border-radius: 8px !important;
-    font-size: 14px !important;
+    min-height: 38px !important;
+    height: 38px !important;
+    border: none !important;
+    outline: none !important;
+    border-radius: 7px !important;
+    font-size: 13px !important;
     font-weight: 600 !important;
     color: var(--auth-muted) !important;
-}
-html:has(.auth-marker) .st-key-auth_mode_seg [data-testid="stSegmentedControl"] button[aria-selected="true"],
-html:has(.auth-marker) .st-key-auth_seg_wrap [data-testid="stSegmentedControl"] button[aria-selected="true"] {
-    background: rgba(255, 255, 255, 0.08) !important;
-    color: var(--auth-text) !important;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+    box-shadow: none !important;
 }
 
-/* ── Intro: Headline 30px → Sub 16px (12px gap) → Form 32px ── */
+html:has(.auth-marker) .st-key-auth_mode_seg [data-testid="stSegmentedControl"] button[aria-selected="true"],
+html:has(.auth-marker) .st-key-auth_seg_wrap [data-testid="stSegmentedControl"] button[aria-selected="true"] {
+    background: rgba(255, 255, 255, 0.1) !important;
+    color: var(--auth-text) !important;
+    border: none !important;
+    outline: none !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* ── Intro ── */
 .auth-intro {
-    margin: 0 0 var(--s-4);
+    margin: 0 0 var(--s-2);
     text-align: center;
     width: 100%;
 }
+
 .auth-headline {
-    margin: 0 0 12px;
-    font-size: 30px;
+    margin: 0 0 var(--s-1);
+    font-size: 22px;
     font-weight: 700;
-    letter-spacing: -0.025em;
-    line-height: 1.2;
+    letter-spacing: -0.02em;
+    line-height: 1.25;
     color: var(--auth-text) !important;
-    text-align: center;
-}
-.auth-desc {
-    margin: 0 auto;
-    max-width: 36ch;
-    font-size: 16px;
-    font-weight: 400;
-    line-height: 1.5;
-    color: var(--auth-muted) !important;
-    text-align: center;
 }
 
-/* ── Form stack ── */
+.auth-desc {
+    margin: 0 auto;
+    max-width: 34ch;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.45;
+    color: var(--auth-muted) !important;
+}
+
+/* ── Form ── */
 html:has(.auth-marker) .st-key-auth_card [data-testid="stForm"] {
     border: none !important;
     padding: 0 !important;
     background: transparent !important;
-    gap: var(--s-3) !important;
+    gap: var(--s-2) !important;
     width: 100% !important;
-    max-width: 100% !important;
 }
 
 html:has(.auth-marker) .st-key-auth_card [data-testid="stTextInput"],
@@ -217,31 +240,32 @@ html:has(.auth-marker) .st-key-auth_card [data-testid="stCheckbox"] {
     width: 100% !important;
 }
 
-html:has(.auth-marker) .st-key-auth_card [data-testid="stTextInput"] label,
-html:has(.auth-marker) .st-key-auth_card [data-testid="stWidgetLabel"] {
-    display: flex !important;
-    justify-content: center !important;
-    width: 100% !important;
-}
-
 html:has(.auth-marker) .st-key-auth_card [data-testid="stTextInput"] label p,
 html:has(.auth-marker) .st-key-auth_card [data-testid="stWidgetLabel"] p {
-    font-size: 14px !important;
+    font-size: 13px !important;
     font-weight: 500 !important;
     color: var(--auth-muted) !important;
-    margin: 0 0 var(--s-1) !important;
-    line-height: 1.4 !important;
-    text-align: center !important;
-    width: 100% !important;
+    margin: 0 0 6px !important;
+    line-height: 1.35 !important;
+    text-align: left !important;
 }
 
-html:has(.auth-marker) .st-key-auth_card [data-testid="stTextInput"] > div,
-html:has(.auth-marker) .st-key-auth_card div[data-baseweb="input"] {
+html:has(.auth-marker) .st-key-auth_card [data-testid="stTextInput"] > div:last-of-type {
     position: relative !important;
+}
+
+html:has(.auth-marker) .st-key-auth_card [data-testid="stTextInput"] > div[data-baseweb="input"],
+html:has(.auth-marker) .st-key-auth_card [data-testid="stTextInput"] > div {
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
     margin: 0 !important;
+}
+
+html:has(.auth-marker) .st-key-auth_card div[data-baseweb="input"] {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
 }
 
 html:has(.auth-marker) .st-key-auth_card [data-testid="stTextInput"] input {
@@ -251,19 +275,19 @@ html:has(.auth-marker) .st-key-auth_card [data-testid="stTextInput"] input {
     -webkit-text-fill-color: var(--auth-text) !important;
     border: 1px solid var(--auth-field-border) !important;
     border-radius: var(--auth-radius) !important;
-    min-height: var(--s-6) !important;
-    height: var(--s-6) !important;
-    font-size: 16px !important;
-    line-height: 1.5 !important;
-    box-shadow: none !important;
-    padding: 0 48px 0 var(--s-2) !important;
+    min-height: var(--auth-input-h) !important;
+    height: var(--auth-input-h) !important;
+    font-size: 15px !important;
+    line-height: 1.4 !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+    padding: 0 44px 0 14px !important;
     transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
 }
 
 html:has(.auth-marker) .st-key-auth_card .st-key-auth_user input,
 html:has(.auth-marker) .st-key-auth_card .st-key-reg_user input,
 html:has(.auth-marker) .st-key-auth_card .st-key-reg_email input {
-    padding-right: var(--s-2) !important;
+    padding-right: 14px !important;
 }
 
 html:has(.auth-marker) .st-key-auth_card [data-testid="stTextInput"] input::placeholder {
@@ -272,111 +296,112 @@ html:has(.auth-marker) .st-key-auth_card [data-testid="stTextInput"] input::plac
 }
 
 html:has(.auth-marker) .st-key-auth_card [data-testid="stTextInput"] input:focus {
-    border-color: rgba(139, 92, 246, 0.55) !important;
-    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.12) !important;
+    border-color: rgba(124, 58, 237, 0.55) !important;
+    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.14) !important;
     outline: none !important;
 }
 
 html:has(.auth-marker) .st-key-auth_card [data-testid="stTextInput"] [data-testid="stButton"] {
     position: absolute !important;
-    right: var(--s-1) !important;
+    right: 4px !important;
     top: 50% !important;
     transform: translateY(-50%) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
     margin: 0 !important;
+    height: auto !important;
 }
+
 html:has(.auth-marker) .st-key-auth_card [data-testid="stTextInput"] [data-testid="stButton"] button {
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    width: 36px !important;
-    height: 36px !important;
-    min-height: 36px !important;
+    width: 32px !important;
+    height: 32px !important;
+    min-height: 32px !important;
     padding: 0 !important;
     border: none !important;
-    border-radius: var(--s-1) !important;
+    border-radius: 6px !important;
     background: transparent !important;
     color: var(--auth-muted) !important;
     box-shadow: none !important;
 }
+
 html:has(.auth-marker) .st-key-auth_card [data-testid="stTextInput"] [data-testid="stButton"] button:hover {
-    background: rgba(255, 255, 255, 0.06) !important;
+    background: rgba(255, 255, 255, 0.08) !important;
     color: var(--auth-text) !important;
 }
+
 html:has(.auth-marker) .st-key-auth_card [data-testid="stTextInput"] [data-testid="stButton"] button svg {
-    width: 18px !important;
-    height: 18px !important;
+    width: 16px !important;
+    height: 16px !important;
 }
 
 html:has(.auth-marker) .st-key-auth_card [data-testid="stCheckbox"] {
-    margin: 0 !important;
-    display: flex !important;
-    justify-content: center !important;
-}
-html:has(.auth-marker) .st-key-auth_card [data-testid="stCheckbox"] label {
-    justify-content: center !important;
-    width: auto !important;
-    margin: 0 auto !important;
-}
-html:has(.auth-marker) .st-key-auth_card [data-testid="stCheckbox"] label p {
-    font-size: 14px !important;
-    font-weight: 400 !important;
-    color: var(--auth-muted) !important;
-    line-height: 1.5 !important;
-    text-align: center !important;
+    margin: var(--s-1) 0 0 !important;
 }
 
-/* Form → Button = 32px (24px gap + 8px) */
+html:has(.auth-marker) .st-key-auth_card [data-testid="stCheckbox"] label p {
+    font-size: 13px !important;
+    font-weight: 400 !important;
+    color: var(--auth-muted) !important;
+    line-height: 1.45 !important;
+    text-align: left !important;
+}
+
 html:has(.auth-marker) .st-key-auth_card [data-testid="stFormSubmitButton"] {
     margin-top: var(--s-1) !important;
     padding-top: 0 !important;
     width: 100% !important;
 }
+
 html:has(.auth-marker) .st-key-auth_card [data-testid="stFormSubmitButton"] button,
 html:has(.auth-marker) .st-key-auth_card button[data-testid="baseButton-primary"] {
     width: 100% !important;
-    min-height: var(--s-6) !important;
-    height: var(--s-6) !important;
+    min-height: var(--auth-input-h) !important;
+    height: var(--auth-input-h) !important;
     border: none !important;
     border-radius: var(--auth-radius) !important;
-    background: linear-gradient(135deg, var(--auth-accent), var(--auth-accent-2)) !important;
-    background-image: linear-gradient(135deg, var(--auth-accent), var(--auth-accent-2)) !important;
+    background: linear-gradient(180deg, #8b5cf6 0%, var(--auth-accent) 100%) !important;
+    background-image: linear-gradient(180deg, #8b5cf6 0%, var(--auth-accent) 100%) !important;
     color: #fff !important;
-    font-size: 16px !important;
+    font-size: 15px !important;
     font-weight: 600 !important;
     letter-spacing: -0.01em !important;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2), 0 8px 24px rgba(139, 92, 246, 0.22) !important;
-    transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25), 0 6px 20px rgba(124, 58, 237, 0.28) !important;
+    transition: transform 0.12s ease, box-shadow 0.12s ease !important;
 }
+
 html:has(.auth-marker) .st-key-auth_card [data-testid="stFormSubmitButton"] button:hover,
 html:has(.auth-marker) .st-key-auth_card button[data-testid="baseButton-primary"]:hover {
     transform: translateY(-1px) !important;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2), 0 12px 28px rgba(139, 92, 246, 0.3) !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25), 0 10px 24px rgba(124, 58, 237, 0.35) !important;
 }
+
 html:has(.auth-marker) .st-key-auth_card [data-testid="stFormSubmitButton"] button p,
 html:has(.auth-marker) .st-key-auth_card button[data-testid="baseButton-primary"] p {
     color: #fff !important;
-    font-size: 16px !important;
+    font-size: 15px !important;
     font-weight: 600 !important;
 }
 
 html:has(.auth-marker) .st-key-auth_card [data-testid="stAlert"] {
     border-radius: var(--auth-radius) !important;
-    font-size: 14px !important;
+    font-size: 13px !important;
     margin: 0 0 var(--s-2) !important;
-    text-align: center !important;
     width: 100% !important;
 }
 
-/* Button → Footer = 24px (margin) + divider + 12px (padding) */
 .auth-footer {
-    margin: var(--s-3) 0 0;
-    padding-top: 12px;
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    margin: var(--s-2) 0 0;
+    padding-top: var(--s-2);
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
     text-align: center;
     width: 100%;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 400;
-    line-height: 1.5;
+    line-height: 1.45;
     color: var(--auth-hint) !important;
 }
 
@@ -384,26 +409,21 @@ html:has(.auth-marker) .st-key-auth_card [data-testid="stMarkdownContainer"] {
     margin: 0 !important;
     padding: 0 !important;
     width: 100% !important;
-    text-align: center !important;
 }
 
 html:has(.auth-marker) .stApp {
     --background-color: #09090b !important;
-    --primary-color: #8b5cf6 !important;
+    --primary-color: #7c3aed !important;
 }
 
 @media (max-width: 640px) {
     html:has(.auth-marker) {
-        --auth-pad: var(--s-5);
+        --auth-pad: 28px;
     }
-    html:has(.auth-marker) .auth-brand { font-size: 30px; }
-    html:has(.auth-marker) .auth-headline { font-size: 24px; }
-    html:has(.auth-marker) [data-testid="stMain"] .block-container {
-        padding: var(--s-3) var(--s-2) !important;
-    }
+    html:has(.auth-marker) .auth-brand { font-size: 24px; }
+    html:has(.auth-marker) .auth-headline { font-size: 20px; }
     html:has(.auth-marker) [data-testid="stMain"] {
-        justify-content: flex-start !important;
-        padding-top: var(--s-4) !important;
+        padding-top: var(--s-2) !important;
     }
 }
 """
@@ -580,7 +600,7 @@ def _render_login_form() -> None:
     st.markdown(
         '<div class="auth-intro">'
         '<p class="auth-headline">Willkommen zurück</p>'
-        '<p class="auth-desc">Melde dich an, um in deinem Workspace weiterzumachen.</p>'
+        '<p class="auth-desc">Melde dich mit deinem Konto an.</p>'
         "</div>",
         unsafe_allow_html=True,
     )
@@ -596,7 +616,7 @@ def _render_register_form() -> None:
     st.markdown(
         '<div class="auth-intro">'
         '<p class="auth-headline">Konto erstellen</p>'
-        '<p class="auth-desc">Registriere dich kostenlos und starte sofort.</p>'
+        '<p class="auth-desc">Kostenlos registrieren und direkt starten.</p>'
         "</div>",
         unsafe_allow_html=True,
     )
@@ -652,7 +672,7 @@ def render_auth() -> None:
 
         with st.container(key="auth_seg_wrap"):
             choice = st.segmented_control(
-                label="Modus",
+                label=" ",
                 options=["Anmelden", "Registrieren"],
                 key="auth_mode_seg",
                 label_visibility="collapsed",
