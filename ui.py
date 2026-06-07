@@ -327,7 +327,7 @@ PAGE_LABELS = {
     "music": "Music",
     "video": "Video",
     "dashboard": "Profile",
-    "premium": "Elite",
+    "premium": "Premium",
 }
 
 if st.session_state.get("logged_in"):
@@ -345,7 +345,7 @@ PAGE_HANDLERS = {
     "music": ("Music", lambda: render_media("music")),
     "video": ("Video", lambda: render_media("video")),
     "dashboard": ("Profile", render_dashboard),
-    "premium": ("Elite", render_premium),
+    "premium": ("Premium", render_premium),
 }
 
 if page == "auth" and st.session_state.get("logged_in"):

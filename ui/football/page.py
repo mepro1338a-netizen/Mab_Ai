@@ -100,7 +100,7 @@ def render_football_betting_board(
     if rank < 1 or session_plan in ("none", ""):
         st.markdown(
             '<div class="fb2-gate">Football Intelligence ist mit deinem Plan noch nicht aktiv. '
-            "Upgrade unter Elite.</div>",
+            "Upgrade unter Premium.</div>",
             unsafe_allow_html=True,
         )
         st.markdown("</div>", unsafe_allow_html=True)

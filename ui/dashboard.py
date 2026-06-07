@@ -281,7 +281,7 @@ def render_home() -> None:
     <div class="mb-dash-label">Account</div>
     <div class="mb-dash-row2">
       <a class="mb-dash-link" href="?nav=dashboard">Profil <span>→</span></a>
-      <a class="mb-dash-link" href="?nav=premium">Elite <span>→</span></a>
+      <a class="mb-dash-link" href="?nav=premium">Premium <span>→</span></a>
     </div>
   </div>
 </div>

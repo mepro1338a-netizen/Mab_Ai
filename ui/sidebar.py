@@ -36,7 +36,7 @@ NAV_SECTIONS: list[tuple[str, list[tuple[str, str]]]] = [
         "",
         [
             ("Profile", "dashboard"),
-            ("Elite", "premium"),
+            ("Premium", "premium"),
         ],
     ),
 ]
@@ -249,9 +249,24 @@ def sidebar_master_css(active_page: str) -> str:
   overflow-y: auto !important;
   overflow-x: hidden !important;
   gap: 0 !important;
-  padding: 0 !important;
+  padding: 0 2px 0 0 !important;
   scrollbar-width: thin;
-  scrollbar-color: #3f3f46 transparent;
+  scrollbar-color: rgba(139, 92, 246, 0.55) transparent;
+}}
+{_SB} .st-key-sb_nav > [data-testid="stVerticalBlock"]::-webkit-scrollbar {{
+  width: 5px;
+}}
+{_SB} .st-key-sb_nav > [data-testid="stVerticalBlock"]::-webkit-scrollbar-track {{
+  background: transparent;
+  margin: 6px 0;
+}}
+{_SB} .st-key-sb_nav > [data-testid="stVerticalBlock"]::-webkit-scrollbar-thumb {{
+  background: linear-gradient(180deg, rgba(139, 92, 246, 0.65), rgba(99, 102, 241, 0.45));
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}}
+{_SB} .st-key-sb_nav > [data-testid="stVerticalBlock"]::-webkit-scrollbar-thumb:hover {{
+  background: linear-gradient(180deg, rgba(167, 139, 250, 0.85), rgba(129, 140, 248, 0.65));
 }}
 .sb-brand {{
   display: flex;
