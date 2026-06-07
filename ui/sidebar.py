@@ -122,6 +122,9 @@ def _render_nav_buttons(active: str) -> None:
                 if not is_on:
                     st.session_state.page = page
                     st.rerun()
+
+
+def _plan_label(plan: str) -> str:
     key = (plan or "free").strip().lower()
     if key in ("none", ""):
         return "Free"
@@ -135,7 +138,7 @@ def _user_initial(username: str) -> str:
     return (u[0] or "U").upper()
 
 
-def _plan_label(plan: str) -> str:
+def sidebar_master_css(active_page: str) -> str:
     _ = active_page
     logout_uri = _icon_uri("logout")
     return f"""
