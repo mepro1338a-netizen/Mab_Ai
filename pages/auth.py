@@ -1,8 +1,12 @@
 ﻿"""MaByte Auth — Login & Registrierung."""
 from __future__ import annotations
 
+import base64
+from pathlib import Path
+
 import streamlit as st
 
+from config import BASE_DIR
 from database import record_login_event, register_account, verify_login_identifier
 from logger import log_auth
 from oauth_service import complete_oauth, friendly_oauth_error, verify_state
@@ -81,22 +85,39 @@ html:has(.auth-marker) [data-testid="stMain"] {
     z-index: 1 !important;
     display: flex !important;
     flex-direction: column !important;
-    align-items: center !important;
-    justify-content: center !important;
-    padding: var(--s3) var(--s2) !important;
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+    padding: 0 0 var(--s3) !important;
     overflow-y: auto !important;
 }
 
 html:has(.auth-marker) [data-testid="stMain"] .block-container,
 html:has(.auth-marker) [data-testid="stMainBlockContainer"] {
-    max-width: var(--auth-w) !important;
-    width: min(var(--auth-w), 100%) !important;
-    margin: 0 auto !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
     padding: 0 !important;
 }
 
+.auth-top-banner {
+    width: 100vw;
+    max-width: 100vw;
+    margin: 0 calc(50% - 50vw) var(--s3);
+    line-height: 0;
+    background: #050816;
+}
+
+.auth-top-banner img {
+    width: 100%;
+    height: auto;
+    display: block;
+    object-fit: cover;
+}
+
 html:has(.auth-marker) .st-key-auth_card {
-    width: 100% !important;
+    width: min(var(--auth-w), calc(100% - 32px)) !important;
+    max-width: var(--auth-w) !important;
+    margin: 0 auto !important;
 }
 
 html:has(.auth-marker) .st-key-auth_card > [data-testid="stVerticalBlock"]:has(.auth-card-marker) {
@@ -397,6 +418,14 @@ def _set_mode(mode: str) -> None:
     st.session_state["auth_mode_seg"] = "Registrieren" if mode == "register" else "Anmelden"
 
 
+def _slogan_header_b64() -> str:
+    for rel in (Path("assets") / "sloganheader.png", Path("sloganheader.png")):
+        path = BASE_DIR / rel
+        if path.is_file():
+            return base64.b64encode(path.read_bytes()).decode("utf-8")
+    return ""
+
+
 def client_meta() -> tuple[str, str]:
     ip_address = "unknown"
     user_agent = "streamlit-client"
@@ -608,6 +637,15 @@ def render_auth() -> None:
     inject_css(_AUTH_CSS)
     st.markdown('<div class="auth-bg" aria-hidden="true"></div>', unsafe_allow_html=True)
     st.markdown('<span class="auth-marker" hidden aria-hidden="true"></span>', unsafe_allow_html=True)
+
+    banner_b64 = _slogan_header_b64()
+    if banner_b64:
+        st.markdown(
+            f'<div class="auth-top-banner">'
+            f'<img src="data:image/png;base64,{banner_b64}" alt="MaByte">'
+            f"</div>",
+            unsafe_allow_html=True,
+        )
 
     with st.container(key="auth_card", border=False):
         st.markdown('<span class="auth-card-marker" hidden aria-hidden="true"></span>', unsafe_allow_html=True)
