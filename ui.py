@@ -9,7 +9,7 @@ from database import ensure_db_ready, get_user
 from payments import confirm_checkout_session
 from services.session_auth import enforce_active_session
 from ui.chrome import apply_nav_from_query, render_app_header
-from ui.sidebar import LEGACY_PAGE_ALIASES, render_sidebar
+from ui.sidebar import LEGACY_PAGE_ALIASES, NAV_ITEMS, VALID_NAV_PAGES, render_sidebar
 from ui_core import load_css, sync_session_user
 
 from pages.auth import render_auth
@@ -212,6 +212,15 @@ for key, value in DEFAULTS.items():
         st.session_state[key] = value
 
 
+def _remember_nav_target() -> None:
+    raw = _qp_first(st.query_params.get("nav"))
+    if not raw:
+        return
+    target = LEGACY_PAGE_ALIASES.get(raw, raw)
+    if target in VALID_NAV_PAGES:
+        st.session_state.post_login_page = target
+
+
 def _session_logged_in() -> bool:
     return bool(st.session_state.get("logged_in") and st.session_state.get("user"))
 
@@ -262,6 +271,7 @@ handle_payment_callback()
 enforce_active_session()
 
 if not _session_logged_in():
+    _remember_nav_target()
     st.session_state.page = "auth"
     render_auth()
     st.stop()
@@ -333,7 +343,7 @@ PAGE_HANDLERS = {
 }
 
 if page == "auth" and st.session_state.get("logged_in"):
-    st.session_state.page = "home"
+    st.session_state.page = st.session_state.pop("post_login_page", None) or "home"
     st.rerun()
 elif page in PAGE_HANDLERS:
     label, handler = PAGE_HANDLERS[page]

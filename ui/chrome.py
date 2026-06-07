@@ -9,11 +9,11 @@ import html
 import streamlit as st
 
 from config import APP_NAME, APP_TAGLINE
-from ui.sidebar import LEGACY_PAGE_ALIASES, NAV_ITEMS
+from ui.sidebar import LEGACY_PAGE_ALIASES, VALID_NAV_PAGES, navigate_to
 
 TOPBAR_HEIGHT = 64
 
-_VALID_NAV = frozenset(page for _label, page in NAV_ITEMS)
+_VALID_NAV = VALID_NAV_PAGES
 
 _CHROME_CSS = f"""
 :root {{
@@ -141,9 +141,7 @@ def apply_nav_from_query() -> None:
         _clear_query_key("nav")
         return
     _clear_query_key("nav")
-    if st.session_state.get("page") != target:
-        st.session_state.page = target
-        st.rerun()
+    navigate_to(target)
 
 
 def render_app_header(*, page_label: str = "") -> None:

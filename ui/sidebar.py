@@ -1,5 +1,5 @@
 """
-MaByte Sidebar — minimal, scrollable nav (HTML links + session-safe ?nav= routing).
+MaByte Sidebar — scrollable nav via Streamlit buttons (session-safe, no ?nav= reload).
 """
 from __future__ import annotations
 
@@ -13,6 +13,11 @@ from ui.styles import inject_css
 
 _SB = 'section[data-testid="stSidebar"]'
 _WIDTH = "230px"
+_NAV_BTN = (
+    f'{_SB} [class*="st-key-sb_nav_"] .stButton > button, '
+    f'{_SB} [class*="st-key-sb_nav_"] [data-testid="stBaseButton-secondary"], '
+    f'{_SB} [class*="st-key-sb_nav_"] [data-testid="stBaseButton-primary"]'
+)
 
 NAV_SECTIONS: list[tuple[str, list[tuple[str, str]]]] = [
     (
@@ -52,6 +57,7 @@ LEGACY_PAGE_ALIASES: dict[str, str] = {
 }
 
 SIDEBAR_NAV_ITEMS = NAV_ITEMS
+VALID_NAV_PAGES = frozenset(page for _label, page in NAV_ITEMS)
 
 _LUCIDE = (
     'xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" '
@@ -79,9 +85,13 @@ _BRAND_SVG = (
 )
 
 
-def _icon_svg(page: str, *, active: bool) -> str:
-    color = "#ffffff" if active else "#a1a1aa"
-    return (_ICONS.get(page) or _ICONS["home"]).format(c=color)
+def navigate_to(page: str) -> None:
+    target = LEGACY_PAGE_ALIASES.get(page, page)
+    if target not in VALID_NAV_PAGES:
+        return
+    if st.session_state.get("page") != target:
+        st.session_state.page = target
+        st.rerun()
 
 
 def _icon_uri(page: str) -> str:
@@ -89,25 +99,49 @@ def _icon_uri(page: str) -> str:
     return f'url("data:image/svg+xml,{quote(svg)}")'
 
 
-def _nav_link(label: str, page: str, *, active: str) -> str:
-    cls = "sb-nav-item is-active" if page == active else "sb-nav-item"
-    return (
-        f'<a class="{cls}" href="?nav={html.escape(page)}" target="_self">'
-        f'<span class="sb-nav-ico">{_icon_svg(page, active=page == active)}</span>'
-        f'<span class="sb-nav-label">{html.escape(label)}</span></a>'
-    )
+def _nav_icon_css() -> str:
+    rules: list[str] = []
+    for page in _ICONS:
+        if page == "logout":
+            continue
+        uri = _icon_uri(page)
+        sel = (
+            f'{_SB} .st-key-sb_nav_{page} .stButton > button, '
+            f'{_SB} .st-key-sb_nav_{page} [data-testid="stBaseButton-secondary"], '
+            f'{_SB} .st-key-sb_nav_{page} [data-testid="stBaseButton-primary"]'
+        )
+        rules.append(
+            f"{sel} {{ padding-left: 36px !important; position: relative !important; }}"
+            f"{sel}::before {{"
+            f'content:"";position:absolute;left:10px;top:50%;transform:translateY(-50%);'
+            f"width:18px;height:18px;background-image:{uri};"
+            f"background-size:18px 18px;background-repeat:no-repeat;"
+            f"}}"
+        )
+    return "".join(rules)
 
 
-def _build_nav_html(active: str) -> str:
-    parts: list[str] = []
+def _render_nav_buttons(active: str) -> None:
+    seen = False
     for section_title, items in NAV_SECTIONS:
         if section_title:
-            parts.append(f'<p class="sb-section">{html.escape(section_title)}</p>')
-        elif parts:
-            parts.append('<div class="sb-divider"></div>')
+            st.markdown(
+                f'<p class="sb-section">{html.escape(section_title)}</p>',
+                unsafe_allow_html=True,
+            )
+        elif seen:
+            st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
+        seen = True
         for label, page in items:
-            parts.append(_nav_link(label, page, active=active))
-    return "".join(parts)
+            is_on = page == active
+            if st.button(
+                label,
+                key=f"sb_nav_{page}",
+                use_container_width=True,
+                type="primary" if is_on else "secondary",
+            ):
+                if not is_on:
+                    navigate_to(page)
 
 
 def _plan_label(plan: str) -> str:
@@ -124,19 +158,14 @@ def _user_initial(username: str) -> str:
     return (u[0] or "U").upper()
 
 
-def _sidebar_shell_html(*, active: str, user: str, plan: str) -> str:
+def _sidebar_user_html(*, user: str, plan: str) -> str:
     return (
-        f'<div class="sb-shell">'
-        f'<div class="sb-brand">{_BRAND_SVG}<span>{html.escape(APP_NAME)}</span></div>'
-        f'<div class="sb-scroll"><nav class="sb-nav" aria-label="Hauptnavigation">'
-        f"{_build_nav_html(active)}"
-        f"</nav></div>"
         f'<div class="sb-foot">'
         f'<div class="sb-user">'
         f'<div class="sb-av">{html.escape(_user_initial(user))}</div>'
         f'<div><div class="sb-un">{html.escape(user)}</div>'
         f'<div class="sb-up">{html.escape(plan)}</div></div>'
-        f"</div></div></div>"
+        f"</div></div>"
     )
 
 
@@ -145,6 +174,7 @@ def sidebar_master_css(active_page: str) -> str:
     logout_uri = _icon_uri("logout")
     return f"""
 :root{{--sb-width:{_WIDTH};}}
+{_nav_icon_css()}
 {_SB}{{
   width:var(--sb-width)!important;min-width:var(--sb-width)!important;max-width:var(--sb-width)!important;
   background:#09090b!important;border-right:1px solid rgba(255,255,255,.06)!important;
@@ -166,20 +196,11 @@ def sidebar_master_css(active_page: str) -> str:
 {_SB} [data-testid="stVerticalBlockBorderWrapper"]{{
   gap:0!important;padding:0!important;margin:0!important;border:none!important;
   box-shadow:none!important;background:transparent!important;
+}}
+{_SB} .st-key-sb_root > [data-testid="stVerticalBlock"]{{
   display:flex!important;flex-direction:column!important;
   flex:1!important;min-height:0!important;overflow:hidden!important;
-}}
-{_SB} [data-testid="stElementContainer"]{{
-  gap:0!important;padding:0!important;margin:0!important;border:none!important;
-  box-shadow:none!important;background:transparent!important;
-}}
-{_SB} [data-testid="stElementContainer"]:has(.sb-shell){{
-  flex:1!important;min-height:0!important;overflow:hidden!important;
-  display:flex!important;flex-direction:column!important;
-}}
-.sb-shell{{
-  display:flex;flex-direction:column;flex:1;min-height:0;width:100%;
-  padding:10px 0 6px;box-sizing:border-box;overflow:hidden;
+  gap:0!important;padding:0!important;
 }}
 .sb-brand{{
   display:flex;align-items:center;gap:10px;padding:4px 6px 14px;flex-shrink:0;
@@ -196,7 +217,6 @@ def sidebar_master_css(active_page: str) -> str:
 .sb-scroll::-webkit-scrollbar{{width:4px;}}
 .sb-scroll::-webkit-scrollbar-thumb{{background:#3f3f46;border-radius:6px;}}
 .sb-scroll::-webkit-scrollbar-track{{background:transparent;}}
-.sb-nav{{display:flex;flex-direction:column;gap:3px;padding-bottom:10px;}}
 .sb-section{{
   color:#52525b!important;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
   padding:10px 10px 5px;margin:0;line-height:1;
@@ -204,22 +224,27 @@ def sidebar_master_css(active_page: str) -> str:
 .sb-divider{{
   height:1px;margin:8px 8px;background:rgba(255,255,255,.06);flex-shrink:0;
 }}
-.sb-nav-item{{
-  display:flex;align-items:center;gap:10px;height:38px;padding:0 10px;border-radius:10px;
-  text-decoration:none!important;border-left:3px solid transparent;box-sizing:border-box;
-  transition:background .12s ease,color .12s ease,border-color .12s ease;
+{_SB} [class*="st-key-sb_nav_"] .stButton{{
+  margin:0 0 3px!important;padding:0!important;width:100%!important;
 }}
-.sb-nav-item:hover{{background:rgba(255,255,255,.05);}}
-.sb-nav-item.is-active{{
+{_NAV_BTN} {{
+  width:100%!important;height:38px!important;min-height:38px!important;max-height:38px!important;
+  padding:0 10px!important;border-radius:10px!important;
+  border:1px solid transparent!important;border-left:3px solid transparent!important;
+  background:transparent!important;background-image:none!important;
+  color:#a1a1aa!important;font-size:13px!important;font-weight:500!important;
+  text-align:left!important;justify-content:flex-start!important;
+  box-shadow:none!important;transform:none!important;
+}}
+{_NAV_BTN}:hover {{
+  background:rgba(255,255,255,.05)!important;color:#e4e4e7!important;
+  border-color:transparent!important;transform:none!important;
+}}
+{_SB} [class*="st-key-sb_nav_"] [data-testid="stBaseButton-primary"],
+{_SB} [class*="st-key-sb_nav_"] .stButton > button[kind="primary"] {{
   background:rgba(124,58,237,.2)!important;border-left-color:#8b5cf6!important;
+  color:#ffffff!important;font-weight:600!important;
 }}
-.sb-nav-ico{{display:flex;align-items:center;justify-content:center;width:18px;height:18px;flex-shrink:0;}}
-.sb-nav-ico svg{{width:18px;height:18px;display:block;}}
-.sb-nav-label{{
-  color:#a1a1aa!important;font-size:13px;font-weight:500;line-height:1;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-}}
-.sb-nav-item.is-active .sb-nav-label{{color:#ffffff!important;font-weight:600;}}
 .sb-foot{{flex-shrink:0;padding-top:10px;border-top:1px solid rgba(255,255,255,.06);}}
 .sb-user{{
   display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;
@@ -267,7 +292,14 @@ def render_sidebar(active_page: str | None = None) -> None:
     plan = _plan_label(str(st.session_state.get("plan") or "free"))
 
     with st.sidebar:
-        st.markdown(_sidebar_shell_html(active=active, user=user, plan=plan), unsafe_allow_html=True)
+        with st.container(key="sb_root"):
+            st.markdown(
+                f'<div class="sb-brand">{_BRAND_SVG}<span>{html.escape(APP_NAME)}</span></div>',
+                unsafe_allow_html=True,
+            )
+            with st.container(key="sb_scroll"):
+                _render_nav_buttons(active)
+            st.markdown(_sidebar_user_html(user=user, plan=plan), unsafe_allow_html=True)
         if st.button("Abmelden", key="nav_logout", use_container_width=True, type="secondary"):
             from services.session_auth import logout_session
             logout_session()
