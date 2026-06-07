@@ -17,7 +17,15 @@ from ui.styles import inject_css
 _SB = 'section[data-testid="stSidebar"]'
 _WIDTH = "240px"
 _NAV_BTN = '[class*="st-key-sb_nav_"]'
-_NAV_SCROLL = f'{_SB} .st-key-sb_scroll'
+_SCROLL_SHELL = (
+    f'{_SB} .st-key-sb_scroll > [data-testid="stVerticalBlockBorderWrapper"], '
+    f'{_SB} .st-key-sb_scroll > div > [data-testid="stVerticalBlockBorderWrapper"]'
+)
+_SCROLL_BODY = (
+    f'{_SB} .st-key-sb_scroll > [data-testid="stVerticalBlockBorderWrapper"] > [data-testid="stVerticalBlock"], '
+    f'{_SB} .st-key-sb_scroll > div > [data-testid="stVerticalBlockBorderWrapper"] > [data-testid="stVerticalBlock"]'
+)
+_SCROLL_INNER = f'{_SCROLL_BODY} [data-testid="stVerticalBlockBorderWrapper"]'
 
 _BG = "#18181b"
 _BG_DEEP = "#141416"
@@ -215,7 +223,7 @@ def sidebar_master_css(active_page: str) -> str:
         f'{_SB} {_NAV_BTN} [data-testid="stElementContainer"], '
         f'{_SB} {_NAV_BTN} .stButton'
     )
-    scroll_block = f"{_NAV_SCROLL} [data-testid='stVerticalBlock']"
+    scroll_block = _SCROLL_BODY
 
     return f"""
 :root {{
@@ -249,7 +257,7 @@ def sidebar_master_css(active_page: str) -> str:
   overflow: hidden !important;
 }}
 {_SB} [data-testid="stSidebarNav"] {{ display: none !important; }}
-{_SB} .st-key-sb_panel [data-testid="stVerticalBlock"] {{
+{_SB} .st-key-sb_panel > [data-testid="stVerticalBlock"] {{
   display: flex !important;
   flex-direction: column !important;
   flex: 1 !important;
@@ -258,7 +266,18 @@ def sidebar_master_css(active_page: str) -> str:
   height: 100% !important;
   overflow: hidden !important;
 }}
-{_SB} .st-key-sb_scroll [data-testid="stVerticalBlockBorderWrapper"] {{
+{_SB} .st-key-sb_scroll {{
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}}
+{_SB} .st-key-sb_panel [data-testid="stMarkdownContainer"],
+{_SB} .st-key-sb_panel [data-testid="stElementContainer"]:not(.st-key-sb_scroll) {{
+  margin: 0 !important;
+  padding: 0 !important;
+  flex-shrink: 0 !important;
+}}
+{_SCROLL_SHELL} {{
   background: var(--sb-panel) !important;
   border: 1px solid var(--sb-line) !important;
   border-radius: 12px !important;
@@ -266,16 +285,34 @@ def sidebar_master_css(active_page: str) -> str:
   min-height: 0 !important;
   overflow: hidden !important;
   margin: 8px 0 !important;
+  padding: 0 !important;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
 }}
-{_SB} .st-key-sb_scroll [data-testid="stVerticalBlock"] {{
+{_SCROLL_BODY} {{
   flex: 1 1 auto !important;
   min-height: 0 !important;
   max-height: 100% !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
-  padding: 6px 6px 6px 4px !important;
-  gap: 2px !important;
+  padding: 8px 8px 8px 6px !important;
+  gap: 4px !important;
+  display: flex !important;
+  flex-direction: column !important;
+}}
+{_SCROLL_INNER} {{
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}}
+{_SB} .st-key-sb_scroll [data-testid="stElementContainer"],
+{_SB} .st-key-sb_scroll [data-testid="stMarkdownContainer"],
+{_SB} .st-key-sb_scroll .stMarkdown {{
+  margin: 0 !important;
+  padding: 0 !important;
 }}
 {_scrollbar_css(scroll_block)}
 .sb-brand {{
@@ -293,18 +330,27 @@ def sidebar_master_css(active_page: str) -> str:
   font-weight: 700;
   letter-spacing: -0.02em;
 }}
+.sb-section-wrap {{
+  margin: 12px 0 4px;
+  padding: 0 6px;
+  flex-shrink: 0;
+}}
 .sb-section {{
   color: #71717a !important;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.13em;
   text-transform: uppercase;
-  padding: 10px 10px 4px;
+  padding: 0;
   margin: 0;
+  line-height: 1.4;
+}}
+.sb-divider-wrap {{
+  margin: 10px 6px;
+  flex-shrink: 0;
 }}
 .sb-divider {{
   height: 1px;
-  margin: 8px 10px;
   background: var(--sb-line);
 }}
 {nav_wrap} {{
@@ -327,8 +373,7 @@ def sidebar_master_css(active_page: str) -> str:
   margin: 0 !important;
   padding: 0 12px !important;
   border-radius: 10px !important;
-  border: 1px solid transparent !important;
-  border-left: 3px solid transparent !important;
+  border: none !important;
   background: transparent !important;
   background-color: transparent !important;
   background-image: none !important;
@@ -339,12 +384,11 @@ def sidebar_master_css(active_page: str) -> str:
   justify-content: flex-start !important;
   box-shadow: none !important;
   transform: none !important;
-  transition: background 0.14s ease, color 0.14s ease, border-color 0.14s ease !important;
+  transition: background 0.14s ease, color 0.14s ease !important;
 }}
 {nav_btn}:hover {{
   background: rgba(255, 255, 255, 0.06) !important;
   background-color: rgba(255, 255, 255, 0.06) !important;
-  border-color: rgba(255, 255, 255, 0.06) !important;
   color: #fafafa !important;
 }}
 {nav_btn} p {{
@@ -448,7 +492,7 @@ def sidebar_master_css(active_page: str) -> str:
 def sidebar_theme_lock_css(active_page: str) -> str:
     """Runs after global theme lock — preserve sidebar shell, nav selection, scrollbar."""
     active = _resolve_active(active_page)
-    scroll_block = f"{_NAV_SCROLL} [data-testid='stVerticalBlock']"
+    scroll_block = _SCROLL_BODY
     shell = (
         f"{_SB}, {_SB} > div, {_SB} [data-testid='stSidebarContent'], "
         f"{_SB} [data-testid='stSidebarUserContent']"
@@ -475,8 +519,14 @@ def sidebar_theme_lock_css(active_page: str) -> str:
 {_SB} [data-testid="stVerticalBlockBorderWrapper"] {{
   background-color: transparent !important;
 }}
-{_SB} .st-key-sb_scroll [data-testid="stVerticalBlockBorderWrapper"] {{
+{_SCROLL_SHELL} {{
   background: var(--sb-panel, {_PANEL}) !important;
+  border: 1px solid var(--sb-line) !important;
+}}
+{_SCROLL_INNER} {{
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
 }}
 {_scrollbar_css(scroll_block)}
 {inactive_wrap} {{
@@ -500,11 +550,15 @@ def _render_nav_buttons(active: str) -> None:
     for section_title, items in NAV_SECTIONS:
         if section_title:
             st.markdown(
-                f'<p class="sb-section">{html.escape(section_title)}</p>',
+                f'<div class="sb-section-wrap">'
+                f'<p class="sb-section">{html.escape(section_title)}</p></div>',
                 unsafe_allow_html=True,
             )
         elif seen:
-            st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
+            st.markdown(
+                '<div class="sb-divider-wrap"><div class="sb-divider"></div></div>',
+                unsafe_allow_html=True,
+            )
         seen = True
         for label, page in items:
             clicked = st.button(
