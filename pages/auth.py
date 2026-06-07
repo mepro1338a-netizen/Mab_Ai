@@ -30,7 +30,7 @@ _AUTH_CSS = """
     --auth-input-h: 44px;
     --auth-pad: 36px;
     --auth-w: 440px;
-    --auth-banner-h: 120px;
+    --auth-banner-h: 140px;
     --s1: 8px;
     --s2: 16px;
     --s3: 24px;
@@ -110,7 +110,7 @@ html:has(.auth-marker) [data-testid="stMainBlockContainer"] {
     align-items: center;
     justify-content: center;
     box-sizing: border-box;
-    padding: 0 clamp(10px, 2vw, 28px);
+    padding: 0 clamp(6px, 1.2vw, 16px);
     background: linear-gradient(180deg, #0a1020 0%, #050816 100%);
     overflow: hidden;
 }
@@ -119,9 +119,9 @@ html:has(.auth-marker) [data-testid="stMainBlockContainer"] {
     margin: 0;
     width: 100%;
     text-align: center;
-    font-size: clamp(12px, calc((100vw - 32px) / 22), 34px);
-    font-weight: 600;
-    letter-spacing: 0.04em;
+    font-size: clamp(15px, calc((100vw - 20px) / 16.5), 44px);
+    font-weight: 700;
+    letter-spacing: clamp(0.06em, 0.45vw, 0.16em);
     line-height: 1;
     white-space: nowrap;
 }
@@ -422,7 +422,11 @@ html:has(.auth-marker) .stApp {
     html:has(.auth-marker) {
         --auth-pad: 28px;
         --auth-w: 100%;
-        --auth-banner-h: 88px;
+        --auth-banner-h: 104px;
+    }
+    html:has(.auth-marker) .auth-slogan-line {
+        font-size: clamp(13px, calc((100vw - 16px) / 15), 28px);
+        letter-spacing: clamp(0.04em, 0.35vw, 0.1em);
     }
     html:has(.auth-marker) [data-testid="stMain"] {
         justify-content: flex-start !important;
