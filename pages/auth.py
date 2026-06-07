@@ -33,6 +33,7 @@ _AUTH_CSS = """
     --auth-input-h: 44px;
     --auth-pad: 36px;
     --auth-w: 440px;
+    --auth-banner-h: 120px;
     --s1: 8px;
     --s2: 16px;
     --s3: 24px;
@@ -101,9 +102,11 @@ html:has(.auth-marker) [data-testid="stMainBlockContainer"] {
 html:has(.auth-marker) .st-key-auth_top_banner {
     width: 100vw !important;
     max-width: 100vw !important;
+    max-height: var(--auth-banner-h) !important;
     margin: 0 calc(50% - 50vw) var(--s3) !important;
     padding: 0 !important;
     background: #050816 !important;
+    overflow: hidden !important;
 }
 
 html:has(.auth-marker) .st-key-auth_top_banner [data-testid="stImage"],
@@ -111,14 +114,18 @@ html:has(.auth-marker) .st-key-auth_top_banner [data-testid="stElementContainer"
     margin: 0 !important;
     padding: 0 !important;
     width: 100% !important;
+    max-height: var(--auth-banner-h) !important;
+    overflow: hidden !important;
 }
 
 html:has(.auth-marker) .st-key-auth_top_banner img {
     width: 100% !important;
     max-width: 100% !important;
-    height: auto !important;
+    height: var(--auth-banner-h) !important;
+    max-height: var(--auth-banner-h) !important;
     display: block !important;
     object-fit: cover !important;
+    object-position: center center !important;
 }
 
 html:has(.auth-marker) .st-key-auth_card {
@@ -405,6 +412,7 @@ html:has(.auth-marker) .stApp {
     html:has(.auth-marker) {
         --auth-pad: 28px;
         --auth-w: 100%;
+        --auth-banner-h: 88px;
     }
     html:has(.auth-marker) [data-testid="stMain"] {
         justify-content: flex-start !important;
