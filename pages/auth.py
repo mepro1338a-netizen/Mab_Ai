@@ -1,11 +1,8 @@
 ﻿"""MaByte Auth — Login & Registrierung."""
 from __future__ import annotations
 
-from pathlib import Path
-
 import streamlit as st
 
-from config import BASE_DIR
 from database import record_login_event, register_account, verify_login_identifier
 from logger import log_auth
 from oauth_service import complete_oauth, friendly_oauth_error, verify_state
@@ -125,26 +122,6 @@ html:has(.auth-marker) .st-key-auth_card [data-testid="stElementContainer"] {
     margin: 0 !important;
     padding: 0 !important;
     width: 100% !important;
-}
-
-html:has(.auth-marker) .st-key-auth_banner {
-    margin: 0 0 var(--s3) !important;
-    width: 100% !important;
-}
-
-html:has(.auth-marker) .st-key-auth_banner [data-testid="stImage"],
-html:has(.auth-marker) .st-key-auth_banner [data-testid="stElementContainer"] {
-    margin: 0 !important;
-    padding: 0 !important;
-    width: 100% !important;
-}
-
-html:has(.auth-marker) .st-key-auth_banner img {
-    width: 100% !important;
-    max-width: 100% !important;
-    height: auto !important;
-    display: block !important;
-    object-fit: contain !important;
 }
 
 html:has(.auth-marker) .st-key-auth_seg_wrap {
@@ -420,14 +397,6 @@ def _set_mode(mode: str) -> None:
     st.session_state["auth_mode_seg"] = "Registrieren" if mode == "register" else "Anmelden"
 
 
-def _slogan_header_path() -> Path | None:
-    for rel in (Path("assets") / "sloganheader.png", Path("sloganheader.png")):
-        path = BASE_DIR / rel
-        if path.is_file():
-            return path
-    return None
-
-
 def client_meta() -> tuple[str, str]:
     ip_address = "unknown"
     user_agent = "streamlit-client"
@@ -642,11 +611,6 @@ def render_auth() -> None:
 
     with st.container(key="auth_card", border=False):
         st.markdown('<span class="auth-card-marker" hidden aria-hidden="true"></span>', unsafe_allow_html=True)
-
-        banner = _slogan_header_path()
-        if banner:
-            with st.container(key="auth_banner"):
-                st.image(str(banner), use_container_width=True)
 
         with st.container(key="auth_seg_wrap"):
             choice = st.segmented_control(
