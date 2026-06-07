@@ -100,31 +100,42 @@ html:has(.auth-marker) [data-testid="stMainBlockContainer"] {
 }
 
 html:has(.auth-marker) .st-key-auth_top_banner {
+    position: relative !important;
+    left: 50% !important;
+    right: 50% !important;
     width: 100vw !important;
+    min-width: 100vw !important;
     max-width: 100vw !important;
     max-height: var(--auth-banner-h) !important;
-    margin: 0 calc(50% - 50vw) var(--s3) !important;
+    margin-left: -50vw !important;
+    margin-right: -50vw !important;
+    margin-top: 0 !important;
+    margin-bottom: var(--s3) !important;
     padding: 0 !important;
     background: #050816 !important;
     overflow: hidden !important;
 }
 
+html:has(.auth-marker) .st-key-auth_top_banner > [data-testid="stVerticalBlock"],
 html:has(.auth-marker) .st-key-auth_top_banner [data-testid="stImage"],
 html:has(.auth-marker) .st-key-auth_top_banner [data-testid="stElementContainer"] {
     margin: 0 !important;
     padding: 0 !important;
     width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
     max-height: var(--auth-banner-h) !important;
     overflow: hidden !important;
 }
 
 html:has(.auth-marker) .st-key-auth_top_banner img {
     width: 100% !important;
+    min-width: 100% !important;
     max-width: 100% !important;
     height: var(--auth-banner-h) !important;
     max-height: var(--auth-banner-h) !important;
     display: block !important;
-    object-fit: cover !important;
+    object-fit: fill !important;
     object-position: center center !important;
 }
 
@@ -656,7 +667,7 @@ def render_auth() -> None:
     banner = _slogan_header_path()
     if banner:
         with st.container(key="auth_top_banner"):
-            st.image(str(banner), use_container_width=True)
+            st.image(str(banner), width="stretch")
 
     with st.container(key="auth_card", border=False):
         st.markdown('<span class="auth-card-marker" hidden aria-hidden="true"></span>', unsafe_allow_html=True)
