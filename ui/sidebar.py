@@ -14,6 +14,10 @@ from ui.styles import inject_css
 _SB = 'section[data-testid="stSidebar"]'
 _WIDTH = "230px"
 _NAV_KEY = '[class*="st-key-sb_nav_"]'
+_SB_BG = "#18181b"
+_SB_BG_DEEP = "#141416"
+_SB_PANEL = "#27272a"
+_SB_LINE = "rgba(255, 255, 255, 0.08)"
 
 NAV_SECTIONS: list[tuple[str, list[tuple[str, str]]]] = [
     (
@@ -96,6 +100,32 @@ def _icon_uri(page: str, *, active: bool = False) -> str:
     return f'url("data:image/svg+xml,{quote(svg)}")'
 
 
+def _sidebar_scrollbar_css(scroll_selector: str) -> str:
+    return f"""
+{scroll_selector} {{
+  scrollbar-width: thin;
+  scrollbar-color: rgba(139, 92, 246, 0.7) rgba(255, 255, 255, 0.04);
+}}
+{scroll_selector}::-webkit-scrollbar {{
+  width: 6px;
+}}
+{scroll_selector}::-webkit-scrollbar-track {{
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 999px;
+  margin: 8px 0;
+}}
+{scroll_selector}::-webkit-scrollbar-thumb {{
+  background: linear-gradient(180deg, #8b5cf6 0%, #6366f1 100%);
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  min-height: 36px;
+}}
+{scroll_selector}::-webkit-scrollbar-thumb:hover {{
+  background: linear-gradient(180deg, #a78bfa 0%, #818cf8 100%);
+}}
+"""
+
+
 def _nav_btn_selectors(page: str) -> str:
     base = f'{_SB} .st-key-sb_nav_{page}'
     return (
@@ -148,12 +178,13 @@ def _active_nav_css(active: str) -> str:
 {_SB} .st-key-sb_nav_{active} .stButton > button,
 {_SB} .st-key-sb_nav_{active} [data-testid="stBaseButton-secondary"],
 {_SB} .st-key-sb_nav_{active} button {{
-  background: rgba(124, 58, 237, 0.18) !important;
-  background-color: rgba(124, 58, 237, 0.18) !important;
-  border: none !important;
-  border-left: 3px solid #8b5cf6 !important;
+  background: linear-gradient(90deg, rgba(124, 58, 237, 0.28), rgba(99, 102, 241, 0.14)) !important;
+  background-color: rgba(124, 58, 237, 0.22) !important;
+  border: 1px solid rgba(139, 92, 246, 0.35) !important;
+  border-left: 3px solid #a78bfa !important;
   color: #ffffff !important;
   font-weight: 600 !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
 }}
 """
 
@@ -192,6 +223,7 @@ def _user_initial(username: str) -> str:
 def sidebar_master_css(active_page: str) -> str:
     active = LEGACY_PAGE_ALIASES.get(active_page, active_page)
     logout_uri = _icon_uri("logout")
+    nav_scroll = f'{_SB} .st-key-sb_nav > [data-testid="stVerticalBlock"]'
     nav_wrap = (
         f'{_SB} {_NAV_KEY} [data-testid="stVerticalBlockBorderWrapper"], '
         f'{_SB} {_NAV_KEY} [data-testid="stElementContainer"], '
@@ -204,19 +236,26 @@ def sidebar_master_css(active_page: str) -> str:
         f'{_SB} {_NAV_KEY} button'
     )
     return f"""
-:root {{ --sb-width: {_WIDTH}; }}
+:root {{
+  --sb-width: {_WIDTH};
+  --sb-bg: {_SB_BG};
+  --sb-bg-deep: {_SB_BG_DEEP};
+  --sb-panel: {_SB_PANEL};
+  --sb-line: {_SB_LINE};
+}}
 {_nav_icon_css(active)}
 {_active_nav_css(active)}
 {_SB} {{
   width: var(--sb-width) !important;
   min-width: var(--sb-width) !important;
   max-width: var(--sb-width) !important;
-  background: #09090b !important;
-  border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
+  background: var(--sb-bg-deep) !important;
+  border-right: 1px solid var(--sb-line) !important;
+  user-select: none;
 }}
 {_SB} > div {{
-  padding: 0 10px 10px !important;
-  background: #09090b !important;
+  padding: 12px 10px 10px !important;
+  background: linear-gradient(180deg, var(--sb-bg) 0%, var(--sb-bg-deep) 100%) !important;
   height: 100dvh !important;
   max-height: 100dvh !important;
   display: flex !important;
@@ -226,7 +265,7 @@ def sidebar_master_css(active_page: str) -> str:
 {_SB} [data-testid="stSidebarContent"],
 {_SB} [data-testid="stSidebarUserContent"] {{
   padding: 0 !important;
-  background: #09090b !important;
+  background: transparent !important;
   display: flex !important;
   flex-direction: column !important;
   flex: 1 !important;
@@ -243,59 +282,53 @@ def sidebar_master_css(active_page: str) -> str:
   padding: 0 !important;
   overflow: hidden !important;
 }}
+{_SB} .st-key-sb_nav {{
+  background: rgba(39, 39, 42, 0.55) !important;
+  border: 1px solid var(--sb-line) !important;
+  border-radius: 12px !important;
+  padding: 4px !important;
+  margin: 6px 0 8px !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}}
 {_SB} .st-key-sb_nav > [data-testid="stVerticalBlock"] {{
   flex: 1 1 auto !important;
   min-height: 0 !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
   gap: 0 !important;
-  padding: 0 2px 0 0 !important;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(139, 92, 246, 0.55) transparent;
+  padding: 2px 4px 2px 2px !important;
 }}
-{_SB} .st-key-sb_nav > [data-testid="stVerticalBlock"]::-webkit-scrollbar {{
-  width: 5px;
-}}
-{_SB} .st-key-sb_nav > [data-testid="stVerticalBlock"]::-webkit-scrollbar-track {{
-  background: transparent;
-  margin: 6px 0;
-}}
-{_SB} .st-key-sb_nav > [data-testid="stVerticalBlock"]::-webkit-scrollbar-thumb {{
-  background: linear-gradient(180deg, rgba(139, 92, 246, 0.65), rgba(99, 102, 241, 0.45));
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-}}
-{_SB} .st-key-sb_nav > [data-testid="stVerticalBlock"]::-webkit-scrollbar-thumb:hover {{
-  background: linear-gradient(180deg, rgba(167, 139, 250, 0.85), rgba(129, 140, 248, 0.65));
-}}
+{_sidebar_scrollbar_css(nav_scroll)}
 .sb-brand {{
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 4px 6px 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  margin-bottom: 4px;
+  padding: 2px 8px 14px;
+  border-bottom: 1px solid var(--sb-line);
+  margin-bottom: 2px;
 }}
-.sb-brand svg {{ width: 24px !important; height: 24px !important; }}
+.sb-brand svg {{ width: 24px !important; height: 24px !important; flex-shrink: 0; }}
 .sb-brand span {{ color: #fafafa !important; font-size: 15px; font-weight: 700; letter-spacing: -0.02em; }}
 .sb-section {{
-  color: #52525b !important;
+  color: #71717a !important;
   font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  padding: 12px 10px 6px;
+  padding: 10px 10px 5px;
   margin: 0;
   line-height: 1.2;
 }}
-.sb-divider {{ height: 1px; margin: 6px 8px; background: rgba(255, 255, 255, 0.06); }}
+.sb-divider {{ height: 1px; margin: 8px 10px; background: var(--sb-line); }}
 {nav_wrap} {{
   background: transparent !important;
   background-color: transparent !important;
   border: none !important;
   box-shadow: none !important;
   padding: 0 !important;
-  margin: 0 0 2px !important;
+  margin: 0 0 3px !important;
 }}
 {_SB} {_NAV_KEY} .stButton {{ margin: 0 !important; padding: 0 !important; width: 100% !important; }}
 {nav_btn} {{
@@ -304,26 +337,32 @@ def sidebar_master_css(active_page: str) -> str:
   min-height: 38px !important;
   max-height: 38px !important;
   margin: 0 !important;
-  padding: 0 10px !important;
-  border-radius: 8px !important;
-  border: none !important;
+  padding: 0 12px !important;
+  border-radius: 9px !important;
+  border: 1px solid transparent !important;
   border-left: 3px solid transparent !important;
   background: transparent !important;
   background-color: transparent !important;
   background-image: none !important;
-  color: #a1a1aa !important;
+  color: #d4d4d8 !important;
   font-size: 13px !important;
   font-weight: 500 !important;
   text-align: left !important;
   justify-content: flex-start !important;
   box-shadow: none !important;
   transform: none !important;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease !important;
 }}
 {nav_btn}:hover {{
-  background: rgba(255, 255, 255, 0.05) !important;
-  background-color: rgba(255, 255, 255, 0.05) !important;
-  color: #e4e4e7 !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.05) !important;
+  color: #fafafa !important;
   transform: none !important;
+}}
+{nav_btn}:focus-visible {{
+  outline: 2px solid rgba(139, 92, 246, 0.55) !important;
+  outline-offset: 1px !important;
 }}
 {nav_btn} p {{
   margin: 0 !important;
@@ -331,25 +370,31 @@ def sidebar_master_css(active_page: str) -> str:
   font-size: inherit !important;
   font-weight: inherit !important;
 }}
-.sb-foot {{ padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.06); margin-top: 4px; }}
+.sb-foot {{
+  flex-shrink: 0;
+  padding-top: 10px;
+  border-top: 1px solid var(--sb-line);
+  margin-top: auto;
+}}
 .sb-user {{
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 11px;
+  background: rgba(39, 39, 42, 0.85);
+  border: 1px solid var(--sb-line);
   margin-bottom: 8px;
 }}
 .sb-av {{
-  width: 28px; height: 28px; border-radius: 8px;
+  width: 30px; height: 30px; border-radius: 9px;
   background: linear-gradient(135deg, #7c3aed, #6366f1);
-  color: #fff; font-size: 11px; font-weight: 700;
+  color: #fff; font-size: 12px; font-weight: 700;
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
 }}
-.sb-un {{ color: #e4e4e7 !important; font-size: 12px; font-weight: 500; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }}
-.sb-up {{ color: #71717a !important; font-size: 10px; margin-top: 2px; }}
+.sb-un {{ color: #f4f4f5 !important; font-size: 12px; font-weight: 600; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }}
+.sb-up {{ color: #a1a1aa !important; font-size: 10px; margin-top: 2px; font-weight: 500; }}
 {_SB} .st-key-nav_logout [data-testid="stVerticalBlockBorderWrapper"],
 {_SB} .st-key-nav_logout [data-testid="stElementContainer"],
 {_SB} .st-key-nav_logout .stButton {{
@@ -363,19 +408,26 @@ def sidebar_master_css(active_page: str) -> str:
 {_SB} .st-key-nav_logout [data-testid="stBaseButton-secondary"],
 {_SB} .st-key-nav_logout button {{
   width: 100% !important;
-  height: 34px !important;
-  min-height: 34px !important;
-  padding: 0 10px 0 34px !important;
-  border-radius: 8px !important;
-  border: 1px solid rgba(255, 255, 255, 0.06) !important;
-  background: transparent !important;
-  background-color: transparent !important;
-  color: #71717a !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  padding: 0 12px 0 36px !important;
+  border-radius: 9px !important;
+  border: 1px solid var(--sb-line) !important;
+  background: rgba(39, 39, 42, 0.6) !important;
+  background-color: rgba(39, 39, 42, 0.6) !important;
+  color: #a1a1aa !important;
   font-size: 12px !important;
   font-weight: 500 !important;
   text-align: left !important;
   position: relative !important;
   box-shadow: none !important;
+  transition: background 0.15s ease, color 0.15s ease !important;
+}}
+{_SB} .st-key-nav_logout .stButton > button:hover,
+{_SB} .st-key-nav_logout button:hover {{
+  background: rgba(255, 255, 255, 0.06) !important;
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  color: #e4e4e7 !important;
 }}
 {_SB} .st-key-nav_logout .stButton > button::before,
 {_SB} .st-key-nav_logout button::before {{
@@ -396,7 +448,20 @@ def sidebar_master_css(active_page: str) -> str:
 def sidebar_theme_lock_css(active_page: str) -> str:
     """Final override — beats Streamlit theme secondary button backgrounds."""
     active = LEGACY_PAGE_ALIASES.get(active_page, active_page)
+    nav_scroll = f'{_SB} .st-key-sb_nav > [data-testid="stVerticalBlock"]'
+    sb_shell = (
+        f"{_SB}, {_SB} > div, {_SB} [data-testid=\"stSidebarContent\"], "
+        f'{_SB} [data-testid="stSidebarUserContent"]'
+    )
     return f"""
+{sb_shell} {{
+  background: var(--sb-bg-deep, {_SB_BG_DEEP}) !important;
+  background-color: var(--sb-bg-deep, {_SB_BG_DEEP}) !important;
+}}
+{_SB} > div {{
+  background: linear-gradient(180deg, var(--sb-bg, {_SB_BG}) 0%, var(--sb-bg-deep, {_SB_BG_DEEP}) 100%) !important;
+}}
+{_sidebar_scrollbar_css(nav_scroll)}
 {_SB} {_NAV_KEY} [data-testid="stVerticalBlockBorderWrapper"],
 {_SB} {_NAV_KEY} [data-testid="stVerticalBlockBorderWrapper"] > div,
 {_SB} {_NAV_KEY} [data-testid="stElementContainer"],
@@ -412,9 +477,10 @@ def sidebar_theme_lock_css(active_page: str) -> str:
 }}
 {_SB} .st-key-sb_nav_{active} .stButton > button,
 {_SB} .st-key-sb_nav_{active} button {{
-  background: rgba(124, 58, 237, 0.18) !important;
-  background-color: rgba(124, 58, 237, 0.18) !important;
-  border-left: 3px solid #8b5cf6 !important;
+  background: linear-gradient(90deg, rgba(124, 58, 237, 0.28), rgba(99, 102, 241, 0.14)) !important;
+  background-color: rgba(124, 58, 237, 0.22) !important;
+  border: 1px solid rgba(139, 92, 246, 0.35) !important;
+  border-left: 3px solid #a78bfa !important;
   color: #ffffff !important;
 }}
 """
