@@ -16,7 +16,7 @@ from ui.styles import inject_css
 _DEFAULT_USE_CASE = "Sonstiges"
 _DEFAULT_COUNTRY = "Deutschland"
 _APP = html.escape(APP_NAME or "MaByte")
-_TAGLINE = "Dein KI-Workspace"
+_SLOGAN = "Dein KI-Workspace — einfach anmelden und loslegen."
 
 _AUTH_CSS = """
 /* MaByte Auth */
@@ -143,12 +143,12 @@ html:has(.auth-marker) .st-key-auth_card [data-testid="stElementContainer"] {
     color: var(--auth-text) !important;
 }
 
-.auth-tagline {
-    margin: 6px 0 0;
+.auth-slogan {
+    margin: 8px 0 0;
     font-size: 13px;
     font-weight: 400;
-    line-height: 1.4;
-    color: var(--auth-hint) !important;
+    line-height: 1.45;
+    color: var(--auth-muted) !important;
 }
 
 html:has(.auth-marker) .st-key-auth_seg_wrap {
@@ -643,7 +643,7 @@ def render_auth() -> None:
         st.markdown(
             f'<div class="auth-header">'
             f'<p class="auth-brand">{_APP}</p>'
-            f'<p class="auth-tagline">{html.escape(_TAGLINE)}</p>'
+            f'<p class="auth-slogan">{html.escape(_SLOGAN)}</p>'
             f"</div>",
             unsafe_allow_html=True,
         )
