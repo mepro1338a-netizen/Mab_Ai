@@ -8,15 +8,7 @@ import streamlit as st
 from config import APP_NAME, APP_TAGLINE
 from database import record_login_event, register_account, verify_login_identifier
 from logger import log_auth
-from oauth_service import (
-    auth_url,
-    complete_oauth,
-    friendly_oauth_error,
-    make_state,
-    oauth_state_ready,
-    provider_configured,
-    verify_state,
-)
+from oauth_service import complete_oauth, friendly_oauth_error, verify_state
 from security import check_login_rate, is_valid_email, is_valid_username, record_login_failure
 from services.session_auth import rotate_session_on_login
 from ui.styles import inject_css
@@ -251,53 +243,6 @@ html:has(.auth-marker) .st-key-auth_mode_seg [data-testid="stSegmentedControl"] 
     color: var(--auth-muted) !important;
 }
 
-.auth-divider {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin: 0 0 var(--s2);
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--auth-hint) !important;
-    text-transform: lowercase;
-}
-
-.auth-divider::before,
-.auth-divider::after {
-    content: "";
-    flex: 1;
-    height: 1px;
-    background: rgba(255, 255, 255, 0.08);
-}
-
-html:has(.auth-marker) .st-key-auth_oauth {
-    margin: 0 0 var(--s2) !important;
-    width: 100% !important;
-}
-
-html:has(.auth-marker) .st-key-auth_oauth a,
-html:has(.auth-marker) .st-key-auth_oauth [data-testid="stLinkButton"] a {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    width: 100% !important;
-    min-height: var(--auth-input-h) !important;
-    border-radius: var(--auth-radius) !important;
-    border: 1px solid var(--auth-field-line) !important;
-    background: var(--auth-field) !important;
-    color: var(--auth-text) !important;
-    font-size: 14px !important;
-    font-weight: 600 !important;
-    text-decoration: none !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
-    transition: border-color 0.15s ease, background 0.15s ease !important;
-}
-
-html:has(.auth-marker) .st-key-auth_oauth a:hover {
-    border-color: rgba(255, 255, 255, 0.18) !important;
-    background: #27272a !important;
-}
-
 html:has(.auth-marker) .st-key-auth_card [data-testid="stForm"] {
     border: none !important;
     padding: 0 !important;
@@ -494,13 +439,6 @@ def _set_mode(mode: str) -> None:
     st.session_state["auth_mode_seg"] = "Registrieren" if mode == "register" else "Anmelden"
 
 
-def _google_login_url() -> str:
-    if not provider_configured("google") or not oauth_state_ready():
-        return ""
-    state = make_state("google")
-    return auth_url("google", state) if state else ""
-
-
 def client_meta() -> tuple[str, str]:
     ip_address = "unknown"
     user_agent = "streamlit-client"
@@ -657,15 +595,6 @@ def handle_google_oauth_callback() -> None:
     st.rerun()
 
 
-def _render_oauth_section() -> None:
-    url = _google_login_url()
-    if not url:
-        return
-    with st.container(key="auth_oauth"):
-        st.link_button("Mit Google fortfahren", url, use_container_width=True)
-    st.markdown('<div class="auth-divider">oder</div>', unsafe_allow_html=True)
-
-
 def _render_login_form() -> None:
     st.markdown(
         '<div class="auth-intro"><p class="auth-title">Willkommen zurück</p></div>',
@@ -778,7 +707,6 @@ def render_auth() -> None:
         st.session_state.auth_mode = mode
 
         _show_notice()
-        _render_oauth_section()
 
         if mode == "register":
             _render_register_form()
