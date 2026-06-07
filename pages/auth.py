@@ -1,11 +1,8 @@
 ﻿"""MaByte Auth — Login & Registrierung."""
 from __future__ import annotations
 
-from pathlib import Path
-
 import streamlit as st
 
-from config import BASE_DIR
 from database import record_login_event, register_account, verify_login_identifier
 from logger import log_auth
 from oauth_service import complete_oauth, friendly_oauth_error, verify_state
@@ -99,44 +96,46 @@ html:has(.auth-marker) [data-testid="stMainBlockContainer"] {
     padding: 0 !important;
 }
 
-html:has(.auth-marker) .st-key-auth_top_banner {
-    position: relative !important;
-    left: 50% !important;
-    right: 50% !important;
-    width: 100vw !important;
-    min-width: 100vw !important;
-    max-width: 100vw !important;
-    max-height: var(--auth-banner-h) !important;
-    margin-left: -50vw !important;
-    margin-right: -50vw !important;
-    margin-top: 0 !important;
-    margin-bottom: var(--s3) !important;
-    padding: 0 !important;
-    background: #050816 !important;
-    overflow: hidden !important;
+.auth-slogan-bar {
+    position: relative;
+    left: 50%;
+    width: 100vw;
+    min-width: 100vw;
+    margin-left: -50vw;
+    margin-right: -50vw;
+    margin-bottom: var(--s3);
+    height: var(--auth-banner-h);
+    min-height: var(--auth-banner-h);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    padding: 0 clamp(10px, 2vw, 28px);
+    background: linear-gradient(180deg, #0a1020 0%, #050816 100%);
+    overflow: hidden;
 }
 
-html:has(.auth-marker) .st-key-auth_top_banner > [data-testid="stVerticalBlock"],
-html:has(.auth-marker) .st-key-auth_top_banner [data-testid="stImage"],
-html:has(.auth-marker) .st-key-auth_top_banner [data-testid="stElementContainer"] {
-    margin: 0 !important;
-    padding: 0 !important;
-    width: 100% !important;
-    min-width: 100% !important;
-    max-width: 100% !important;
-    max-height: var(--auth-banner-h) !important;
-    overflow: hidden !important;
+.auth-slogan-line {
+    margin: 0;
+    width: 100%;
+    text-align: center;
+    font-size: clamp(12px, calc((100vw - 32px) / 22), 34px);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    line-height: 1;
+    white-space: nowrap;
 }
 
-html:has(.auth-marker) .st-key-auth_top_banner img {
-    width: 100% !important;
-    min-width: 100% !important;
-    max-width: 100% !important;
-    height: var(--auth-banner-h) !important;
-    max-height: var(--auth-banner-h) !important;
-    display: block !important;
-    object-fit: fill !important;
-    object-position: center center !important;
+.auth-slogan-grad {
+    background: linear-gradient(90deg, #c084fc 0%, #818cf8 48%, #6366f1 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+}
+
+.auth-slogan-plain {
+    color: #f4f4f5;
 }
 
 html:has(.auth-marker) .st-key-auth_card {
@@ -444,12 +443,17 @@ def _set_mode(mode: str) -> None:
     st.session_state["auth_mode_seg"] = "Registrieren" if mode == "register" else "Anmelden"
 
 
-def _slogan_header_path() -> Path | None:
-    for rel in (Path("assets") / "sloganheader.png", Path("sloganheader.png")):
-        path = BASE_DIR / rel
-        if path.is_file():
-            return path
-    return None
+def _render_slogan_header() -> None:
+    st.markdown(
+        """
+<div class="auth-slogan-bar" role="banner">
+  <p class="auth-slogan-line">
+    <span class="auth-slogan-grad">One</span><span class="auth-slogan-plain"> system. </span><span class="auth-slogan-grad">Infinite</span><span class="auth-slogan-plain"> intelligence.</span>
+  </p>
+</div>
+        """,
+        unsafe_allow_html=True,
+    )
 
 
 def client_meta() -> tuple[str, str]:
@@ -664,10 +668,7 @@ def render_auth() -> None:
     st.markdown('<div class="auth-bg" aria-hidden="true"></div>', unsafe_allow_html=True)
     st.markdown('<span class="auth-marker" hidden aria-hidden="true"></span>', unsafe_allow_html=True)
 
-    banner = _slogan_header_path()
-    if banner:
-        with st.container(key="auth_top_banner"):
-            st.image(str(banner), width="stretch")
+    _render_slogan_header()
 
     with st.container(key="auth_card", border=False):
         st.markdown('<span class="auth-card-marker" hidden aria-hidden="true"></span>', unsafe_allow_html=True)
