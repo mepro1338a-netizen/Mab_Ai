@@ -1,7 +1,6 @@
 ﻿"""MaByte Auth — Login & Registrierung."""
 from __future__ import annotations
 
-import base64
 from pathlib import Path
 
 import streamlit as st
@@ -99,19 +98,27 @@ html:has(.auth-marker) [data-testid="stMainBlockContainer"] {
     padding: 0 !important;
 }
 
-.auth-top-banner {
-    width: 100vw;
-    max-width: 100vw;
-    margin: 0 calc(50% - 50vw) var(--s3);
-    line-height: 0;
-    background: #050816;
+html:has(.auth-marker) .st-key-auth_top_banner {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    margin: 0 calc(50% - 50vw) var(--s3) !important;
+    padding: 0 !important;
+    background: #050816 !important;
 }
 
-.auth-top-banner img {
-    width: 100%;
-    height: auto;
-    display: block;
-    object-fit: cover;
+html:has(.auth-marker) .st-key-auth_top_banner [data-testid="stImage"],
+html:has(.auth-marker) .st-key-auth_top_banner [data-testid="stElementContainer"] {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+}
+
+html:has(.auth-marker) .st-key-auth_top_banner img {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    display: block !important;
+    object-fit: cover !important;
 }
 
 html:has(.auth-marker) .st-key-auth_card {
@@ -418,12 +425,12 @@ def _set_mode(mode: str) -> None:
     st.session_state["auth_mode_seg"] = "Registrieren" if mode == "register" else "Anmelden"
 
 
-def _slogan_header_b64() -> str:
+def _slogan_header_path() -> Path | None:
     for rel in (Path("assets") / "sloganheader.png", Path("sloganheader.png")):
         path = BASE_DIR / rel
         if path.is_file():
-            return base64.b64encode(path.read_bytes()).decode("utf-8")
-    return ""
+            return path
+    return None
 
 
 def client_meta() -> tuple[str, str]:
@@ -638,14 +645,10 @@ def render_auth() -> None:
     st.markdown('<div class="auth-bg" aria-hidden="true"></div>', unsafe_allow_html=True)
     st.markdown('<span class="auth-marker" hidden aria-hidden="true"></span>', unsafe_allow_html=True)
 
-    banner_b64 = _slogan_header_b64()
-    if banner_b64:
-        st.markdown(
-            f'<div class="auth-top-banner">'
-            f'<img src="data:image/png;base64,{banner_b64}" alt="MaByte">'
-            f"</div>",
-            unsafe_allow_html=True,
-        )
+    banner = _slogan_header_path()
+    if banner:
+        with st.container(key="auth_top_banner"):
+            st.image(str(banner), use_container_width=True)
 
     with st.container(key="auth_card", border=False):
         st.markdown('<span class="auth-card-marker" hidden aria-hidden="true"></span>', unsafe_allow_html=True)
