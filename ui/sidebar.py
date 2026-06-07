@@ -1,5 +1,5 @@
 """
-MaByte Sidebar — flat nav buttons (session-safe) in a single HTML shell layout.
+MaByte Sidebar — session-safe Streamlit nav with professional styling.
 """
 from __future__ import annotations
 
@@ -11,13 +11,22 @@ import streamlit as st
 from config import APP_NAME
 from ui.styles import inject_css
 
+# ---------------------------------------------------------------------------
+# Design tokens
+# ---------------------------------------------------------------------------
 _SB = 'section[data-testid="stSidebar"]'
-_WIDTH = "230px"
-_NAV_KEY = '[class*="st-key-sb_nav_"]'
-_SB_BG = "#18181b"
-_SB_BG_DEEP = "#141416"
-_SB_PANEL = "#27272a"
-_SB_LINE = "rgba(255, 255, 255, 0.08)"
+_WIDTH = "240px"
+_NAV_BTN = '[class*="st-key-sb_nav_"]'
+_NAV_SCROLL = f'{_SB} .st-key-sb_scroll'
+
+_BG = "#18181b"
+_BG_DEEP = "#141416"
+_PANEL = "#232326"
+_LINE = "rgba(255, 255, 255, 0.08)"
+_MUTED = "#a1a1aa"
+_TEXT = "#e4e4e7"
+_ACTIVE_BG = "linear-gradient(90deg, rgba(124, 58, 237, 0.32), rgba(99, 102, 241, 0.12))"
+_ACTIVE_BORDER = "rgba(167, 139, 250, 0.45)"
 
 NAV_SECTIONS: list[tuple[str, list[tuple[str, str]]]] = [
     (
@@ -54,6 +63,13 @@ LEGACY_PAGE_ALIASES: dict[str, str] = {
     "creator": "video",
     "automations": "automation_lab",
     "projects": "home",
+}
+
+# Map routes without a direct nav entry to the closest sidebar item.
+NAV_HIGHLIGHT_ALIASES: dict[str, str] = {
+    "coding": "image",
+    "music": "video",
+    "social_oauth": "dashboard",
 }
 
 SIDEBAR_NAV_ITEMS = NAV_ITEMS
@@ -100,92 +116,382 @@ def _icon_uri(page: str, *, active: bool = False) -> str:
     return f'url("data:image/svg+xml,{quote(svg)}")'
 
 
-def _sidebar_scrollbar_css(scroll_selector: str) -> str:
+def _resolve_active(active_page: str | None) -> str:
+    raw = (active_page or st.session_state.get("page") or "home").strip()
+    page = LEGACY_PAGE_ALIASES.get(raw, raw)
+    if page in VALID_NAV_PAGES:
+        return page
+    return NAV_HIGHLIGHT_ALIASES.get(page, "home")
+
+
+def _nav_key(page: str) -> str:
+    return f"sb_nav_{page}"
+
+
+def _btn_sel(page: str) -> str:
+    key = _nav_key(page)
+    return (
+        f'{_SB} .st-key-{key} .stButton > button, '
+        f'{_SB} .st-key-{key} [data-testid="stBaseButton-tertiary"], '
+        f'{_SB} .st-key-{key} [data-testid="stBaseButton-secondary"], '
+        f'{_SB} .st-key-{key} button'
+    )
+
+
+def _active_style(page: str) -> str:
+    sel = _btn_sel(page)
     return f"""
-{scroll_selector} {{
-  scrollbar-width: thin;
-  scrollbar-color: rgba(139, 92, 246, 0.7) rgba(255, 255, 255, 0.04);
+{sel} {{
+  background: {_ACTIVE_BG} !important;
+  background-color: rgba(124, 58, 237, 0.24) !important;
+  border: 1px solid {_ACTIVE_BORDER} !important;
+  border-left: 3px solid #c4b5fd !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
 }}
-{scroll_selector}::-webkit-scrollbar {{
-  width: 6px;
-}}
-{scroll_selector}::-webkit-scrollbar-track {{
-  background: rgba(255, 255, 255, 0.04);
-  border-radius: 999px;
-  margin: 8px 0;
-}}
-{scroll_selector}::-webkit-scrollbar-thumb {{
-  background: linear-gradient(180deg, #8b5cf6 0%, #6366f1 100%);
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  min-height: 36px;
-}}
-{scroll_selector}::-webkit-scrollbar-thumb:hover {{
-  background: linear-gradient(180deg, #a78bfa 0%, #818cf8 100%);
+{sel}:hover, {sel}:focus-visible {{
+  background: {_ACTIVE_BG} !important;
+  background-color: rgba(124, 58, 237, 0.28) !important;
+  border: 1px solid {_ACTIVE_BORDER} !important;
+  border-left: 3px solid #c4b5fd !important;
+  color: #ffffff !important;
 }}
 """
 
 
-def _nav_btn_selectors(page: str) -> str:
-    base = f'{_SB} .st-key-sb_nav_{page}'
-    return (
-        f'{base} [data-testid="stVerticalBlockBorderWrapper"], '
-        f'{base} [data-testid="stElementContainer"], '
-        f'{base} .stButton, '
-        f'{base} .stButton > button, '
-        f'{base} [data-testid="stBaseButton-secondary"], '
-        f'{base} [data-testid="stBaseButton-primary"], '
-        f'{base} button'
-    )
-
-
-def _nav_icon_css(active: str) -> str:
-    rules: list[str] = []
+def _nav_icons_css(active: str) -> str:
+    chunks: list[str] = []
     for page in _ICONS:
         if page == "logout":
             continue
-        sel = _nav_btn_selectors(page)
         uri = _icon_uri(page, active=(page == active))
-        rules.append(
-            f"{sel} {{ box-shadow: none !important; }}"
-            f'{_SB} .st-key-sb_nav_{page} .stButton > button, '
-            f'{_SB} .st-key-sb_nav_{page} [data-testid="stBaseButton-secondary"], '
-            f'{_SB} .st-key-sb_nav_{page} button {{'
-            f"padding-left: 36px !important; position: relative !important;"
-            f"}}"
-            f'{_SB} .st-key-sb_nav_{page} .stButton > button::before, '
-            f'{_SB} .st-key-sb_nav_{page} [data-testid="stBaseButton-secondary"]::before, '
-            f'{_SB} .st-key-sb_nav_{page} button::before {{'
-            f'content:"";position:absolute;left:10px;top:50%;transform:translateY(-50%);'
+        sel = _btn_sel(page)
+        chunks.append(
+            f"{sel} {{ padding-left: 38px !important; position: relative !important; }}"
+            f"{sel}::before {{"
+            f'content:"";position:absolute;left:12px;top:50%;transform:translateY(-50%);'
             f"width:18px;height:18px;background-image:{uri};"
             f"background-size:18px 18px;background-repeat:no-repeat;"
             f"}}"
         )
-    return "".join(rules)
+    return "".join(chunks)
 
 
-def _active_nav_css(active: str) -> str:
-    if active not in VALID_NAV_PAGES:
-        return ""
-    sel = _nav_btn_selectors(active)
+def _scrollbar_css(target: str) -> str:
     return f"""
-{sel} {{
+{target} {{
+  scrollbar-width: thin;
+  scrollbar-color: rgba(139, 92, 246, 0.75) rgba(255, 255, 255, 0.05);
+}}
+{target}::-webkit-scrollbar {{ width: 6px; }}
+{target}::-webkit-scrollbar-track {{
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 999px;
+  margin: 6px 0;
+}}
+{target}::-webkit-scrollbar-thumb {{
+  background: linear-gradient(180deg, #8b5cf6, #6366f1);
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}}
+{target}::-webkit-scrollbar-thumb:hover {{
+  background: linear-gradient(180deg, #a78bfa, #818cf8);
+}}
+"""
+
+
+def sidebar_master_css(active_page: str) -> str:
+    active = _resolve_active(active_page)
+    logout_uri = _icon_uri("logout")
+    nav_btn = (
+        f'{_SB} {_NAV_BTN} .stButton > button, '
+        f'{_SB} {_NAV_BTN} [data-testid="stBaseButton-tertiary"], '
+        f'{_SB} {_NAV_BTN} [data-testid="stBaseButton-secondary"], '
+        f'{_SB} {_NAV_BTN} button'
+    )
+    nav_wrap = (
+        f'{_SB} {_NAV_BTN} [data-testid="stVerticalBlockBorderWrapper"], '
+        f'{_SB} {_NAV_BTN} [data-testid="stElementContainer"], '
+        f'{_SB} {_NAV_BTN} .stButton'
+    )
+    scroll_block = f"{_NAV_SCROLL} [data-testid='stVerticalBlock']"
+
+    return f"""
+:root {{
+  --sb-w: {_WIDTH};
+  --sb-bg: {_BG};
+  --sb-bg-deep: {_BG_DEEP};
+  --sb-panel: {_PANEL};
+  --sb-line: {_LINE};
+}}
+{_nav_icons_css(active)}
+{_SB} {{
+  width: var(--sb-w) !important;
+  min-width: var(--sb-w) !important;
+  max-width: var(--sb-w) !important;
+  background: var(--sb-bg-deep) !important;
+  border-right: 1px solid var(--sb-line) !important;
+  user-select: none;
+  -webkit-user-select: none;
+}}
+{_SB} > div {{
+  padding: 14px 12px 12px !important;
+  background: linear-gradient(180deg, var(--sb-bg) 0%, var(--sb-bg-deep) 100%) !important;
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  overflow: hidden !important;
+}}
+{_SB} [data-testid="stSidebarContent"],
+{_SB} [data-testid="stSidebarUserContent"] {{
+  padding: 0 !important;
+  background: transparent !important;
+  overflow: hidden !important;
+}}
+{_SB} [data-testid="stSidebarNav"] {{ display: none !important; }}
+{_SB} .st-key-sb_panel [data-testid="stVerticalBlock"] {{
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 !important;
+  min-height: 0 !important;
+  gap: 0 !important;
+  height: 100% !important;
+  overflow: hidden !important;
+}}
+{_SB} .st-key-sb_scroll [data-testid="stVerticalBlockBorderWrapper"] {{
+  background: var(--sb-panel) !important;
+  border: 1px solid var(--sb-line) !important;
+  border-radius: 12px !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  margin: 8px 0 !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+}}
+{_SB} .st-key-sb_scroll [data-testid="stVerticalBlock"] {{
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding: 6px 6px 6px 4px !important;
+  gap: 2px !important;
+}}
+{_scrollbar_css(scroll_block)}
+.sb-brand {{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 4px 14px;
+  margin-bottom: 2px;
+  border-bottom: 1px solid var(--sb-line);
+}}
+.sb-brand svg {{ flex-shrink: 0; }}
+.sb-brand span {{
+  color: #fafafa !important;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}}
+.sb-section {{
+  color: #71717a !important;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  padding: 10px 10px 4px;
+  margin: 0;
+}}
+.sb-divider {{
+  height: 1px;
+  margin: 8px 10px;
+  background: var(--sb-line);
+}}
+{nav_wrap} {{
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}}
+{_SB} {_NAV_BTN} .stButton {{
+  margin: 0 !important;
+  padding: 0 !important;
+  width: 100% !important;
+}}
+{nav_btn} {{
+  width: 100% !important;
+  height: 40px !important;
+  min-height: 40px !important;
+  max-height: 40px !important;
+  margin: 0 !important;
+  padding: 0 12px !important;
+  border-radius: 10px !important;
+  border: 1px solid transparent !important;
+  border-left: 3px solid transparent !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  color: {_TEXT} !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  text-align: left !important;
+  justify-content: flex-start !important;
+  box-shadow: none !important;
+  transform: none !important;
+  transition: background 0.14s ease, color 0.14s ease, border-color 0.14s ease !important;
+}}
+{nav_btn}:hover {{
+  background: rgba(255, 255, 255, 0.06) !important;
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
+  color: #fafafa !important;
+}}
+{nav_btn} p {{
+  margin: 0 !important;
+  color: inherit !important;
+  font-size: inherit !important;
+  font-weight: inherit !important;
+}}
+.sb-foot {{
+  flex-shrink: 0;
+  margin-top: auto;
+  padding-top: 10px;
+  border-top: 1px solid var(--sb-line);
+}}
+.sb-user {{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  border-radius: 11px;
+  background: var(--sb-panel);
+  border: 1px solid var(--sb-line);
+}}
+.sb-av {{
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #7c3aed, #6366f1);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}}
+.sb-un {{
+  color: #f4f4f5 !important;
+  font-size: 12px;
+  font-weight: 600;
+  max-width: 148px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}}
+.sb-up {{
+  color: {_MUTED} !important;
+  font-size: 10px;
+  margin-top: 2px;
+}}
+{_SB} .st-key-nav_logout [data-testid="stVerticalBlockBorderWrapper"],
+{_SB} .st-key-nav_logout [data-testid="stElementContainer"],
+{_SB} .st-key-nav_logout .stButton {{
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}}
+{_SB} .st-key-nav_logout .stButton > button,
+{_SB} .st-key-nav_logout [data-testid="stBaseButton-tertiary"],
+{_SB} .st-key-nav_logout button {{
+  width: 100% !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  padding: 0 12px 0 38px !important;
+  border-radius: 10px !important;
+  border: 1px solid var(--sb-line) !important;
+  background: var(--sb-panel) !important;
+  background-color: var(--sb-panel) !important;
+  color: {_MUTED} !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  text-align: left !important;
+  position: relative !important;
+  box-shadow: none !important;
+}}
+{_SB} .st-key-nav_logout .stButton > button:hover,
+{_SB} .st-key-nav_logout button:hover {{
+  background: rgba(255, 255, 255, 0.06) !important;
+  color: {_TEXT} !important;
+}}
+{_SB} .st-key-nav_logout .stButton > button::before,
+{_SB} .st-key-nav_logout button::before {{
+  content: "";
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  background-image: {logout_uri};
+  background-size: 14px;
+  background-repeat: no-repeat;
+}}
+{_active_style(active)}
+"""
+
+
+def sidebar_theme_lock_css(active_page: str) -> str:
+    """Runs after global theme lock — preserve sidebar shell, nav selection, scrollbar."""
+    active = _resolve_active(active_page)
+    scroll_block = f"{_NAV_SCROLL} [data-testid='stVerticalBlock']"
+    shell = (
+        f"{_SB}, {_SB} > div, {_SB} [data-testid='stSidebarContent'], "
+        f"{_SB} [data-testid='stSidebarUserContent']"
+    )
+    inactive_btn = (
+        f'{_SB} {_NAV_BTN} .stButton > button, '
+        f'{_SB} {_NAV_BTN} [data-testid="stBaseButton-tertiary"], '
+        f'{_SB} {_NAV_BTN} [data-testid="stBaseButton-secondary"], '
+        f'{_SB} {_NAV_BTN} button'
+    )
+    inactive_wrap = (
+        f'{_SB} {_NAV_BTN} [data-testid="stVerticalBlockBorderWrapper"], '
+        f'{_SB} {_NAV_BTN} [data-testid="stElementContainer"], '
+        f'{_SB} {_NAV_BTN} .stButton'
+    )
+    return f"""
+{shell} {{
+  background-color: var(--sb-bg-deep, {_BG_DEEP}) !important;
+}}
+{_SB} > div {{
+  background: linear-gradient(180deg, var(--sb-bg, {_BG}) 0%, var(--sb-bg-deep, {_BG_DEEP}) 100%) !important;
+}}
+{_SB} [data-testid="stVerticalBlock"],
+{_SB} [data-testid="stVerticalBlockBorderWrapper"] {{
+  background-color: transparent !important;
+}}
+{_SB} .st-key-sb_scroll [data-testid="stVerticalBlockBorderWrapper"] {{
+  background: var(--sb-panel, {_PANEL}) !important;
+}}
+{_scrollbar_css(scroll_block)}
+{inactive_wrap} {{
   background: transparent !important;
   background-color: transparent !important;
   border: none !important;
   box-shadow: none !important;
 }}
-{_SB} .st-key-sb_nav_{active} .stButton > button,
-{_SB} .st-key-sb_nav_{active} [data-testid="stBaseButton-secondary"],
-{_SB} .st-key-sb_nav_{active} button {{
-  background: linear-gradient(90deg, rgba(124, 58, 237, 0.28), rgba(99, 102, 241, 0.14)) !important;
-  background-color: rgba(124, 58, 237, 0.22) !important;
-  border: 1px solid rgba(139, 92, 246, 0.35) !important;
-  border-left: 3px solid #a78bfa !important;
-  color: #ffffff !important;
-  font-weight: 600 !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+{inactive_btn} {{
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
 }}
+{_active_style(active)}
 """
 
 
@@ -201,9 +507,14 @@ def _render_nav_buttons(active: str) -> None:
             st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
         seen = True
         for label, page in items:
-            if st.button(label, key=f"sb_nav_{page}", use_container_width=True, type="secondary"):
-                if page != active:
-                    navigate_to(page)
+            clicked = st.button(
+                label,
+                key=_nav_key(page),
+                use_container_width=True,
+                type="tertiary",
+            )
+            if clicked and page != active:
+                navigate_to(page)
 
 
 def _plan_label(plan: str) -> str:
@@ -220,277 +531,6 @@ def _user_initial(username: str) -> str:
     return (u[0] or "U").upper()
 
 
-def sidebar_master_css(active_page: str) -> str:
-    active = LEGACY_PAGE_ALIASES.get(active_page, active_page)
-    logout_uri = _icon_uri("logout")
-    nav_scroll = f'{_SB} .st-key-sb_nav > [data-testid="stVerticalBlock"]'
-    nav_wrap = (
-        f'{_SB} {_NAV_KEY} [data-testid="stVerticalBlockBorderWrapper"], '
-        f'{_SB} {_NAV_KEY} [data-testid="stElementContainer"], '
-        f'{_SB} {_NAV_KEY} .stButton'
-    )
-    nav_btn = (
-        f'{_SB} {_NAV_KEY} .stButton > button, '
-        f'{_SB} {_NAV_KEY} [data-testid="stBaseButton-secondary"], '
-        f'{_SB} {_NAV_KEY} [data-testid="stBaseButton-primary"], '
-        f'{_SB} {_NAV_KEY} button'
-    )
-    return f"""
-:root {{
-  --sb-width: {_WIDTH};
-  --sb-bg: {_SB_BG};
-  --sb-bg-deep: {_SB_BG_DEEP};
-  --sb-panel: {_SB_PANEL};
-  --sb-line: {_SB_LINE};
-}}
-{_nav_icon_css(active)}
-{_active_nav_css(active)}
-{_SB} {{
-  width: var(--sb-width) !important;
-  min-width: var(--sb-width) !important;
-  max-width: var(--sb-width) !important;
-  background: var(--sb-bg-deep) !important;
-  border-right: 1px solid var(--sb-line) !important;
-  user-select: none;
-}}
-{_SB} > div {{
-  padding: 12px 10px 10px !important;
-  background: linear-gradient(180deg, var(--sb-bg) 0%, var(--sb-bg-deep) 100%) !important;
-  height: 100dvh !important;
-  max-height: 100dvh !important;
-  display: flex !important;
-  flex-direction: column !important;
-  overflow: hidden !important;
-}}
-{_SB} [data-testid="stSidebarContent"],
-{_SB} [data-testid="stSidebarUserContent"] {{
-  padding: 0 !important;
-  background: transparent !important;
-  display: flex !important;
-  flex-direction: column !important;
-  flex: 1 !important;
-  min-height: 0 !important;
-  overflow: hidden !important;
-}}
-{_SB} [data-testid="stSidebarNav"] {{ display: none !important; }}
-{_SB} .st-key-sb_panel > [data-testid="stVerticalBlock"] {{
-  display: flex !important;
-  flex-direction: column !important;
-  flex: 1 !important;
-  min-height: 0 !important;
-  gap: 0 !important;
-  padding: 0 !important;
-  overflow: hidden !important;
-}}
-{_SB} .st-key-sb_nav {{
-  background: rgba(39, 39, 42, 0.55) !important;
-  border: 1px solid var(--sb-line) !important;
-  border-radius: 12px !important;
-  padding: 4px !important;
-  margin: 6px 0 8px !important;
-  flex: 1 1 auto !important;
-  min-height: 0 !important;
-  overflow: hidden !important;
-}}
-{_SB} .st-key-sb_nav > [data-testid="stVerticalBlock"] {{
-  flex: 1 1 auto !important;
-  min-height: 0 !important;
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
-  gap: 0 !important;
-  padding: 2px 4px 2px 2px !important;
-}}
-{_sidebar_scrollbar_css(nav_scroll)}
-.sb-brand {{
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 2px 8px 14px;
-  border-bottom: 1px solid var(--sb-line);
-  margin-bottom: 2px;
-}}
-.sb-brand svg {{ width: 24px !important; height: 24px !important; flex-shrink: 0; }}
-.sb-brand span {{ color: #fafafa !important; font-size: 15px; font-weight: 700; letter-spacing: -0.02em; }}
-.sb-section {{
-  color: #71717a !important;
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  padding: 10px 10px 5px;
-  margin: 0;
-  line-height: 1.2;
-}}
-.sb-divider {{ height: 1px; margin: 8px 10px; background: var(--sb-line); }}
-{nav_wrap} {{
-  background: transparent !important;
-  background-color: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  padding: 0 !important;
-  margin: 0 0 3px !important;
-}}
-{_SB} {_NAV_KEY} .stButton {{ margin: 0 !important; padding: 0 !important; width: 100% !important; }}
-{nav_btn} {{
-  width: 100% !important;
-  height: 38px !important;
-  min-height: 38px !important;
-  max-height: 38px !important;
-  margin: 0 !important;
-  padding: 0 12px !important;
-  border-radius: 9px !important;
-  border: 1px solid transparent !important;
-  border-left: 3px solid transparent !important;
-  background: transparent !important;
-  background-color: transparent !important;
-  background-image: none !important;
-  color: #d4d4d8 !important;
-  font-size: 13px !important;
-  font-weight: 500 !important;
-  text-align: left !important;
-  justify-content: flex-start !important;
-  box-shadow: none !important;
-  transform: none !important;
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease !important;
-}}
-{nav_btn}:hover {{
-  background: rgba(255, 255, 255, 0.06) !important;
-  background-color: rgba(255, 255, 255, 0.06) !important;
-  border-color: rgba(255, 255, 255, 0.05) !important;
-  color: #fafafa !important;
-  transform: none !important;
-}}
-{nav_btn}:focus-visible {{
-  outline: 2px solid rgba(139, 92, 246, 0.55) !important;
-  outline-offset: 1px !important;
-}}
-{nav_btn} p {{
-  margin: 0 !important;
-  color: inherit !important;
-  font-size: inherit !important;
-  font-weight: inherit !important;
-}}
-.sb-foot {{
-  flex-shrink: 0;
-  padding-top: 10px;
-  border-top: 1px solid var(--sb-line);
-  margin-top: auto;
-}}
-.sb-user {{
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: 11px;
-  background: rgba(39, 39, 42, 0.85);
-  border: 1px solid var(--sb-line);
-  margin-bottom: 8px;
-}}
-.sb-av {{
-  width: 30px; height: 30px; border-radius: 9px;
-  background: linear-gradient(135deg, #7c3aed, #6366f1);
-  color: #fff; font-size: 12px; font-weight: 700;
-  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.25);
-}}
-.sb-un {{ color: #f4f4f5 !important; font-size: 12px; font-weight: 600; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }}
-.sb-up {{ color: #a1a1aa !important; font-size: 10px; margin-top: 2px; font-weight: 500; }}
-{_SB} .st-key-nav_logout [data-testid="stVerticalBlockBorderWrapper"],
-{_SB} .st-key-nav_logout [data-testid="stElementContainer"],
-{_SB} .st-key-nav_logout .stButton {{
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-  padding: 0 !important;
-  margin: 0 !important;
-}}
-{_SB} .st-key-nav_logout .stButton > button,
-{_SB} .st-key-nav_logout [data-testid="stBaseButton-secondary"],
-{_SB} .st-key-nav_logout button {{
-  width: 100% !important;
-  height: 36px !important;
-  min-height: 36px !important;
-  padding: 0 12px 0 36px !important;
-  border-radius: 9px !important;
-  border: 1px solid var(--sb-line) !important;
-  background: rgba(39, 39, 42, 0.6) !important;
-  background-color: rgba(39, 39, 42, 0.6) !important;
-  color: #a1a1aa !important;
-  font-size: 12px !important;
-  font-weight: 500 !important;
-  text-align: left !important;
-  position: relative !important;
-  box-shadow: none !important;
-  transition: background 0.15s ease, color 0.15s ease !important;
-}}
-{_SB} .st-key-nav_logout .stButton > button:hover,
-{_SB} .st-key-nav_logout button:hover {{
-  background: rgba(255, 255, 255, 0.06) !important;
-  background-color: rgba(255, 255, 255, 0.06) !important;
-  color: #e4e4e7 !important;
-}}
-{_SB} .st-key-nav_logout .stButton > button::before,
-{_SB} .st-key-nav_logout button::before {{
-  content: '';
-  position: absolute;
-  left: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 14px;
-  height: 14px;
-  background-image: {logout_uri};
-  background-size: 14px;
-  background-repeat: no-repeat;
-}}
-"""
-
-
-def sidebar_theme_lock_css(active_page: str) -> str:
-    """Final override — beats Streamlit theme secondary button backgrounds."""
-    active = LEGACY_PAGE_ALIASES.get(active_page, active_page)
-    nav_scroll = f'{_SB} .st-key-sb_nav > [data-testid="stVerticalBlock"]'
-    sb_shell = (
-        f"{_SB}, {_SB} > div, {_SB} [data-testid=\"stSidebarContent\"], "
-        f'{_SB} [data-testid="stSidebarUserContent"]'
-    )
-    return f"""
-{sb_shell} {{
-  background: var(--sb-bg-deep, {_SB_BG_DEEP}) !important;
-  background-color: var(--sb-bg-deep, {_SB_BG_DEEP}) !important;
-}}
-{_SB} > div {{
-  background: linear-gradient(180deg, var(--sb-bg, {_SB_BG}) 0%, var(--sb-bg-deep, {_SB_BG_DEEP}) 100%) !important;
-}}
-{_sidebar_scrollbar_css(nav_scroll)}
-{_SB} {_NAV_KEY} [data-testid="stVerticalBlockBorderWrapper"],
-{_SB} {_NAV_KEY} [data-testid="stVerticalBlockBorderWrapper"] > div,
-{_SB} {_NAV_KEY} [data-testid="stElementContainer"],
-{_SB} {_NAV_KEY} .stButton,
-{_SB} {_NAV_KEY} .stButton > button,
-{_SB} {_NAV_KEY} [data-testid="stBaseButton-secondary"],
-{_SB} {_NAV_KEY} button[kind="secondary"] {{
-  background: transparent !important;
-  background-color: transparent !important;
-  background-image: none !important;
-  border: none !important;
-  box-shadow: none !important;
-}}
-{_SB} .st-key-sb_nav_{active} .stButton > button,
-{_SB} .st-key-sb_nav_{active} button {{
-  background: linear-gradient(90deg, rgba(124, 58, 237, 0.28), rgba(99, 102, 241, 0.14)) !important;
-  background-color: rgba(124, 58, 237, 0.22) !important;
-  border: 1px solid rgba(139, 92, 246, 0.35) !important;
-  border-left: 3px solid #a78bfa !important;
-  color: #ffffff !important;
-}}
-"""
-
-
-def _resolve_active(active_page: str | None) -> str:
-    p = (active_page or st.session_state.get("page") or "home").strip()
-    return LEGACY_PAGE_ALIASES.get(p, p)
-
-
 def render_sidebar(active_page: str | None = None) -> None:
     active = _resolve_active(active_page)
     inject_css(sidebar_master_css(active))
@@ -503,7 +543,7 @@ def render_sidebar(active_page: str | None = None) -> None:
                 f'<div class="sb-brand">{_BRAND_SVG}<span>{html.escape(APP_NAME)}</span></div>',
                 unsafe_allow_html=True,
             )
-            with st.container(key="sb_nav"):
+            with st.container(key="sb_scroll"):
                 _render_nav_buttons(active)
             st.markdown(
                 f'<div class="sb-foot"><div class="sb-user">'
@@ -513,7 +553,13 @@ def render_sidebar(active_page: str | None = None) -> None:
                 f"</div></div>",
                 unsafe_allow_html=True,
             )
-            if st.button("Abmelden", key="nav_logout", use_container_width=True, type="secondary"):
+            if st.button(
+                "Abmelden",
+                key="nav_logout",
+                use_container_width=True,
+                type="tertiary",
+            ):
                 from services.session_auth import logout_session
+
                 logout_session()
                 st.rerun()
