@@ -141,10 +141,9 @@ def enforce_active_session() -> dict | None:
         return _cached_session_user()
 
     if not user:
-        # Missing row — often ephemeral DB on redeploy; keep recent Streamlit session.
-        issued = float(st.session_state.get("session_issued_at") or 0)
-        if issued and (time.time() - issued) < 86_400:
-            return _cached_session_user()
+        cached = _cached_session_user()
+        if cached and st.session_state.get("logged_in"):
+            return cached
         logout_session()
         return None
 

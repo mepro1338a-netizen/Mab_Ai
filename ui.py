@@ -23,11 +23,6 @@ from pages.account import render_dashboard
 
 
 def render_football() -> None:
-    if not st.session_state.get("logged_in"):
-        st.session_state.page = "auth"
-        st.rerun()
-        return
-
     def _open_premium() -> None:
         st.session_state.page = "premium"
         st.rerun()
@@ -217,14 +212,9 @@ for key, value in DEFAULTS.items():
         st.session_state[key] = value
 
 
-# =========================================================
-# ROUTER
-# =========================================================
+def _session_logged_in() -> bool:
+    return bool(st.session_state.get("logged_in") and st.session_state.get("user"))
 
-logged_in = bool(
-    st.session_state.get("logged_in")
-    and st.session_state.get("user")
-)
 
 # Social platform OAuth (YouTube/IG/TikTok — not login)
 if _is_social_oauth_callback():
@@ -234,15 +224,10 @@ if _is_social_oauth_callback():
     st.stop()
 
 # Google login OAuth callback
-if not logged_in and _is_google_login_oauth_callback():
+if not _session_logged_in() and _is_google_login_oauth_callback():
     from pages.auth import handle_google_oauth_callback
 
     handle_google_oauth_callback()
-    st.stop()
-
-if not logged_in:
-    st.session_state.page = "auth"
-    render_auth()
     st.stop()
 
 
@@ -275,6 +260,12 @@ def handle_payment_callback() -> None:
 handle_payment_callback()
 
 enforce_active_session()
+
+if not _session_logged_in():
+    st.session_state.page = "auth"
+    render_auth()
+    st.stop()
+
 
 load_css()
 apply_nav_from_query()
