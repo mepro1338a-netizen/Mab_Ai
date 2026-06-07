@@ -1,11 +1,8 @@
 ﻿"""MaByte Auth — Login & Registrierung."""
 from __future__ import annotations
 
-import html
-
 import streamlit as st
 
-from config import APP_NAME
 from database import record_login_event, register_account, verify_login_identifier
 from logger import log_auth
 from oauth_service import complete_oauth, friendly_oauth_error, verify_state
@@ -15,8 +12,6 @@ from ui.styles import inject_css
 
 _DEFAULT_USE_CASE = "Sonstiges"
 _DEFAULT_COUNTRY = "Deutschland"
-_APP = html.escape(APP_NAME or "MaByte")
-_SLOGAN = "Dein KI-Workspace — einfach anmelden und loslegen."
 
 _AUTH_CSS = """
 /* MaByte Auth */
@@ -127,28 +122,6 @@ html:has(.auth-marker) .st-key-auth_card [data-testid="stElementContainer"] {
     margin: 0 !important;
     padding: 0 !important;
     width: 100% !important;
-}
-
-.auth-header {
-    margin: 0 0 20px;
-    text-align: center;
-}
-
-.auth-brand {
-    margin: 0;
-    font-size: 28px;
-    font-weight: 700;
-    letter-spacing: -0.03em;
-    line-height: 1.15;
-    color: var(--auth-text) !important;
-}
-
-.auth-slogan {
-    margin: 8px 0 0;
-    font-size: 13px;
-    font-weight: 400;
-    line-height: 1.45;
-    color: var(--auth-muted) !important;
 }
 
 html:has(.auth-marker) .st-key-auth_seg_wrap {
@@ -405,7 +378,6 @@ html:has(.auth-marker) .stApp {
         --auth-pad: 28px;
         --auth-w: 100%;
     }
-    html:has(.auth-marker) .auth-brand { font-size: 24px; }
     html:has(.auth-marker) [data-testid="stMain"] {
         justify-content: flex-start !important;
         padding-top: var(--s2) !important;
@@ -639,14 +611,6 @@ def render_auth() -> None:
 
     with st.container(key="auth_card", border=False):
         st.markdown('<span class="auth-card-marker" hidden aria-hidden="true"></span>', unsafe_allow_html=True)
-
-        st.markdown(
-            f'<div class="auth-header">'
-            f'<p class="auth-brand">{_APP}</p>'
-            f'<p class="auth-slogan">{html.escape(_SLOGAN)}</p>'
-            f"</div>",
-            unsafe_allow_html=True,
-        )
 
         with st.container(key="auth_seg_wrap"):
             choice = st.segmented_control(
