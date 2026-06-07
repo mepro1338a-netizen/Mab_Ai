@@ -17,14 +17,13 @@ from ui.styles import inject_css
 _SB = 'section[data-testid="stSidebar"]'
 _WIDTH = "240px"
 _NAV_BTN = '[class*="st-key-sb_nav_"]'
+_PANEL_COL = f'{_SB} .st-key-sb_panel [data-testid="stVerticalBlockBorderWrapper"] > [data-testid="stVerticalBlock"]'
+_SCROLL_HOST = f'{_SB} .st-key-sb_scroll'
 _SCROLL_SHELL = (
-    f'{_SB} .st-key-sb_scroll > [data-testid="stVerticalBlockBorderWrapper"], '
-    f'{_SB} .st-key-sb_scroll > div > [data-testid="stVerticalBlockBorderWrapper"]'
+    f'{_SCROLL_HOST} > [data-testid="stVerticalBlockBorderWrapper"], '
+    f'{_SCROLL_HOST} > div > [data-testid="stVerticalBlockBorderWrapper"]'
 )
-_SCROLL_BODY = (
-    f'{_SB} .st-key-sb_scroll > [data-testid="stVerticalBlockBorderWrapper"] > [data-testid="stVerticalBlock"], '
-    f'{_SB} .st-key-sb_scroll > div > [data-testid="stVerticalBlockBorderWrapper"] > [data-testid="stVerticalBlock"]'
-)
+_SCROLL_BODY = f'{_SCROLL_SHELL} > [data-testid="stVerticalBlock"]'
 _SCROLL_INNER = f'{_SCROLL_BODY} [data-testid="stVerticalBlockBorderWrapper"]'
 
 _BG = "#18181b"
@@ -187,23 +186,28 @@ def _nav_icons_css(active: str) -> str:
 
 
 def _scrollbar_css(target: str) -> str:
+    fallback = f'{_SCROLL_HOST} [data-testid="stVerticalBlockBorderWrapper"] > [data-testid="stVerticalBlock"]'
+    scrollers = f'{target}, {fallback}'
     return f"""
-{target} {{
+{scrollers} {{
   scrollbar-width: thin;
   scrollbar-color: rgba(139, 92, 246, 0.75) rgba(255, 255, 255, 0.05);
+  max-height: calc(100dvh - 250px) !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
 }}
-{target}::-webkit-scrollbar {{ width: 6px; }}
-{target}::-webkit-scrollbar-track {{
+{scrollers}::-webkit-scrollbar {{ width: 6px; }}
+{scrollers}::-webkit-scrollbar-track {{
   background: rgba(255, 255, 255, 0.04);
   border-radius: 999px;
   margin: 6px 0;
 }}
-{target}::-webkit-scrollbar-thumb {{
+{scrollers}::-webkit-scrollbar-thumb {{
   background: linear-gradient(180deg, #8b5cf6, #6366f1);
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.12);
 }}
-{target}::-webkit-scrollbar-thumb:hover {{
+{scrollers}::-webkit-scrollbar-thumb:hover {{
   background: linear-gradient(180deg, #a78bfa, #818cf8);
 }}
 """
@@ -254,22 +258,39 @@ def sidebar_master_css(active_page: str) -> str:
 {_SB} [data-testid="stSidebarUserContent"] {{
   padding: 0 !important;
   background: transparent !important;
-  overflow: hidden !important;
-}}
-{_SB} [data-testid="stSidebarNav"] {{ display: none !important; }}
-{_SB} .st-key-sb_panel > [data-testid="stVerticalBlock"] {{
   display: flex !important;
   flex-direction: column !important;
-  flex: 1 !important;
+  flex: 1 1 auto !important;
   min-height: 0 !important;
-  gap: 0 !important;
   height: 100% !important;
   overflow: hidden !important;
 }}
-{_SB} .st-key-sb_scroll {{
+{_SB} [data-testid="stSidebarNav"] {{ display: none !important; }}
+{_SB} .st-key-sb_panel {{
   flex: 1 1 auto !important;
   min-height: 0 !important;
+  height: 100% !important;
   overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+}}
+{_PANEL_COL} {{
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  max-height: 100% !important;
+  gap: 0 !important;
+  overflow: hidden !important;
+}}
+{_SCROLL_HOST} {{
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
+  height: auto !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
 }}
 {_SB} .st-key-sb_panel [data-testid="stMarkdownContainer"],
 {_SB} .st-key-sb_panel [data-testid="stElementContainer"]:not(.st-key-sb_scroll) {{
@@ -281,23 +302,27 @@ def sidebar_master_css(active_page: str) -> str:
   background: var(--sb-panel) !important;
   border: 1px solid var(--sb-line) !important;
   border-radius: 12px !important;
-  flex: 1 1 auto !important;
+  flex: 1 1 0 !important;
   min-height: 0 !important;
+  height: auto !important;
   overflow: hidden !important;
   margin: 8px 0 !important;
   padding: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
 }}
 {_SCROLL_BODY} {{
-  flex: 1 1 auto !important;
+  flex: 1 1 0 !important;
   min-height: 0 !important;
+  height: auto !important;
   max-height: 100% !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
+  overscroll-behavior: contain !important;
+  -webkit-overflow-scrolling: touch !important;
   padding: 8px 8px 8px 6px !important;
   gap: 4px !important;
-  display: flex !important;
-  flex-direction: column !important;
 }}
 {_SCROLL_INNER} {{
   background: transparent !important;
@@ -519,9 +544,25 @@ def sidebar_theme_lock_css(active_page: str) -> str:
 {_SB} [data-testid="stVerticalBlockBorderWrapper"] {{
   background-color: transparent !important;
 }}
+{_PANEL_COL} {{
+  min-height: 0 !important;
+  overflow: hidden !important;
+}}
+{_SCROLL_HOST} {{
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}}
 {_SCROLL_SHELL} {{
   background: var(--sb-panel, {_PANEL}) !important;
   border: 1px solid var(--sb-line) !important;
+  flex: 1 1 0 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}}
+{_SCROLL_BODY} {{
+  overflow-y: auto !important;
+  min-height: 0 !important;
 }}
 {_SCROLL_INNER} {{
   background: transparent !important;
