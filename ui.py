@@ -9,7 +9,13 @@ from database import ensure_db_ready, get_user
 from payments import confirm_checkout_session
 from services.session_auth import enforce_active_session
 from ui.chrome import apply_nav_from_query, render_app_header
-from ui.sidebar import LEGACY_PAGE_ALIASES, NAV_ITEMS, VALID_NAV_PAGES, render_sidebar
+from ui.sidebar import (
+    LEGACY_PAGE_ALIASES,
+    NAV_ITEMS,
+    VALID_NAV_PAGES,
+    render_sidebar,
+    sidebar_theme_lock_css,
+)
 from ui_core import load_css, sync_session_user
 
 from pages.auth import render_auth
@@ -352,6 +358,7 @@ else:
     st.session_state.page = "home"
     st.rerun()
 
-from ui.styles import inject_theme_lock
+from ui.styles import inject_css, inject_theme_lock
 
 inject_theme_lock()
+inject_css(sidebar_theme_lock_css(page))

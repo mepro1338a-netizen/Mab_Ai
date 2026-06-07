@@ -1,5 +1,5 @@
 """
-MaByte Sidebar — clean flat nav (Streamlit buttons, session-safe).
+MaByte Sidebar — flat nav buttons (session-safe) in a single HTML shell layout.
 """
 from __future__ import annotations
 
@@ -13,6 +13,7 @@ from ui.styles import inject_css
 
 _SB = 'section[data-testid="stSidebar"]'
 _WIDTH = "230px"
+_NAV_KEY = '[class*="st-key-sb_nav_"]'
 
 NAV_SECTIONS: list[tuple[str, list[tuple[str, str]]]] = [
     (
@@ -95,26 +96,36 @@ def _icon_uri(page: str, *, active: bool = False) -> str:
     return f'url("data:image/svg+xml,{quote(svg)}")'
 
 
-def _nav_btn_sel(page: str) -> str:
+def _nav_btn_selectors(page: str) -> str:
+    base = f'{_SB} .st-key-sb_nav_{page}'
     return (
-        f'{_SB} .st-key-sb_nav_{page} .stButton > button, '
-        f'{_SB} .st-key-sb_nav_{page} [data-testid="stBaseButton-secondary"], '
-        f'{_SB} .st-key-sb_nav_{page} [data-testid="stBaseButton-primary"]'
+        f'{base} [data-testid="stVerticalBlockBorderWrapper"], '
+        f'{base} [data-testid="stElementContainer"], '
+        f'{base} .stButton, '
+        f'{base} .stButton > button, '
+        f'{base} [data-testid="stBaseButton-secondary"], '
+        f'{base} [data-testid="stBaseButton-primary"], '
+        f'{base} button'
     )
 
 
-def _nav_icon_css(active_page: str) -> str:
-    active = LEGACY_PAGE_ALIASES.get(active_page, active_page)
+def _nav_icon_css(active: str) -> str:
     rules: list[str] = []
     for page in _ICONS:
         if page == "logout":
             continue
-        is_active = page == active
-        sel = _nav_btn_sel(page)
-        uri = _icon_uri(page, active=is_active)
+        sel = _nav_btn_selectors(page)
+        uri = _icon_uri(page, active=(page == active))
         rules.append(
-            f"{sel} {{ padding-left: 36px !important; position: relative !important; }}"
-            f"{sel}::before {{"
+            f"{sel} {{ box-shadow: none !important; }}"
+            f'{_SB} .st-key-sb_nav_{page} .stButton > button, '
+            f'{_SB} .st-key-sb_nav_{page} [data-testid="stBaseButton-secondary"], '
+            f'{_SB} .st-key-sb_nav_{page} button {{'
+            f"padding-left: 36px !important; position: relative !important;"
+            f"}}"
+            f'{_SB} .st-key-sb_nav_{page} .stButton > button::before, '
+            f'{_SB} .st-key-sb_nav_{page} [data-testid="stBaseButton-secondary"]::before, '
+            f'{_SB} .st-key-sb_nav_{page} button::before {{'
             f'content:"";position:absolute;left:10px;top:50%;transform:translateY(-50%);'
             f"width:18px;height:18px;background-image:{uri};"
             f"background-size:18px 18px;background-repeat:no-repeat;"
@@ -123,14 +134,23 @@ def _nav_icon_css(active_page: str) -> str:
     return "".join(rules)
 
 
-def _active_nav_css(active_page: str) -> str:
-    active = LEGACY_PAGE_ALIASES.get(active_page, active_page)
+def _active_nav_css(active: str) -> str:
     if active not in VALID_NAV_PAGES:
         return ""
-    sel = _nav_btn_sel(active)
+    sel = _nav_btn_selectors(active)
     return f"""
 {sel} {{
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}}
+{_SB} .st-key-sb_nav_{active} .stButton > button,
+{_SB} .st-key-sb_nav_{active} [data-testid="stBaseButton-secondary"],
+{_SB} .st-key-sb_nav_{active} button {{
   background: rgba(124, 58, 237, 0.18) !important;
+  background-color: rgba(124, 58, 237, 0.18) !important;
+  border: none !important;
   border-left: 3px solid #8b5cf6 !important;
   color: #ffffff !important;
   font-weight: 600 !important;
@@ -150,12 +170,7 @@ def _render_nav_buttons(active: str) -> None:
             st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
         seen = True
         for label, page in items:
-            if st.button(
-                label,
-                key=f"sb_nav_{page}",
-                use_container_width=True,
-                type="secondary",
-            ):
+            if st.button(label, key=f"sb_nav_{page}", use_container_width=True, type="secondary"):
                 if page != active:
                     navigate_to(page)
 
@@ -177,10 +192,16 @@ def _user_initial(username: str) -> str:
 def sidebar_master_css(active_page: str) -> str:
     active = LEGACY_PAGE_ALIASES.get(active_page, active_page)
     logout_uri = _icon_uri("logout")
+    nav_wrap = (
+        f'{_SB} {_NAV_KEY} [data-testid="stVerticalBlockBorderWrapper"], '
+        f'{_SB} {_NAV_KEY} [data-testid="stElementContainer"], '
+        f'{_SB} {_NAV_KEY} .stButton'
+    )
     nav_btn = (
-        f'{_SB} [class*="st-key-sb_nav_"] .stButton > button, '
-        f'{_SB} [class*="st-key-sb_nav_"] [data-testid="stBaseButton-secondary"], '
-        f'{_SB} [class*="st-key-sb_nav_"] [data-testid="stBaseButton-primary"]'
+        f'{_SB} {_NAV_KEY} .stButton > button, '
+        f'{_SB} {_NAV_KEY} [data-testid="stBaseButton-secondary"], '
+        f'{_SB} {_NAV_KEY} [data-testid="stBaseButton-primary"], '
+        f'{_SB} {_NAV_KEY} button'
     )
     return f"""
 :root {{ --sb-width: {_WIDTH}; }}
@@ -201,7 +222,6 @@ def sidebar_master_css(active_page: str) -> str:
   display: flex !important;
   flex-direction: column !important;
   overflow: hidden !important;
-  box-sizing: border-box !important;
 }}
 {_SB} [data-testid="stSidebarContent"],
 {_SB} [data-testid="stSidebarUserContent"] {{
@@ -214,20 +234,17 @@ def sidebar_master_css(active_page: str) -> str:
   overflow: hidden !important;
 }}
 {_SB} [data-testid="stSidebarNav"] {{ display: none !important; }}
-{_SB} [data-testid="stVerticalBlock"],
-{_SB} [data-testid="stVerticalBlockBorderWrapper"],
-{_SB} [data-testid="stElementContainer"] {{
-  gap: 0 !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  border: none !important;
-  box-shadow: none !important;
-  background: transparent !important;
-}}
-{_SB} .st-key-sb_shell > [data-testid="stVerticalBlock"] {{
+{_SB} .st-key-sb_panel > [data-testid="stVerticalBlock"] {{
   display: flex !important;
   flex-direction: column !important;
   flex: 1 !important;
+  min-height: 0 !important;
+  gap: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}}
+{_SB} .st-key-sb_nav > [data-testid="stVerticalBlock"] {{
+  flex: 1 1 auto !important;
   min-height: 0 !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
@@ -241,52 +258,44 @@ def sidebar_master_css(active_page: str) -> str:
   align-items: center;
   gap: 10px;
   padding: 4px 6px 14px;
-  flex-shrink: 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }}
-.sb-brand svg {{ width: 24px !important; height: 24px !important; flex-shrink: 0; }}
-.sb-brand span {{
-  color: #fafafa !important;
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-}}
-.sb-nav-list {{
-  padding: 2px 0 4px;
-}}
+.sb-brand svg {{ width: 24px !important; height: 24px !important; }}
+.sb-brand span {{ color: #fafafa !important; font-size: 15px; font-weight: 700; letter-spacing: -0.02em; }}
 .sb-section {{
   color: #52525b !important;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  padding: 10px 10px 4px;
+  padding: 12px 10px 6px;
   margin: 0;
-  line-height: 1;
+  line-height: 1.2;
 }}
-.sb-divider {{
-  height: 1px;
-  margin: 6px 8px;
-  background: rgba(255, 255, 255, 0.06);
-}}
-{_SB} [class*="st-key-sb_nav_"] .stButton {{
-  margin: 0 0 2px !important;
+.sb-divider {{ height: 1px; margin: 6px 8px; background: rgba(255, 255, 255, 0.06); }}
+{nav_wrap} {{
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
   padding: 0 !important;
-  width: 100% !important;
+  margin: 0 0 2px !important;
 }}
+{_SB} {_NAV_KEY} .stButton {{ margin: 0 !important; padding: 0 !important; width: 100% !important; }}
 {nav_btn} {{
   width: 100% !important;
-  height: 36px !important;
-  min-height: 36px !important;
-  max-height: 36px !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  max-height: 38px !important;
+  margin: 0 !important;
   padding: 0 10px !important;
   border-radius: 8px !important;
   border: none !important;
   border-left: 3px solid transparent !important;
   background: transparent !important;
-  background-image: none !important;
   background-color: transparent !important;
+  background-image: none !important;
   color: #a1a1aa !important;
   font-size: 13px !important;
   font-weight: 500 !important;
@@ -297,22 +306,17 @@ def sidebar_master_css(active_page: str) -> str:
 }}
 {nav_btn}:hover {{
   background: rgba(255, 255, 255, 0.05) !important;
+  background-color: rgba(255, 255, 255, 0.05) !important;
   color: #e4e4e7 !important;
   transform: none !important;
 }}
 {nav_btn} p {{
   margin: 0 !important;
-  text-align: left !important;
   color: inherit !important;
   font-size: inherit !important;
   font-weight: inherit !important;
 }}
-.sb-foot {{
-  flex-shrink: 0;
-  padding-top: 10px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  margin-top: auto;
-}}
+.sb-foot {{ padding-top: 10px; border-top: 1px solid rgba(255, 255, 255, 0.06); margin-top: 4px; }}
 .sb-user {{
   display: flex;
   align-items: center;
@@ -321,49 +325,36 @@ def sidebar_master_css(active_page: str) -> str:
   border-radius: 10px;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.05);
-  margin-bottom: 6px;
+  margin-bottom: 8px;
 }}
 .sb-av {{
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
+  width: 28px; height: 28px; border-radius: 8px;
   background: linear-gradient(135deg, #7c3aed, #6366f1);
-  color: #fff;
-  font-size: 11px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
+  color: #fff; font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }}
-.sb-un {{
-  color: #e4e4e7 !important;
-  font-size: 12px;
-  font-weight: 500;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 140px;
+.sb-un {{ color: #e4e4e7 !important; font-size: 12px; font-weight: 500; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }}
+.sb-up {{ color: #71717a !important; font-size: 10px; margin-top: 2px; }}
+{_SB} .st-key-nav_logout [data-testid="stVerticalBlockBorderWrapper"],
+{_SB} .st-key-nav_logout [data-testid="stElementContainer"],
+{_SB} .st-key-nav_logout .stButton {{
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
 }}
-.sb-up {{
-  color: #71717a !important;
-  font-size: 10px;
-  line-height: 1.2;
-  margin-top: 2px;
-}}
-{_SB} .st-key-nav_logout {{ flex-shrink: 0 !important; margin: 0 !important; }}
-{_SB} .st-key-nav_logout .stButton {{ margin: 0 !important; padding: 0 !important; width: 100% !important; }}
 {_SB} .st-key-nav_logout .stButton > button,
-{_SB} .st-key-nav_logout [data-testid="stBaseButton-secondary"] {{
+{_SB} .st-key-nav_logout [data-testid="stBaseButton-secondary"],
+{_SB} .st-key-nav_logout button {{
   width: 100% !important;
   height: 34px !important;
   min-height: 34px !important;
-  max-height: 34px !important;
   padding: 0 10px 0 34px !important;
   border-radius: 8px !important;
   border: 1px solid rgba(255, 255, 255, 0.06) !important;
   background: transparent !important;
-  background-image: none !important;
+  background-color: transparent !important;
   color: #71717a !important;
   font-size: 12px !important;
   font-weight: 500 !important;
@@ -371,13 +362,8 @@ def sidebar_master_css(active_page: str) -> str:
   position: relative !important;
   box-shadow: none !important;
 }}
-{_SB} .st-key-nav_logout .stButton > button:hover,
-{_SB} .st-key-nav_logout [data-testid="stBaseButton-secondary"]:hover {{
-  background: rgba(255, 255, 255, 0.04) !important;
-  color: #a1a1aa !important;
-  transform: none !important;
-}}
-{_SB} .st-key-nav_logout .stButton > button::before {{
+{_SB} .st-key-nav_logout .stButton > button::before,
+{_SB} .st-key-nav_logout button::before {{
   content: '';
   position: absolute;
   left: 10px;
@@ -388,7 +374,33 @@ def sidebar_master_css(active_page: str) -> str:
   background-image: {logout_uri};
   background-size: 14px;
   background-repeat: no-repeat;
-  opacity: 0.85;
+}}
+"""
+
+
+def sidebar_theme_lock_css(active_page: str) -> str:
+    """Final override — beats Streamlit theme secondary button backgrounds."""
+    active = LEGACY_PAGE_ALIASES.get(active_page, active_page)
+    return f"""
+{_SB} {_NAV_KEY} [data-testid="stVerticalBlockBorderWrapper"],
+{_SB} {_NAV_KEY} [data-testid="stVerticalBlockBorderWrapper"] > div,
+{_SB} {_NAV_KEY} [data-testid="stElementContainer"],
+{_SB} {_NAV_KEY} .stButton,
+{_SB} {_NAV_KEY} .stButton > button,
+{_SB} {_NAV_KEY} [data-testid="stBaseButton-secondary"],
+{_SB} {_NAV_KEY} button[kind="secondary"] {{
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  border: none !important;
+  box-shadow: none !important;
+}}
+{_SB} .st-key-sb_nav_{active} .stButton > button,
+{_SB} .st-key-sb_nav_{active} button {{
+  background: rgba(124, 58, 237, 0.18) !important;
+  background-color: rgba(124, 58, 237, 0.18) !important;
+  border-left: 3px solid #8b5cf6 !important;
+  color: #ffffff !important;
 }}
 """
 
@@ -405,22 +417,22 @@ def render_sidebar(active_page: str | None = None) -> None:
     plan = _plan_label(str(st.session_state.get("plan") or "free"))
 
     with st.sidebar:
-        with st.container(key="sb_shell"):
+        with st.container(key="sb_panel"):
             st.markdown(
                 f'<div class="sb-brand">{_BRAND_SVG}<span>{html.escape(APP_NAME)}</span></div>',
                 unsafe_allow_html=True,
             )
-            _render_nav_buttons(active)
+            with st.container(key="sb_nav"):
+                _render_nav_buttons(active)
             st.markdown(
-                f'<div class="sb-foot">'
-                f'<div class="sb-user">'
+                f'<div class="sb-foot"><div class="sb-user">'
                 f'<div class="sb-av">{html.escape(_user_initial(user))}</div>'
                 f'<div><div class="sb-un">{html.escape(user)}</div>'
                 f'<div class="sb-up">{html.escape(plan)}</div></div>'
                 f"</div></div>",
                 unsafe_allow_html=True,
             )
-        if st.button("Abmelden", key="nav_logout", use_container_width=True, type="secondary"):
-            from services.session_auth import logout_session
-            logout_session()
-            st.rerun()
+            if st.button("Abmelden", key="nav_logout", use_container_width=True, type="secondary"):
+                from services.session_auth import logout_session
+                logout_session()
+                st.rerun()
