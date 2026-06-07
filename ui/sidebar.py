@@ -1,5 +1,5 @@
 """
-MaByte Sidebar — scrollable nav via Streamlit buttons (session-safe, no ?nav= reload).
+MaByte Sidebar — clean flat nav (Streamlit buttons, session-safe).
 """
 from __future__ import annotations
 
@@ -13,11 +13,6 @@ from ui.styles import inject_css
 
 _SB = 'section[data-testid="stSidebar"]'
 _WIDTH = "230px"
-_NAV_BTN = (
-    f'{_SB} [class*="st-key-sb_nav_"] .stButton > button, '
-    f'{_SB} [class*="st-key-sb_nav_"] [data-testid="stBaseButton-secondary"], '
-    f'{_SB} [class*="st-key-sb_nav_"] [data-testid="stBaseButton-primary"]'
-)
 
 NAV_SECTIONS: list[tuple[str, list[tuple[str, str]]]] = [
     (
@@ -94,22 +89,29 @@ def navigate_to(page: str) -> None:
         st.rerun()
 
 
-def _icon_uri(page: str) -> str:
-    svg = (_ICONS.get(page) or _ICONS["home"]).format(c="%23a1a1aa")
+def _icon_uri(page: str, *, active: bool = False) -> str:
+    color = "%23ffffff" if active else "%23a1a1aa"
+    svg = (_ICONS.get(page) or _ICONS["home"]).format(c=color)
     return f'url("data:image/svg+xml,{quote(svg)}")'
 
 
-def _nav_icon_css() -> str:
+def _nav_btn_sel(page: str) -> str:
+    return (
+        f'{_SB} .st-key-sb_nav_{page} .stButton > button, '
+        f'{_SB} .st-key-sb_nav_{page} [data-testid="stBaseButton-secondary"], '
+        f'{_SB} .st-key-sb_nav_{page} [data-testid="stBaseButton-primary"]'
+    )
+
+
+def _nav_icon_css(active_page: str) -> str:
+    active = LEGACY_PAGE_ALIASES.get(active_page, active_page)
     rules: list[str] = []
     for page in _ICONS:
         if page == "logout":
             continue
-        uri = _icon_uri(page)
-        sel = (
-            f'{_SB} .st-key-sb_nav_{page} .stButton > button, '
-            f'{_SB} .st-key-sb_nav_{page} [data-testid="stBaseButton-secondary"], '
-            f'{_SB} .st-key-sb_nav_{page} [data-testid="stBaseButton-primary"]'
-        )
+        is_active = page == active
+        sel = _nav_btn_sel(page)
+        uri = _icon_uri(page, active=is_active)
         rules.append(
             f"{sel} {{ padding-left: 36px !important; position: relative !important; }}"
             f"{sel}::before {{"
@@ -119,6 +121,21 @@ def _nav_icon_css() -> str:
             f"}}"
         )
     return "".join(rules)
+
+
+def _active_nav_css(active_page: str) -> str:
+    active = LEGACY_PAGE_ALIASES.get(active_page, active_page)
+    if active not in VALID_NAV_PAGES:
+        return ""
+    sel = _nav_btn_sel(active)
+    return f"""
+{sel} {{
+  background: rgba(124, 58, 237, 0.18) !important;
+  border-left: 3px solid #8b5cf6 !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+}}
+"""
 
 
 def _render_nav_buttons(active: str) -> None:
@@ -133,14 +150,13 @@ def _render_nav_buttons(active: str) -> None:
             st.markdown('<div class="sb-divider"></div>', unsafe_allow_html=True)
         seen = True
         for label, page in items:
-            is_on = page == active
             if st.button(
                 label,
                 key=f"sb_nav_{page}",
                 use_container_width=True,
-                type="primary" if is_on else "secondary",
+                type="secondary",
             ):
-                if not is_on:
+                if page != active:
                     navigate_to(page)
 
 
@@ -158,124 +174,221 @@ def _user_initial(username: str) -> str:
     return (u[0] or "U").upper()
 
 
-def _sidebar_user_html(*, user: str, plan: str) -> str:
-    return (
-        f'<div class="sb-foot">'
-        f'<div class="sb-user">'
-        f'<div class="sb-av">{html.escape(_user_initial(user))}</div>'
-        f'<div><div class="sb-un">{html.escape(user)}</div>'
-        f'<div class="sb-up">{html.escape(plan)}</div></div>'
-        f"</div></div>"
-    )
-
-
 def sidebar_master_css(active_page: str) -> str:
-    _ = active_page
+    active = LEGACY_PAGE_ALIASES.get(active_page, active_page)
     logout_uri = _icon_uri("logout")
+    nav_btn = (
+        f'{_SB} [class*="st-key-sb_nav_"] .stButton > button, '
+        f'{_SB} [class*="st-key-sb_nav_"] [data-testid="stBaseButton-secondary"], '
+        f'{_SB} [class*="st-key-sb_nav_"] [data-testid="stBaseButton-primary"]'
+    )
     return f"""
-:root{{--sb-width:{_WIDTH};}}
-{_nav_icon_css()}
-{_SB}{{
-  width:var(--sb-width)!important;min-width:var(--sb-width)!important;max-width:var(--sb-width)!important;
-  background:#09090b!important;border-right:1px solid rgba(255,255,255,.06)!important;
+:root {{ --sb-width: {_WIDTH}; }}
+{_nav_icon_css(active)}
+{_active_nav_css(active)}
+{_SB} {{
+  width: var(--sb-width) !important;
+  min-width: var(--sb-width) !important;
+  max-width: var(--sb-width) !important;
+  background: #09090b !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
 }}
-{_SB}>div{{
-  padding:0 10px 10px!important;background:#09090b!important;
-  height:100dvh!important;max-height:100dvh!important;
-  display:flex!important;flex-direction:column!important;overflow:hidden!important;
-  box-sizing:border-box!important;
+{_SB} > div {{
+  padding: 0 10px 10px !important;
+  background: #09090b !important;
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  box-sizing: border-box !important;
 }}
 {_SB} [data-testid="stSidebarContent"],
-{_SB} [data-testid="stSidebarUserContent"]{{
-  padding:0!important;background:#09090b!important;
-  display:flex!important;flex-direction:column!important;
-  flex:1!important;min-height:0!important;overflow:hidden!important;
+{_SB} [data-testid="stSidebarUserContent"] {{
+  padding: 0 !important;
+  background: #09090b !important;
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
 }}
-{_SB} [data-testid="stSidebarNav"]{{display:none!important;}}
+{_SB} [data-testid="stSidebarNav"] {{ display: none !important; }}
 {_SB} [data-testid="stVerticalBlock"],
-{_SB} [data-testid="stVerticalBlockBorderWrapper"]{{
-  gap:0!important;padding:0!important;margin:0!important;border:none!important;
-  box-shadow:none!important;background:transparent!important;
+{_SB} [data-testid="stVerticalBlockBorderWrapper"],
+{_SB} [data-testid="stElementContainer"] {{
+  gap: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
 }}
-{_SB} .st-key-sb_root > [data-testid="stVerticalBlock"]{{
-  display:flex!important;flex-direction:column!important;
-  flex:1!important;min-height:0!important;overflow:hidden!important;
-  gap:0!important;padding:0!important;
+{_SB} .st-key-sb_shell > [data-testid="stVerticalBlock"] {{
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  gap: 0 !important;
+  padding: 0 !important;
+  scrollbar-width: thin;
+  scrollbar-color: #3f3f46 transparent;
 }}
-.sb-brand{{
-  display:flex;align-items:center;gap:10px;padding:4px 6px 14px;flex-shrink:0;
-  border-bottom:1px solid rgba(255,255,255,.06);margin-bottom:8px;
+.sb-brand {{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 6px 14px;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  margin-bottom: 6px;
 }}
-.sb-brand svg{{width:24px!important;height:24px!important;flex-shrink:0;}}
-.sb-brand span{{color:#fafafa!important;font-size:15px;font-weight:700;letter-spacing:-.02em;}}
-.sb-scroll{{
-  flex:1 1 auto;min-height:0;overflow-y:auto!important;overflow-x:hidden!important;
-  -webkit-overflow-scrolling:touch;overscroll-behavior:contain;
-  padding:2px 4px;margin:0 -2px;
-  scrollbar-width:thin;scrollbar-color:#3f3f46 transparent;
+.sb-brand svg {{ width: 24px !important; height: 24px !important; flex-shrink: 0; }}
+.sb-brand span {{
+  color: #fafafa !important;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }}
-.sb-scroll::-webkit-scrollbar{{width:4px;}}
-.sb-scroll::-webkit-scrollbar-thumb{{background:#3f3f46;border-radius:6px;}}
-.sb-scroll::-webkit-scrollbar-track{{background:transparent;}}
-.sb-section{{
-  color:#52525b!important;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
-  padding:10px 10px 5px;margin:0;line-height:1;
+.sb-nav-list {{
+  padding: 2px 0 4px;
 }}
-.sb-divider{{
-  height:1px;margin:8px 8px;background:rgba(255,255,255,.06);flex-shrink:0;
+.sb-section {{
+  color: #52525b !important;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 10px 10px 4px;
+  margin: 0;
+  line-height: 1;
 }}
-{_SB} [class*="st-key-sb_nav_"] .stButton{{
-  margin:0 0 3px!important;padding:0!important;width:100%!important;
+.sb-divider {{
+  height: 1px;
+  margin: 6px 8px;
+  background: rgba(255, 255, 255, 0.06);
 }}
-{_NAV_BTN} {{
-  width:100%!important;height:38px!important;min-height:38px!important;max-height:38px!important;
-  padding:0 10px!important;border-radius:10px!important;
-  border:1px solid transparent!important;border-left:3px solid transparent!important;
-  background:transparent!important;background-image:none!important;
-  color:#a1a1aa!important;font-size:13px!important;font-weight:500!important;
-  text-align:left!important;justify-content:flex-start!important;
-  box-shadow:none!important;transform:none!important;
+{_SB} [class*="st-key-sb_nav_"] .stButton {{
+  margin: 0 0 2px !important;
+  padding: 0 !important;
+  width: 100% !important;
 }}
-{_NAV_BTN}:hover {{
-  background:rgba(255,255,255,.05)!important;color:#e4e4e7!important;
-  border-color:transparent!important;transform:none!important;
+{nav_btn} {{
+  width: 100% !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  max-height: 36px !important;
+  padding: 0 10px !important;
+  border-radius: 8px !important;
+  border: none !important;
+  border-left: 3px solid transparent !important;
+  background: transparent !important;
+  background-image: none !important;
+  background-color: transparent !important;
+  color: #a1a1aa !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  text-align: left !important;
+  justify-content: flex-start !important;
+  box-shadow: none !important;
+  transform: none !important;
 }}
-{_SB} [class*="st-key-sb_nav_"] [data-testid="stBaseButton-primary"],
-{_SB} [class*="st-key-sb_nav_"] .stButton > button[kind="primary"] {{
-  background:rgba(124,58,237,.2)!important;border-left-color:#8b5cf6!important;
-  color:#ffffff!important;font-weight:600!important;
+{nav_btn}:hover {{
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: #e4e4e7 !important;
+  transform: none !important;
 }}
-.sb-foot{{flex-shrink:0;padding-top:10px;border-top:1px solid rgba(255,255,255,.06);}}
-.sb-user{{
-  display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;
-  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);margin-bottom:8px;
+{nav_btn} p {{
+  margin: 0 !important;
+  text-align: left !important;
+  color: inherit !important;
+  font-size: inherit !important;
+  font-weight: inherit !important;
 }}
-.sb-av{{
-  width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#7c3aed,#6366f1);
-  color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+.sb-foot {{
+  flex-shrink: 0;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  margin-top: auto;
 }}
-.sb-un{{color:#e4e4e7!important;font-size:12px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px;}}
-.sb-up{{color:#71717a!important;font-size:10px;line-height:1.2;margin-top:2px;}}
-{_SB} .st-key-nav_logout{{flex-shrink:0!important;margin:8px 0 0!important;}}
-{_SB} .st-key-nav_logout .stButton{{margin:0!important;padding:0!important;width:100%!important;}}
-{_SB} .st-key-nav_logout .stButton>button,
-{_SB} .st-key-nav_logout [data-testid="stBaseButton-secondary"]{{
-  width:100%!important;height:38px!important;min-height:38px!important;max-height:38px!important;
-  padding:0 12px 0 38px!important;border-radius:10px!important;
-  border:1px solid rgba(255,255,255,.07)!important;
-  background:rgba(255,255,255,.02)!important;background-image:none!important;
-  color:#a1a1aa!important;font-size:13px!important;font-weight:500!important;
-  text-align:left!important;position:relative!important;box-shadow:none!important;
+.sb-user {{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  margin-bottom: 6px;
 }}
-{_SB} .st-key-nav_logout .stButton>button:hover,
-{_SB} .st-key-nav_logout [data-testid="stBaseButton-secondary"]:hover{{
-  background:rgba(255,255,255,.05)!important;border-color:rgba(255,255,255,.1)!important;
-  color:#e4e4e7!important;transform:none!important;
+.sb-av {{
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #7c3aed, #6366f1);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }}
-{_SB} .st-key-nav_logout .stButton>button::before{{
-  content:'';position:absolute;left:12px;top:50%;transform:translateY(-50%);
-  width:16px;height:16px;background-image:{logout_uri};
-  background-size:16px;background-repeat:no-repeat;
+.sb-un {{
+  color: #e4e4e7 !important;
+  font-size: 12px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 140px;
+}}
+.sb-up {{
+  color: #71717a !important;
+  font-size: 10px;
+  line-height: 1.2;
+  margin-top: 2px;
+}}
+{_SB} .st-key-nav_logout {{ flex-shrink: 0 !important; margin: 0 !important; }}
+{_SB} .st-key-nav_logout .stButton {{ margin: 0 !important; padding: 0 !important; width: 100% !important; }}
+{_SB} .st-key-nav_logout .stButton > button,
+{_SB} .st-key-nav_logout [data-testid="stBaseButton-secondary"] {{
+  width: 100% !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  max-height: 34px !important;
+  padding: 0 10px 0 34px !important;
+  border-radius: 8px !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  background: transparent !important;
+  background-image: none !important;
+  color: #71717a !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  text-align: left !important;
+  position: relative !important;
+  box-shadow: none !important;
+}}
+{_SB} .st-key-nav_logout .stButton > button:hover,
+{_SB} .st-key-nav_logout [data-testid="stBaseButton-secondary"]:hover {{
+  background: rgba(255, 255, 255, 0.04) !important;
+  color: #a1a1aa !important;
+  transform: none !important;
+}}
+{_SB} .st-key-nav_logout .stButton > button::before {{
+  content: '';
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+  height: 14px;
+  background-image: {logout_uri};
+  background-size: 14px;
+  background-repeat: no-repeat;
+  opacity: 0.85;
 }}
 """
 
@@ -292,14 +405,21 @@ def render_sidebar(active_page: str | None = None) -> None:
     plan = _plan_label(str(st.session_state.get("plan") or "free"))
 
     with st.sidebar:
-        with st.container(key="sb_root"):
+        with st.container(key="sb_shell"):
             st.markdown(
                 f'<div class="sb-brand">{_BRAND_SVG}<span>{html.escape(APP_NAME)}</span></div>',
                 unsafe_allow_html=True,
             )
-            with st.container(key="sb_scroll"):
-                _render_nav_buttons(active)
-            st.markdown(_sidebar_user_html(user=user, plan=plan), unsafe_allow_html=True)
+            _render_nav_buttons(active)
+            st.markdown(
+                f'<div class="sb-foot">'
+                f'<div class="sb-user">'
+                f'<div class="sb-av">{html.escape(_user_initial(user))}</div>'
+                f'<div><div class="sb-un">{html.escape(user)}</div>'
+                f'<div class="sb-up">{html.escape(plan)}</div></div>'
+                f"</div></div>",
+                unsafe_allow_html=True,
+            )
         if st.button("Abmelden", key="nav_logout", use_container_width=True, type="secondary"):
             from services.session_auth import logout_session
             logout_session()
