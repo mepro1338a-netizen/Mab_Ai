@@ -9,7 +9,7 @@ from urllib.parse import quote
 import streamlit as st
 
 from config import APP_NAME
-from ui.styles import inject_css
+from ui.styles import MB_APP_BACKGROUND, inject_css
 
 # ---------------------------------------------------------------------------
 # Tokens
@@ -20,8 +20,9 @@ _NAV = '[class*="st-key-sb_nav_"]'
 _SHELL = f"{_SB} .st-key-sb_shell"
 _COL = f'{_SHELL} > [data-testid="stVerticalBlockBorderWrapper"] > [data-testid="stVerticalBlock"]'
 
-_BG = "#18181b"
-_LINE = "rgba(255, 255, 255, 0.07)"
+_BG = "#09090b"
+_APP_BG = MB_APP_BACKGROUND
+_LINE = "rgba(255, 255, 255, 0.06)"
 _MUTED = "#71717a"
 _TEXT = "#d4d4d8"
 _ACTIVE = "rgba(124, 58, 237, 0.22)"
@@ -157,11 +158,11 @@ def _base_css() -> str:
 :root {{ --sb-w:{SIDEBAR_WIDTH}; --sb-width:{SIDEBAR_WIDTH}; --sb-bg:{_BG}; }}
 {_SB}, {_SB}>div, {_SB} [data-testid="stSidebarContent"],
 {_SB} [data-testid="stSidebarUserContent"], {_COL} {{
-  background:{_BG}!important; background-color:{_BG}!important;
+  background:{_APP_BG}!important; background-color:{_BG}!important;
 }}
 {_SB} {{
   width:var(--sb-w)!important; min-width:var(--sb-w)!important;
-  max-width:var(--sb-w)!important; border-right:1px solid {_LINE}!important;
+  max-width:var(--sb-w)!important; border-right:none!important; box-shadow:none!important;
   z-index:999980!important; isolation:isolate!important;
 }}
 {_SB} [data-testid="stSidebarHeader"], {_SB} [data-testid="stSidebarCollapsedControl"] {{
@@ -192,7 +193,7 @@ def _base_css() -> str:
 {_SHELL} .st-key-sb_bottom {{ margin-top:auto!important; flex-shrink:0!important; padding-top:4px!important; }}
 .sb-brand {{
   display:flex; align-items:center; gap:6px; padding:0 2px 6px;
-  margin-bottom:4px; border-bottom:1px solid {_LINE}; flex-shrink:0;
+  margin-bottom:4px; border-bottom:none; flex-shrink:0;
 }}
 .sb-brand span {{ color:#fafafa!important; font-size:11px; font-weight:700; letter-spacing:-0.02em; }}
 .sb-sec {{
@@ -254,7 +255,7 @@ def sidebar_theme_lock_css(active_page: str) -> str:
     active = _resolve_active(active_page)
     btn = f"{_SB} {_NAV} .stButton > button, {_SB} {_NAV} button"
     return f"""
-{_SB}, {_SB}>div {{ background:{_BG}!important; }}
+{_SB}, {_SB}>div {{ background:{_APP_BG}!important; background-color:{_BG}!important; }}
 {btn} {{ background:transparent!important; box-shadow:none!important; }}
 {_active_css(active)}
 """

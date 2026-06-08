@@ -53,8 +53,8 @@ STREAMLIT_THEME_VARS = """
 }
 section[data-testid="stSidebar"],
 section[data-testid="stSidebar"] .stApp {
-    --background-color: #18181b !important;
-    --secondary-background-color: #27272a !important;
+    --background-color: #09090b !important;
+    --secondary-background-color: #18181b !important;
     --text-color: #e4e4e7 !important;
 }
 """
@@ -132,8 +132,10 @@ section[data-testid="stSidebar"] [data-testid="stSidebarContent"],
 section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"],
 section[data-testid="stSidebar"] [data-testid="stVerticalBlock"],
 section[data-testid="stSidebar"] [data-testid="stSidebarNav"] {
-    background: #18181b !important;
-    background-color: #18181b !important;
+    background: """
+        + MB_APP_BACKGROUND
+        + """ !important;
+    background-color: #09090b !important;
     color: #e4e4e7 !important;
 }
 
