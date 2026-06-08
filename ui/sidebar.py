@@ -141,19 +141,45 @@ def _active_style(page: str) -> str:
     sel = _btn_sel(page)
     return f"""
 {sel} {{
-  background: rgba(124, 58, 237, 0.16) !important;
-  background-color: rgba(124, 58, 237, 0.16) !important;
+  background: rgba(124, 58, 237, 0.14) !important;
+  background-color: rgba(124, 58, 237, 0.14) !important;
   border: none !important;
-  border-left: 3px solid #a78bfa !important;
+  border-radius: 8px !important;
   color: #ffffff !important;
   font-weight: 600 !important;
-  box-shadow: none !important;
+  box-shadow: inset 3px 0 0 #a78bfa !important;
 }}
 {sel}:hover, {sel}:focus-visible {{
-  background: rgba(124, 58, 237, 0.22) !important;
+  background: rgba(124, 58, 237, 0.2) !important;
   border: none !important;
-  border-left: 3px solid #a78bfa !important;
+  box-shadow: inset 3px 0 0 #c4b5fd !important;
   color: #ffffff !important;
+}}
+"""
+
+
+def _sidebar_opaque_css() -> str:
+    layers = (
+        f"{_SB}, {_SB} > div, "
+        f'{_SB} [data-testid="stSidebarContent"], '
+        f'{_SB} [data-testid="stSidebarUserContent"], '
+        f"{_SHELL_COL}"
+    )
+    return f"""
+{layers} {{
+  background: var(--sb-bg, {_BG}) !important;
+  background-color: var(--sb-bg, {_BG}) !important;
+  opacity: 1 !important;
+}}
+{_SB} {{
+  z-index: 999980 !important;
+  isolation: isolate !important;
+}}
+{_SB} [data-testid="stVerticalBlockBorderWrapper"],
+{_SB} [data-testid="stElementContainer"] {{
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
 }}
 """
 
@@ -226,11 +252,13 @@ def sidebar_master_css(active_page: str) -> str:
   --sb-nav-max: calc(100dvh - 200px);
 }}
 {_nav_icons_css(active)}
+{_sidebar_opaque_css()}
 {_SB} {{
   width: var(--sb-w) !important;
   min-width: var(--sb-w) !important;
   max-width: var(--sb-w) !important;
   background: var(--sb-bg) !important;
+  background-color: var(--sb-bg) !important;
   border-right: 1px solid var(--sb-line) !important;
   user-select: none;
 }}
@@ -254,7 +282,8 @@ def sidebar_master_css(active_page: str) -> str:
 {_SB} [data-testid="stSidebarUserContent"] {{
   padding: 0 !important;
   margin: 0 !important;
-  background: transparent !important;
+  background: var(--sb-bg) !important;
+  background-color: var(--sb-bg) !important;
   height: 100% !important;
   overflow: hidden !important;
 }}
@@ -386,12 +415,13 @@ def sidebar_master_css(active_page: str) -> str:
   max-height: 38px !important;
   margin: 0 !important;
   padding: 0 12px !important;
-  border-radius: 10px !important;
+  border-radius: 8px !important;
   border: none !important;
   background: transparent !important;
   background-color: transparent !important;
   color: {_TEXT} !important;
   font-size: 13px !important;
+  box-shadow: none !important;
   font-weight: 500 !important;
   text-align: left !important;
   justify-content: flex-start !important;
@@ -500,11 +530,10 @@ def sidebar_theme_lock_css(active_page: str) -> str:
         f'{_SB} {_NAV_BTN} .stButton'
     )
     return f"""
+{_sidebar_opaque_css()}
 {_SB}, {_SB} > div {{
-  background-color: var(--sb-bg-deep, {_BG_DEEP}) !important;
-}}
-{_SB} > div {{
-  background: linear-gradient(180deg, var(--sb-bg, {_BG}) 0%, var(--sb-bg-deep, {_BG_DEEP}) 100%) !important;
+  background: var(--sb-bg, {_BG}) !important;
+  background-color: var(--sb-bg, {_BG}) !important;
 }}
 {_NAV_HOST} {{
   overflow-y: auto !important;

@@ -131,10 +131,9 @@ section[data-testid="stSidebar"] > div,
 section[data-testid="stSidebar"] [data-testid="stSidebarContent"],
 section[data-testid="stSidebar"] [data-testid="stSidebarUserContent"],
 section[data-testid="stSidebar"] [data-testid="stVerticalBlock"],
-section[data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"],
 section[data-testid="stSidebar"] [data-testid="stSidebarNav"] {
-    background: #09090b !important;
-    background-color: #09090b !important;
+    background: #18181b !important;
+    background-color: #18181b !important;
     color: #e4e4e7 !important;
 }
 
