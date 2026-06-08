@@ -26,7 +26,7 @@ _LINE = "rgba(255, 255, 255, 0.06)"
 _MUTED = "#71717a"
 _TEXT = "#d4d4d8"
 _ACTIVE = "rgba(124, 58, 237, 0.22)"
-_BTN_H = 26
+_BTN_H = 28
 
 NAV_SECTIONS: list[tuple[str, list[tuple[str, str]]]] = [
     ("Workspace", [("Dashboard", "home"), ("AI Chat", "chat"), ("Football", "football"), ("Automation", "automation_lab")]),
@@ -197,7 +197,7 @@ def _base_css() -> str:
 }}
 .sb-brand span {{ color:#fafafa!important; font-size:11px; font-weight:700; letter-spacing:-0.02em; }}
 .sb-sec {{
-  color:{_MUTED}!important; font-size:8px; font-weight:700; letter-spacing:.1em;
+  color:{_MUTED}!important; font-size:9px; font-weight:700; letter-spacing:.1em;
   text-transform:uppercase; padding:5px 4px 1px; margin:0!important; line-height:1;
 }}
 .sb-sec:first-of-type {{ padding-top:0; }}
@@ -207,14 +207,14 @@ def _base_css() -> str:
   width:100%!important; height:{_BTN_H}px!important; min-height:{_BTN_H}px!important;
   max-height:{_BTN_H}px!important; margin:0!important; padding:0 6px!important;
   border-radius:6px!important; border:none!important; background:transparent!important;
-  color:{_TEXT}!important; font-size:11px!important; font-weight:500!important;
+  color:{_TEXT}!important; font-size:12px!important; font-weight:500!important;
   text-align:left!important; justify-content:flex-start!important; box-shadow:none!important;
   line-height:1!important;
 }}
 {btn}:hover {{ background:rgba(255,255,255,.05)!important; color:#fafafa!important; }}
 {btn} p, {btn} span, {btn} div {{
   margin:0!important; padding:0!important; color:inherit!important;
-  font-size:11px!important; line-height:1!important; white-space:nowrap!important; overflow:visible!important;
+  font-size:12px!important; line-height:1!important; white-space:nowrap!important; overflow:visible!important;
 }}
 .sb-user {{
   display:flex; align-items:center; gap:6px; padding:4px 6px; margin-bottom:3px;
