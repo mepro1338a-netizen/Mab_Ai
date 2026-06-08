@@ -321,6 +321,41 @@ def _updates_html() -> str:
     )
 
 
+def _dash_page_html(*, user: str, tokens: str, plan_label: str, activity: str) -> str:
+    return (
+        '<div class="mb-dash">'
+        + _header_html()
+        + '<div class="mb-dash-body">'
+        + '<header class="mb-dash-top">'
+        + f"<h1>Hallo, {html.escape(user)}</h1>"
+        + "<p>Dein Workspace — Status, Tools und kurze Updates.</p>"
+        + "</header>"
+        + '<div class="mb-dash-kpis">'
+        + '<div class="mb-dash-kpi"><div class="k">Tokens</div>'
+        + f'<div class="v">{html.escape(tokens)}</div>'
+        + '<div class="h">Verfügbares Guthaben</div></div>'
+        + '<div class="mb-dash-kpi"><div class="k">Plan</div>'
+        + f'<div class="v">{html.escape(plan_label)}</div>'
+        + '<div class="h">MaByte Abonnement</div></div>'
+        + '<div class="mb-dash-kpi"><div class="k">Letzte Aktivität</div>'
+        + f'<div class="v sm">{html.escape(activity)}</div>'
+        + '<div class="h">Zuletzt im Workspace</div></div>'
+        + "</div>"
+        + '<div class="mb-dash-main">'
+        + "<section>"
+        + '<p class="mb-dash-label">Workspace</p>'
+        + f'<div class="mb-dash-actions">{_actions_html()}</div>'
+        + "</section>"
+        + f'<aside class="mb-dash-aside">{_updates_html()}'
+        + "<div>"
+        + '<p class="mb-dash-label mb-dash-label-muted">Account</p>'
+        + '<div class="mb-dash-links">'
+        + '<a class="mb-dash-link" href="?nav=dashboard">Profil <span>→</span></a>'
+        + '<a class="mb-dash-link" href="?nav=premium">Premium <span>→</span></a>'
+        + "</div></div></aside></div></div></div>"
+    )
+
+
 def render_home() -> None:
     if not st.session_state.get("logged_in"):
         st.session_state.page = "auth"
@@ -335,53 +370,12 @@ def render_home() -> None:
     activity = _activity_snippet(user)
 
     inject_css(_DASH_CSS)
-
     st.markdown(
-        f"""
-<div class="mb-dash">
-  {_header_html()}
-  <div class="mb-dash-body">
-    <header class="mb-dash-top">
-      <h1>Hallo, {html.escape(user)}</h1>
-      <p>Dein Workspace — Status, Tools und kurze Updates.</p>
-    </header>
-
-    <div class="mb-dash-kpis">
-      <div class="mb-dash-kpi">
-        <div class="k">Tokens</div>
-        <div class="v">{html.escape(format_num(tokens))}</div>
-        <div class="h">Verfügbares Guthaben</div>
-      </div>
-      <div class="mb-dash-kpi">
-        <div class="k">Plan</div>
-        <div class="v">{html.escape(plan_label)}</div>
-        <div class="h">MaByte Abonnement</div>
-      </div>
-      <div class="mb-dash-kpi">
-        <div class="k">Letzte Aktivität</div>
-        <div class="v sm">{html.escape(activity)}</div>
-        <div class="h">Zuletzt im Workspace</div>
-      </div>
-    </div>
-
-    <div class="mb-dash-main">
-      <section>
-        <p class="mb-dash-label">Workspace</p>
-        <div class="mb-dash-actions">{_actions_html()}</div>
-      </section>
-      <aside class="mb-dash-aside">
-        {_updates_html()}
-        <div>
-          <p class="mb-dash-label mb-dash-label-muted">Account</p>
-          <div class="mb-dash-links">
-            <a class="mb-dash-link" href="?nav=dashboard">Profil <span>→</span></a>
-            <a class="mb-dash-link" href="?nav=premium">Premium <span>→</span></a>
-          </div>
-        </div>
-      </aside>
-    </div>
-  </div>
-</div>
-        """,
+        _dash_page_html(
+            user=user,
+            tokens=format_num(tokens),
+            plan_label=plan_label,
+            activity=activity,
+        ),
         unsafe_allow_html=True,
     )
