@@ -162,7 +162,9 @@ def _base_css() -> str:
 }}
 {_SB} {{
   width:var(--sb-w)!important; min-width:var(--sb-w)!important;
-  max-width:var(--sb-w)!important; border-right:none!important; box-shadow:none!important;
+  max-width:var(--sb-w)!important;
+  border-right:1px solid rgba(255,255,255,0.04)!important;
+  box-shadow:none!important;
   z-index:999980!important; isolation:isolate!important;
 }}
 {_SB} [data-testid="stSidebarHeader"], {_SB} [data-testid="stSidebarCollapsedControl"] {{
@@ -176,7 +178,7 @@ def _base_css() -> str:
 }}
 {_COL} {{
   display:flex!important; flex-direction:column!important; height:100%!important;
-  min-height:0!important; padding:14px 14px 12px!important; gap:0!important;
+  min-height:0!important; padding:16px 16px 14px!important; gap:0!important;
   overflow-y:auto!important; overflow-x:hidden!important;
   scrollbar-width:thin; scrollbar-color:rgba(139,92,246,.5) transparent;
 }}
@@ -190,17 +192,22 @@ def _base_css() -> str:
   margin:0!important; padding:0!important;
 }}
 {_SHELL} [data-testid="stMarkdownContainer"] p {{ margin:0!important; padding:0!important; }}
-{_SHELL} .st-key-sb_bottom {{ margin-top:auto!important; flex-shrink:0!important; padding-top:12px!important; }}
+{_SHELL} .st-key-sb_bottom {{
+  margin-top:auto!important; flex-shrink:0!important;
+  padding-top:14px!important; border-top:1px solid {_LINE};
+}}
 .sb-brand {{
-  display:flex; align-items:center; gap:8px; padding:2px 6px 14px;
-  margin-bottom:6px; border-bottom:none; flex-shrink:0;
+  display:flex; align-items:center; gap:8px; padding:0 4px 16px;
+  margin-bottom:4px; border-bottom:none; flex-shrink:0;
 }}
 .sb-brand span {{ color:#fafafa!important; font-size:12px; font-weight:700; letter-spacing:-0.02em; }}
 .sb-sec {{
-  color:{_MUTED}!important; font-size:9px; font-weight:700; letter-spacing:.1em;
-  text-transform:uppercase; padding:12px 8px 5px; margin:0!important; line-height:1;
+  color:var(--mb-label-color,#a78bfa)!important;
+  font-size:var(--mb-label-size,10px); font-weight:var(--mb-label-weight,700);
+  letter-spacing:var(--mb-label-spacing,.12em);
+  text-transform:uppercase; padding:14px 6px 6px; margin:0!important; line-height:1;
 }}
-.sb-sec:first-of-type {{ padding-top:2px; }}
+.sb-sec:first-of-type {{ padding-top:4px; }}
 {wrap} {{ background:transparent!important; border:none!important; margin:0!important; padding:0!important; }}
 {_SB} {_NAV} [data-testid='stElementContainer'] {{ margin-bottom:3px!important; }}
 {_SB} {_NAV} .stButton {{ margin:0!important; padding:0!important; width:100%!important; }}

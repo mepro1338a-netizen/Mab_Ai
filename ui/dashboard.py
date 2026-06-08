@@ -8,7 +8,7 @@ import streamlit as st
 from config import PLANS
 from database import recent_activity
 from ui.components import format_num
-from ui.styles import inject_css, page_layout_css
+from ui.styles import inject_css
 
 _MODULES = (
     ("chat", "AI Chat", "Fragen stellen und Ideen entwickeln.", "chat"),
@@ -30,32 +30,31 @@ _MODULE_ICONS: dict[str, str] = {
 
 _DASH_CSS = """
 .stApp:has(.mb-dash) section.main .block-container {
-    max-width: 1100px !important;
-    padding-bottom: 64px !important;
+    max-width: var(--mb-content-max) !important;
 }
 .mb-dash {
     display: flex;
     flex-direction: column;
-    gap: 28px;
+    gap: var(--mb-gap-section, 20px);
 }
 .mb-dash-top {
     display: flex;
     flex-wrap: wrap;
     align-items: flex-end;
     justify-content: space-between;
-    gap: 16px;
+    gap: 12px;
 }
 .mb-dash-greet h1 {
     margin: 0;
-    font-size: clamp(26px, 3.5vw, 34px);
+    font-size: clamp(24px, 2.8vw, 30px);
     font-weight: 800;
     color: #fafafa !important;
     letter-spacing: -0.03em;
-    line-height: 1.1;
+    line-height: 1.15;
 }
 .mb-dash-greet p {
-    margin: 8px 0 0;
-    font-size: 14px;
+    margin: 6px 0 0;
+    font-size: 13px;
     color: #94a3b8 !important;
     line-height: 1.5;
     max-width: 480px;
@@ -75,27 +74,27 @@ _DASH_CSS = """
 .mb-dash-stats {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 12px;
+    gap: var(--mb-gap-card, 12px);
 }
 @media (max-width: 720px) {
     .mb-dash-stats { grid-template-columns: 1fr; }
 }
 .mb-dash-stat {
-    padding: 16px 18px;
-    border-radius: 14px;
+    padding: 14px 16px;
+    border-radius: 12px;
     background: rgba(24, 24, 27, 0.9);
     border: 1px solid rgba(255, 255, 255, 0.08);
 }
 .mb-dash-stat .k {
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.1em;
+    font-size: var(--mb-label-size, 10px);
+    font-weight: var(--mb-label-weight, 700);
+    letter-spacing: var(--mb-label-spacing, 0.12em);
     text-transform: uppercase;
     color: #71717a !important;
 }
 .mb-dash-stat .v {
-    margin-top: 6px;
-    font-size: 22px;
+    margin-top: 5px;
+    font-size: 20px;
     font-weight: 800;
     color: #fafafa !important;
     line-height: 1.2;
@@ -110,17 +109,17 @@ _DASH_CSS = """
     color: #64748b !important;
 }
 .mb-dash-label {
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 0.14em;
+    font-size: var(--mb-label-size, 10px);
+    font-weight: var(--mb-label-weight, 700);
+    letter-spacing: var(--mb-label-spacing, 0.12em);
     text-transform: uppercase;
-    color: #a78bfa !important;
-    margin: 0 0 12px;
+    color: var(--mb-label-color, #a78bfa) !important;
+    margin: 0 0 var(--mb-gap-card, 12px);
 }
 .mb-dash-grid {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 12px;
+    gap: var(--mb-gap-card, 12px);
 }
 @media (max-width: 900px) {
     .mb-dash-grid { grid-template-columns: repeat(2, 1fr); }
@@ -170,7 +169,7 @@ _DASH_CSS = """
 .mb-dash-row2 {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 12px;
+    gap: var(--mb-gap-card, 12px);
 }
 @media (max-width: 520px) {
     .mb-dash-row2 { grid-template-columns: 1fr; }
@@ -202,7 +201,7 @@ _DASH_CSS = """
 
 
 def _inject_css() -> None:
-    inject_css(page_layout_css(1100, 0, 48) + _DASH_CSS)
+    inject_css(_DASH_CSS)
 
 
 def _activity_snippet(username: str) -> str:

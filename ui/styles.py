@@ -30,6 +30,14 @@ MB_THEME_VARS = """
     --mb-accent: #7c3aed;
     --mb-auth-line: rgba(124, 58, 237, .22);
     --mb-surface-card: rgba(24, 24, 27, .96);
+    --mb-content-max: 1100px;
+    --mb-content-pad-x: 1.5rem;
+    --mb-gap-section: 20px;
+    --mb-gap-card: 12px;
+    --mb-label-size: 10px;
+    --mb-label-weight: 700;
+    --mb-label-spacing: 0.12em;
+    --mb-label-color: #a78bfa;
 }
 """
 
@@ -76,6 +84,33 @@ def page_layout_css(
     padding-top: {padding_top}px !important;
     padding-bottom: {padding_bottom}px !important;
 }}
+"""
+
+
+def layout_system_css() -> str:
+    """Shared content grid — aligns topbar, main pages, and dashboard."""
+    return """
+section.main .block-container,
+.main .block-container {
+    max-width: var(--mb-content-max) !important;
+    padding-left: var(--mb-content-pad-x) !important;
+    padding-right: var(--mb-content-pad-x) !important;
+    padding-top: 12px !important;
+    padding-bottom: 42px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+.stApp:has(.mb-dash) section.main .block-container {
+    padding-top: 8px !important;
+    padding-bottom: 48px !important;
+}
+@media (max-width: 768px) {
+    section.main .block-container,
+    .main .block-container {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+}
 """
 
 

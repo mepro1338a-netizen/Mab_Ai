@@ -7,10 +7,7 @@ import streamlit as st
 
 from config import DAILY_LIMITS, FOOTBALL_PLANS, PLANS
 from database import list_usage, recent_activity
-from ui.styles import inject_css, page_layout_css
-
-_DASH_TOPBAR = 0
-
+from ui.styles import inject_css
 
 def nav(page: str) -> None:
     st.session_state.page = page
@@ -25,23 +22,15 @@ def format_num(value) -> str:
 
 
 _DASHBOARD_CSS = f"""
-.stApp:has(.mb-dash) section.main .block-container {{
-    max-width: 1080px !important;
-    padding-top: {_DASH_TOPBAR}px !important;
-    padding-bottom: 48px !important;
-}}
-.stApp:has(.mb-dash) section.main [data-testid="stVerticalBlock"] {{
+.stApp:has(.mb-dash) section.main [data-testid="stVerticalBlock"] {
     gap: 12px !important;
-}}
-.stApp:has(.mb-dash) section.main div[data-testid="stVerticalBlockBorderWrapper"] {{
-    background: #18181b !important;
-    border: 1px solid #3f3f46 !important;
-    border-radius: 16px !important;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, .12) !important;
-    backdrop-filter: blur(12px);
-    padding: 4px 4px !important;
-}}
-.mb-dash-head {{ margin: 0 0 16px 0; padding-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,.06); }}
+}
+.stApp:has(.mb-dash) section.main div[data-testid="stVerticalBlockBorderWrapper"] {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+.mb-dash-head { margin: 0 0 16px 0; padding-bottom: 14px; border-bottom: 1px solid rgba(255,255,255,.06); }
 .mb-dash-kicker {{ color: rgba(192,132,252,.9)!important; font-size:10px; font-weight:800; letter-spacing:.2em; text-transform:uppercase; }}
 .mb-dash-title {{ color:#f8fafc!important; font-size:clamp(22px,3.5vw,30px); font-weight:800; letter-spacing:-0.03em; margin:4px 0 0 0; line-height:1.2; }}
 .mb-dash-sub {{ color:rgba(148,163,184,.95)!important; font-size:13px; line-height:1.45; margin:6px 0 0 0; max-width:640px; }}
@@ -110,7 +99,7 @@ _DASHBOARD_CSS = f"""
 
 
 def inject_dashboard_css() -> None:
-    inject_css(page_layout_css(1080, _DASH_TOPBAR, 48) + _DASHBOARD_CSS)
+    inject_css(_DASHBOARD_CSS)
 
 
 def render_header(*, user: str, greeting: str = "") -> None:

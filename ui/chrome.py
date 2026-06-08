@@ -48,7 +48,8 @@ section.main [data-testid="stMarkdownContainer"]:has(.mb-topbar-mount) {{
   height: 100% !important;
   display: flex !important;
   align-items: center !important;
-  padding: 0 1.25rem !important;
+  justify-content: center !important;
+  padding: 0 var(--mb-content-pad-x, 1.5rem) !important;
   box-sizing: border-box !important;
   background: rgba(9, 9, 11, 0.94) !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
@@ -61,7 +62,7 @@ section.main [data-testid="stMarkdownContainer"]:has(.mb-topbar-mount) {{
   justify-content: space-between;
   gap: 16px;
   width: 100%;
-  max-width: 1280px;
+  max-width: var(--mb-content-max, 1100px);
   margin: 0 auto;
 }}
 .mb-header-left {{
@@ -127,9 +128,6 @@ section.main [data-testid="stMarkdownContainer"]:has(.mb-topbar-mount) {{
   width: 100% !important;
   flex-shrink: 0 !important;
   pointer-events: none !important;
-}}
-section.main .block-container {{
-  padding-top: 16px !important;
 }}
 @media (max-width: 768px) {{
   section.main [data-testid="stElementContainer"]:has(.mb-topbar-mount),
