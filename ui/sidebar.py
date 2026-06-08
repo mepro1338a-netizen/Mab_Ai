@@ -15,7 +15,7 @@ from ui.styles import inject_css
 # Tokens
 # ---------------------------------------------------------------------------
 _SB = 'section[data-testid="stSidebar"]'
-SIDEBAR_WIDTH = "208px"
+SIDEBAR_WIDTH = "176px"
 _NAV = '[class*="st-key-sb_nav_"]'
 _SHELL = f"{_SB} .st-key-sb_shell"
 _COL = f'{_SHELL} > [data-testid="stVerticalBlockBorderWrapper"] > [data-testid="stVerticalBlock"]'
@@ -25,7 +25,7 @@ _LINE = "rgba(255, 255, 255, 0.07)"
 _MUTED = "#71717a"
 _TEXT = "#d4d4d8"
 _ACTIVE = "rgba(124, 58, 237, 0.22)"
-_BTN_H = 32
+_BTN_H = 26
 
 NAV_SECTIONS: list[tuple[str, list[tuple[str, str]]]] = [
     ("Workspace", [("Dashboard", "home"), ("AI Chat", "chat"), ("Football", "football"), ("Automation", "automation_lab")]),
@@ -69,7 +69,7 @@ _SVG: dict[str, str] = {
 }
 
 _LOGO = (
-    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="20" height="20">'
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="16" height="16">'
     '<defs><linearGradient id="mbs" x1="0" y1="0" x2="1" y2="1">'
     '<stop offset="0%" stop-color="#8b5cf6"/><stop offset="100%" stop-color="#6366f1"/>'
     '</linearGradient></defs><rect width="40" height="40" rx="9" fill="url(#mbs)"/>'
@@ -134,10 +134,10 @@ def _icons_css(active: str) -> str:
         s = _btn(p)
         uri = _icon_uri(p, on=(p == active))
         out.append(
-            f"{s}{{padding-left:30px!important;position:relative!important}}"
-            f"{s}::before{{content:'';position:absolute;left:9px;top:50%;"
-            f"transform:translateY(-50%);width:14px;height:14px;"
-            f"background-image:{uri};background-size:14px;background-repeat:no-repeat}}"
+            f"{s}{{padding-left:26px!important;position:relative!important}}"
+            f"{s}::before{{content:'';position:absolute;left:7px;top:50%;"
+            f"transform:translateY(-50%);width:12px;height:12px;"
+            f"background-image:{uri};background-size:12px;background-repeat:no-repeat}}"
         )
     return "".join(out)
 
@@ -175,64 +175,72 @@ def _base_css() -> str:
 }}
 {_COL} {{
   display:flex!important; flex-direction:column!important; height:100%!important;
-  min-height:0!important; padding:10px 8px 8px!important; gap:0!important;
+  min-height:0!important; padding:6px 5px 5px!important; gap:0!important;
   overflow-y:auto!important; overflow-x:hidden!important;
   scrollbar-width:thin; scrollbar-color:rgba(139,92,246,.5) transparent;
 }}
-{_COL}::-webkit-scrollbar {{ width:4px; }}
+{_COL}::-webkit-scrollbar {{ width:3px; }}
 {_COL}::-webkit-scrollbar-thumb {{ background:#8b5cf6; border-radius:99px; }}
+{_SHELL} [data-testid="stVerticalBlock"],
+{_SHELL} [data-testid="stVerticalBlockBorderWrapper"] > [data-testid="stVerticalBlock"] {{
+  gap:0!important; row-gap:0!important;
+}}
 {_SHELL} [data-testid="stMarkdownContainer"], {_SHELL} [data-testid="stElementContainer"] {{
   margin:0!important; padding:0!important;
 }}
-{_SHELL} .st-key-sb_bottom {{ margin-top:auto!important; flex-shrink:0!important; padding-top:6px!important; }}
+{_SHELL} [data-testid="stMarkdownContainer"] p {{ margin:0!important; padding:0!important; }}
+{_SHELL} .st-key-sb_bottom {{ margin-top:auto!important; flex-shrink:0!important; padding-top:4px!important; }}
 .sb-brand {{
-  display:flex; align-items:center; gap:8px; padding:2px 4px 10px;
-  margin-bottom:6px; border-bottom:1px solid {_LINE}; flex-shrink:0;
+  display:flex; align-items:center; gap:6px; padding:0 2px 6px;
+  margin-bottom:4px; border-bottom:1px solid {_LINE}; flex-shrink:0;
 }}
-.sb-brand span {{ color:#fafafa!important; font-size:13px; font-weight:700; letter-spacing:-0.02em; }}
+.sb-brand span {{ color:#fafafa!important; font-size:11px; font-weight:700; letter-spacing:-0.02em; }}
 .sb-sec {{
-  color:{_MUTED}!important; font-size:9px; font-weight:700; letter-spacing:.12em;
-  text-transform:uppercase; padding:8px 6px 3px; margin:0; line-height:1;
+  color:{_MUTED}!important; font-size:8px; font-weight:700; letter-spacing:.1em;
+  text-transform:uppercase; padding:5px 4px 1px; margin:0!important; line-height:1;
 }}
-.sb-sec:first-of-type {{ padding-top:2px; }}
+.sb-sec:first-of-type {{ padding-top:0; }}
 {wrap} {{ background:transparent!important; border:none!important; margin:0!important; padding:0!important; }}
 {_SB} {_NAV} .stButton {{ margin:0!important; padding:0!important; width:100%!important; }}
 {btn} {{
   width:100%!important; height:{_BTN_H}px!important; min-height:{_BTN_H}px!important;
-  max-height:{_BTN_H}px!important; margin:0!important; padding:0 8px!important;
-  border-radius:7px!important; border:none!important; background:transparent!important;
-  color:{_TEXT}!important; font-size:12px!important; font-weight:500!important;
+  max-height:{_BTN_H}px!important; margin:0!important; padding:0 6px!important;
+  border-radius:6px!important; border:none!important; background:transparent!important;
+  color:{_TEXT}!important; font-size:11px!important; font-weight:500!important;
   text-align:left!important; justify-content:flex-start!important; box-shadow:none!important;
+  line-height:1!important;
 }}
 {btn}:hover {{ background:rgba(255,255,255,.05)!important; color:#fafafa!important; }}
-{btn} p {{ margin:0!important; padding:0!important; color:inherit!important;
-  font-size:inherit!important; line-height:1!important; white-space:nowrap!important; overflow:visible!important; }}
+{btn} p, {btn} span, {btn} div {{
+  margin:0!important; padding:0!important; color:inherit!important;
+  font-size:11px!important; line-height:1!important; white-space:nowrap!important; overflow:visible!important;
+}}
 .sb-user {{
-  display:flex; align-items:center; gap:8px; padding:6px 8px; margin-bottom:4px;
-  border-radius:8px; background:rgba(255,255,255,.03); border:1px solid {_LINE};
+  display:flex; align-items:center; gap:6px; padding:4px 6px; margin-bottom:3px;
+  border-radius:6px; background:rgba(255,255,255,.03); border:1px solid {_LINE};
 }}
 .sb-av {{
-  width:26px; height:26px; border-radius:7px; flex-shrink:0;
+  width:22px; height:22px; border-radius:6px; flex-shrink:0;
   background:linear-gradient(135deg,#7c3aed,#6366f1); color:#fff;
-  font-size:10px; font-weight:700; display:flex; align-items:center; justify-content:center;
+  font-size:9px; font-weight:700; display:flex; align-items:center; justify-content:center;
 }}
-.sb-un {{ color:#f4f4f5!important; font-size:11px; font-weight:600;
-  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:120px; }}
-.sb-up {{ color:{_MUTED}!important; font-size:9px; }}
+.sb-un {{ color:#f4f4f5!important; font-size:10px; font-weight:600;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:100px; }}
+.sb-up {{ color:{_MUTED}!important; font-size:8px; line-height:1.1; }}
 {_SB} .st-key-nav_logout [data-testid="stVerticalBlockBorderWrapper"],
 {_SB} .st-key-nav_logout .stButton {{ background:transparent!important; border:none!important; margin:0!important; padding:0!important; }}
 {_SB} .st-key-nav_logout .stButton>button, {_SB} .st-key-nav_logout button {{
-  width:100%!important; height:28px!important; min-height:28px!important;
-  padding:0 8px 0 28px!important; border-radius:7px!important;
+  width:100%!important; height:24px!important; min-height:24px!important;
+  padding:0 6px 0 24px!important; border-radius:6px!important;
   border:1px solid {_LINE}!important; background:rgba(255,255,255,.02)!important;
-  color:{_MUTED}!important; font-size:11px!important; text-align:left!important;
-  position:relative!important; box-shadow:none!important;
+  color:{_MUTED}!important; font-size:10px!important; text-align:left!important;
+  position:relative!important; box-shadow:none!important; line-height:1!important;
 }}
 {_SB} .st-key-nav_logout .stButton>button:hover {{ color:{_TEXT}!important; background:rgba(255,255,255,.05)!important; }}
 {_SB} .st-key-nav_logout .stButton>button::before {{
-  content:''; position:absolute; left:9px; top:50%; transform:translateY(-50%);
-  width:12px; height:12px; background-image:{_icon_uri("logout")};
-  background-size:12px; background-repeat:no-repeat;
+  content:''; position:absolute; left:7px; top:50%; transform:translateY(-50%);
+  width:10px; height:10px; background-image:{_icon_uri("logout")};
+  background-size:10px; background-repeat:no-repeat;
 }}
 """
 
