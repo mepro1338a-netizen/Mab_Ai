@@ -31,6 +31,7 @@ _MODULE_ICONS: dict[str, str] = {
 _DASH_CSS = """
 .stApp:has(.mb-dash) section.main .block-container {
     max-width: var(--mb-content-max) !important;
+    padding-top: 20px !important;
 }
 .mb-dash {
     display: flex;
