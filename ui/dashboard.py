@@ -251,7 +251,6 @@ def render_home() -> None:
       <h1>Hallo, {html.escape(user)}</h1>
       <p>Wähle einen Bereich — alles startet von hier.</p>
     </div>
-    <div class="mb-dash-pill">{html.escape(plan_label)} Plan</div>
   </div>
 
   <div class="mb-dash-stats">

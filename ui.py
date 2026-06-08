@@ -4,7 +4,7 @@ from typing import Callable
 
 import streamlit as st
 
-from config import APP_BASE_URL, APP_NAME, APP_TAGLINE
+from config import APP_BASE_URL, APP_NAME, APP_TAGLINE, PLANS
 from database import ensure_db_ready, get_user
 from payments import confirm_checkout_session
 from services.session_auth import enforce_active_session
@@ -331,8 +331,12 @@ PAGE_LABELS = {
 }
 
 if st.session_state.get("logged_in"):
-    header_label = "" if page == "home" else PAGE_LABELS.get(page, "")
-    render_app_header(page_label=header_label)
+    if page == "home":
+        plan_key = str(st.session_state.get("plan") or "free")
+        plan_hdr = str(PLANS.get(plan_key, PLANS["free"]).get("label", plan_key))
+        render_app_header(plan_badge=plan_hdr)
+    else:
+        render_app_header(page_label=PAGE_LABELS.get(page, ""))
 
 PAGE_HANDLERS = {
     "social_oauth": ("Social Connect", lambda: None),

@@ -12,7 +12,8 @@ from config import APP_NAME
 from ui.styles import inject_css
 
 _SB = 'section[data-testid="stSidebar"]'
-_WIDTH = "240px"
+SIDEBAR_WIDTH = "240px"
+_WIDTH = SIDEBAR_WIDTH
 _NAV_BTN = '[class*="st-key-sb_nav_"]'
 _NAV_HOST = f"{_SB} .st-key-sb_nav"
 
@@ -216,6 +217,7 @@ def sidebar_master_css(active_page: str) -> str:
     return f"""
 :root {{
   --sb-w: {_WIDTH};
+  --sb-width: {_WIDTH};
   --sb-bg: {_BG};
   --sb-bg-deep: {_BG_DEEP};
   --sb-panel: {_PANEL};
