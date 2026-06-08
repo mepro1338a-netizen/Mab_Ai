@@ -1,5 +1,5 @@
 """
-MaByte Sidebar — session-safe Streamlit nav with professional styling.
+MaByte Sidebar — session-safe Streamlit nav with scrollable layout.
 """
 from __future__ import annotations
 
@@ -11,20 +11,10 @@ import streamlit as st
 from config import APP_NAME
 from ui.styles import inject_css
 
-# ---------------------------------------------------------------------------
-# Design tokens
-# ---------------------------------------------------------------------------
 _SB = 'section[data-testid="stSidebar"]'
 _WIDTH = "240px"
 _NAV_BTN = '[class*="st-key-sb_nav_"]'
-_PANEL_COL = f'{_SB} .st-key-sb_panel [data-testid="stVerticalBlockBorderWrapper"] > [data-testid="stVerticalBlock"]'
-_SCROLL_HOST = f'{_SB} .st-key-sb_scroll'
-_SCROLL_SHELL = (
-    f'{_SCROLL_HOST} > [data-testid="stVerticalBlockBorderWrapper"], '
-    f'{_SCROLL_HOST} > div > [data-testid="stVerticalBlockBorderWrapper"]'
-)
-_SCROLL_BODY = f'{_SCROLL_SHELL} > [data-testid="stVerticalBlock"]'
-_SCROLL_INNER = f'{_SCROLL_BODY} [data-testid="stVerticalBlockBorderWrapper"]'
+_NAV_HOST = f"{_SB} .st-key-sb_nav"
 
 _BG = "#18181b"
 _BG_DEEP = "#141416"
@@ -72,7 +62,6 @@ LEGACY_PAGE_ALIASES: dict[str, str] = {
     "projects": "home",
 }
 
-# Map routes without a direct nav entry to the closest sidebar item.
 NAV_HIGHLIGHT_ALIASES: dict[str, str] = {
     "coding": "image",
     "music": "video",
@@ -185,29 +174,24 @@ def _nav_icons_css(active: str) -> str:
     return "".join(chunks)
 
 
-def _scrollbar_css(target: str) -> str:
-    fallback = f'{_SCROLL_HOST} [data-testid="stVerticalBlockBorderWrapper"] > [data-testid="stVerticalBlock"]'
-    scrollers = f'{target}, {fallback}'
+def _scrollbar_css() -> str:
     return f"""
-{scrollers} {{
+{_NAV_HOST} {{
   scrollbar-width: thin;
   scrollbar-color: rgba(139, 92, 246, 0.75) rgba(255, 255, 255, 0.05);
-  max-height: calc(100dvh - 250px) !important;
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
 }}
-{scrollers}::-webkit-scrollbar {{ width: 6px; }}
-{scrollers}::-webkit-scrollbar-track {{
+{_NAV_HOST}::-webkit-scrollbar {{ width: 6px; }}
+{_NAV_HOST}::-webkit-scrollbar-track {{
   background: rgba(255, 255, 255, 0.04);
   border-radius: 999px;
-  margin: 6px 0;
+  margin: 4px 0;
 }}
-{scrollers}::-webkit-scrollbar-thumb {{
+{_NAV_HOST}::-webkit-scrollbar-thumb {{
   background: linear-gradient(180deg, #8b5cf6, #6366f1);
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.12);
 }}
-{scrollers}::-webkit-scrollbar-thumb:hover {{
+{_NAV_HOST}::-webkit-scrollbar-thumb:hover {{
   background: linear-gradient(180deg, #a78bfa, #818cf8);
 }}
 """
@@ -227,7 +211,7 @@ def sidebar_master_css(active_page: str) -> str:
         f'{_SB} {_NAV_BTN} [data-testid="stElementContainer"], '
         f'{_SB} {_NAV_BTN} .stButton'
     )
-    scroll_block = _SCROLL_BODY
+    nav_inner_wrap = f'{_NAV_HOST} [data-testid="stVerticalBlockBorderWrapper"]'
 
     return f"""
 :root {{
@@ -236,6 +220,7 @@ def sidebar_master_css(active_page: str) -> str:
   --sb-bg-deep: {_BG_DEEP};
   --sb-panel: {_PANEL};
   --sb-line: {_LINE};
+  --sb-nav-max: calc(100dvh - 220px);
 }}
 {_nav_icons_css(active)}
 {_SB} {{
@@ -245,7 +230,6 @@ def sidebar_master_css(active_page: str) -> str:
   background: var(--sb-bg-deep) !important;
   border-right: 1px solid var(--sb-line) !important;
   user-select: none;
-  -webkit-user-select: none;
 }}
 {_SB} > div {{
   padding: 14px 12px 12px !important;
@@ -253,99 +237,80 @@ def sidebar_master_css(active_page: str) -> str:
   height: 100dvh !important;
   max-height: 100dvh !important;
   overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
 }}
 {_SB} [data-testid="stSidebarContent"],
 {_SB} [data-testid="stSidebarUserContent"] {{
   padding: 0 !important;
   background: transparent !important;
-  display: flex !important;
-  flex-direction: column !important;
   flex: 1 1 auto !important;
   min-height: 0 !important;
-  height: 100% !important;
   overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
 }}
 {_SB} [data-testid="stSidebarNav"] {{ display: none !important; }}
-{_SB} .st-key-sb_panel {{
+{_SB} [data-testid="stSidebarContent"] > div,
+{_SB} [data-testid="stSidebarUserContent"] > div {{
+  display: flex !important;
+  flex-direction: column !important;
   flex: 1 1 auto !important;
   min-height: 0 !important;
   height: 100% !important;
   overflow: hidden !important;
-  display: flex !important;
-  flex-direction: column !important;
-}}
-{_PANEL_COL} {{
-  display: flex !important;
-  flex-direction: column !important;
-  flex: 1 1 auto !important;
-  min-height: 0 !important;
-  height: 100% !important;
-  max-height: 100% !important;
   gap: 0 !important;
-  overflow: hidden !important;
 }}
-{_SCROLL_HOST} {{
-  flex: 1 1 0 !important;
-  min-height: 0 !important;
-  height: auto !important;
-  overflow: hidden !important;
-  display: flex !important;
-  flex-direction: column !important;
-}}
-{_SB} .st-key-sb_panel [data-testid="stMarkdownContainer"],
-{_SB} .st-key-sb_panel [data-testid="stElementContainer"]:not(.st-key-sb_scroll) {{
-  margin: 0 !important;
-  padding: 0 !important;
+{_SB} .st-key-sb_brand,
+{_SB} .st-key-sb_foot,
+{_SB} .st-key-nav_logout {{
   flex-shrink: 0 !important;
 }}
-{_SCROLL_SHELL} {{
-  background: var(--sb-panel) !important;
-  border: 1px solid var(--sb-line) !important;
-  border-radius: 12px !important;
-  flex: 1 1 0 !important;
-  min-height: 0 !important;
-  height: auto !important;
-  overflow: hidden !important;
-  margin: 8px 0 !important;
+{_SB} .st-key-sb_brand [data-testid="stMarkdownContainer"],
+{_SB} .st-key-sb_foot [data-testid="stMarkdownContainer"],
+{_SB} .st-key-sb_brand [data-testid="stElementContainer"],
+{_SB} .st-key-sb_foot [data-testid="stElementContainer"] {{
+  margin: 0 !important;
   padding: 0 !important;
-  display: flex !important;
-  flex-direction: column !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
 }}
-{_SCROLL_BODY} {{
-  flex: 1 1 0 !important;
-  min-height: 0 !important;
-  height: auto !important;
-  max-height: 100% !important;
+{_NAV_HOST} {{
+  flex: 1 1 auto !important;
+  min-height: 200px !important;
+  max-height: var(--sb-nav-max) !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
   overscroll-behavior: contain !important;
   -webkit-overflow-scrolling: touch !important;
-  padding: 8px 8px 8px 6px !important;
-  gap: 4px !important;
+  margin: 8px 0 !important;
+  padding: 8px 6px !important;
+  background: var(--sb-panel) !important;
+  border: 1px solid var(--sb-line) !important;
+  border-radius: 12px !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
 }}
-{_SCROLL_INNER} {{
+{nav_inner_wrap} {{
   background: transparent !important;
-  background-color: transparent !important;
   border: none !important;
-  border-radius: 0 !important;
   box-shadow: none !important;
   padding: 0 !important;
   margin: 0 !important;
 }}
-{_SB} .st-key-sb_scroll [data-testid="stElementContainer"],
-{_SB} .st-key-sb_scroll [data-testid="stMarkdownContainer"],
-{_SB} .st-key-sb_scroll .stMarkdown {{
+{_NAV_HOST} [data-testid="stVerticalBlock"] {{
+  gap: 4px !important;
+  padding: 0 !important;
+}}
+{_NAV_HOST} [data-testid="stMarkdownContainer"],
+{_NAV_HOST} [data-testid="stElementContainer"],
+{_NAV_HOST} .stMarkdown {{
   margin: 0 !important;
   padding: 0 !important;
 }}
-{_scrollbar_css(scroll_block)}
+{_scrollbar_css()}
 .sb-brand {{
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 0 4px 14px;
-  margin-bottom: 2px;
   border-bottom: 1px solid var(--sb-line);
 }}
 .sb-brand svg {{ flex-shrink: 0; }}
@@ -358,7 +323,6 @@ def sidebar_master_css(active_page: str) -> str:
 .sb-section-wrap {{
   margin: 12px 0 4px;
   padding: 0 6px;
-  flex-shrink: 0;
 }}
 .sb-section {{
   color: #71717a !important;
@@ -366,18 +330,11 @@ def sidebar_master_css(active_page: str) -> str:
   font-weight: 700;
   letter-spacing: 0.13em;
   text-transform: uppercase;
-  padding: 0;
   margin: 0;
   line-height: 1.4;
 }}
-.sb-divider-wrap {{
-  margin: 10px 6px;
-  flex-shrink: 0;
-}}
-.sb-divider {{
-  height: 1px;
-  background: var(--sb-line);
-}}
+.sb-divider-wrap {{ margin: 10px 6px; }}
+.sb-divider {{ height: 1px; background: var(--sb-line); }}
 {nav_wrap} {{
   background: transparent !important;
   border: none !important;
@@ -401,30 +358,22 @@ def sidebar_master_css(active_page: str) -> str:
   border: none !important;
   background: transparent !important;
   background-color: transparent !important;
-  background-image: none !important;
   color: {_TEXT} !important;
   font-size: 13px !important;
   font-weight: 500 !important;
   text-align: left !important;
   justify-content: flex-start !important;
   box-shadow: none !important;
-  transform: none !important;
-  transition: background 0.14s ease, color 0.14s ease !important;
 }}
 {nav_btn}:hover {{
   background: rgba(255, 255, 255, 0.06) !important;
-  background-color: rgba(255, 255, 255, 0.06) !important;
   color: #fafafa !important;
 }}
 {nav_btn} p {{
   margin: 0 !important;
   color: inherit !important;
-  font-size: inherit !important;
-  font-weight: inherit !important;
 }}
 .sb-foot {{
-  flex-shrink: 0;
-  margin-top: auto;
   padding-top: 10px;
   border-top: 1px solid var(--sb-line);
 }}
@@ -460,11 +409,7 @@ def sidebar_master_css(active_page: str) -> str:
   text-overflow: ellipsis;
   white-space: nowrap;
 }}
-.sb-up {{
-  color: {_MUTED} !important;
-  font-size: 10px;
-  margin-top: 2px;
-}}
+.sb-up {{ color: {_MUTED} !important; font-size: 10px; margin-top: 2px; }}
 {_SB} .st-key-nav_logout [data-testid="stVerticalBlockBorderWrapper"],
 {_SB} .st-key-nav_logout [data-testid="stElementContainer"],
 {_SB} .st-key-nav_logout .stButton {{
@@ -475,7 +420,6 @@ def sidebar_master_css(active_page: str) -> str:
   margin: 0 !important;
 }}
 {_SB} .st-key-nav_logout .stButton > button,
-{_SB} .st-key-nav_logout [data-testid="stBaseButton-tertiary"],
 {_SB} .st-key-nav_logout button {{
   width: 100% !important;
   height: 38px !important;
@@ -484,10 +428,8 @@ def sidebar_master_css(active_page: str) -> str:
   border-radius: 10px !important;
   border: 1px solid var(--sb-line) !important;
   background: var(--sb-panel) !important;
-  background-color: var(--sb-panel) !important;
   color: {_MUTED} !important;
   font-size: 12px !important;
-  font-weight: 500 !important;
   text-align: left !important;
   position: relative !important;
   box-shadow: none !important;
@@ -515,71 +457,38 @@ def sidebar_master_css(active_page: str) -> str:
 
 
 def sidebar_theme_lock_css(active_page: str) -> str:
-    """Runs after global theme lock — preserve sidebar shell, nav selection, scrollbar."""
     active = _resolve_active(active_page)
-    scroll_block = _SCROLL_BODY
-    shell = (
-        f"{_SB}, {_SB} > div, {_SB} [data-testid='stSidebarContent'], "
-        f"{_SB} [data-testid='stSidebarUserContent']"
-    )
     inactive_btn = (
         f'{_SB} {_NAV_BTN} .stButton > button, '
         f'{_SB} {_NAV_BTN} [data-testid="stBaseButton-tertiary"], '
-        f'{_SB} {_NAV_BTN} [data-testid="stBaseButton-secondary"], '
         f'{_SB} {_NAV_BTN} button'
     )
     inactive_wrap = (
         f'{_SB} {_NAV_BTN} [data-testid="stVerticalBlockBorderWrapper"], '
-        f'{_SB} {_NAV_BTN} [data-testid="stElementContainer"], '
         f'{_SB} {_NAV_BTN} .stButton'
     )
     return f"""
-{shell} {{
+{_SB}, {_SB} > div {{
   background-color: var(--sb-bg-deep, {_BG_DEEP}) !important;
 }}
 {_SB} > div {{
   background: linear-gradient(180deg, var(--sb-bg, {_BG}) 0%, var(--sb-bg-deep, {_BG_DEEP}) 100%) !important;
 }}
-{_SB} [data-testid="stVerticalBlock"],
-{_SB} [data-testid="stVerticalBlockBorderWrapper"] {{
-  background-color: transparent !important;
-}}
-{_PANEL_COL} {{
-  min-height: 0 !important;
-  overflow: hidden !important;
-}}
-{_SCROLL_HOST} {{
-  flex: 1 1 0 !important;
-  min-height: 0 !important;
-  overflow: hidden !important;
-}}
-{_SCROLL_SHELL} {{
-  background: var(--sb-panel, {_PANEL}) !important;
-  border: 1px solid var(--sb-line) !important;
-  flex: 1 1 0 !important;
-  min-height: 0 !important;
-  overflow: hidden !important;
-}}
-{_SCROLL_BODY} {{
+{_NAV_HOST} {{
   overflow-y: auto !important;
-  min-height: 0 !important;
+  min-height: 200px !important;
+  max-height: var(--sb-nav-max, calc(100dvh - 220px)) !important;
+  background: var(--sb-panel, {_PANEL}) !important;
 }}
-{_SCROLL_INNER} {{
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-}}
-{_scrollbar_css(scroll_block)}
+{_scrollbar_css()}
 {inactive_wrap} {{
   background: transparent !important;
-  background-color: transparent !important;
   border: none !important;
   box-shadow: none !important;
 }}
 {inactive_btn} {{
   background: transparent !important;
   background-color: transparent !important;
-  background-image: none !important;
   box-shadow: none !important;
 }}
 {_active_style(active)}
@@ -633,13 +542,14 @@ def render_sidebar(active_page: str | None = None) -> None:
     plan = _plan_label(str(st.session_state.get("plan") or "free"))
 
     with st.sidebar:
-        with st.container(key="sb_panel"):
+        with st.container(key="sb_brand"):
             st.markdown(
                 f'<div class="sb-brand">{_BRAND_SVG}<span>{html.escape(APP_NAME)}</span></div>',
                 unsafe_allow_html=True,
             )
-            with st.container(key="sb_scroll"):
-                _render_nav_buttons(active)
+        with st.container(key="sb_nav"):
+            _render_nav_buttons(active)
+        with st.container(key="sb_foot"):
             st.markdown(
                 f'<div class="sb-foot"><div class="sb-user">'
                 f'<div class="sb-av">{html.escape(_user_initial(user))}</div>'
@@ -648,13 +558,13 @@ def render_sidebar(active_page: str | None = None) -> None:
                 f"</div></div>",
                 unsafe_allow_html=True,
             )
-            if st.button(
-                "Abmelden",
-                key="nav_logout",
-                use_container_width=True,
-                type="tertiary",
-            ):
-                from services.session_auth import logout_session
+        if st.button(
+            "Abmelden",
+            key="nav_logout",
+            use_container_width=True,
+            type="tertiary",
+        ):
+            from services.session_auth import logout_session
 
-                logout_session()
-                st.rerun()
+            logout_session()
+            st.rerun()
