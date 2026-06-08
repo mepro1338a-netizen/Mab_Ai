@@ -16,6 +16,10 @@ SIDEBAR_WIDTH = "240px"
 _WIDTH = SIDEBAR_WIDTH
 _NAV_BTN = '[class*="st-key-sb_nav_"]'
 _NAV_HOST = f"{_SB} .st-key-sb_nav"
+_SHELL = f"{_SB} .st-key-sb_shell"
+_SHELL_COL = (
+    f"{_SHELL} > [data-testid=\"stVerticalBlockBorderWrapper\"] > [data-testid=\"stVerticalBlock\"]"
+)
 
 _BG = "#18181b"
 _BG_DEEP = "#141416"
@@ -23,8 +27,6 @@ _PANEL = "#232326"
 _LINE = "rgba(255, 255, 255, 0.08)"
 _MUTED = "#a1a1aa"
 _TEXT = "#e4e4e7"
-_ACTIVE_BG = "linear-gradient(90deg, rgba(124, 58, 237, 0.32), rgba(99, 102, 241, 0.12))"
-_ACTIVE_BORDER = "rgba(167, 139, 250, 0.45)"
 
 NAV_SECTIONS: list[tuple[str, list[tuple[str, str]]]] = [
     (
@@ -139,19 +141,18 @@ def _active_style(page: str) -> str:
     sel = _btn_sel(page)
     return f"""
 {sel} {{
-  background: {_ACTIVE_BG} !important;
-  background-color: rgba(124, 58, 237, 0.24) !important;
-  border: 1px solid {_ACTIVE_BORDER} !important;
-  border-left: 3px solid #c4b5fd !important;
+  background: rgba(124, 58, 237, 0.16) !important;
+  background-color: rgba(124, 58, 237, 0.16) !important;
+  border: none !important;
+  border-left: 3px solid #a78bfa !important;
   color: #ffffff !important;
   font-weight: 600 !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+  box-shadow: none !important;
 }}
 {sel}:hover, {sel}:focus-visible {{
-  background: {_ACTIVE_BG} !important;
-  background-color: rgba(124, 58, 237, 0.28) !important;
-  border: 1px solid {_ACTIVE_BORDER} !important;
-  border-left: 3px solid #c4b5fd !important;
+  background: rgba(124, 58, 237, 0.22) !important;
+  border: none !important;
+  border-left: 3px solid #a78bfa !important;
   color: #ffffff !important;
 }}
 """
@@ -222,73 +223,100 @@ def sidebar_master_css(active_page: str) -> str:
   --sb-bg-deep: {_BG_DEEP};
   --sb-panel: {_PANEL};
   --sb-line: {_LINE};
-  --sb-nav-max: calc(100dvh - 220px);
+  --sb-nav-max: calc(100dvh - 200px);
 }}
 {_nav_icons_css(active)}
 {_SB} {{
   width: var(--sb-w) !important;
   min-width: var(--sb-w) !important;
   max-width: var(--sb-w) !important;
-  background: var(--sb-bg-deep) !important;
+  background: var(--sb-bg) !important;
   border-right: 1px solid var(--sb-line) !important;
   user-select: none;
 }}
+{_SB} [data-testid="stSidebarHeader"],
+{_SB} [data-testid="stSidebarCollapsedControl"] {{
+  display: none !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+}}
 {_SB} > div {{
-  padding: 14px 12px 12px !important;
-  background: linear-gradient(180deg, var(--sb-bg) 0%, var(--sb-bg-deep) 100%) !important;
+  padding: 0 !important;
+  background: var(--sb-bg) !important;
   height: 100dvh !important;
   max-height: 100dvh !important;
   overflow: hidden !important;
-  display: flex !important;
-  flex-direction: column !important;
 }}
 {_SB} [data-testid="stSidebarContent"],
 {_SB} [data-testid="stSidebarUserContent"] {{
   padding: 0 !important;
+  margin: 0 !important;
   background: transparent !important;
-  flex: 1 1 auto !important;
-  min-height: 0 !important;
+  height: 100% !important;
   overflow: hidden !important;
-  display: flex !important;
-  flex-direction: column !important;
 }}
 {_SB} [data-testid="stSidebarNav"] {{ display: none !important; }}
 {_SB} [data-testid="stSidebarContent"] > div,
 {_SB} [data-testid="stSidebarUserContent"] > div {{
-  display: flex !important;
-  flex-direction: column !important;
-  flex: 1 1 auto !important;
-  min-height: 0 !important;
   height: 100% !important;
-  overflow: hidden !important;
+  padding: 0 !important;
+  margin: 0 !important;
   gap: 0 !important;
 }}
-{_SB} .st-key-sb_brand,
-{_SB} .st-key-sb_foot,
-{_SB} .st-key-nav_logout {{
-  flex-shrink: 0 !important;
+{_SHELL} {{
+  height: 100% !important;
+  min-height: 100% !important;
+  overflow: hidden !important;
 }}
-{_SB} .st-key-sb_brand [data-testid="stMarkdownContainer"],
-{_SB} .st-key-sb_foot [data-testid="stMarkdownContainer"],
-{_SB} .st-key-sb_brand [data-testid="stElementContainer"],
-{_SB} .st-key-sb_foot [data-testid="stElementContainer"] {{
+{_SHELL} > [data-testid="stVerticalBlockBorderWrapper"] {{
+  height: 100% !important;
+  min-height: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}}
+{_SHELL_COL} {{
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  padding: 12px 10px 10px !important;
+  gap: 0 !important;
+  overflow: hidden !important;
+}}
+{_SHELL} [data-testid="stMarkdownContainer"],
+{_SHELL} [data-testid="stElementContainer"] {{
   margin: 0 !important;
   padding: 0 !important;
 }}
-{_NAV_HOST} {{
+{_SHELL} .st-key-sb_nav {{
   flex: 1 1 auto !important;
-  min-height: 200px !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}}
+{_SHELL} .st-key-sb_bottom {{
+  flex-shrink: 0 !important;
+  margin-top: auto !important;
+  padding-top: 8px !important;
+}}
+{_NAV_HOST} {{
+  height: 100% !important;
   max-height: var(--sb-nav-max) !important;
   overflow-y: auto !important;
   overflow-x: hidden !important;
   overscroll-behavior: contain !important;
   -webkit-overflow-scrolling: touch !important;
-  margin: 8px 0 !important;
-  padding: 8px 6px !important;
-  background: var(--sb-panel) !important;
-  border: 1px solid var(--sb-line) !important;
-  border-radius: 12px !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
+  padding: 4px 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  border: none !important;
 }}
 {nav_inner_wrap} {{
   background: transparent !important;
@@ -298,7 +326,7 @@ def sidebar_master_css(active_page: str) -> str:
   margin: 0 !important;
 }}
 {_NAV_HOST} [data-testid="stVerticalBlock"] {{
-  gap: 4px !important;
+  gap: 2px !important;
   padding: 0 !important;
 }}
 {_NAV_HOST} [data-testid="stMarkdownContainer"],
@@ -312,10 +340,12 @@ def sidebar_master_css(active_page: str) -> str:
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 0 4px 14px;
+  flex-shrink: 0;
+  padding: 0 4px 16px;
+  margin: 0 0 8px;
   border-bottom: 1px solid var(--sb-line);
 }}
-.sb-brand svg {{ flex-shrink: 0; }}
+.sb-brand svg {{ flex-shrink: 0; width: 24px; height: 24px; }}
 .sb-brand span {{
   color: #fafafa !important;
   font-size: 15px;
@@ -323,8 +353,8 @@ def sidebar_master_css(active_page: str) -> str:
   letter-spacing: -0.02em;
 }}
 .sb-section-wrap {{
-  margin: 12px 0 4px;
-  padding: 0 6px;
+  margin: 10px 0 2px;
+  padding: 0 4px;
 }}
 .sb-section {{
   color: #71717a !important;
@@ -335,8 +365,8 @@ def sidebar_master_css(active_page: str) -> str:
   margin: 0;
   line-height: 1.4;
 }}
-.sb-divider-wrap {{ margin: 10px 6px; }}
-.sb-divider {{ height: 1px; background: var(--sb-line); }}
+.sb-divider-wrap {{ margin: 8px 4px; }}
+.sb-divider {{ height: 1px; background: var(--sb-line); opacity: 0.7; }}
 {nav_wrap} {{
   background: transparent !important;
   border: none !important;
@@ -351,9 +381,9 @@ def sidebar_master_css(active_page: str) -> str:
 }}
 {nav_btn} {{
   width: 100% !important;
-  height: 40px !important;
-  min-height: 40px !important;
-  max-height: 40px !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  max-height: 38px !important;
   margin: 0 !important;
   padding: 0 12px !important;
   border-radius: 10px !important;
@@ -376,17 +406,17 @@ def sidebar_master_css(active_page: str) -> str:
   color: inherit !important;
 }}
 .sb-foot {{
-  padding-top: 10px;
+  padding-top: 8px;
   border-top: 1px solid var(--sb-line);
 }}
 .sb-user {{
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 12px;
-  margin-bottom: 8px;
-  border-radius: 11px;
-  background: var(--sb-panel);
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--sb-line);
 }}
 .sb-av {{
@@ -478,9 +508,12 @@ def sidebar_theme_lock_css(active_page: str) -> str:
 }}
 {_NAV_HOST} {{
   overflow-y: auto !important;
-  min-height: 200px !important;
-  max-height: var(--sb-nav-max, calc(100dvh - 220px)) !important;
-  background: var(--sb-panel, {_PANEL}) !important;
+  max-height: var(--sb-nav-max, calc(100dvh - 200px)) !important;
+  background: transparent !important;
+  border: none !important;
+}}
+{_SHELL_COL} {{
+  padding-top: 12px !important;
 }}
 {_scrollbar_css()}
 {inactive_wrap} {{
@@ -544,29 +577,29 @@ def render_sidebar(active_page: str | None = None) -> None:
     plan = _plan_label(str(st.session_state.get("plan") or "free"))
 
     with st.sidebar:
-        with st.container(key="sb_brand"):
+        with st.container(key="sb_shell"):
             st.markdown(
                 f'<div class="sb-brand">{_BRAND_SVG}<span>{html.escape(APP_NAME)}</span></div>',
                 unsafe_allow_html=True,
             )
-        with st.container(key="sb_nav"):
-            _render_nav_buttons(active)
-        with st.container(key="sb_foot"):
-            st.markdown(
-                f'<div class="sb-foot"><div class="sb-user">'
-                f'<div class="sb-av">{html.escape(_user_initial(user))}</div>'
-                f'<div><div class="sb-un">{html.escape(user)}</div>'
-                f'<div class="sb-up">{html.escape(plan)}</div></div>'
-                f"</div></div>",
-                unsafe_allow_html=True,
-            )
-        if st.button(
-            "Abmelden",
-            key="nav_logout",
-            use_container_width=True,
-            type="tertiary",
-        ):
-            from services.session_auth import logout_session
+            with st.container(key="sb_nav"):
+                _render_nav_buttons(active)
+            with st.container(key="sb_bottom"):
+                st.markdown(
+                    f'<div class="sb-foot"><div class="sb-user">'
+                    f'<div class="sb-av">{html.escape(_user_initial(user))}</div>'
+                    f'<div><div class="sb-un">{html.escape(user)}</div>'
+                    f'<div class="sb-up">{html.escape(plan)}</div></div>'
+                    f"</div></div>",
+                    unsafe_allow_html=True,
+                )
+                if st.button(
+                    "Abmelden",
+                    key="nav_logout",
+                    use_container_width=True,
+                    type="tertiary",
+                ):
+                    from services.session_auth import logout_session
 
-            logout_session()
-            st.rerun()
+                    logout_session()
+                    st.rerun()
