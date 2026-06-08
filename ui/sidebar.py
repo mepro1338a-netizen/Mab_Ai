@@ -52,6 +52,7 @@ NAV_HIGHLIGHT_ALIASES: dict[str, str] = {
 
 SIDEBAR_NAV_ITEMS = NAV_ITEMS
 VALID_NAV_PAGES = frozenset(p for _, p in NAV_ITEMS)
+ROUTE_PAGES = VALID_NAV_PAGES | frozenset({"coding", "music"})
 
 _ICON = (
     'xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" '
@@ -81,7 +82,7 @@ _LOGO = (
 
 def navigate_to(page: str) -> None:
     target = LEGACY_PAGE_ALIASES.get(page, page)
-    if target not in VALID_NAV_PAGES:
+    if target not in ROUTE_PAGES:
         return
     if st.session_state.get("page") != target:
         st.session_state.page = target

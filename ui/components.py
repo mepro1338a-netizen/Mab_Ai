@@ -61,6 +61,16 @@ _DASHBOARD_CSS = """
   border:1px solid rgba(139,92,246,.35);
 }
 .mb-pay-upgrade:hover { background:rgba(124,58,237,.32); }
+.stApp .st-key-pay_nav_premium .stButton > button {
+  padding:7px 14px!important;border-radius:999px!important;
+  font-size:12px!important;font-weight:600!important;
+  color:#e9d5ff!important;background:rgba(124,58,237,.2)!important;
+  border:1px solid rgba(139,92,246,.35)!important;
+  min-height:0!important;height:auto!important;
+}
+.stApp .st-key-pay_nav_premium .stButton > button:hover {
+  background:rgba(124,58,237,.32)!important;border-color:rgba(139,92,246,.45)!important;
+}
 .mb-pay-table {
   width:100%;border-collapse:separate;border-spacing:0;
   border-radius:12px;overflow:hidden;
@@ -234,19 +244,17 @@ def _payment_status_badge(row: dict) -> tuple[str, str]:
 def render_payments(username: str, *, purchases: list[dict] | None = None) -> None:
     """Styled payment history for the profile page."""
     from database import list_purchases
+    from ui.sidebar import navigate_to
 
     rows = purchases if purchases is not None else list_purchases(username)
 
-    st.markdown(
-        """
-<div class="mb-pay-wrap">
-  <div class="mb-pay-head">
-    <div class="mb-dash-section">Zahlungen</div>
-    <a class="mb-pay-upgrade" href="?nav=premium">Plan verwalten</a>
-  </div>
-        """,
-        unsafe_allow_html=True,
-    )
+    st.markdown('<div class="mb-pay-wrap">', unsafe_allow_html=True)
+    head_l, head_r = st.columns([1, 0.35], gap="small")
+    with head_l:
+        st.markdown('<div class="mb-dash-section">Zahlungen</div>', unsafe_allow_html=True)
+    with head_r:
+        if st.button("Plan verwalten", key="pay_nav_premium", use_container_width=True, type="tertiary"):
+            navigate_to("premium")
 
     if not rows:
         st.markdown(

@@ -9,6 +9,7 @@ import streamlit as st
 from config import PLANS
 from database import recent_activity
 from ui.components import format_num
+from ui.sidebar import navigate_to
 from ui.styles import inject_css
 from ui_core import img_base64
 
@@ -60,7 +61,7 @@ _DASH_CSS = """
 .mb-dash-body {
     max-width: var(--mb-content-max, 1100px);
     margin: 0 auto;
-    padding: 22px var(--mb-content-pad-x, 1.5rem) 48px;
+    padding: 22px var(--mb-content-pad-x, 1.5rem) 0;
     width: 100%;
     box-sizing: border-box;
 }
@@ -119,14 +120,92 @@ _DASH_CSS = """
     font-size: 11px;
     color: #52525b !important;
 }
-.mb-dash-main {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 260px;
-    gap: 20px;
-    align-items: start;
+.stApp:has(.mb-dash) .st-key-dash_row {
+    max-width: var(--mb-content-max, 1100px);
+    margin: 0 auto;
+    padding: 0 var(--mb-content-pad-x, 1.5rem) 48px;
+    width: 100%;
+    box-sizing: border-box;
+}
+.stApp:has(.mb-dash) .st-key-dash_row > [data-testid="stVerticalBlockBorderWrapper"] > [data-testid="stVerticalBlock"] {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 260px !important;
+    gap: 20px !important;
+    align-items: start !important;
 }
 @media (max-width: 900px) {
-    .mb-dash-main { grid-template-columns: 1fr; }
+    .stApp:has(.mb-dash) .st-key-dash_row > [data-testid="stVerticalBlockBorderWrapper"] > [data-testid="stVerticalBlock"] {
+        grid-template-columns: 1fr !important;
+    }
+}
+.stApp:has(.mb-dash) [class*="st-key-dash_nav_"] .stButton,
+.stApp:has(.mb-dash) [class*="st-key-dash_nav_"] [data-testid="stVerticalBlockBorderWrapper"],
+.stApp:has(.mb-dash) [class*="st-key-dash_nav_"] [data-testid="stElementContainer"] {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    width: 100% !important;
+}
+.stApp:has(.mb-dash) [class*="st-key-dash_nav_"] .stButton > button,
+.stApp:has(.mb-dash) [class*="st-key-dash_nav_"] button {
+    width: 100% !important;
+    min-height: 96px !important;
+    height: auto !important;
+    padding: 14px 14px !important;
+    border-radius: 12px !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    background: linear-gradient(155deg, rgba(28, 28, 32, 0.96), rgba(12, 12, 15, 0.98)) !important;
+    color: #f4f4f5 !important;
+    text-align: left !important;
+    justify-content: flex-start !important;
+    align-items: flex-start !important;
+    box-shadow: none !important;
+    white-space: pre-line !important;
+    line-height: 1.35 !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+}
+.stApp:has(.mb-dash) [class*="st-key-dash_nav_"] .stButton > button:hover,
+.stApp:has(.mb-dash) [class*="st-key-dash_nav_"] button:hover {
+    border-color: rgba(139, 92, 246, 0.4) !important;
+    background: linear-gradient(155deg, rgba(36, 32, 48, 0.98), rgba(18, 14, 28, 0.99)) !important;
+    color: #fafafa !important;
+}
+.stApp:has(.mb-dash) [class*="st-key-dash_nav_"] .stButton > button p,
+.stApp:has(.mb-dash) [class*="st-key-dash_nav_"] button p {
+    white-space: pre-line !important;
+    text-align: left !important;
+    font-size: 14px !important;
+    line-height: 1.35 !important;
+    color: inherit !important;
+}
+.stApp:has(.mb-dash) .st-key-dash_actions_grid [data-testid="column"] > [data-testid="stVerticalBlock"] {
+    gap: 12px !important;
+}
+.stApp:has(.mb-dash) .st-key-dash_acc [class*="st-key-dash_nav_"] .stButton > button,
+.stApp:has(.mb-dash) .st-key-dash_acc [class*="st-key-dash_nav_"] button {
+    min-height: 40px !important;
+    padding: 10px 12px !important;
+    font-size: 12px !important;
+    white-space: nowrap !important;
+}
+.stApp:has(.mb-dash) .st-key-dash_acc [class*="st-key-dash_nav_"] .stButton > button p,
+.stApp:has(.mb-dash) .st-key-dash_acc [class*="st-key-dash_nav_"] button p {
+    white-space: nowrap !important;
+    font-size: 12px !important;
+}
+.mb-dash-actions-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--mb-gap-card, 12px);
+}
+@media (max-width: 720px) {
+    .mb-dash-actions-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 480px) {
+    .mb-dash-actions-grid { grid-template-columns: 1fr; }
 }
 .mb-dash-label {
     font-size: var(--mb-label-size, 10px);
@@ -139,60 +218,6 @@ _DASH_CSS = """
 .mb-dash-label-muted {
     color: #52525b !important;
     font-weight: 600;
-}
-.mb-dash-actions {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: var(--mb-gap-card, 12px);
-}
-@media (max-width: 720px) {
-    .mb-dash-actions { grid-template-columns: repeat(2, 1fr); }
-}
-@media (max-width: 480px) {
-    .mb-dash-actions { grid-template-columns: 1fr; }
-}
-.mb-dash-action {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    padding: 14px 14px;
-    min-height: 96px;
-    border-radius: 12px;
-    text-decoration: none !important;
-    background: linear-gradient(155deg, rgba(28, 28, 32, 0.96), rgba(12, 12, 15, 0.98));
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    transition: border-color 0.12s ease, transform 0.12s ease, box-shadow 0.12s ease;
-}
-.mb-dash-action:hover {
-    border-color: rgba(139, 92, 246, 0.4);
-    transform: translateY(-1px);
-    box-shadow: 0 8px 24px rgba(124, 58, 237, 0.1);
-}
-.mb-dash-action .ico {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 15px;
-    background: rgba(124, 58, 237, 0.16);
-    border: 1px solid rgba(139, 92, 246, 0.22);
-}
-.mb-dash-action .t {
-    font-size: 14px;
-    font-weight: 700;
-    color: #f4f4f5 !important;
-}
-.mb-dash-action .d {
-    font-size: 11px;
-    color: #71717a !important;
-    line-height: 1.35;
-}
-.mb-dash-aside {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
 }
 .mb-dash-updates {
     padding: 12px 12px 10px;
@@ -233,28 +258,6 @@ _DASH_CSS = """
     flex-direction: column;
     gap: 6px;
 }
-.mb-dash-link {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 12px;
-    border-radius: 10px;
-    text-decoration: none !important;
-    font-size: 12px;
-    font-weight: 600;
-    color: #d4d4d8 !important;
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    transition: border-color 0.12s ease, background 0.12s ease;
-}
-.mb-dash-link:hover {
-    border-color: rgba(139, 92, 246, 0.25);
-    background: rgba(124, 58, 237, 0.06);
-}
-.mb-dash-link span {
-    color: #52525b !important;
-    font-size: 11px;
-}
 @media (max-width: 768px) {
     .mb-dash-body { padding-bottom: 32px; }
 }
@@ -292,16 +295,41 @@ def _activity_snippet(username: str) -> str:
     return f"{tool} · {when}" if when else tool
 
 
-def _actions_html() -> str:
-    parts: list[str] = []
-    for page, title, desc, icon in _QUICK_ACTIONS:
-        parts.append(
-            f'<a class="mb-dash-action" href="?nav={html.escape(page)}">'
-            f'<span class="ico">{html.escape(icon)}</span>'
-            f'<span class="t">{html.escape(title)}</span>'
-            f'<span class="d">{html.escape(desc)}</span></a>'
-        )
-    return "".join(parts)
+def _dash_nav_key(page: str) -> str:
+    return f"dash_nav_{page}"
+
+
+def _dash_button_label(title: str, desc: str, icon: str) -> str:
+    return f"{icon}  {title}\n{desc}"
+
+
+def _render_action_buttons() -> None:
+    with st.container(key="dash_actions_grid"):
+        for row_start in range(0, len(_QUICK_ACTIONS), 3):
+            cols = st.columns(3, gap="small")
+            batch = _QUICK_ACTIONS[row_start : row_start + 3]
+            for col, item in zip(cols, batch):
+                page, title, desc, icon = item
+                with col:
+                    if st.button(
+                        _dash_button_label(title, desc, icon),
+                        key=_dash_nav_key(page),
+                        use_container_width=True,
+                        type="tertiary",
+                    ):
+                        navigate_to(page)
+            if len(batch) < 3:
+                for col in cols[len(batch) :]:
+                    with col:
+                        st.empty()
+
+
+def _render_account_buttons() -> None:
+    with st.container(key="dash_acc"):
+        if st.button("Profil  →", key=_dash_nav_key("dashboard"), use_container_width=True, type="tertiary"):
+            navigate_to("dashboard")
+        if st.button("Premium  →", key=_dash_nav_key("premium"), use_container_width=True, type="tertiary"):
+            navigate_to("premium")
 
 
 def _updates_html() -> str:
@@ -321,7 +349,7 @@ def _updates_html() -> str:
     )
 
 
-def _dash_page_html(*, user: str, tokens: str, plan_label: str, activity: str) -> str:
+def _dash_top_html(*, user: str, tokens: str, plan_label: str, activity: str) -> str:
     return (
         '<div class="mb-dash">'
         + _header_html()
@@ -340,19 +368,7 @@ def _dash_page_html(*, user: str, tokens: str, plan_label: str, activity: str) -
         + '<div class="mb-dash-kpi"><div class="k">Letzte Aktivität</div>'
         + f'<div class="v sm">{html.escape(activity)}</div>'
         + '<div class="h">Zuletzt im Workspace</div></div>'
-        + "</div>"
-        + '<div class="mb-dash-main">'
-        + "<section>"
-        + '<p class="mb-dash-label">Workspace</p>'
-        + f'<div class="mb-dash-actions">{_actions_html()}</div>'
-        + "</section>"
-        + f'<aside class="mb-dash-aside">{_updates_html()}'
-        + "<div>"
-        + '<p class="mb-dash-label mb-dash-label-muted">Account</p>'
-        + '<div class="mb-dash-links">'
-        + '<a class="mb-dash-link" href="?nav=dashboard">Profil <span>→</span></a>'
-        + '<a class="mb-dash-link" href="?nav=premium">Premium <span>→</span></a>'
-        + "</div></div></aside></div></div></div>"
+        + "</div></div></div>"
     )
 
 
@@ -371,7 +387,7 @@ def render_home() -> None:
 
     inject_css(_DASH_CSS)
     st.markdown(
-        _dash_page_html(
+        _dash_top_html(
             user=user,
             tokens=format_num(tokens),
             plan_label=plan_label,
@@ -379,3 +395,13 @@ def render_home() -> None:
         ),
         unsafe_allow_html=True,
     )
+
+    with st.container(key="dash_row"):
+        col_main, col_aside = st.columns([1, 0.32], gap="medium")
+        with col_main:
+            st.markdown('<p class="mb-dash-label">Workspace</p>', unsafe_allow_html=True)
+            _render_action_buttons()
+        with col_aside:
+            st.markdown(_updates_html(), unsafe_allow_html=True)
+            st.markdown('<p class="mb-dash-label mb-dash-label-muted">Account</p>', unsafe_allow_html=True)
+            _render_account_buttons()
