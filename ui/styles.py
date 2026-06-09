@@ -100,8 +100,13 @@ section.main .block-container,
     margin-left: auto !important;
     margin-right: auto !important;
 }
-.stApp:has(.mb-dash) section.main .block-container {
+.stApp:has(.mb-dash) section.main .block-container,
+.stApp:has(.mb-hub) section.main .block-container {
     padding-top: 8px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+.stApp:has(.mb-dash) section.main .block-container {
     padding-bottom: 48px !important;
 }
 @media (max-width: 768px) {

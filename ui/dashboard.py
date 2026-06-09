@@ -56,10 +56,16 @@ def _btn_css() -> str:
     parts = [
         f"""
 .stApp:has(.mb-hub) section.main .block-container {{
-    max-width: var(--mb-content-max, 1040px) !important;
-    padding: 20px var(--mb-content-pad-x, 1.5rem) 52px !important;
+    max-width: 900px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding: 14px 1.25rem 36px !important;
 }}
-.stApp:has(.mb-hub) section.main [data-testid="stVerticalBlock"] {{ gap: 16px !important; }}
+.stApp:has(.mb-hub) section.main [data-testid="stVerticalBlock"] {{ gap: 10px !important; }}
+.stApp:has(.mb-hub) .st-key-hub_layout > [data-testid="stHorizontalBlock"] {{
+    gap: 12px !important;
+    align-items: start !important;
+}}
 {base} .stButton, {base} [data-testid="stVerticalBlockBorderWrapper"],
 {base} [data-testid="stElementContainer"] {{
     margin: 0 !important; padding: 0 !important;
@@ -67,13 +73,13 @@ def _btn_css() -> str:
     box-shadow: none !important; width: 100% !important;
 }}
 .stApp:has(.mb-hub) .st-key-hub_grid [data-testid="column"] > [data-testid="stVerticalBlock"] {{
-    gap: 10px !important;
+    gap: 8px !important;
 }}
 .stApp:has(.mb-hub) .st-key-hub_side > [data-testid="stVerticalBlockBorderWrapper"] > [data-testid="stVerticalBlock"] {{
-    gap: 12px !important;
+    gap: 8px !important;
 }}
 .stApp:has(.mb-hub) .st-key-hub_account {{
-    padding: 16px; border-radius: 16px;
+    padding: 12px; border-radius: 12px;
     background: rgba(18, 18, 20, 0.65);
     border: 1px solid rgba(255, 255, 255, 0.06);
 }}
@@ -86,8 +92,8 @@ def _btn_css() -> str:
     parts.append(
         f"""
 {tile} .stButton > button, {tile} button {{
-    width: 100% !important; min-height: 108px !important;
-    padding: 18px 12px 14px !important; border-radius: 16px !important;
+    width: 100% !important; min-height: 86px !important;
+    padding: 14px 10px 12px !important; border-radius: 12px !important;
     border: 1px solid rgba(255,255,255,0.07) !important;
     background: rgba(24,24,27,0.9) !important;
     display: flex !important; flex-direction: column !important;
@@ -96,14 +102,14 @@ def _btn_css() -> str:
     transition: transform .12s, border-color .15s, box-shadow .15s !important;
 }}
 {tile} .stButton > button:hover, {tile} button:hover {{
-    transform: translateY(-2px) !important;
-    border-color: rgba(139,92,246,0.4) !important;
-    box-shadow: 0 10px 28px rgba(124,58,237,0.12) !important;
+    transform: translateY(-1px) !important;
+    border-color: rgba(139,92,246,0.35) !important;
+    box-shadow: 0 6px 18px rgba(124,58,237,0.1) !important;
 }}
 {tile} .stButton > button::before, {tile} button::before {{
     content: "" !important; display: block !important;
-    width: 28px !important; height: 28px !important;
-    margin: 0 auto 10px !important; border-radius: 10px !important;
+    width: 24px !important; height: 24px !important;
+    margin: 0 auto 8px !important; border-radius: 8px !important;
     background-color: rgba(124,58,237,0.15) !important;
     background-size: 16px !important; background-position: center !important;
     background-repeat: no-repeat !important; position: static !important;
@@ -130,8 +136,8 @@ def _btn_css() -> str:
         sel = f".stApp:has(.mb-hub) .st-key-hub_link_{page}"
         parts.append(
             f"{sel} .stButton > button, {sel} button {{"
-            f"min-height: 44px !important; padding: 10px 14px !important;"
-            f"border-radius: 12px !important; border: 1px solid rgba(255,255,255,0.08) !important;"
+            f"min-height: 36px !important; padding: 8px 12px !important;"
+            f"border-radius: 10px !important; border: 1px solid rgba(255,255,255,0.07) !important;"
             f"background: rgba(255,255,255,0.03) !important; text-align: left !important;"
             f"justify-content: flex-start !important; }}"
             f"{sel} .stButton > button::before, {sel} button::before {{"
@@ -147,10 +153,11 @@ def _btn_css() -> str:
 
 _HUB_CSS = """
 .mb-hub-hero {
-    position: relative; overflow: hidden; border-radius: 20px;
-    padding: 28px 28px 24px; margin-bottom: 4px;
-    border: 1px solid rgba(139, 92, 246, 0.2);
+    position: relative; overflow: hidden; border-radius: 14px;
+    padding: 20px 20px 18px; margin-bottom: 2px;
+    border: 1px solid rgba(139, 92, 246, 0.16);
     background: linear-gradient(145deg, rgba(30, 20, 50, 0.95), rgba(15, 15, 18, 0.98));
+    text-align: center;
 }
 .mb-hub-glow {
     position: absolute; top: -40%; right: -10%; width: 55%; height: 140%;
@@ -167,34 +174,36 @@ _HUB_CSS = """
     color: #fafafa !important; letter-spacing: -0.03em; line-height: 1.15;
 }
 .mb-hub-metrics {
-    display: flex; gap: 28px; margin-top: 20px; flex-wrap: wrap;
+    display: flex; gap: 24px; margin-top: 14px; flex-wrap: wrap;
+    justify-content: center; align-items: center;
 }
-.mb-hub-metrics .item { display: flex; flex-direction: column; gap: 2px; }
+.mb-hub-metrics .item { display: flex; flex-direction: column; gap: 2px; align-items: center; }
 .mb-hub-metrics .n {
-    font-size: 22px; font-weight: 800; color: #fafafa !important; line-height: 1;
+    font-size: 18px; font-weight: 800; color: #fafafa !important; line-height: 1;
 }
 .mb-hub-metrics .l {
     font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
     text-transform: uppercase; color: #71717a !important;
 }
 .mb-hub-label {
-    font-size: 10px; font-weight: 800; letter-spacing: 0.14em;
-    text-transform: uppercase; color: #52525b !important; margin: 0 0 2px;
+    font-size: 9px; font-weight: 800; letter-spacing: 0.12em;
+    text-transform: uppercase; color: #52525b !important;
+    margin: 0 0 6px; text-align: center;
 }
 .mb-hub-card {
-    padding: 16px; border-radius: 16px;
+    padding: 12px; border-radius: 12px;
     background: rgba(18, 18, 20, 0.65);
     border: 1px solid rgba(255, 255, 255, 0.06);
 }
 .mb-hub-card .lbl,
 .stApp:has(.mb-hub) .st-key-hub_account .lbl {
     font-size: 10px; font-weight: 800; letter-spacing: 0.12em;
-    text-transform: uppercase; color: #52525b !important; margin-bottom: 12px;
+    text-transform: uppercase; color: #52525b !important;     margin-bottom: 8px;
 }
 .mb-hub-act {
     display: flex; justify-content: space-between; align-items: center; gap: 8px;
-    padding: 9px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-    font-size: 13px;
+    padding: 6px 0; border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    font-size: 12px;
 }
 .mb-hub-act:last-child { border-bottom: none; padding-bottom: 0; }
 .mb-hub-act .t { color: #e4e4e7 !important; font-weight: 600; }
@@ -295,8 +304,9 @@ def render_home() -> None:
         unsafe_allow_html=True,
     )
 
-    col_tools, col_side = st.columns([1.65, 1], gap="medium")
-    with col_tools:
-        _render_tool_grid()
-    with col_side:
-        _render_side_panel(user)
+    with st.container(key="hub_layout"):
+        col_tools, col_side = st.columns([1.45, 1], gap="small")
+        with col_tools:
+            _render_tool_grid()
+        with col_side:
+            _render_side_panel(user)
