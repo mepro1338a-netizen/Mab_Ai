@@ -23,7 +23,8 @@ _APP_BG = MB_APP_BACKGROUND
 _LINE = "rgba(255, 255, 255, 0.08)"
 _MUTED = "#71717a"
 _TEXT = "#d4d4d8"
-_BTN_H = 34
+_BTN_H = 36
+_ROW = f'{_SB} [class*="st-key-sb_row_"]'
 
 NAV_SECTIONS: list[tuple[str, list[tuple[str, str]]]] = [
     ("Workspace", [("Dashboard", "home"), ("AI Chat", "chat"), ("Football", "football"), ("Automation", "automation_lab")]),
@@ -112,13 +113,47 @@ def _icon_html(page: str, *, active: bool = False) -> str:
     return f'<img src="data:image/svg+xml;base64,{b64}" width="16" height="16" alt="" class="sb-ico" />'
 
 
-def _nav_btn_css(active: str) -> str:
+def _row_css(active: str) -> str:
     btn = f"{_SB} {_NAV} .stButton > button, {_SB} {_NAV} button"
     parts = [
         f"""
+{_ROW} {{
+  margin:0 0 3px 0!important; padding:0!important;
+  min-height:{_BTN_H}px!important;
+}}
+{_ROW} [data-testid="stVerticalBlockBorderWrapper"] {{
+  padding:0!important; margin:0!important; border:none!important;
+  background:transparent!important; min-height:{_BTN_H}px!important;
+}}
+{_ROW} [data-testid="stVerticalBlock"] {{
+  gap:0!important; min-height:{_BTN_H}px!important;
+}}
+{_ROW} [data-testid="stHorizontalBlock"] {{
+  display:flex!important; flex-wrap:nowrap!important; align-items:center!important;
+  min-height:{_BTN_H}px!important; gap:0!important;
+}}
+{_ROW} [data-testid="column"] {{
+  display:flex!important; align-items:center!important; min-height:{_BTN_H}px!important;
+  padding:0!important; margin:0!important;
+}}
+{_ROW} [data-testid="column"]:first-child {{
+  flex:0 0 32px!important; width:32px!important; min-width:32px!important; max-width:32px!important;
+  justify-content:center!important;
+}}
+{_ROW} [data-testid="column"]:last-child {{
+  flex:1 1 auto!important; min-width:0!important;
+}}
+{_ROW} [data-testid="stMarkdownContainer"] {{
+  margin:0!important; padding:0!important; width:100%!important;
+}}
+.sb-ico-wrap {{
+  display:flex; align-items:center; justify-content:center;
+  width:32px; height:{_BTN_H}px; flex-shrink:0;
+}}
+.sb-ico {{ display:block; width:16px; height:16px; flex-shrink:0; }}
 {btn} {{
   width:100%!important; height:{_BTN_H}px!important; min-height:{_BTN_H}px!important;
-  max-height:{_BTN_H}px!important; margin:0!important; padding:0 10px!important;
+  max-height:{_BTN_H}px!important; margin:0!important; padding:0 8px!important;
   border-radius:8px!important; border:none!important; background:transparent!important;
   color:{_TEXT}!important; font-size:13px!important; font-weight:500!important;
   display:flex!important; align-items:center!important; justify-content:flex-start!important;
@@ -128,33 +163,24 @@ def _nav_btn_css(active: str) -> str:
 {btn} p, {btn} span, {btn} div {{
   margin:0!important; padding:0!important; color:inherit!important;
   font-size:13px!important; line-height:1!important; white-space:nowrap!important;
-  display:flex!important; align-items:center!important;
+  overflow:hidden!important; text-overflow:ellipsis!important;
 }}
-.stApp [class*="st-key-sb_item_"] {{
-  margin-bottom:2px!important;
+{_SB} .st-key-sb_logout_row [data-testid="stHorizontalBlock"] {{
+  display:flex!important; align-items:center!important; min-height:32px!important;
 }}
-.stApp [class*="st-key-sb_item_"] > [data-testid="stVerticalBlockBorderWrapper"] {{
-  padding:0!important; border:none!important; background:transparent!important;
+{_SB} .st-key-sb_logout_row [data-testid="column"]:first-child {{
+  flex:0 0 32px!important; width:32px!important; max-width:32px!important;
 }}
-.stApp [class*="st-key-sb_item_"] > [data-testid="stHorizontalBlock"] {{
-  align-items:center!important; gap:0!important;
-}}
-.stApp [class*="st-key-sb_item_"] [data-testid="column"]:first-child {{
-  display:flex!important; align-items:center!important; justify-content:center!important;
-  min-width:28px!important; max-width:28px!important; flex:0 0 28px!important;
-}}
-.sb-ico-wrap {{ display:flex; align-items:center; justify-content:center; width:28px; height:{_BTN_H}px; }}
-.sb-ico {{ display:block; width:16px; height:16px; flex-shrink:0; }}
 """
     ]
     for _, items in NAV_SECTIONS:
         for _, page in items:
             if page == active:
+                sel = f"{_SB} .st-key-sb_row_{page}"
                 parts.append(
-                    f".stApp .st-key-sb_item_{page} {{"
+                    f"{sel} [data-testid='stHorizontalBlock'] {{"
                     f"background:rgba(39,39,42,0.95)!important; border-radius:8px!important; }}"
-                    f".stApp .st-key-sb_item_{page} {btn} {{"
-                    f"color:#fafafa!important; font-weight:600!important; }}"
+                    f"{sel} {btn} {{ color:#fafafa!important; font-weight:600!important; }}"
                 )
     return "".join(parts)
 
@@ -189,8 +215,11 @@ def _base_css() -> str:
   min-height:0!important; padding:16px 14px 14px!important; gap:0!important;
   overflow-y:auto!important; overflow-x:hidden!important;
 }}
-{_SHELL} [data-testid="stVerticalBlock"],
-{_SHELL} [data-testid="stVerticalBlockBorderWrapper"] > [data-testid="stVerticalBlock"] {{
+{_SHELL} > [data-testid="stVerticalBlockBorderWrapper"] > [data-testid="stVerticalBlock"] {{
+  gap:2px!important;
+}}
+{_SHELL} [class*="st-key-sb_row_"] [data-testid="stVerticalBlock"],
+{_SHELL} .st-key-sb_bottom [data-testid="stVerticalBlock"] {{
   gap:0!important;
 }}
 {_SHELL} [data-testid="stMarkdownContainer"], {_SHELL} [data-testid="stElementContainer"] {{
@@ -229,40 +258,41 @@ def _base_css() -> str:
 {_SB} .st-key-nav_logout .stButton>button:hover {{
   color:#f87171!important; background:rgba(248,113,113,0.06)!important;
 }}
-.stApp .st-key-sb_item_ [data-testid="stVerticalBlockBorderWrapper"] {{
-  background:transparent!important; border:none!important; padding:0!important; margin:0!important;
-}}
 """
 
 
 def sidebar_master_css(active_page: str) -> str:
     active = _resolve_active(active_page)
-    return _base_css() + _nav_btn_css(active)
+    return _base_css() + _row_css(active)
 
 
 def sidebar_theme_lock_css(active_page: str) -> str:
     active = _resolve_active(active_page)
     return f"""
 {_SB}, {_SB}>div {{ background:{_APP_BG}!important; background-color:{_BG}!important; }}
-{_nav_btn_css(active)}
+{_row_css(active)}
 """
+
+
+def _render_nav_row(label: str, page: str, active: str) -> None:
+    with st.container(key=f"sb_row_{page}", border=False):
+        icon_col, btn_col = st.columns([1, 7], gap="small", vertical_alignment="center")
+        with icon_col:
+            st.markdown(
+                f'<div class="sb-ico-wrap">{_icon_html(page, active=(page == active))}</div>',
+                unsafe_allow_html=True,
+            )
+        with btn_col:
+            if st.button(label, key=_nav_key(page), use_container_width=True, type="tertiary"):
+                if page != active:
+                    navigate_to(page)
 
 
 def _render_nav(active: str) -> None:
     for title, items in NAV_SECTIONS:
         st.markdown(f'<p class="sb-sec">{html.escape(title)}</p>', unsafe_allow_html=True)
         for label, page in items:
-            with st.container(key=f"sb_item_{page}"):
-                icon_col, btn_col = st.columns([0.12, 0.88], gap="small")
-                with icon_col:
-                    st.markdown(
-                        f'<div class="sb-ico-wrap">{_icon_html(page, active=(page == active))}</div>',
-                        unsafe_allow_html=True,
-                    )
-                with btn_col:
-                    if st.button(label, key=_nav_key(page), use_container_width=True, type="tertiary"):
-                        if page != active:
-                            navigate_to(page)
+            _render_nav_row(label, page, active)
 
 
 def _plan_label(plan: str) -> str:
@@ -282,13 +312,13 @@ def render_sidebar(active_page: str | None = None) -> None:
     tokens = format_num(int(st.session_state.get("tokens", 0) or 0))
 
     with st.sidebar:
-        with st.container(key="sb_shell"):
+        with st.container(key="sb_shell", border=False):
             st.markdown(
                 f'<div class="sb-brand">{_LOGO}<span class="sb-name">{html.escape(APP_NAME)}</span></div>',
                 unsafe_allow_html=True,
             )
             _render_nav(active)
-            with st.container(key="sb_bottom"):
+            with st.container(key="sb_bottom", border=False):
                 st.markdown(
                     f'<div class="sb-user">'
                     f'<p class="sb-un">{html.escape(user)}</p>'
@@ -296,8 +326,8 @@ def render_sidebar(active_page: str | None = None) -> None:
                     f"</div>",
                     unsafe_allow_html=True,
                 )
-                with st.container(key="sb_logout_row"):
-                    lo_ic, lo_bt = st.columns([0.12, 0.88], gap="small")
+                with st.container(key="sb_logout_row", border=False):
+                    lo_ic, lo_bt = st.columns([1, 7], gap="small", vertical_alignment="center")
                     with lo_ic:
                         st.markdown(
                             f'<div class="sb-ico-wrap">{_icon_html("logout")}</div>',
