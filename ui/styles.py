@@ -101,7 +101,7 @@ section.main .block-container,
     margin-right: auto !important;
 }
 .stApp:has(.mb-dash) section.main .block-container,
-.stApp:has(.mb-hub) section.main .block-container {
+.stApp:has(.mb-home) section.main .block-container {
     padding-top: 8px !important;
     margin-left: auto !important;
     margin-right: auto !important;
