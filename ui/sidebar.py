@@ -27,7 +27,7 @@ _BTN_H = 34
 
 NAV_SECTIONS: list[tuple[str, list[tuple[str, str]]]] = [
     ("Workspace", [("Dashboard", "home"), ("AI Chat", "chat"), ("Football", "football"), ("Automation", "automation_lab")]),
-    ("Create", [("Image", "image"), ("Video", "video")]),
+    ("Create", [("Image", "image"), ("Video", "video"), ("Code", "coding"), ("Music", "music")]),
     ("Account", [("Profile", "dashboard"), ("Premium", "premium")]),
 ]
 
@@ -41,15 +41,15 @@ LEGACY_PAGE_ALIASES: dict[str, str] = {
 }
 
 NAV_HIGHLIGHT_ALIASES: dict[str, str] = {
-    "coding": "image",
-    "music": "video",
+    "coding": "coding",
+    "music": "music",
     "social_oauth": "dashboard",
     "football": "football",
 }
 
 SIDEBAR_NAV_ITEMS = NAV_ITEMS
 VALID_NAV_PAGES = frozenset(p for _, p in NAV_ITEMS)
-ROUTE_PAGES = VALID_NAV_PAGES | frozenset({"coding", "music"})
+ROUTE_PAGES = VALID_NAV_PAGES
 
 _SVG_PATHS: dict[str, str] = {
     "home": '<rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/>',
@@ -60,6 +60,8 @@ _SVG_PATHS: dict[str, str] = {
     "automation_lab": '<rect width="8" height="8" x="3" y="3" rx="2"/><path d="M7 11v4a2 2 0 0 0 2 2h4"/><rect width="8" height="8" x="13" y="13" rx="2"/>',
     "dashboard": '<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
     "premium": '<path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"/>',
+    "coding": '<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>',
+    "music": '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
     "logout": '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/>',
 }
 
@@ -94,7 +96,7 @@ def _nav_key(page: str) -> str:
     return f"sb_nav_{page}"
 
 
-def _svg_data_uri(page: str, *, active: bool = False) -> str:
+def _svg_b64(page: str, *, active: bool = False) -> str:
     stroke = "#fafafa" if active else "#a1a1aa"
     inner = _SVG_PATHS.get(page, _SVG_PATHS["home"])
     svg = (
@@ -102,31 +104,25 @@ def _svg_data_uri(page: str, *, active: bool = False) -> str:
         f'stroke="{stroke}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
         f"{inner}</svg>"
     )
-    b64 = base64.b64encode(svg.encode("utf-8")).decode("ascii")
-    return f'url("data:image/svg+xml;base64,{b64}")'
+    return base64.b64encode(svg.encode("utf-8")).decode("ascii")
 
 
-def _btn_sel(page: str) -> str:
-    k = _nav_key(page)
-    return (
-        f"{_SB} .st-key-{k} .stButton > button, "
-        f"{_SB} .st-key-{k} [data-testid='stBaseButton-tertiary'], "
-        f"{_SB} .st-key-{k} button"
-    )
+def _icon_html(page: str, *, active: bool = False) -> str:
+    b64 = _svg_b64(page, active=active)
+    return f'<img src="data:image/svg+xml;base64,{b64}" width="16" height="16" alt="" class="sb-ico" />'
 
 
 def _nav_btn_css(active: str) -> str:
-    parts: list[str] = []
     btn = f"{_SB} {_NAV} .stButton > button, {_SB} {_NAV} button"
-    parts.append(
+    parts = [
         f"""
 {btn} {{
   width:100%!important; height:{_BTN_H}px!important; min-height:{_BTN_H}px!important;
-  max-height:{_BTN_H}px!important; margin:0!important; padding:0 12px 0 38px!important;
+  max-height:{_BTN_H}px!important; margin:0!important; padding:0 10px!important;
   border-radius:8px!important; border:none!important; background:transparent!important;
   color:{_TEXT}!important; font-size:13px!important; font-weight:500!important;
   display:flex!important; align-items:center!important; justify-content:flex-start!important;
-  box-shadow:none!important; line-height:1!important; position:relative!important;
+  box-shadow:none!important; line-height:1!important;
 }}
 {btn}:hover {{ background:rgba(255,255,255,0.05)!important; color:#fafafa!important; }}
 {btn} p, {btn} span, {btn} div {{
@@ -134,25 +130,32 @@ def _nav_btn_css(active: str) -> str:
   font-size:13px!important; line-height:1!important; white-space:nowrap!important;
   display:flex!important; align-items:center!important;
 }}
+.stApp [class*="st-key-sb_item_"] {{
+  margin-bottom:2px!important;
+}}
+.stApp [class*="st-key-sb_item_"] > [data-testid="stVerticalBlockBorderWrapper"] {{
+  padding:0!important; border:none!important; background:transparent!important;
+}}
+.stApp [class*="st-key-sb_item_"] > [data-testid="stHorizontalBlock"] {{
+  align-items:center!important; gap:0!important;
+}}
+.stApp [class*="st-key-sb_item_"] [data-testid="column"]:first-child {{
+  display:flex!important; align-items:center!important; justify-content:center!important;
+  min-width:28px!important; max-width:28px!important; flex:0 0 28px!important;
+}}
+.sb-ico-wrap {{ display:flex; align-items:center; justify-content:center; width:28px; height:{_BTN_H}px; }}
+.sb-ico {{ display:block; width:16px; height:16px; flex-shrink:0; }}
 """
-    )
-    for page in _SVG_PATHS:
-        if page == "logout":
-            continue
-        sel = _btn_sel(page)
-        uri = _svg_data_uri(page, active=(page == active))
-        parts.append(
-            f"{sel}::before {{"
-            f'content:""!important; position:absolute!important; left:12px!important; top:50%!important;'
-            f"transform:translateY(-50%)!important; width:16px!important; height:16px!important;"
-            f"background-image:{uri}!important; background-size:16px 16px!important;"
-            f"background-repeat:no-repeat!important; background-position:center!important;"
-            f"background-color:transparent!important; }}"
-        )
-        if page == active:
-            parts.append(
-                f"{sel} {{ background:rgba(39,39,42,0.95)!important; color:#fafafa!important; font-weight:600!important; }}"
-            )
+    ]
+    for _, items in NAV_SECTIONS:
+        for _, page in items:
+            if page == active:
+                parts.append(
+                    f".stApp .st-key-sb_item_{page} {{"
+                    f"background:rgba(39,39,42,0.95)!important; border-radius:8px!important; }}"
+                    f".stApp .st-key-sb_item_{page} {btn} {{"
+                    f"color:#fafafa!important; font-weight:600!important; }}"
+                )
     return "".join(parts)
 
 
@@ -162,7 +165,6 @@ def _base_css() -> str:
         f"{_SB} {_NAV} [data-testid='stVerticalBlockBorderWrapper'], "
         f"{_SB} {_NAV} [data-testid='stElementContainer'], {_SB} {_NAV} .stButton"
     )
-    logout_uri = _svg_data_uri("logout")
     return f"""
 :root {{ --sb-w:{SIDEBAR_WIDTH}; --sb-width:{SIDEBAR_WIDTH}; --sb-bg:{_BG}; }}
 {_SB}, {_SB}>div, {_SB} [data-testid="stSidebarContent"],
@@ -218,20 +220,17 @@ def _base_css() -> str:
 .sb-meta {{ color:{_MUTED}!important; font-size:11px; margin:3px 0 0; }}
 {_SB} .st-key-nav_logout .stButton>button, {_SB} .st-key-nav_logout button {{
   width:100%!important; height:32px!important; min-height:32px!important;
-  padding:0 12px 0 36px!important; border-radius:8px!important;
+  padding:0 10px!important; border-radius:8px!important;
   border:1px solid {_LINE}!important; background:transparent!important;
   color:{_MUTED}!important; font-size:12px!important;
-  display:flex!important; align-items:center!important; position:relative!important;
+  display:flex!important; align-items:center!important;
   box-shadow:none!important;
 }}
 {_SB} .st-key-nav_logout .stButton>button:hover {{
   color:#f87171!important; background:rgba(248,113,113,0.06)!important;
 }}
-{_SB} .st-key-nav_logout .stButton>button::before {{
-  content:""!important; position:absolute!important; left:12px!important; top:50%!important;
-  transform:translateY(-50%)!important; width:14px!important; height:14px!important;
-  background-image:{logout_uri}!important; background-size:14px 14px!important;
-  background-repeat:no-repeat!important; background-position:center!important;
+.stApp .st-key-sb_item_ [data-testid="stVerticalBlockBorderWrapper"] {{
+  background:transparent!important; border:none!important; padding:0!important; margin:0!important;
 }}
 """
 
@@ -253,9 +252,17 @@ def _render_nav(active: str) -> None:
     for title, items in NAV_SECTIONS:
         st.markdown(f'<p class="sb-sec">{html.escape(title)}</p>', unsafe_allow_html=True)
         for label, page in items:
-            if st.button(label, key=_nav_key(page), use_container_width=True, type="tertiary"):
-                if page != active:
-                    navigate_to(page)
+            with st.container(key=f"sb_item_{page}"):
+                icon_col, btn_col = st.columns([0.12, 0.88], gap="small")
+                with icon_col:
+                    st.markdown(
+                        f'<div class="sb-ico-wrap">{_icon_html(page, active=(page == active))}</div>',
+                        unsafe_allow_html=True,
+                    )
+                with btn_col:
+                    if st.button(label, key=_nav_key(page), use_container_width=True, type="tertiary"):
+                        if page != active:
+                            navigate_to(page)
 
 
 def _plan_label(plan: str) -> str:
@@ -289,7 +296,15 @@ def render_sidebar(active_page: str | None = None) -> None:
                     f"</div>",
                     unsafe_allow_html=True,
                 )
-                if st.button("Abmelden", key="nav_logout", use_container_width=True, type="tertiary"):
-                    from services.session_auth import logout_session
-                    logout_session()
-                    st.rerun()
+                with st.container(key="sb_logout_row"):
+                    lo_ic, lo_bt = st.columns([0.12, 0.88], gap="small")
+                    with lo_ic:
+                        st.markdown(
+                            f'<div class="sb-ico-wrap">{_icon_html("logout")}</div>',
+                            unsafe_allow_html=True,
+                        )
+                    with lo_bt:
+                        if st.button("Abmelden", key="nav_logout", use_container_width=True, type="tertiary"):
+                            from services.session_auth import logout_session
+                            logout_session()
+                            st.rerun()
