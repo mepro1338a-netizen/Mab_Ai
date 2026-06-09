@@ -104,7 +104,7 @@ def _nav_key(page: str) -> str:
 
 
 def _icon_uri(page: str, *, on: bool = False) -> str:
-    c = "%23ffffff" if on else "%238a8a8e"
+    c = "%23fafafa" if on else "%23a1a1aa"
     svg = (_SVG.get(page) or _SVG["home"]).format(c=c)
     return f'url("data:image/svg+xml,{quote(svg)}")'
 
@@ -126,7 +126,7 @@ def _active_css(page: str) -> str:
   color: #fafafa !important;
   font-weight: 600 !important;
   border: 1px solid rgba(139, 92, 246, 0.28) !important;
-  box-shadow: inset 3px 0 0 {_ACTIVE_BORDER} !important;
+  border-left: 3px solid {_ACTIVE_BORDER} !important;
 }}
 {s}:hover {{
   background: rgba(124, 58, 237, 0.22) !important;
@@ -134,6 +134,7 @@ def _active_css(page: str) -> str:
 }}
 {s}::before {{
   background-color: rgba(124, 58, 237, 0.22) !important;
+  left: 10px !important;
 }}
 """
 
@@ -146,10 +147,11 @@ def _icons_css(active: str) -> str:
         s = _btn(p)
         uri = _icon_uri(p, on=(p == active))
         out.append(
-            f"{s}{{padding-left:42px!important;position:relative!important}}"
-            f"{s}::before{{content:'';position:absolute;left:8px;top:50%;"
-            f"transform:translateY(-50%);width:22px;height:22px;"
-            f"border-radius:7px;background-color:rgba(255,255,255,0.04);"
+            f"{s}{{padding-left:40px!important;position:relative!important;"
+            f"display:flex!important;align-items:center!important}}"
+            f"{s}::before{{content:'';position:absolute;left:9px;top:7px;"
+            f"transform:none;width:22px;height:22px;"
+            f"border-radius:7px;background-color:rgba(255,255,255,0.05);"
             f"background-image:{uri};background-size:14px;background-position:center;"
             f"background-repeat:no-repeat}}"
         )
@@ -221,31 +223,35 @@ def _base_css() -> str:
   color:#52525b!important;
   font-size:10px; font-weight:800;
   letter-spacing:0.14em; text-transform:uppercase;
-  padding:16px 8px 8px; margin:0!important; line-height:1;
+  padding:18px 8px 10px; margin:0!important; line-height:1;
 }}
 .sb-sec::after {{
   content:""; flex:1; height:1px; background:rgba(255,255,255,0.05);
 }}
-.sb-sec:first-of-type {{ padding-top:6px; }}
+.sb-sec:first-of-type {{ padding-top:10px; }}
 {wrap} {{ background:transparent!important; border:none!important; margin:0!important; padding:0!important; }}
 {_SB} {_NAV} [data-testid='stElementContainer'] {{ margin-bottom:4px!important; }}
 {_SB} {_NAV} .stButton {{ margin:0!important; padding:0!important; width:100%!important; }}
 {btn} {{
   width:100%!important; height:{_BTN_H}px!important; min-height:{_BTN_H}px!important;
-  max-height:{_BTN_H}px!important; margin:0!important; padding:0 12px!important;
+  max-height:{_BTN_H}px!important; margin:0!important; padding:0 12px 0 40px!important;
   border-radius:10px!important; border:1px solid transparent!important;
+  border-left:3px solid transparent!important;
   background:transparent!important;
   color:{_TEXT}!important; font-size:12.5px!important; font-weight:500!important;
-  text-align:left!important; justify-content:flex-start!important; box-shadow:none!important;
-  line-height:1!important; transition:background .12s,border-color .12s,color .12s!important;
+  display:flex!important; align-items:center!important; justify-content:flex-start!important;
+  box-shadow:none!important; line-height:1.2!important;
+  transition:background .12s,border-color .12s,color .12s!important;
 }}
 {btn}:hover {{
   background:rgba(255,255,255,.04)!important; color:#fafafa!important;
   border-color:rgba(255,255,255,0.06)!important;
 }}
-{btn} p, {btn} span, {btn} div {{
+{btn} p, {btn} span, {btn} div, {btn} [data-testid="stMarkdownContainer"] {{
   margin:0!important; padding:0!important; color:inherit!important;
-  font-size:12px!important; line-height:1!important; white-space:nowrap!important; overflow:visible!important;
+  font-size:12.5px!important; line-height:1.2!important; white-space:nowrap!important;
+  overflow:visible!important; display:flex!important; align-items:center!important;
+  height:auto!important; min-height:0!important;
 }}
 .sb-user {{
   display:flex; align-items:center; gap:11px; padding:12px 12px; margin:0 0 10px;
@@ -277,15 +283,18 @@ def _base_css() -> str:
   padding:0 12px 0 38px!important; border-radius:10px!important;
   border:1px solid {_LINE}!important; background:rgba(255,255,255,.02)!important;
   color:{_MUTED}!important; font-size:11.5px!important; font-weight:500!important;
-  text-align:left!important; position:relative!important; box-shadow:none!important;
-  line-height:1!important;
+  display:flex!important; align-items:center!important; justify-content:flex-start!important;
+  position:relative!important; box-shadow:none!important; line-height:1.2!important;
+}}
+{_SB} .st-key-nav_logout .stButton>button p, {_SB} .st-key-nav_logout button p {{
+  display:flex!important; align-items:center!important; margin:0!important; padding:0!important;
 }}
 {_SB} .st-key-nav_logout .stButton>button:hover {{
   color:#fca5a5!important; border-color:rgba(248,113,113,0.25)!important;
   background:rgba(248,113,113,0.06)!important;
 }}
 {_SB} .st-key-nav_logout .stButton>button::before {{
-  content:''; position:absolute; left:12px; top:50%; transform:translateY(-50%);
+  content:''; position:absolute; left:12px; top:10px; transform:none;
   width:14px; height:14px; border-radius:5px;
   background-color:rgba(255,255,255,0.04);
   background-image:{_icon_uri("logout")};
@@ -304,7 +313,10 @@ def sidebar_theme_lock_css(active_page: str) -> str:
     btn = f"{_SB} {_NAV} .stButton > button, {_SB} {_NAV} button"
     return f"""
 {_SB}, {_SB}>div {{ background:{_APP_BG}!important; background-color:{_BG}!important; }}
-{btn} {{ background:transparent!important; box-shadow:none!important; }}
+{btn} {{
+  background:transparent!important; box-shadow:none!important;
+  display:flex!important; align-items:center!important;
+}}
 {_active_css(active)}
 """
 
