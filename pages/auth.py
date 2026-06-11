@@ -28,7 +28,7 @@ _AUTH_CSS = """
     --auth-accent-hover: #6d28d9;
     --auth-violet: #8b5cf6;
     --auth-glass-bg: rgba(255, 255, 255, 0.06);
-    --auth-glass-bg-strong: rgba(139, 92, 246, 0.14);
+    --auth-glass-bg-strong: rgba(139, 92, 246, 0.15);
     --auth-glass-border: rgba(255, 255, 255, 0.14);
     --auth-glass-border-hover: rgba(139, 92, 246, 0.45);
     --auth-glass-blur: blur(12px);
@@ -447,6 +447,7 @@ html:has(.auth-marker) .stApp section.main .st-key-auth_card [data-testid="stFor
 
 html:has(.auth-marker) .stApp section.main .st-key-auth_card [data-testid="stForm"] [data-testid="stFormSubmitButton"] button,
 html:has(.auth-marker) .stApp section.main .st-key-auth_card [data-testid="stFormSubmitButton"] button,
+html:has(.auth-marker) .stApp section.main .st-key-auth_card button[kind="primary"],
 html:has(.auth-marker) .stApp section.main .st-key-auth_card .stButton > button[kind="primary"],
 html:has(.auth-marker) .stApp section.main .st-key-auth_card button[data-testid="baseButton-primary"],
 html:has(.auth-marker) .stApp section.main .st-key-auth_card button[data-testid="stBaseButton-primary"] {
@@ -456,20 +457,26 @@ html:has(.auth-marker) .stApp section.main .st-key-auth_card button[data-testid=
     border: 1px solid transparent !important;
     border-radius: 12px !important;
     background:
-        linear-gradient(rgba(139, 92, 246, 0.24), rgba(99, 102, 241, 0.14)) padding-box,
-        linear-gradient(90deg, rgba(139, 92, 246, 0.72), rgba(99, 102, 241, 0.62)) border-box !important;
+        linear-gradient(rgba(139, 92, 246, 0.18), rgba(99, 102, 241, 0.10)) padding-box,
+        linear-gradient(90deg, rgba(139, 92, 246, 0.75), rgba(99, 102, 241, 0.75)) border-box !important;
     background-color: transparent !important;
+    background-image:
+        linear-gradient(rgba(139, 92, 246, 0.18), rgba(99, 102, 241, 0.10)),
+        linear-gradient(90deg, rgba(139, 92, 246, 0.75), rgba(99, 102, 241, 0.75)) !important;
+    background-origin: padding-box, border-box !important;
+    background-clip: padding-box, border-box !important;
     color: #fafafa !important;
     font-size: 14px !important;
     font-weight: 600 !important;
     backdrop-filter: var(--auth-glass-blur) !important;
     -webkit-backdrop-filter: var(--auth-glass-blur) !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.14),
-        0 0 20px rgba(139, 92, 246, 0.22),
-        0 4px 16px rgba(0, 0, 0, 0.28) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.12),
+        0 0 18px rgba(139, 92, 246, 0.2),
+        0 4px 16px rgba(0, 0, 0, 0.24) !important;
     transition:
         background 0.15s ease,
+        background-image 0.15s ease,
         border-color 0.15s ease,
         box-shadow 0.15s ease,
         transform 0.12s ease !important;
@@ -477,17 +484,24 @@ html:has(.auth-marker) .stApp section.main .st-key-auth_card button[data-testid=
 
 html:has(.auth-marker) .stApp section.main .st-key-auth_card [data-testid="stForm"] [data-testid="stFormSubmitButton"] button:hover,
 html:has(.auth-marker) .stApp section.main .st-key-auth_card [data-testid="stFormSubmitButton"] button:hover,
+html:has(.auth-marker) .stApp section.main .st-key-auth_card button[kind="primary"]:hover,
 html:has(.auth-marker) .stApp section.main .st-key-auth_card .stButton > button[kind="primary"]:hover,
 html:has(.auth-marker) .stApp section.main .st-key-auth_card button[data-testid="baseButton-primary"]:hover,
 html:has(.auth-marker) .stApp section.main .st-key-auth_card button[data-testid="stBaseButton-primary"]:hover {
     background:
-        linear-gradient(rgba(139, 92, 246, 0.34), rgba(99, 102, 241, 0.2)) padding-box,
+        linear-gradient(rgba(139, 92, 246, 0.28), rgba(99, 102, 241, 0.16)) padding-box,
         linear-gradient(90deg, rgba(167, 139, 250, 0.85), rgba(129, 140, 248, 0.75)) border-box !important;
+    background-color: transparent !important;
+    background-image:
+        linear-gradient(rgba(139, 92, 246, 0.28), rgba(99, 102, 241, 0.16)),
+        linear-gradient(90deg, rgba(167, 139, 250, 0.85), rgba(129, 140, 248, 0.75)) !important;
+    background-origin: padding-box, border-box !important;
+    background-clip: padding-box, border-box !important;
     transform: translateY(-1px) !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.18),
+        inset 0 1px 0 rgba(255, 255, 255, 0.16),
         0 0 28px rgba(139, 92, 246, 0.38),
-        0 6px 20px rgba(0, 0, 0, 0.32) !important;
+        0 6px 20px rgba(0, 0, 0, 0.28) !important;
 }
 
 html:has(.auth-marker) .stApp section.main .st-key-auth_card [data-testid="stForm"] [data-testid="stFormSubmitButton"] button:active,
