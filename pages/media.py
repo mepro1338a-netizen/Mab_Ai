@@ -1,4 +1,5 @@
-﻿import uuid
+﻿import html
+import uuid
 import sqlite3
 
 import streamlit as st
