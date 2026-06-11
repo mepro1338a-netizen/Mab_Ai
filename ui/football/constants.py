@@ -3,15 +3,15 @@ from __future__ import annotations
 
 from config import FOOTBALL_DATA_COMPETITION_CODES
 
-# (competition_key, tab label)
+# (competition_key, selectbox label)
 CATEGORY_TABS: tuple[tuple[str, str], ...] = (
-    ("deutschland", "Deutschland"),
-    ("uefa", "Europa"),
-    ("nationalteams", "International"),
-    ("topligen", "Top-Ligen"),
+    ("deutschland", "🇩🇪 Deutschland"),
+    ("uefa", "🏆 Europa"),
+    ("nationalteams", "🌍 International"),
+    ("topligen", "⭐ Top-Ligen"),
 )
 
-# (time_key, segmented label)
+# (time_key, selectbox label)
 TIME_OPTIONS: tuple[tuple[str, str], ...] = (
     ("heute", "Heute"),
     ("live", "Live"),
@@ -51,6 +51,7 @@ _LEAGUE_CATALOG: dict[str, list[tuple[int, str]]] = {
     ],
 }
 
+
 def league_has_free_tier_data(league_id: int) -> bool:
     if not league_id:
         return True
@@ -85,7 +86,7 @@ MSG_NO_ANALYSIS = (
 )
 MSG_EMPTY_TODAY = "Heute sind keine Spiele verfügbar."
 MSG_EMPTY_SELECTION = "Keine Spiele für diese Auswahl."
-MSG_NEXT_SECTION = "Nächste Spiele"
+MSG_NEXT_SECTION = "Kommende Spiele"
 MSG_PREMIUM_LEAGUE = (
     "Für diesen Wettbewerb liegen im Free-Tier keine Live-Daten vor. "
     "Bitte eine verfügbare Liga wählen oder Premium nutzen."

@@ -8,14 +8,17 @@ FOOTBALL_CSS = """
 }
 
 .fb2-header {
-  display: flex; align-items: flex-start; justify-content: space-between;
+  display: flex; align-items: center; justify-content: space-between;
   gap: 16px; margin-bottom: 18px; flex-wrap: wrap;
 }
 .fb2-header-main h1 {
   margin: 0; font-size: 24px; font-weight: 800; color: #fafafa; letter-spacing: -.02em;
 }
 .fb2-header-main p { margin: 6px 0 0; font-size: 13px; color: #94a3b8; line-height: 1.45; }
-.fb2-header-meta { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.fb2-header-meta {
+  display: flex; align-items: center; justify-content: flex-end;
+  gap: 8px; flex-shrink: 0; width: 100%;
+}
 .fb2-pill {
   display: inline-flex; align-items: center; gap: 8px;
   padding: 8px 12px; border-radius: 10px;
@@ -25,30 +28,15 @@ FOOTBALL_CSS = """
 .fb2-pill-label { color: #71717a; font-weight: 500; }
 .fb2-pill strong { color: #fafafa; font-weight: 700; font-size: 13px; }
 
-.fb2-panel {
-  padding: 14px 16px 12px; margin-bottom: 18px;
-  border-radius: 12px; border: 1px solid rgba(255,255,255,.08);
-  background: rgba(9,9,11,.55);
+.fb2-refresh-slot {
+  display: flex; align-items: flex-start; justify-content: flex-end;
+  padding-top: 2px; min-height: 44px;
 }
-.fb2-panel [data-testid="stSegmentedControl"] {
-  margin-bottom: 10px !important;
-}
-.fb2-panel [data-testid="stSegmentedControl"]:last-of-type {
-  margin-bottom: 4px !important;
-}
-.fb2-panel .stSelectbox label {
-  font-size: 11px !important; font-weight: 600 !important;
-  letter-spacing: .06em !important; text-transform: uppercase !important;
-  color: #71717a !important;
-}
-.fb2-panel [data-testid="column"]:last-child {
-  display: flex !important; justify-content: flex-end !important;
-}
-.fb2-panel .st-key-fb_refresh .stButton,
-.fb2-panel .st-key-fb_refresh .stButton > button {
+.fb2-refresh-slot .stButton,
+.fb2-refresh-slot .stButton > button {
   width: 36px !important; min-width: 36px !important; max-width: 36px !important;
 }
-.fb2-panel .st-key-fb_refresh .stButton > button {
+.fb2-refresh-slot .stButton > button {
   height: 36px !important; min-height: 36px !important; max-height: 36px !important;
   padding: 0 !important; border-radius: 10px !important;
   border: 1px solid rgba(255,255,255,.08) !important;
@@ -56,27 +44,67 @@ FOOTBALL_CSS = """
   color: #a1a1aa !important; box-shadow: none !important;
   display: flex !important; align-items: center !important; justify-content: center !important;
 }
-.fb2-panel .st-key-fb_refresh .stButton > button:hover {
+.fb2-refresh-slot .stButton > button:hover {
   border-color: rgba(139,92,246,.45) !important;
   background: rgba(139,92,246,.1) !important; color: #c4b5fd !important;
 }
-.fb2-panel .st-key-fb_refresh [data-testid="stIconMaterial"] {
+.fb2-refresh-slot [data-testid="stIconMaterial"] {
   font-size: 18px !important; color: inherit !important;
+}
+
+.fb2-panel {
+  padding: 16px 18px 14px; margin-bottom: 20px;
+  border-radius: 12px; border: 1px solid rgba(255,255,255,.08);
+  background: rgba(9,9,11,.42);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 4px 24px rgba(0,0,0,.18);
+}
+.fb2-panel [data-testid="column"] { min-width: 0; }
+.fb2-panel .stSelectbox { margin-bottom: 0 !important; }
+.fb2-panel .stSelectbox label {
+  font-size: 10px !important; font-weight: 700 !important;
+  letter-spacing: .08em !important; text-transform: uppercase !important;
+  color: #71717a !important; margin-bottom: 6px !important;
+}
+.fb2-panel [data-baseweb="select"] > div {
+  min-height: 40px !important;
+  border-radius: 10px !important;
+  border-color: rgba(255,255,255,.1) !important;
+  background: rgba(24,24,27,.72) !important;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.fb2-panel [data-baseweb="select"]:hover > div {
+  border-color: rgba(139,92,246,.35) !important;
+}
+.fb2-panel [data-baseweb="select"]:focus-within > div {
+  border-color: rgba(139,92,246,.65) !important;
+  box-shadow: 0 0 0 1px rgba(139,92,246,.25) !important;
+}
+.fb2-panel [data-baseweb="select"] span {
+  color: #f4f4f5 !important; font-size: 13px !important; font-weight: 500 !important;
+}
+.fb2-panel [data-baseweb="select"] svg { fill: #71717a !important; }
+.fb2-panel .stCaption { margin-top: 10px !important; color: #52525b !important; font-size: 12px !important; }
+
+.fb2-section-label {
+  margin: 0 0 12px; padding: 0;
+  font-size: 11px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase;
+  color: #71717a;
 }
 
 .fb2-match-list { display: flex; flex-direction: column; gap: 2px; }
 
 .fb2-empty {
-  padding: 36px 24px; text-align: center; border-radius: 14px;
+  padding: 40px 24px; text-align: center; border-radius: 14px;
   border: 1px dashed rgba(255,255,255,.1);
   background: rgba(9,9,11,.35);
 }
-.fb2-empty-icon { font-size: 28px; line-height: 1; margin-bottom: 10px; opacity: .65; }
+.fb2-empty-icon { font-size: 32px; line-height: 1; margin-bottom: 12px; opacity: .55; }
 .fb2-empty-title {
   margin: 0 0 8px; font-size: 15px; font-weight: 600; color: #e4e4e7; line-height: 1.45;
 }
 .fb2-empty-note {
-  margin: 0 0 8px; font-size: 13px; color: #a78bfa; line-height: 1.45;
+  margin: 0 0 8px; font-size: 13px; color: #94a3b8; line-height: 1.45;
 }
 .fb2-empty-hint { margin: 0; font-size: 13px; color: #71717a; line-height: 1.45; }
 
@@ -264,6 +292,9 @@ FOOTBALL_CSS = """
 
 @media (max-width: 600px) { .fb2-prob { grid-template-columns: 1fr; } }
 @media (max-width: 700px) { .fb2-grid2 { grid-template-columns: 1fr; } }
+@media (max-width: 768px) {
+  .fb2-panel [data-testid="column"] { margin-bottom: 4px; }
+}
 @media (max-width: 640px) {
   .fb2-header { flex-direction: column; align-items: stretch; }
   .fb2-header-meta { justify-content: flex-start; }

@@ -72,84 +72,103 @@ def _resolve_time(label: str) -> str:
         return "heute"
 
 
-def _current_category_label(competition: str) -> str:
+def _label_for_category(competition: str) -> str:
     for key, label in CATEGORY_TABS:
         if key == competition:
             return label
     return CATEGORY_TABS[0][1]
 
 
-def _current_time_label(time_key: str) -> str:
+def _label_for_time(time_key: str) -> str:
     for key, label in TIME_OPTIONS:
         if key == time_key:
             return label
     return TIME_OPTIONS[0][1]
 
 
-def _render_page_header() -> None:
-    tokens = format_num(int(st.session_state.get("tokens", 0) or 0))
-    st.markdown(
-        f"""
-<div class="fb2-header">
-  <div class="fb2-header-main">
-    <h1>Football</h1>
-    <p>Live-Spiele, Quoten und KI-Analyse — nur echte API-Daten.</p>
-  </div>
-  <div class="fb2-header-meta">
-    <span class="fb2-pill" title="Token-Guthaben">
-      <span class="fb2-pill-label">Guthaben</span>
-      <strong>{html.escape(tokens)}</strong>
-    </span>
-  </div>
-</div>
-        """,
-        unsafe_allow_html=True,
+def _sync_selectbox(key: str, label: str, options: list[str], current_label: str) -> str:
+    if key not in st.session_state or st.session_state[key] not in options:
+        st.session_state[key] = current_label
+    return str(
+        st.selectbox(
+            label,
+            options=options,
+            key=key,
+        )
     )
 
 
-def _render_control_panel() -> tuple[str, str, int]:
+def _render_top_bar() -> None:
+    tokens = format_num(int(st.session_state.get("tokens", 0) or 0))
+    title_l, meta_r = st.columns([8, 4])
+    with title_l:
+        st.markdown(
+            """
+<div class="fb2-header-main">
+  <h1>Football</h1>
+  <p>Live-Spiele, Quoten und KI-Analyse — nur echte API-Daten.</p>
+</div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with meta_r:
+        pill_c, refresh_c = st.columns([5, 1])
+        with pill_c:
+            st.markdown(
+                f"""
+<div class="fb2-header-meta">
+  <span class="fb2-pill" title="Token-Guthaben">
+    <span class="fb2-pill-label">Guthaben</span>
+    <strong>{html.escape(tokens)}</strong>
+  </span>
+</div>
+                """,
+                unsafe_allow_html=True,
+            )
+        with refresh_c:
+            st.markdown('<div class="fb2-refresh-slot">', unsafe_allow_html=True)
+            if st.button(
+                "",
+                key="fb_refresh",
+                icon=":material/refresh:",
+                type="tertiary",
+                help="Spiele neu laden",
+            ):
+                _clear_feed()
+                st.rerun()
+            st.markdown("</div>", unsafe_allow_html=True)
+
+
+def _render_filter_panel() -> tuple[str, str, int]:
     competition = str(st.session_state.get("fb_competition") or "deutschland")
     time_key = str(st.session_state.get("fb_time") or "heute")
     league_id = int(st.session_state.get("fb_league_id") or 0)
 
     st.markdown('<div class="fb2-panel">', unsafe_allow_html=True)
 
-    head_l, head_r = st.columns([11, 1])
-    with head_r:
-        if st.button(
-            "",
-            key="fb_refresh",
-            icon=":material/refresh:",
-            type="tertiary",
-            help="Spiele neu laden",
-        ):
-            _clear_feed()
-            st.rerun()
+    col_time, col_cat, col_league = st.columns(3, gap="medium")
 
-    if "fb_time_seg" not in st.session_state:
-        st.session_state["fb_time_seg"] = _current_time_label(time_key)
-    if "fb_category_seg" not in st.session_state:
-        st.session_state["fb_category_seg"] = _current_category_label(competition)
-
-    time_choice = st.segmented_control(
-        "Zeitraum",
-        options=_time_labels(),
-        key="fb_time_seg",
-        label_visibility="collapsed",
-    )
-    new_time = _resolve_time(str(time_choice))
+    with col_time:
+        time_choice = _sync_selectbox(
+            "fb_time_sel",
+            "Zeitraum",
+            _time_labels(),
+            _label_for_time(time_key),
+        )
+    new_time = _resolve_time(time_choice)
     if new_time != time_key:
         st.session_state["fb_time"] = new_time
         time_key = new_time
         _clear_feed()
 
-    cat_choice = st.segmented_control(
-        "Wettbewerb",
-        options=_category_labels(),
-        key="fb_category_seg",
-        label_visibility="collapsed",
-    )
-    new_comp = _resolve_category(str(cat_choice))
+    with col_cat:
+        cat_choice = _sync_selectbox(
+            "fb_category_sel",
+            "Wettbewerb",
+            _category_labels(),
+            _label_for_category(competition),
+        )
+    new_comp = _resolve_category(cat_choice)
     if new_comp != competition:
         st.session_state["fb_competition"] = new_comp
         competition = new_comp
@@ -164,13 +183,13 @@ def _render_control_panel() -> tuple[str, str, int]:
         league_id = 0
         st.session_state["fb_league_id"] = 0
 
-    league_label = st.selectbox(
-        "Liga / Turnier",
-        options=labels,
-        index=ids.index(league_id),
-        key=f"fb_league_sel_{competition}",
-        label_visibility="visible",
-    )
+    with col_league:
+        league_label = _sync_selectbox(
+            f"fb_league_sel_{competition}",
+            "Liga / Turnier",
+            labels,
+            labels[ids.index(league_id)],
+        )
     new_league_id = ids[labels.index(league_label)]
     if new_league_id != league_id:
         st.session_state["fb_league_id"] = new_league_id
@@ -199,12 +218,15 @@ def _render_empty_state(
     else:
         message = MSG_EMPTY_SELECTION
 
+    note_html = (
+        f'<p class="fb2-empty-note">{html.escape(note)}</p>' if note else ""
+    )
     st.markdown(
         f"""
 <div class="fb2-empty">
   <div class="fb2-empty-icon" aria-hidden="true">⚽</div>
   <p class="fb2-empty-title">{html.escape(message)}</p>
-  {f'<p class="fb2-empty-note">{html.escape(note)}</p>' if note else ""}
+  {note_html}
   <p class="fb2-empty-hint">Filter anpassen oder später erneut versuchen.</p>
 </div>
         """,
@@ -228,7 +250,7 @@ def render_football_betting_board(
     ensure_football_session()
 
     st.markdown('<div class="fb2">', unsafe_allow_html=True)
-    _render_page_header()
+    _render_top_bar()
 
     rank = football_plan_rank(session_plan or "none")
     if rank < 1 or session_plan in ("none", ""):
@@ -280,7 +302,7 @@ def render_football_betting_board(
         st.markdown("</div>", unsafe_allow_html=True)
         return
 
-    comp, time_f, league_id = _render_control_panel()
+    comp, time_f, league_id = _render_filter_panel()
 
     if league_id and not league_has_free_tier_data(league_id):
         _render_empty_state(time_key=time_f, league_id=league_id, api_errors=[])
@@ -346,7 +368,10 @@ def render_football_betting_board(
         return
 
     if show_empty_today and empty_note:
-        st.caption(empty_note)
+        st.markdown(
+            f'<p class="fb2-section-label">{html.escape(empty_note)}</p>',
+            unsafe_allow_html=True,
+        )
 
     st.markdown('<div class="fb2-match-list">', unsafe_allow_html=True)
     for row in rows:

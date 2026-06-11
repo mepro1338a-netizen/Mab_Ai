@@ -5,7 +5,7 @@ from typing import Any
 
 import streamlit as st
 
-FB_VERSION = 11
+FB_VERSION = 12
 
 FB_DEFAULTS: dict[str, Any] = {
     "fb_v": FB_VERSION,
@@ -20,14 +20,19 @@ FB_DEFAULTS: dict[str, Any] = {
     "fb_displayed_allspiele_count": 0,
 }
 
+_LEGACY_WIDGET_KEYS = ("fb_time_seg", "fb_category_seg")
+
 
 def ensure_football_session() -> None:
     if st.session_state.get("fb_v") != FB_VERSION:
+        for key in list(st.session_state.keys()):
+            if str(key).startswith("fb_"):
+                st.session_state.pop(key, None)
         for key, value in FB_DEFAULTS.items():
             st.session_state[key] = value
-        for widget_key in ("fb_time_seg", "fb_category_seg"):
-            st.session_state.pop(widget_key, None)
         return
+    for legacy_key in _LEGACY_WIDGET_KEYS:
+        st.session_state.pop(legacy_key, None)
     for key, value in FB_DEFAULTS.items():
         if key not in st.session_state:
             st.session_state[key] = value
