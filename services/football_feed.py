@@ -117,12 +117,19 @@ def _filter_competition_pool(
     ]
 
 
+def _note_error(errors: list[str] | None, exc: Exception) -> None:
+    msg = str(exc).strip()
+    if errors is not None and msg and msg not in errors:
+        errors.append(msg)
+
+
 def _fetch_league_today(
     service: FootballService,
     league_id: int,
     today: str,
     *,
     username: str,
+    errors: list[str] | None = None,
 ) -> list[dict[str, Any]]:
     try:
         return service.get_fixtures_by_league_range(
@@ -131,7 +138,8 @@ def _fetch_league_today(
             date_to=today,
             username=username,
         )
-    except FootballAPIError:
+    except FootballAPIError as exc:
+        _note_error(errors, exc)
         return []
 
 
@@ -141,6 +149,7 @@ def _fetch_league_tomorrow(
     tomorrow: str,
     *,
     username: str,
+    errors: list[str] | None = None,
 ) -> list[dict[str, Any]]:
     try:
         return service.get_fixtures_by_league_range(
@@ -149,7 +158,8 @@ def _fetch_league_tomorrow(
             date_to=tomorrow,
             username=username,
         )
-    except FootballAPIError:
+    except FootballAPIError as exc:
+        _note_error(errors, exc)
         return []
 
 
@@ -159,12 +169,14 @@ def _fetch_league_next(
     *,
     username: str,
     count: int = 15,
+    errors: list[str] | None = None,
 ) -> list[dict[str, Any]]:
     try:
         return service.get_fixtures_by_league_next(
             league_id, next_count=count, username=username
         )
-    except FootballAPIError:
+    except FootballAPIError as exc:
+        _note_error(errors, exc)
         return []
 
 
@@ -173,10 +185,12 @@ def _fetch_league_live(
     league_ids: frozenset[int],
     *,
     username: str,
+    errors: list[str] | None = None,
 ) -> list[dict[str, Any]]:
     try:
         rows = service.get_live_fixtures(username=username)
-    except FootballAPIError:
+    except FootballAPIError as exc:
+        _note_error(errors, exc)
         return []
     return [fx for fx in rows if _league_id(fx) in league_ids]
 
@@ -213,18 +227,18 @@ def fetch_competition_fixtures(
     effective_filter = tf
 
     def _today_fetch(svc: FootballService, lid: int, *, username: str) -> list[dict[str, Any]]:
-        return _fetch_league_today(svc, lid, today, username=username)
+        return _fetch_league_today(svc, lid, today, username=username, errors=errors)
 
     def _tomorrow_fetch(svc: FootballService, lid: int, *, username: str) -> list[dict[str, Any]]:
-        return _fetch_league_tomorrow(svc, lid, tomorrow, username=username)
+        return _fetch_league_tomorrow(svc, lid, tomorrow, username=username, errors=errors)
 
     def _next_fetch(svc: FootballService, lid: int, *, username: str) -> list[dict[str, Any]]:
-        return _fetch_league_next(svc, lid, username=username)
+        return _fetch_league_next(svc, lid, username=username, errors=errors)
 
     pool: list[dict[str, Any]] = []
 
     if tf == "live":
-        live_rows = _fetch_league_live(service, league_ids, username=username)
+        live_rows = _fetch_league_live(service, league_ids, username=username, errors=errors)
         pool = _filter_competition_pool(live_rows, competition=competition, league_ids=league_ids)
         if not pool:
             pool = _filter_competition_pool(
@@ -265,7 +279,7 @@ def fetch_competition_fixtures(
             league_ids=league_ids,
         )
         if not pool:
-            live_rows = _fetch_league_live(service, league_ids, username=username)
+            live_rows = _fetch_league_live(service, league_ids, username=username, errors=errors)
             pool = _filter_competition_pool(live_rows, competition=competition, league_ids=league_ids)
             if pool:
                 effective_filter = "live"
@@ -584,6 +598,7 @@ def resolve_all_api_board(
         "raw_mode": True,
         "displayed_topspiele_count": 0,
         "displayed_allspiele_count": len(rows),
+        "errors": payload.get("errors") or [],
     }
 
 

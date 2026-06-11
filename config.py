@@ -155,6 +155,20 @@ FOOTBALL_API_INJURIES_CACHE_TTL = int(os.getenv("FOOTBALL_API_INJURIES_CACHE_TTL
 FOOTBALL_API_TIMEOUT = int(os.getenv("FOOTBALL_API_TIMEOUT", "20") or 20)
 FOOTBALL_DEFAULT_SEASON = int(os.getenv("FOOTBALL_DEFAULT_SEASON", "2025") or 2025)
 
+# football-data.org v4 — Free-Tier Quelle für Spielpläne + Tabellen.
+# API-Football bleibt optionaler Zusatz für Odds/Predictions/Injuries.
+FOOTBALL_DATA_API_KEY = os.getenv("FOOTBALL_DATA_API_KEY", "")
+FOOTBALL_DATA_BASE_URL = os.getenv(
+    "FOOTBALL_DATA_BASE_URL",
+    "https://api.football-data.org/v4",
+)
+FOOTBALL_DATA_TIMEOUT = int(os.getenv("FOOTBALL_DATA_TIMEOUT", "20") or 20)
+FOOTBALL_DATA_CACHE_TTL = int(os.getenv("FOOTBALL_DATA_CACHE_TTL", "21600") or 21600)  # 6 h
+FOOTBALL_DATA_LIVE_CACHE_TTL = int(os.getenv("FOOTBALL_DATA_LIVE_CACHE_TTL", "120") or 120)
+FOOTBALL_DATA_STANDINGS_CACHE_TTL = int(
+    os.getenv("FOOTBALL_DATA_STANDINGS_CACHE_TTL", "43200") or 43200
+)  # 12 h
+
 
 def football_api_season() -> int:
     """API-Football season year (start year of e.g. 2025/26 → 2025)."""
@@ -271,6 +285,42 @@ FOOTBALL_COMPETITION_GROUPS: dict[str, frozenset[int]] = {
 }
 
 FOOTBALL_FRIENDLIES_LEAGUE_ID = 10
+
+# API-Football Liga-ID -> football-data.org Wettbewerbs-Code (Free-Tier).
+# Ohne Free-Tier-Quelle: Europa League (3), Conference League (848),
+# 2. Bundesliga (79), DFB-Pokal (81), Nations League (5), Friendlies (10),
+# WM-Quali Europa (32).
+FOOTBALL_DATA_COMPETITION_CODES: dict[int, str] = {
+    78: "BL1",   # 1. Bundesliga
+    2: "CL",     # Champions League
+    39: "PL",    # Premier League
+    140: "PD",   # La Liga
+    135: "SA",   # Serie A
+    61: "FL1",   # Ligue 1
+    88: "DED",   # Eredivisie
+    94: "PPL",   # Primeira Liga
+    1: "WC",     # World Cup
+    4: "EC",     # Euro Championship
+    40: "ELC",   # Championship (England)
+    71: "BSA",   # Brasileirão Serie A
+}
+
+# football-data.org Wettbewerbs-ID -> API-Football Liga-ID (für den Fixture-Mapper,
+# damit alle Konsumenten weiter mit den bekannten numerischen IDs arbeiten).
+FOOTBALL_DATA_ID_TO_LEAGUE_ID: dict[int, int] = {
+    2002: 78,    # BL1
+    2001: 2,     # CL
+    2021: 39,    # PL
+    2014: 140,   # PD
+    2019: 135,   # SA
+    2015: 61,    # FL1
+    2003: 88,    # DED
+    2017: 94,    # PPL
+    2000: 1,     # WC
+    2018: 4,     # EC
+    2016: 40,    # ELC
+    2013: 71,    # BSA
+}
 
 # Football AI Topspiele — union of curated competition leagues (excl. friendlies id 10)
 FOOTBALL_TOPSPIELE_LEAGUE_IDS = frozenset(

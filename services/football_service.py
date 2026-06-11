@@ -24,6 +24,10 @@ from config import (
     FOOTBALL_API_STANDINGS_CACHE_TTL,
     FOOTBALL_API_TIMEOUT,
     FOOTBALL_BETTING_CORE_LEAGUE_IDS,
+    FOOTBALL_DATA_CACHE_TTL,
+    FOOTBALL_DATA_COMPETITION_CODES,
+    FOOTBALL_DATA_LIVE_CACHE_TTL,
+    FOOTBALL_DATA_STANDINGS_CACHE_TTL,
     FOOTBALL_DEFAULT_SEASON,
     FOOTBALL_PLAN_ORDER,
     FOOTBALL_PLANS,
@@ -39,6 +43,15 @@ from config import (
 )
 import os
 
+from services.football_data_client import (
+    FootballDataError,
+    fd_get,
+    is_fd_configured,
+    map_fd_match,
+    map_fd_matches,
+    map_fd_standings,
+)
+
 from db.app import (
     get_football_plan as db_get_football_plan,
     get_football_usage_today,
@@ -51,6 +64,28 @@ from security import check_rate_limit
 
 PLAN_LABELS = {key: val.get("label", key) for key, val in FOOTBALL_PLANS.items()}
 PLAN_LABELS["none"] = "Kein Football Plan"
+
+_BERLIN_TZ = ZoneInfo("Europe/Berlin")
+# Statuses that should never appear in "next matches" pools.
+_FD_DONE_OR_DEAD = frozenset({"FT", "AET", "PEN", "AWD", "WO", "CANC", "PST"})
+
+
+def _fixture_local_date(fixture: dict[str, Any]) -> str:
+    """Local (Europe/Berlin) ISO date of a fixture in API-Football shape."""
+    raw = str((fixture.get("fixture") or {}).get("date") or "")
+    if not raw:
+        return ""
+    try:
+        dt = datetime.fromisoformat(raw.replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=_BERLIN_TZ)
+        return dt.astimezone(_BERLIN_TZ).date().isoformat()
+    except ValueError:
+        return raw[:10]
+
+
+def _fixture_status_short(fixture: dict[str, Any]) -> str:
+    return str(((fixture.get("fixture") or {}).get("status") or {}).get("short") or "NS")
 
 ACTION_TO_FEATURE = {
     "match_recap": "ai_match_summary",
@@ -306,7 +341,12 @@ class FootballService:
       }
 
   def is_configured(self) -> bool:
-      return bool(FOOTBALL_API_KEY.strip())
+      """Any fixture source available (football-data.org or API-Football)."""
+      return self.fd_enabled() or bool(FOOTBALL_API_KEY.strip())
+
+  def fd_enabled(self) -> bool:
+      """football-data.org v4 is the primary fixture/standings source."""
+      return is_fd_configured()
 
   def _cache_key(self, endpoint: str, params: dict[str, Any]) -> str:
       payload = json.dumps(
@@ -415,10 +455,11 @@ class FootballService:
           except FootballAccessError as exc:
               raise FootballAPIError(str(exc)) from exc
 
-      if not self.is_configured():
+      if not bool(FOOTBALL_API_KEY.strip()):
+          # _request is the API-Football path only (odds/predictions/injuries/h2h).
           raise FootballAPIError(
-              "API-Football ist auf dem Server noch nicht konfiguriert "
-              "(FOOTBALL_API_KEY in Railway/.env). Dein Plan bleibt aktiv."
+              "API-Football ist auf dem Server nicht konfiguriert "
+              "(FOOTBALL_API_KEY in Railway/.env) — dieses Feature ist deaktiviert."
           )
 
       clean_params = {k: v for k, v in (params or {}).items() if v not in (None, "")}
@@ -679,6 +720,188 @@ class FootballService:
           log_info(f"Football API {endpoint} params={clean_params} results={len(data)}")
       return data
 
+  # ------------------------------------------------------------------
+  # football-data.org v4 layer (primary fixture/standings source)
+  # ------------------------------------------------------------------
+
+  def _fd_request(
+      self,
+      path: str,
+      params: dict[str, Any] | None = None,
+      *,
+      ttl: int,
+      feature: str = "api_fixtures",
+      username: str = "",
+  ) -> dict[str, Any]:
+      """Cached GET against football-data.org; serves stale cache on 429/errors."""
+      if username:
+          try:
+              preflight_api_request(username, feature, api_configured=True)
+          except FootballAccessError as exc:
+              raise FootballAPIError(str(exc)) from exc
+
+      clean_params = {k: v for k, v in (params or {}).items() if v not in (None, "")}
+      cache_key = self._cache_key(f"fd:{path}", clean_params)
+      cached = self._read_cache(cache_key, int(ttl))
+      if cached is not None:
+          self._log_http_debug(
+              endpoint=f"fd:{path}",
+              params=clean_params,
+              status_code=200,
+              response_length=len(cached.get("matches") or []) if isinstance(cached, dict) else 0,
+              cached=True,
+              limiter="cache",
+          )
+          return cached
+
+      allowed, rate_msg = check_rate_limit(f"football_fd:{username or 'global'}")
+      if not allowed:
+          stale = self._read_cache_any_age(cache_key)
+          if stale is not None:
+              log_warning(f"football-data internal rate limit — stale cache: {path}")
+              return stale
+          raise FootballAPIError(rate_msg)
+
+      try:
+          payload = fd_get(path, clean_params)
+      except FootballDataError as exc:
+          stale = self._read_cache_any_age(cache_key)
+          if stale is not None:
+              log_warning(f"football-data error — serving stale cache: {path} ({exc})")
+              return stale
+          self._log_http_debug(
+              endpoint=f"fd:{path}",
+              params=clean_params,
+              status_code=exc.status_code,
+              response_length=0,
+              cached=False,
+              error=str(exc),
+              limiter="api",
+          )
+          raise FootballAPIError(str(exc), status_code=exc.status_code) from exc
+
+      self._write_cache(cache_key, payload)
+      if username:
+          try:
+              record_api_success(username)
+          except FootballAccessError as exc:
+              raise FootballAPIError(str(exc)) from exc
+      self._log_http_debug(
+          endpoint=f"fd:{path}",
+          params=clean_params,
+          status_code=200,
+          response_length=len(payload.get("matches") or []) if isinstance(payload, dict) else 0,
+          cached=False,
+          limiter="api",
+      )
+      return payload
+
+  def _fd_code(self, league_id: int) -> str | None:
+      try:
+          return FOOTBALL_DATA_COMPETITION_CODES.get(int(league_id))
+      except (TypeError, ValueError):
+          return None
+
+  def _fd_competition_season_fixtures(
+      self,
+      league_id: int,
+      *,
+      username: str = "",
+  ) -> list[dict[str, Any]]:
+      """ONE call per competition (current season, 6h cache) — rate-limit friendly.
+
+      Today/tomorrow/next/range views are filtered client-side from this pool.
+      """
+      code = self._fd_code(league_id)
+      if not code:
+          return []
+      payload = self._fd_request(
+          f"competitions/{code}/matches",
+          {},
+          ttl=int(FOOTBALL_DATA_CACHE_TTL),
+          feature="api_fixtures",
+          username=username,
+      )
+      return map_fd_matches(payload)
+
+  def _fd_fixtures_in_range(
+      self,
+      league_id: int,
+      date_from: str,
+      date_to: str,
+      *,
+      username: str = "",
+  ) -> list[dict[str, Any]]:
+      lo, hi = str(date_from)[:10], str(date_to)[:10]
+      rows = self._fd_competition_season_fixtures(league_id, username=username)
+      return [fx for fx in rows if lo <= _fixture_local_date(fx) <= hi]
+
+  def _fd_premium_upcoming(
+      self,
+      *,
+      days: int = 30,
+      username: str = "",
+  ) -> list[dict[str, Any]]:
+      from config import FOOTBALL_TOPSPIELE_LEAGUE_IDS
+      from services.football_loaders import sort_fixtures_by_priority
+
+      today = datetime.now(_BERLIN_TZ).date()
+      horizon = (today + timedelta(days=max(1, int(days)))).isoformat()
+      today_s = today.isoformat()
+      mapped_ids = sorted(
+          int(lid) for lid in FOOTBALL_TOPSPIELE_LEAGUE_IDS if self._fd_code(int(lid))
+      )
+
+      composite_key = self._cache_key(
+          "fd_premium_upcoming_v1", {"days": int(days), "ids": mapped_ids}
+      )
+      cached = self._read_cache(composite_key, 21_600)
+      if isinstance(cached, list) and cached:
+          return cached
+
+      rows: list[dict[str, Any]] = []
+      report: dict[str, Any] = {
+          "provider": "football-data.org",
+          "horizon_days": int(days),
+          "leagues": {},
+      }
+      for lid in mapped_ids:
+          try:
+              part = self._fd_competition_season_fixtures(lid, username=username)
+          except FootballAPIError:
+              part = []
+          in_window = [
+              fx for fx in part
+              if today_s <= _fixture_local_date(fx) <= horizon
+              and _fixture_status_short(fx) not in _FD_DONE_OR_DEAD
+          ]
+          report["leagues"][str(lid)] = {"count": len(in_window)}
+          rows.extend(in_window)
+      report["total_upcoming"] = len(rows)
+      self._premium_load_report = report
+
+      seen: set[int] = set()
+      deduped: list[dict[str, Any]] = []
+      for fx in rows:
+          fid = (fx.get("fixture") or {}).get("id")
+          try:
+              key = int(fid)
+          except (TypeError, ValueError):
+              continue
+          if key in seen:
+              continue
+          seen.add(key)
+          deduped.append(fx)
+
+      out = sort_fixtures_by_priority(deduped)
+      if out:
+          self._write_cache(composite_key, out)
+      return out
+
+  # ------------------------------------------------------------------
+  # Public fixture/standings API (routes to football-data.org when set)
+  # ------------------------------------------------------------------
+
   def get_recent_fixtures(
       self,
       team_id: int,
@@ -686,9 +909,24 @@ class FootballService:
       last_count: int = 5,
       username: str = "",
   ) -> list[dict[str, Any]]:
+      count = max(1, min(int(last_count), 15))
+      if self.fd_enabled():
+          payload = self._fd_request(
+              f"teams/{int(team_id)}/matches",
+              {"status": "FINISHED"},
+              ttl=int(FOOTBALL_DATA_CACHE_TTL),
+              feature="api_results",
+              username=username,
+          )
+          rows = map_fd_matches(payload)
+          rows.sort(
+              key=lambda fx: str((fx.get("fixture") or {}).get("date") or ""),
+              reverse=True,
+          )
+          return rows[:count]
       return self._request(
           "fixtures",
-          {"team": int(team_id), "last": max(1, min(int(last_count), 15))},
+          {"team": int(team_id), "last": count},
           feature="api_results",
           username=username,
       )
@@ -702,6 +940,8 @@ class FootballService:
       ttl_override: int | None = None,
   ) -> list[dict[str, Any]]:
       """All fixtures for league+season (client-side date filter for upcoming)."""
+      if self.fd_enabled():
+          return self._fd_competition_season_fixtures(int(league_id), username=username)
       return self._request(
           "fixtures",
           {
@@ -723,6 +963,9 @@ class FootballService:
       Premium whitelist: fixtures?league=ID&season=current per league.
       From today through the next `days` days, sorted by kickoff.
       """
+      if self.fd_enabled():
+          return self._fd_premium_upcoming(days=days, username=username)
+
       from services.football_loaders import (
           FINISHED_STATUSES,
           filter_betting_core_fixtures,
@@ -886,6 +1129,10 @@ class FootballService:
       username: str = "",
       ttl_override: int | None = None,
   ) -> list[dict[str, Any]]:
+      if self.fd_enabled():
+          return self._fd_fixtures_in_range(
+              int(league_id), date_from, date_to, username=username
+          )
       return self._request(
           "fixtures",
           {
@@ -907,11 +1154,22 @@ class FootballService:
       username: str = "",
       ttl_override: int | None = None,
   ) -> list[dict[str, Any]]:
+      count = max(1, min(int(next_count), 50))
+      if self.fd_enabled():
+          today_s = datetime.now(_BERLIN_TZ).date().isoformat()
+          rows = self._fd_competition_season_fixtures(int(league_id), username=username)
+          upcoming = [
+              fx for fx in rows
+              if _fixture_local_date(fx) >= today_s
+              and _fixture_status_short(fx) not in _FD_DONE_OR_DEAD
+          ]
+          upcoming.sort(key=lambda fx: str((fx.get("fixture") or {}).get("date") or ""))
+          return upcoming[:count]
       return self._request(
           "fixtures",
           {
               "league": int(league_id),
-              "next": max(1, min(int(next_count), 50)),
+              "next": count,
           },
           feature="api_fixtures",
           username=username,
@@ -924,13 +1182,23 @@ class FootballService:
       username: str = "",
       premium_only: bool = False,
   ) -> list[dict[str, Any]]:
-      rows = self._request(
-          "fixtures",
-          {"live": "all"},
-          feature="api_live_scores",
-          live=True,
-          username=username,
-      )
+      if self.fd_enabled():
+          payload = self._fd_request(
+              "matches",
+              {"status": "LIVE"},
+              ttl=int(FOOTBALL_DATA_LIVE_CACHE_TTL),
+              feature="api_live_scores",
+              username=username,
+          )
+          rows = map_fd_matches(payload)
+      else:
+          rows = self._request(
+              "fixtures",
+              {"live": "all"},
+              feature="api_live_scores",
+              live=True,
+              username=username,
+          )
       if premium_only:
           from services.football_loaders import filter_premium_fixtures
           return filter_premium_fixtures(rows)
@@ -946,7 +1214,26 @@ class FootballService:
       ttl_override: int | None = None,
   ) -> list[dict[str, Any]]:
       """Fixtures for YYYY-MM-DD, optional league filter."""
-      params: dict[str, Any] = {"date": str(date).strip()[:10]}
+      day = str(date).strip()[:10]
+      if self.fd_enabled():
+          if league_id:
+              return self._fd_fixtures_in_range(int(league_id), day, day, username=username)
+          today_s = datetime.now(_BERLIN_TZ).date().isoformat()
+          ttl = 1_800 if day == today_s else int(FOOTBALL_DATA_CACHE_TTL)
+          try:
+              day_after = (datetime.fromisoformat(day) + timedelta(days=1)).date().isoformat()
+          except ValueError:
+              day_after = day
+          # /v4/matches: dateTo is exclusive — request day..day+1 for one UTC day.
+          payload = self._fd_request(
+              "matches",
+              {"dateFrom": day, "dateTo": day_after},
+              ttl=ttl,
+              feature="api_fixtures",
+              username=username,
+          )
+          return map_fd_matches(payload)
+      params: dict[str, Any] = {"date": day}
       if league_id:
           params["league"] = int(league_id)
           params["season"] = int(season or football_api_season() or FOOTBALL_DEFAULT_SEASON)
@@ -960,6 +1247,18 @@ class FootballService:
       )
 
   def get_fixture(self, fixture_id: int, *, username: str = "") -> dict[str, Any] | None:
+      if self.fd_enabled():
+          payload = self._fd_request(
+              f"matches/{int(fixture_id)}",
+              {},
+              ttl=300,
+              feature="api_fixtures",
+              username=username,
+          )
+          match = payload.get("match") if isinstance(payload.get("match"), dict) else payload
+          if not isinstance(match, dict) or not match.get("id"):
+              return None
+          return map_fd_match(match)
       rows = self._request(
           "fixtures",
           {"id": int(fixture_id)},
@@ -992,6 +1291,18 @@ class FootballService:
       season: int | None = None,
       username: str = "",
   ) -> list[dict[str, Any]]:
+      if self.fd_enabled():
+          code = self._fd_code(int(league_id))
+          if not code:
+              return []
+          payload = self._fd_request(
+              f"competitions/{code}/standings",
+              {},
+              ttl=int(FOOTBALL_DATA_STANDINGS_CACHE_TTL),
+              feature="api_standings",
+              username=username,
+          )
+          return map_fd_standings(payload, int(league_id))
       return self._request(
           "standings",
           {

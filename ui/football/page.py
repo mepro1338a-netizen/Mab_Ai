@@ -231,6 +231,12 @@ def render_football_betting_board(
             f'<div class="fb2-empty">{html.escape(empty_text)}</div>',
             unsafe_allow_html=True,
         )
+        api_errors = [str(e).strip() for e in (result.get("errors") or []) if str(e).strip()]
+        if api_errors:
+            st.caption(
+                "Spieldaten derzeit nicht verfügbar (API-Limit oder Verbindung). "
+                "Bitte später erneut versuchen."
+            )
         st.markdown("</div>", unsafe_allow_html=True)
         return
 
