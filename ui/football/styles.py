@@ -1,4 +1,4 @@
-"""Football AI V2 — page CSS."""
+"""Football AI — page CSS."""
 from __future__ import annotations
 
 FOOTBALL_CSS = """
@@ -6,99 +6,80 @@ FOOTBALL_CSS = """
   max-width: 1100px; width: 100%; margin: 0 auto; padding-bottom: 40px;
   overflow-x: hidden; box-sizing: border-box;
 }
-.fb2-hero { margin-bottom: 20px; }
-.fb2-hero h1 { margin: 0; font-size: 24px; font-weight: 800; color: #fafafa; letter-spacing: -.02em; }
-.fb2-hero p { margin: 6px 0 0; font-size: 13px; color: #94a3b8; }
 
-.fb2-filters {
-  padding: 14px 16px 12px; margin-bottom: 16px;
-  border-radius: 10px; border: 1px solid rgba(255,255,255,.08);
+.fb2-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 16px; margin-bottom: 18px; flex-wrap: wrap;
+}
+.fb2-header-main h1 {
+  margin: 0; font-size: 24px; font-weight: 800; color: #fafafa; letter-spacing: -.02em;
+}
+.fb2-header-main p { margin: 6px 0 0; font-size: 13px; color: #94a3b8; line-height: 1.45; }
+.fb2-header-meta { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.fb2-pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 8px 12px; border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.08); background: rgba(24,24,27,.55);
+  font-size: 12px; color: #a1a1aa;
+}
+.fb2-pill-label { color: #71717a; font-weight: 500; }
+.fb2-pill strong { color: #fafafa; font-weight: 700; font-size: 13px; }
+
+.fb2-panel {
+  padding: 14px 16px 12px; margin-bottom: 18px;
+  border-radius: 12px; border: 1px solid rgba(255,255,255,.08);
   background: rgba(9,9,11,.55);
 }
-.fb2-filters-head {
-  display: flex; align-items: flex-start; justify-content: flex-end;
-  gap: 10px; margin: -4px 0 2px;
+.fb2-panel [data-testid="stSegmentedControl"] {
+  margin-bottom: 10px !important;
 }
-.fb2-filters-head [data-testid="column"]:last-child {
+.fb2-panel [data-testid="stSegmentedControl"]:last-of-type {
+  margin-bottom: 4px !important;
+}
+.fb2-panel .stSelectbox label {
+  font-size: 11px !important; font-weight: 600 !important;
+  letter-spacing: .06em !important; text-transform: uppercase !important;
+  color: #71717a !important;
+}
+.fb2-panel [data-testid="column"]:last-child {
   display: flex !important; justify-content: flex-end !important;
 }
-.fb2-sec {
-  color: #71717a !important; font-size: 11px; font-weight: 600;
-  letter-spacing: .06em; text-transform: uppercase;
-  padding: 10px 2px 6px; margin: 0 !important;
+.fb2-panel .st-key-fb_refresh .stButton,
+.fb2-panel .st-key-fb_refresh .stButton > button {
+  width: 36px !important; min-width: 36px !important; max-width: 36px !important;
 }
-.fb2-sec:first-of-type { padding-top: 2px; }
-.fb2-chip-row { margin-bottom: 2px; }
-.fb2-chip-row [data-testid="stHorizontalBlock"] {
-  gap: 8px !important; flex-wrap: wrap !important; align-items: center !important;
-}
-.fb2-chip-row [data-testid="column"] {
-  width: auto !important; flex: 0 0 auto !important; min-width: 0 !important;
-}
-.fb2-filters .fb2-chip-row .stButton,
-.fb2-filters .fb2-chip-row .stButton > button {
-  width: auto !important; min-width: 0 !important;
-}
-.fb2-filters .fb2-chip-row .stButton > button,
-.fb2-filters .fb2-chip-row .stButton > button[kind="tertiary"],
-.fb2-filters .fb2-chip-row .stButton > button[kind="primary"] {
-  height: 38px !important; min-height: 38px !important; max-height: 38px !important;
-  padding: 0 14px !important; margin: 0 !important;
-  border-radius: 999px !important;
-  border: 1px solid rgba(255,255,255,.08) !important;
-  background: rgba(24,24,27,.65) !important;
-  color: #a1a1aa !important; font-size: 13px !important; font-weight: 500 !important;
-  line-height: 1 !important; box-shadow: none !important;
-  white-space: nowrap !important;
-}
-.fb2-filters .fb2-chip-row .stButton > button:hover {
-  border-color: rgba(139,92,246,.45) !important;
-  background: rgba(139,92,246,.08) !important;
-  color: #fafafa !important;
-}
-.fb2-filters .fb2-chip-row .stButton > button p,
-.fb2-filters .fb2-chip-row .stButton > button span,
-.fb2-filters .fb2-chip-row .stButton > button div {
-  margin: 0 !important; padding: 0 !important; color: inherit !important;
-  font-size: 13px !important; line-height: 1 !important;
-}
-.fb2-filters .fb2-chip-row .stButton > button[kind="primary"],
-.fb2-filters .fb2-chip-row .stButton > button[data-testid="stBaseButton-primary"] {
-  background: rgba(39,39,42,.95) !important;
-  border-color: rgba(139,92,246,.55) !important;
-  color: #fafafa !important; font-weight: 600 !important;
-  box-shadow: 0 0 0 1px rgba(139,92,246,.12) !important;
-}
-.fb2-filters .st-key-fb2_refresh .stButton,
-.fb2-filters .st-key-fb2_refresh .stButton > button {
-  width: 38px !important; min-width: 38px !important; max-width: 38px !important;
-}
-.fb2-filters .st-key-fb2_refresh .stButton > button {
-  height: 38px !important; min-height: 38px !important; max-height: 38px !important;
+.fb2-panel .st-key-fb_refresh .stButton > button {
+  height: 36px !important; min-height: 36px !important; max-height: 36px !important;
   padding: 0 !important; border-radius: 10px !important;
   border: 1px solid rgba(255,255,255,.08) !important;
   background: rgba(24,24,27,.65) !important;
   color: #a1a1aa !important; box-shadow: none !important;
   display: flex !important; align-items: center !important; justify-content: center !important;
 }
-.fb2-filters .st-key-fb2_refresh .stButton > button:hover {
+.fb2-panel .st-key-fb_refresh .stButton > button:hover {
   border-color: rgba(139,92,246,.45) !important;
   background: rgba(139,92,246,.1) !important; color: #c4b5fd !important;
 }
-.fb2-filters .st-key-fb2_refresh [data-testid="stIconMaterial"] {
+.fb2-panel .st-key-fb_refresh [data-testid="stIconMaterial"] {
   font-size: 18px !important; color: inherit !important;
 }
-.fb2-banner {
-  font-size: 12px; color: #a78bfa; padding: 10px 14px; margin-bottom: 14px;
-  border-radius: 10px; background: rgba(139,92,246,.08); border: 1px solid rgba(139,92,246,.2);
+
+.fb2-match-list { display: flex; flex-direction: column; gap: 2px; }
+
+.fb2-empty {
+  padding: 36px 24px; text-align: center; border-radius: 14px;
+  border: 1px dashed rgba(255,255,255,.1);
+  background: rgba(9,9,11,.35);
+}
+.fb2-empty-icon { font-size: 28px; line-height: 1; margin-bottom: 10px; opacity: .65; }
+.fb2-empty-title {
+  margin: 0 0 8px; font-size: 15px; font-weight: 600; color: #e4e4e7; line-height: 1.45;
 }
 .fb2-empty-note {
-  font-size: 14px; color: #94a3b8; text-align: center; margin-bottom: 10px; line-height: 1.5;
+  margin: 0 0 8px; font-size: 13px; color: #a78bfa; line-height: 1.45;
 }
-.fb2-empty {
-  padding: 32px 20px; text-align: center; border-radius: 14px;
-  border: 1px dashed rgba(255,255,255,.1); color: #94a3b8; font-size: 14px; line-height: 1.5;
-}
+.fb2-empty-hint { margin: 0; font-size: 13px; color: #71717a; line-height: 1.45; }
+
 .fb2-gate {
   padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,.08);
   color: #94a3b8; font-size: 14px; line-height: 1.5;
@@ -283,6 +264,10 @@ FOOTBALL_CSS = """
 
 @media (max-width: 600px) { .fb2-prob { grid-template-columns: 1fr; } }
 @media (max-width: 700px) { .fb2-grid2 { grid-template-columns: 1fr; } }
+@media (max-width: 640px) {
+  .fb2-header { flex-direction: column; align-items: stretch; }
+  .fb2-header-meta { justify-content: flex-start; }
+}
 @media (max-width: 430px) {
   .fb2-match { padding: 12px 12px; }
   .fb2-teams { gap: 6px; grid-template-columns: minmax(0, 1fr) 62px minmax(0, 1fr); }
