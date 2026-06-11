@@ -1,7 +1,6 @@
 """MaByte Home — clean standard dashboard."""
 from __future__ import annotations
 
-import base64
 import html
 from datetime import datetime
 
@@ -22,33 +21,23 @@ _TOOLS: list[tuple[str, str, str]] = [
     ("coding", "Code", "Entwickeln & fixen"),
 ]
 
-_SVG_PATHS: dict[str, str] = {
-    "chat": '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
-    "image": '<rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/>',
-    "video": '<path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"/><rect x="2" y="6" width="14" height="12" rx="2"/>',
-    "football": '<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>',
-    "automation_lab": '<rect width="8" height="8" x="3" y="3" rx="2"/><path d="M7 11v4a2 2 0 0 0 2 2h4"/><rect width="8" height="8" x="13" y="13" rx="2"/>',
-    "coding": '<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>',
-    "dashboard": '<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
-    "premium": '<path d="M11.562 3.266a.5.5 0 0 1 .876 0L15.39 8.87a1 1 0 0 0 1.516.294L21.183 5.5a.5.5 0 0 1 .798.519l-2.834 10.246a1 1 0 0 1-.956.734H5.81a1 1 0 0 1-.957-.734L2.02 6.02a.5.5 0 0 1 .798-.519l4.276 3.664a1 1 0 0 0 1.516-.294z"/>',
+# Same Material icon set as the sidebar (ui/sidebar.py _NAV_ICONS).
+_TILE_ICONS: dict[str, str] = {
+    "chat": ":material/chat_bubble:",
+    "image": ":material/image:",
+    "video": ":material/movie:",
+    "football": ":material/sports_soccer:",
+    "automation_lab": ":material/account_tree:",
+    "coding": ":material/code:",
+    "dashboard": ":material/person:",
+    "premium": ":material/workspace_premium:",
 }
 
 
-def _icon_html(page: str) -> str:
-    inner = _SVG_PATHS.get(page, _SVG_PATHS["chat"])
-    svg = (
-        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" '
-        'stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'
-        f"{inner}</svg>"
-    )
-    b64 = base64.b64encode(svg.encode("utf-8")).decode("ascii")
-    return f'<img src="data:image/svg+xml;base64,{b64}" width="18" height="18" alt="" class="home-ico" />'
-
-
 def _tool_btn_css() -> str:
-    base = ".stApp:has(.mb-home) [class*='st-key-home_tile_']"
-    rules = [
-        f"""
+    tile = ".stApp:has(.mb-home) section.main [class*='st-key-home_tile_']"
+    link = ".stApp:has(.mb-home) section.main [class*='st-key-home_link_']"
+    return f"""
 .stApp:has(.mb-home) section.main .block-container {{
     max-width: 820px !important;
     margin: 0 auto !important;
@@ -58,62 +47,66 @@ def _tool_btn_css() -> str:
 .stApp:has(.mb-home) .st-key-home_grid [data-testid="column"] > [data-testid="stVerticalBlock"] {{
     gap: 8px !important;
 }}
-{base} .stButton, {base} [data-testid="stVerticalBlockBorderWrapper"],
-{base} [data-testid="stElementContainer"] {{
-    margin: 0 !important; padding: 0 !important;
+.stApp:has(.mb-home) section.main [data-testid="stVerticalBlockBorderWrapper"] {{
     background: transparent !important; border: none !important; box-shadow: none !important;
 }}
-.stApp:has(.mb-home) [class*="st-key-home_tile_"] > [data-testid="stHorizontalBlock"] {{
-    align-items: center !important;
+{tile}, {link} {{
+    margin: 0 !important; padding: 0 !important; width: 100% !important;
+    background: transparent !important; border: none !important; box-shadow: none !important;
 }}
-.stApp:has(.mb-home) [class*="st-key-home_tile_"] [data-testid="column"]:first-child {{
-    flex: 0 0 36px !important; min-width: 36px !important; max-width: 36px !important;
-    display: flex !important; align-items: center !important; justify-content: center !important;
+{tile} .stButton, {link} .stButton {{
+    margin: 0 !important; padding: 0 !important; width: 100% !important;
+    background: transparent !important; border: none !important; box-shadow: none !important;
 }}
-.home-ico-wrap {{ display:flex; align-items:center; justify-content:center; width:36px; }}
-.home-ico {{ display:block; width:18px; height:18px; }}
-{base} .stButton > button, {base} button {{
-    width: 100% !important; min-height: 48px !important;
-    padding: 8px 12px !important;
-    border-radius: 10px !important;
+{tile} .stButton > button, {tile} button {{
+    width: 100% !important; min-height: 56px !important;
+    padding: 10px 14px !important;
+    border-radius: 8px !important;
     border: 1px solid rgba(255,255,255,0.08) !important;
     background: rgba(24,24,27,0.85) !important;
-    color: #71717a !important;
     display: flex !important; align-items: center !important;
-    justify-content: flex-start !important; text-align: left !important;
-    box-shadow: none !important;
-    white-space: pre-line !important; line-height: 1.3 !important;
-    font-size: 11px !important;
+    justify-content: flex-start !important; gap: 12px !important;
+    text-align: left !important; box-shadow: none !important;
 }}
-{base} .stButton > button:hover, {base} button:hover {{
+{tile} .stButton > button:hover, {tile} button:hover {{
     border-color: rgba(139,92,246,0.35) !important;
     background: rgba(30,30,35,0.95) !important;
 }}
-{base} .stButton > button p, {base} button p {{
-    white-space: pre-line !important; text-align: left !important;
-    font-size: 11px !important; line-height: 1.3 !important; color: #71717a !important;
-    margin: 0 !important; display: flex !important; align-items: center !important;
+{tile} [data-testid="stIconMaterial"] {{
+    font-size: 18px !important; color: #a78bfa !important;
+    line-height: 1 !important; flex-shrink: 0 !important;
 }}
-{base} .stButton > button p::first-line, {base} button p::first-line {{
+{tile} .stButton > button p, {tile} button p {{
+    white-space: pre-line !important; text-align: left !important;
+    font-size: 11px !important; line-height: 1.35 !important; color: #71717a !important;
+    margin: 0 !important;
+}}
+{tile} .stButton > button p::first-line, {tile} button p::first-line {{
     font-size: 14px !important; font-weight: 600 !important; color: #fafafa !important;
 }}
-.stApp:has(.mb-home) [class*="st-key-home_link_"] > [data-testid="stHorizontalBlock"] {{
-    align-items: center !important;
+{link} .stButton > button, {link} button {{
+    width: 100% !important; min-height: 36px !important;
+    padding: 6px 12px !important;
+    border-radius: 8px !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+    background: rgba(24,24,27,0.85) !important;
+    display: flex !important; align-items: center !important;
+    justify-content: flex-start !important; gap: 10px !important;
+    text-align: left !important; box-shadow: none !important;
 }}
-.stApp:has(.mb-home) [class*="st-key-home_link_"] [data-testid="column"]:first-child {{
-    flex: 0 0 32px !important; min-width: 32px !important; max-width: 32px !important;
+{link} .stButton > button:hover, {link} button:hover {{
+    border-color: rgba(139,92,246,0.35) !important;
+    background: rgba(30,30,35,0.95) !important;
+}}
+{link} [data-testid="stIconMaterial"] {{
+    font-size: 16px !important; color: #a78bfa !important;
+    line-height: 1 !important; flex-shrink: 0 !important;
+}}
+{link} .stButton > button p, {link} button p {{
+    font-size: 13px !important; color: #e4e4e7 !important;
+    white-space: nowrap !important; margin: 0 !important;
 }}
 """
-    ]
-    for page in ("dashboard", "premium"):
-        sel = f".stApp:has(.mb-home) .st-key-home_link_{page}"
-        rules.append(
-            f"{sel} .stButton > button, {sel} button {{"
-            f"min-height: 36px !important; font-size: 13px !important; }}"
-            f"{sel} .stButton > button p, {sel} button p {{"
-            f"font-size: 13px !important; color: #e4e4e7 !important; white-space: nowrap !important; }}"
-        )
-    return "".join(rules)
 
 
 _HOME_CSS = """
@@ -198,45 +191,39 @@ def _render_tools() -> None:
     with st.container(key="home_grid"):
         for row_start in range(0, len(_TOOLS), 2):
             cols = st.columns(2, gap="small")
-            for col, item in zip(cols, _TOOLS[row_start : row_start + 2]):
-                page, title, desc = item
+            for col, (page, title, desc) in zip(cols, _TOOLS[row_start : row_start + 2]):
                 with col:
-                    with st.container(key=f"home_tile_{page}"):
-                        ic, bt = st.columns([0.14, 0.86], gap="small")
-                        with ic:
-                            st.markdown(
-                                f'<div class="home-ico-wrap">{_icon_html(page)}</div>',
-                                unsafe_allow_html=True,
-                            )
-                        with bt:
-                            if st.button(
-                                _tile_label(title, desc),
-                                key=f"home_btn_{page}",
-                                use_container_width=True,
-                                type="tertiary",
-                            ):
-                                navigate_to(page)
+                    if st.button(
+                        _tile_label(title, desc),
+                        key=f"home_tile_{page}",
+                        icon=_TILE_ICONS.get(page),
+                        use_container_width=True,
+                        type="tertiary",
+                    ):
+                        navigate_to(page)
 
 
 def _render_quick_links() -> None:
     with st.container(key="home_links"):
         c1, c2 = st.columns(2, gap="small")
         with c1:
-            with st.container(key="home_link_dashboard"):
-                ic, bt = st.columns([0.14, 0.86], gap="small")
-                with ic:
-                    st.markdown(f'<div class="home-ico-wrap">{_icon_html("dashboard")}</div>', unsafe_allow_html=True)
-                with bt:
-                    if st.button("Profil & Limits", key="home_btn_profile", use_container_width=True, type="tertiary"):
-                        navigate_to("dashboard")
+            if st.button(
+                "Profil & Limits",
+                key="home_link_dashboard",
+                icon=_TILE_ICONS["dashboard"],
+                use_container_width=True,
+                type="tertiary",
+            ):
+                navigate_to("dashboard")
         with c2:
-            with st.container(key="home_link_premium"):
-                ic, bt = st.columns([0.14, 0.86], gap="small")
-                with ic:
-                    st.markdown(f'<div class="home-ico-wrap">{_icon_html("premium")}</div>', unsafe_allow_html=True)
-                with bt:
-                    if st.button("Premium", key="home_btn_premium", use_container_width=True, type="tertiary"):
-                        navigate_to("premium")
+            if st.button(
+                "Premium",
+                key="home_link_premium",
+                icon=_TILE_ICONS["premium"],
+                use_container_width=True,
+                type="tertiary",
+            ):
+                navigate_to("premium")
 
 
 def render_home() -> None:

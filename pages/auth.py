@@ -107,12 +107,43 @@ html:has(.auth-marker) [data-testid="stMainBlockContainer"] {
     height: var(--auth-banner-h);
     min-height: var(--auth-banner-h);
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 12px;
     box-sizing: border-box;
     padding: 0 clamp(6px, 1.2vw, 16px);
     background: linear-gradient(180deg, #0a1020 0%, #050816 100%);
     overflow: hidden;
+}
+
+.auth-early-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 5px 14px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background:
+        linear-gradient(rgba(9, 9, 11, 0.88), rgba(9, 9, 11, 0.88)) padding-box,
+        linear-gradient(90deg, rgba(139, 92, 246, 0.75), rgba(99, 102, 241, 0.75)) border-box;
+    color: #c4b5fd;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    line-height: 1;
+    white-space: nowrap;
+    box-shadow: 0 0 18px rgba(139, 92, 246, 0.16);
+}
+
+.auth-early-pill::before {
+    content: "";
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #8b5cf6;
+    box-shadow: 0 0 8px rgba(139, 92, 246, 0.85);
 }
 
 .auth-slogan-line {
@@ -428,6 +459,13 @@ html:has(.auth-marker) .stApp {
         font-size: clamp(13px, calc((100vw - 16px) / 15), 28px);
         letter-spacing: clamp(0.04em, 0.35vw, 0.1em);
     }
+    html:has(.auth-marker) .auth-slogan-bar {
+        gap: 8px;
+    }
+    html:has(.auth-marker) .auth-early-pill {
+        font-size: 10px;
+        padding: 4px 12px;
+    }
     html:has(.auth-marker) [data-testid="stMain"] {
         justify-content: flex-start !important;
         padding-top: var(--s2) !important;
@@ -451,6 +489,7 @@ def _render_slogan_header() -> None:
     st.markdown(
         """
 <div class="auth-slogan-bar" role="banner">
+  <span class="auth-early-pill">Early Access</span>
   <p class="auth-slogan-line">
     <span class="auth-slogan-grad">One</span><span class="auth-slogan-plain"> system. </span><span class="auth-slogan-grad">Infinite</span><span class="auth-slogan-plain"> intelligence.</span>
   </p>
