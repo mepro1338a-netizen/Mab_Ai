@@ -9,8 +9,85 @@ FOOTBALL_CSS = """
 .fb2-hero { margin-bottom: 20px; }
 .fb2-hero h1 { margin: 0; font-size: 24px; font-weight: 800; color: #fafafa; letter-spacing: -.02em; }
 .fb2-hero p { margin: 6px 0 0; font-size: 13px; color: #94a3b8; }
-.fb2-nav { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
-.fb2-subnav { margin-bottom: 16px; }
+
+.fb2-filters {
+  padding: 14px 16px 12px; margin-bottom: 16px;
+  border-radius: 10px; border: 1px solid rgba(255,255,255,.08);
+  background: rgba(9,9,11,.55);
+}
+.fb2-filters-head {
+  display: flex; align-items: flex-start; justify-content: flex-end;
+  gap: 10px; margin: -4px 0 2px;
+}
+.fb2-filters-head [data-testid="column"]:last-child {
+  display: flex !important; justify-content: flex-end !important;
+}
+.fb2-sec {
+  color: #71717a !important; font-size: 11px; font-weight: 600;
+  letter-spacing: .06em; text-transform: uppercase;
+  padding: 10px 2px 6px; margin: 0 !important;
+}
+.fb2-sec:first-of-type { padding-top: 2px; }
+.fb2-chip-row { margin-bottom: 2px; }
+.fb2-chip-row [data-testid="stHorizontalBlock"] {
+  gap: 8px !important; flex-wrap: wrap !important; align-items: center !important;
+}
+.fb2-chip-row [data-testid="column"] {
+  width: auto !important; flex: 0 0 auto !important; min-width: 0 !important;
+}
+.fb2-filters .fb2-chip-row .stButton,
+.fb2-filters .fb2-chip-row .stButton > button {
+  width: auto !important; min-width: 0 !important;
+}
+.fb2-filters .fb2-chip-row .stButton > button,
+.fb2-filters .fb2-chip-row .stButton > button[kind="tertiary"],
+.fb2-filters .fb2-chip-row .stButton > button[kind="primary"] {
+  height: 38px !important; min-height: 38px !important; max-height: 38px !important;
+  padding: 0 14px !important; margin: 0 !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(255,255,255,.08) !important;
+  background: rgba(24,24,27,.65) !important;
+  color: #a1a1aa !important; font-size: 13px !important; font-weight: 500 !important;
+  line-height: 1 !important; box-shadow: none !important;
+  white-space: nowrap !important;
+}
+.fb2-filters .fb2-chip-row .stButton > button:hover {
+  border-color: rgba(139,92,246,.45) !important;
+  background: rgba(139,92,246,.08) !important;
+  color: #fafafa !important;
+}
+.fb2-filters .fb2-chip-row .stButton > button p,
+.fb2-filters .fb2-chip-row .stButton > button span,
+.fb2-filters .fb2-chip-row .stButton > button div {
+  margin: 0 !important; padding: 0 !important; color: inherit !important;
+  font-size: 13px !important; line-height: 1 !important;
+}
+.fb2-filters .fb2-chip-row .stButton > button[kind="primary"],
+.fb2-filters .fb2-chip-row .stButton > button[data-testid="stBaseButton-primary"] {
+  background: rgba(39,39,42,.95) !important;
+  border-color: rgba(139,92,246,.55) !important;
+  color: #fafafa !important; font-weight: 600 !important;
+  box-shadow: 0 0 0 1px rgba(139,92,246,.12) !important;
+}
+.fb2-filters .st-key-fb2_refresh .stButton,
+.fb2-filters .st-key-fb2_refresh .stButton > button {
+  width: 38px !important; min-width: 38px !important; max-width: 38px !important;
+}
+.fb2-filters .st-key-fb2_refresh .stButton > button {
+  height: 38px !important; min-height: 38px !important; max-height: 38px !important;
+  padding: 0 !important; border-radius: 10px !important;
+  border: 1px solid rgba(255,255,255,.08) !important;
+  background: rgba(24,24,27,.65) !important;
+  color: #a1a1aa !important; box-shadow: none !important;
+  display: flex !important; align-items: center !important; justify-content: center !important;
+}
+.fb2-filters .st-key-fb2_refresh .stButton > button:hover {
+  border-color: rgba(139,92,246,.45) !important;
+  background: rgba(139,92,246,.1) !important; color: #c4b5fd !important;
+}
+.fb2-filters .st-key-fb2_refresh [data-testid="stIconMaterial"] {
+  font-size: 18px !important; color: inherit !important;
+}
 .fb2-banner {
   font-size: 12px; color: #a78bfa; padding: 10px 14px; margin-bottom: 14px;
   border-radius: 10px; background: rgba(139,92,246,.08); border: 1px solid rgba(139,92,246,.2);

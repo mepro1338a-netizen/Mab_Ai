@@ -27,51 +27,75 @@ def _clear_feed() -> None:
     st.session_state["fb_sel"] = None
 
 
-def _chip_row(
+def _filter_section(
+    title: str,
     items: list[tuple[Any, str]],
     *,
     session_key: str,
     key_prefix: str,
+    value_cast: type | None = None,
 ) -> None:
-    n = len(items)
-    cols = st.columns(n)
+    st.markdown(f'<p class="fb2-sec">{html.escape(title)}</p>', unsafe_allow_html=True)
+    st.markdown('<div class="fb2-chip-row">', unsafe_allow_html=True)
     current = st.session_state.get(session_key)
+    cols = st.columns(len(items))
     for col, (value, label) in zip(cols, items):
         with col:
-            is_on = str(current) == str(value)
-            btn_type = "primary" if is_on else "secondary"
+            if value_cast is int:
+                is_on = int(current or 0) == int(value)
+            else:
+                is_on = str(current) == str(value)
             if st.button(
                 label,
                 key=f"{key_prefix}_{value}",
-                use_container_width=True,
-                type=btn_type,
+                type="primary" if is_on else "tertiary",
             ):
                 if not is_on:
-                    st.session_state[session_key] = value
+                    st.session_state[session_key] = int(value) if value_cast is int else value
                     _clear_feed()
                     st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)
 
 
-def _league_chips(competition: str) -> None:
+def _league_section_label(competition: str) -> str:
+    return "Turniere" if competition == "nationalteams" else "Ligen"
+
+
+def _render_filters(competition: str) -> None:
+    st.markdown('<div class="fb2-filters">', unsafe_allow_html=True)
+    st.markdown('<div class="fb2-filters-head">', unsafe_allow_html=True)
+    _, refresh_col = st.columns([11, 1])
+    with refresh_col:
+        if st.button(
+            "",
+            key="fb2_refresh",
+            icon=":material/refresh:",
+            type="tertiary",
+            help="Spiele neu laden",
+        ):
+            _clear_feed()
+            st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)
+    _filter_section(
+        "Wettbewerb",
+        list(TOP_NAV),
+        session_key="fb_competition",
+        key_prefix="fb2_top",
+    )
+    _filter_section(
+        "Zeitraum",
+        list(TIME_NAV),
+        session_key="fb_time",
+        key_prefix="fb2_time",
+    )
     leagues = LEAGUE_NAV.get(competition, [(0, "Alle")])
-    st.markdown('<div class="fb2-subnav">', unsafe_allow_html=True)
-    items = [(lid, lbl) for lid, lbl in leagues]
-    n = len(items)
-    cols = st.columns(min(n, 5))
-    cur = int(st.session_state.get("fb_league_id") or 0)
-    for col, (lid, lbl) in zip(cols, items):
-        with col:
-            is_on = int(lid) == cur
-            if st.button(
-                lbl,
-                key=f"fb2_lg_{competition}_{lid}",
-                use_container_width=True,
-                type="primary" if is_on else "secondary",
-            ):
-                if not is_on:
-                    st.session_state["fb_league_id"] = int(lid)
-                    _clear_feed()
-                    st.rerun()
+    _filter_section(
+        _league_section_label(competition),
+        [(lid, lbl) for lid, lbl in leagues],
+        session_key="fb_league_id",
+        key_prefix=f"fb2_lg_{competition}",
+        value_cast=int,
+    )
     st.markdown("</div>", unsafe_allow_html=True)
 
 
@@ -146,16 +170,8 @@ def render_football_betting_board(
         st.markdown("</div>", unsafe_allow_html=True)
         return
 
-    st.markdown('<div class="fb2-nav">', unsafe_allow_html=True)
-    _chip_row(list(TOP_NAV), session_key="fb_competition", key_prefix="fb2_top")
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    st.markdown('<div class="fb2-nav">', unsafe_allow_html=True)
-    _chip_row(list(TIME_NAV), session_key="fb_time", key_prefix="fb2_time")
-    st.markdown("</div>", unsafe_allow_html=True)
-
     comp = str(st.session_state.get("fb_competition") or "deutschland")
-    _league_chips(comp)
+    _render_filters(comp)
 
     time_f = str(st.session_state.get("fb_time") or "heute")
     league_id = int(st.session_state.get("fb_league_id") or 0)
@@ -164,12 +180,6 @@ def render_football_betting_board(
     if st.session_state.get("fb_cache_key") != cache_key:
         st.session_state["fb_payload"] = None
         st.session_state["fb_cache_key"] = cache_key
-
-    refresh_col, _ = st.columns([1, 11])
-    with refresh_col:
-        if st.button("↻", key="fb2_refresh", use_container_width=True):
-            _clear_feed()
-            st.rerun()
 
     with st.spinner("Spiele laden…"):
         try:

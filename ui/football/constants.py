@@ -4,7 +4,7 @@ from __future__ import annotations
 TOP_NAV: tuple[tuple[str, str], ...] = (
     ("deutschland", "Deutschland"),
     ("uefa", "UEFA"),
-    ("topligen", "Topligen"),
+    ("topligen", "Top-Ligen"),
     ("nationalteams", "Nationalteams"),
 )
 
@@ -37,10 +37,10 @@ LEAGUE_NAV: dict[str, list[tuple[int, str]]] = {
         (61, "Ligue 1"),
     ],
     "nationalteams": [
-        (0, "Alle"),
         (1, "WM"),
         (4, "EM"),
         (5, "Nations League"),
+        (0, "Alle Spiele"),
     ],
 }
 
