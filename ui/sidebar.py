@@ -214,9 +214,45 @@ def _base_css() -> str:
 .sb-sec:first-of-type {{ padding-top:4px; }}
 {wrap} {{ background:transparent!important; border:none!important; margin:0!important; padding:0!important; }}
 {_SB} {_NAV} .stButton {{ margin:0!important; padding:0!important; width:100%!important; }}
-.sb-user {{ padding:0 4px 10px; }}
-.sb-un {{ color:#f4f4f5!important; font-size:13px; font-weight:600; margin:0; }}
-.sb-meta {{ color:{_MUTED}!important; font-size:11px; margin:3px 0 0; }}
+.sb-user {{
+  display:flex; align-items:center; gap:10px;
+  padding:10px; margin:0 0 4px;
+  background:linear-gradient(135deg, rgba(139,92,246,0.10), rgba(24,24,27,0.6));
+  backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,0.10); border-radius:12px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,0.06), inset 0 0 18px rgba(139,92,246,0.06);
+  user-select:none; -webkit-user-select:none; overflow:hidden;
+}}
+.sb-avatar {{
+  flex:0 0 auto; width:30px; height:30px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  background:linear-gradient(135deg,#8b5cf6,#6366f1);
+  color:#fff!important; font-size:13px; font-weight:700; line-height:1;
+}}
+.sb-user-info {{ flex:1 1 auto; min-width:0; }}
+.sb-un {{
+  color:#f4f4f5!important; font-size:13px; font-weight:600; margin:0;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}}
+.sb-meta {{
+  color:{_MUTED}!important; font-size:11px; margin:2px 0 0!important;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}}
+.sb-plan {{
+  flex:0 0 auto; padding:3px 8px; border-radius:999px;
+  font-size:9px; font-weight:700; letter-spacing:0.08em;
+  text-transform:uppercase; line-height:1.3;
+}}
+.sb-plan-elite {{
+  background:linear-gradient(135deg, rgba(139,92,246,0.35), rgba(99,102,241,0.22));
+  border:1px solid rgba(167,139,250,0.45); color:#c4b5fd!important;
+  text-shadow:0 0 8px rgba(139,92,246,0.55);
+  box-shadow:0 0 10px rgba(139,92,246,0.25);
+}}
+.sb-plan-default {{
+  background:rgba(255,255,255,0.06);
+  border:1px solid rgba(255,255,255,0.12); color:#a1a1aa!important;
+}}
 {_SB} .st-key-nav_logout .stButton>button, {_SB} .st-key-nav_logout button {{
   width:100%!important; height:32px!important; min-height:32px!important;
   padding:0 10px!important; border-radius:8px!important;
@@ -289,10 +325,16 @@ def render_sidebar(active_page: str | None = None) -> None:
             )
             _render_nav(active)
             with st.container(key="sb_bottom", border=False):
+                initial = (user.strip()[:1] or "U").upper()
+                plan_cls = "sb-plan-elite" if plan == "Elite" else "sb-plan-default"
                 st.markdown(
                     f'<div class="sb-user">'
+                    f'<span class="sb-avatar">{html.escape(initial)}</span>'
+                    f'<div class="sb-user-info">'
                     f'<p class="sb-un">{html.escape(user)}</p>'
-                    f'<p class="sb-meta">{html.escape(plan)} · {html.escape(tokens)} Tokens</p>'
+                    f'<p class="sb-meta">{html.escape(tokens)} Tokens</p>'
+                    f"</div>"
+                    f'<span class="sb-plan {plan_cls}">{html.escape(plan)}</span>'
                     f"</div>",
                     unsafe_allow_html=True,
                 )
