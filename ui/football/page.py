@@ -265,8 +265,8 @@ def render_football_betting_board(
     service = get_football_service()
     if not service.is_configured():
         st.markdown(
-            '<div class="fb2-gate">Football Intelligence benötigt <strong>FOOTBALL_API_KEY</strong> '
-            "in der Server-Umgebung (Railway Variables oder lokale .env). "
+            '<div class="fb2-gate">Football Intelligence benötigt <strong>FOOTBALL_DATA_API_KEY</strong> '
+            "(football-data.org) in der Server-Umgebung (Railway Variables oder lokale .env). "
             "Ohne Key werden keine Spiele geladen.</div>",
             unsafe_allow_html=True,
         )

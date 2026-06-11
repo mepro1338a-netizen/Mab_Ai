@@ -407,7 +407,7 @@ def fetch_premium_dashboard(
     errors: list[str] = []
     empty = {
         "configured": False, "today": today_s,
-        "errors": ["API-Football ist nicht konfiguriert (FOOTBALL_API_KEY)."],
+        "errors": ["football-data.org ist nicht konfiguriert (FOOTBALL_DATA_API_KEY)."],
         "top_matches": [], "live_now": [], "all_premium": [], "next_matches": [], "extended": [],
         "premium_count": 0,
         "raw_live_count": 0,

@@ -84,6 +84,7 @@ PREMIUM_LEAGUE_HINT = (
 MSG_NO_ANALYSIS = (
     "Für dieses Spiel stehen aktuell keine ausreichenden Analysedaten zur Verfügung."
 )
+MSG_FREE_PLAN_UNAVAILABLE = "Nicht verfügbar im Free-Plan"
 MSG_EMPTY_TODAY = "Heute sind keine Spiele verfügbar."
 MSG_EMPTY_SELECTION = "Keine Spiele für diese Auswahl."
 MSG_NEXT_SECTION = "Kommende Spiele"

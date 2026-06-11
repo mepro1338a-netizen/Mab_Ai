@@ -37,8 +37,9 @@ from services.football_service import FootballAPIError, FootballService
 MATCH_CAP = 20
 ALL_API_CAP = 50
 MSG_NEXT = "Nächste Spiele"
-MSG_ALL_API_LABEL = "Alle API-Spiele (max. 50) — inkl. untergeordnete Ligen."
+MSG_ALL_API_LABEL = "Alle Free-Tier-Spiele (max. 50) — football-data.org Wettbewerbe."
 MSG_QUOTE_IN_ANALYSIS = "Quote in Analyse verfügbar"
+MSG_NO_ODDS_FREE = ""
 
 _CLUB_MARKERS = (
     " fc", " cf", " sc", " united", " city", " bayern", " borussia",
@@ -460,29 +461,31 @@ def probe_analysis_available(
     if rank < 1 or not fixture_id:
         return has_odds, has_pred, odds, form_home, form_away
 
-    try:
-        o1x2 = get_odds_for_fixture(service, int(fixture_id), username=username)
-        odds = {
-            "home": o1x2.get("home"),
-            "draw": o1x2.get("draw"),
-            "away": o1x2.get("away"),
-        }
-        has_odds = has_complete_odds(
-            {"home_odd": odds["home"], "draw_odd": odds["draw"], "away_odd": odds["away"]}
-        )
-    except FootballAPIError:
-        pass
-
-    if rank >= 2:
+    premium_api = getattr(service, "premium_api_enabled", lambda: False)()
+    if premium_api:
         try:
-            rows = service.get_fixture_predictions(int(fixture_id), username=username)
-            if rows:
-                ins = parse_prediction_insights(rows[0])
-                has_pred = ins.get("home_pct") is not None or bool(ins.get("advice"))
-                form_home = format_form_display(str(ins.get("form_home") or ""))
-                form_away = format_form_display(str(ins.get("form_away") or ""))
+            o1x2 = get_odds_for_fixture(service, int(fixture_id), username=username)
+            odds = {
+                "home": o1x2.get("home"),
+                "draw": o1x2.get("draw"),
+                "away": o1x2.get("away"),
+            }
+            has_odds = has_complete_odds(
+                {"home_odd": odds["home"], "draw_odd": odds["draw"], "away_odd": odds["away"]}
+            )
         except FootballAPIError:
             pass
+
+        if rank >= 2:
+            try:
+                rows = service.get_fixture_predictions(int(fixture_id), username=username)
+                if rows:
+                    ins = parse_prediction_insights(rows[0])
+                    has_pred = ins.get("home_pct") is not None or bool(ins.get("advice"))
+                    form_home = format_form_display(str(ins.get("form_home") or ""))
+                    form_away = format_form_display(str(ins.get("form_away") or ""))
+            except FootballAPIError:
+                pass
 
     return has_odds, has_pred, odds, form_home, form_away
 
@@ -506,12 +509,13 @@ def enrich_rows_analysis_flags(
     max_probe: int = MATCH_CAP,
 ) -> list[dict[str, Any]]:
     rank = football_plan_rank(session_plan or "none")
+    premium_api = getattr(service, "premium_api_enabled", lambda: False)()
     out: list[dict[str, Any]] = []
     probed = 0
     for row in rows:
         r = dict(row)
         fid = r.get("fixture_id")
-        probed_this = bool(fid and probed < max_probe and rank >= 1)
+        probed_this = bool(fid and probed < max_probe and rank >= 1 and premium_api)
         if probed_this:
             has_odds, has_pred, odds, pf_home, pf_away = probe_analysis_available(
                 service, int(fid), username=username, session_plan=session_plan
@@ -531,7 +535,7 @@ def enrich_rows_analysis_flags(
             r.setdefault("has_odds", False)
             r.setdefault("has_predictions", False)
             r["quote_label"] = (
-                MSG_QUOTE_IN_ANALYSIS if rank >= 1 and fid else ""
+                MSG_QUOTE_IN_ANALYSIS if rank >= 1 and fid and premium_api else MSG_NO_ODDS_FREE
             )
         r["analysis_available"] = _row_analysis_available(r)
         out.append(r)

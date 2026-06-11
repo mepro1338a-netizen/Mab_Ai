@@ -12,7 +12,7 @@ from services.football_board import (
     parse_match_card,
     win_pcts_from_odds,
 )
-from ui.football.constants import MSG_NO_ANALYSIS
+from ui.football.constants import MSG_FREE_PLAN_UNAVAILABLE, MSG_NO_ANALYSIS
 
 
 def _pct_bar(label: str, pct: float | None) -> str:
@@ -44,7 +44,16 @@ def _standing_block(title: str, summary: dict[str, Any] | None) -> str:
 """
 
 
-def _injury_list(items: list[dict[str, Any]] | None) -> str:
+def _unavailable_block(title: str) -> str:
+    return (
+        f'<div class="fb2-block"><h3>{html.escape(title)}</h3>'
+        f'<div class="fb2-warn">{html.escape(MSG_FREE_PLAN_UNAVAILABLE)}</div></div>'
+    )
+
+
+def _injury_list(items: list[dict[str, Any]] | None, *, unavailable: bool = False) -> str:
+    if unavailable:
+        return f"<li>{html.escape(MSG_FREE_PLAN_UNAVAILABLE)}</li>"
     if not items:
         return "<li>Keine Meldungen</li>"
     lines: list[str] = []
@@ -56,7 +65,9 @@ def _injury_list(items: list[dict[str, Any]] | None) -> str:
     return "".join(lines)
 
 
-def _h2h_html(fixtures: list[dict[str, Any]] | None) -> str:
+def _h2h_html(fixtures: list[dict[str, Any]] | None, *, unavailable: bool = False) -> str:
+    if unavailable:
+        return f"<li>{html.escape(MSG_FREE_PLAN_UNAVAILABLE)}</li>"
     if not fixtures:
         return "<li>Keine H2H-Daten</li>"
     items: list[str] = []
@@ -154,6 +165,8 @@ def render_analysis(detail: dict[str, Any]) -> None:
 
     pred = detail.get("prediction_insights") or {}
     odds = detail.get("odds") or {}
+    premium_unavailable = bool(detail.get("premium_data_unavailable"))
+    odds_unavailable = bool(detail.get("odds_unavailable"))
     hp, dp, ap = pred.get("home_pct"), pred.get("draw_pct"), pred.get("away_pct")
 
     if hp is None and has_complete_odds(
@@ -173,17 +186,37 @@ def render_analysis(detail: dict[str, Any]) -> None:
             '<div class="fb2-block"><h3>Siegwahrscheinlichkeit</h3>'
             f'<div class="fb2-prob">{_pct_bar("Heim", hp)}{_pct_bar("Unentschieden", dp)}{_pct_bar("Auswärts", ap)}</div></div>'
         )
-
     form_home = detail.get("home_form") or pred.get("form_home") or "—"
     form_away = detail.get("away_form") or pred.get("form_away") or "—"
 
     h_odd, d_odd, a_odd = odds.get("home"), odds.get("draw"), odds.get("away")
-    odds_line = "nicht verfügbar"
+    odds_line = MSG_FREE_PLAN_UNAVAILABLE if odds_unavailable else "nicht verfügbar"
     if h_odd and d_odd and a_odd:
         try:
             odds_line = f"1 {float(h_odd):.2f} · X {float(d_odd):.2f} · 2 {float(a_odd):.2f}"
         except (TypeError, ValueError):
             pass
+
+    h2h_block = (
+        _unavailable_block("H2H")
+        if premium_unavailable
+        else f'<div class="fb2-block"><h3>H2H</h3><ul class="fb2-list">{_h2h_html(detail.get("h2h"))}</ul></div>'
+    )
+    injuries_block = (
+        _unavailable_block("Verletzungen")
+        if premium_unavailable
+        else f"""<div class="fb2-block"><h3>Verletzungen</h3>
+    <div class="fb2-grid2">
+      <div class="fb2-statbox"><div class="t">{home}</div><ul class="fb2-list">{_injury_list(detail.get("home_injuries"))}</ul></div>
+      <div class="fb2-statbox"><div class="t">{away}</div><ul class="fb2-list">{_injury_list(detail.get("away_injuries"))}</ul></div>
+    </div>
+  </div>"""
+    )
+    odds_block = (
+        _unavailable_block("Quotenvergleich")
+        if odds_unavailable
+        else f'<div class="fb2-block"><h3>Quotenvergleich</h3><div class="fb2-statbox"><div class="t">1X2</div>{html.escape(odds_line)}</div></div>'
+    )
 
     signal = None
     if has_complete_odds(
@@ -222,16 +255,9 @@ def render_analysis(detail: dict[str, Any]) -> None:
       {_standing_block(str(card.get("away") or "Auswärts"), detail.get("away_standing_summary"))}
     </div>
   </div>
-  <div class="fb2-block"><h3>H2H</h3><ul class="fb2-list">{_h2h_html(detail.get("h2h"))}</ul></div>
-  <div class="fb2-block"><h3>Verletzungen</h3>
-    <div class="fb2-grid2">
-      <div class="fb2-statbox"><div class="t">{home}</div><ul class="fb2-list">{_injury_list(detail.get("home_injuries"))}</ul></div>
-      <div class="fb2-statbox"><div class="t">{away}</div><ul class="fb2-list">{_injury_list(detail.get("away_injuries"))}</ul></div>
-    </div>
-  </div>
-  <div class="fb2-block"><h3>Quotenvergleich</h3>
-    <div class="fb2-statbox"><div class="t">1X2</div>{html.escape(odds_line)}</div>
-  </div>
+  {h2h_block}
+  {injuries_block}
+  {odds_block}
   <div class="fb2-block"><h3>AI Summary</h3>
     {summary_html or f'<div class="fb2-warn">{html.escape(MSG_NO_ANALYSIS)}</div>'}
   </div>

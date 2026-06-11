@@ -118,13 +118,16 @@ def get_odds_for_fixture(
     *,
     username: str,
 ) -> dict[str, float | None]:
-    """Fetch 1X2 odds via API-Football GET /odds?fixture=ID."""
-    try:
-        raw = service.get_fixture_odds(int(fixture_id), username=username)
-        markets = parse_fixture_odds_payload(raw)
-        return extract_1x2_odds(markets)
-    except FootballAPIError:
-        return {"home": None, "draw": None, "away": None}
+    """1X2 odds — not available without api-sports.io (disabled)."""
+    _ = fixture_id, username
+    if getattr(service, "premium_api_enabled", lambda: False)():
+        try:
+            raw = service.get_fixture_odds(int(fixture_id), username=username)
+            markets = parse_fixture_odds_payload(raw)
+            return extract_1x2_odds(markets)
+        except FootballAPIError:
+            pass
+    return {"home": None, "draw": None, "away": None}
 
 
 def win_pcts_from_odds(
@@ -589,13 +592,38 @@ def fetch_match_detail(
             )
             detail["away_standing_summary"] = _standing_summary(detail.get("away_standing"))
 
-    if rank >= 1:
+    premium_api = getattr(service, "premium_api_enabled", lambda: False)()
+
+    if rank >= 1 and premium_api:
         try:
             detail["odds"] = get_odds_for_fixture(service, fixture_id, username=username)
         except FootballAPIError:
             detail["missing"].append("odds")
+    elif rank >= 1:
+        detail["odds_unavailable"] = True
 
-    if rank >= 2:
+    if home_id and away_id and rank >= 1:
+        try:
+            detail["home_form_fixtures"] = service.get_recent_fixtures(
+                int(home_id), last_count=5, username=username
+            )
+            detail["away_form_fixtures"] = service.get_recent_fixtures(
+                int(away_id), last_count=5, username=username
+            )
+            detail["home_form"] = _form_from_fixtures(
+                detail.get("home_form_fixtures") or [], int(home_id)
+            )
+            detail["away_form"] = _form_from_fixtures(
+                detail.get("away_form_fixtures") or [], int(away_id)
+            )
+        except FootballAPIError:
+            detail["missing"].append("form")
+
+        hf, af = detail.get("home_form"), detail.get("away_form")
+        if (hf and str(hf).strip() != "—") or (af and str(af).strip() != "—"):
+            detail["form"] = {"home": hf or "", "away": af or ""}
+
+    if rank >= 2 and premium_api:
         try:
             pred_rows = service.get_fixture_predictions(fixture_id, username=username)
             detail["predictions"] = pred_rows
@@ -605,7 +633,6 @@ def fetch_match_detail(
         except FootballAPIError:
             detail["missing"].append("predictions")
 
-        # Injuries (on-demand only; can be rate-limited)
         for side, tid in (("home_injuries", home_id), ("away_injuries", away_id)):
             if tid:
                 try:
@@ -620,26 +647,8 @@ def fetch_match_detail(
                 )
             except FootballAPIError:
                 detail["missing"].append("h2h")
-
-            try:
-                detail["home_form_fixtures"] = service.get_recent_fixtures(
-                    int(home_id), last_count=5, username=username
-                )
-                detail["away_form_fixtures"] = service.get_recent_fixtures(
-                    int(away_id), last_count=5, username=username
-                )
-                detail["home_form"] = _form_from_fixtures(
-                    detail.get("home_form_fixtures") or [], int(home_id)
-                )
-                detail["away_form"] = _form_from_fixtures(
-                    detail.get("away_form_fixtures") or [], int(away_id)
-                )
-            except FootballAPIError:
-                detail["missing"].append("form")
-
-        hf, af = detail.get("home_form"), detail.get("away_form")
-        if (hf and str(hf).strip() != "—") or (af and str(af).strip() != "—"):
-            detail["form"] = {"home": hf or "", "away": af or ""}
+    elif rank >= 2:
+        detail["premium_data_unavailable"] = True
 
     has_odds = has_complete_odds(
         {
