@@ -95,14 +95,14 @@ section.main .block-container,
     max-width: var(--mb-content-max) !important;
     padding-left: var(--mb-content-pad-x) !important;
     padding-right: var(--mb-content-pad-x) !important;
-    padding-top: 12px !important;
+    padding-top: 20px !important;
     padding-bottom: 42px !important;
     margin-left: auto !important;
     margin-right: auto !important;
 }
 .stApp:has(.mb-dash) section.main .block-container,
 .stApp:has(.mb-home) section.main .block-container {
-    padding-top: 8px !important;
+    padding-top: 20px !important;
     margin-left: auto !important;
     margin-right: auto !important;
 }

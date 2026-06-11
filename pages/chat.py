@@ -44,7 +44,7 @@ def ensure_messages() -> None:
 
 
 def load_chat_css() -> None:
-    inject_css(page_layout_css(980, 92, 130) + """
+    inject_css(page_layout_css(980, 20, 130) + """
 [data-testid="stChatMessage"] {
     background: #18181b !important;
     border: 1px solid #3f3f46 !important;

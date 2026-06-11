@@ -18,7 +18,7 @@ from ui.football.styles import FOOTBALL_CSS
 
 
 def _inject_css() -> None:
-    inject_css(MB_THEME_VARS + page_layout_css(1100, 0, 32) + FOOTBALL_CSS)
+    inject_css(MB_THEME_VARS + page_layout_css(1100, 20, 32) + FOOTBALL_CSS)
 
 
 def _clear_feed() -> None:

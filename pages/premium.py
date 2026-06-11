@@ -10,7 +10,7 @@ from ui_core import sync_session_user
 
 
 def premium_css():
-    premium_foundation_css(1180, 80, """
+    premium_foundation_css(1180, 20, """
 h1,h2,h3,p,span,label,
 div[data-testid="stMarkdownContainer"],
 div[data-testid="stCaptionContainer"]{

@@ -191,7 +191,7 @@ PREMIUM_COMPONENT_CSS = """
 
 def premium_foundation_css(
     max_width: int = 1180,
-    padding_top: int = 80,
+    padding_top: int = 20,
     extra_css: str = "",
 ) -> None:
     inject_css(

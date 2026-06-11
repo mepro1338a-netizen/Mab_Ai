@@ -16,6 +16,7 @@ from ui.sidebar import (
     render_sidebar,
     sidebar_theme_lock_css,
 )
+from ui.slogan_header import render_slogan_header
 from ui_core import load_css, sync_session_user
 
 from pages.auth import render_auth
@@ -335,6 +336,7 @@ if page == "auth" and st.session_state.get("logged_in"):
     st.rerun()
 elif page in PAGE_HANDLERS:
     label, handler = PAGE_HANDLERS[page]
+    render_slogan_header()
     safe_render(label, handler)
 else:
     st.session_state.page = "home"

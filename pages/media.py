@@ -26,7 +26,7 @@ def render_image_studio(
 
     IMAGE_STUDIO_CSS = """
 .stApp:has(.img-studio) section.main .block-container {
-    padding-top: 92px !important;
+    padding-top: 20px !important;
     padding-bottom: 32px !important;
     max-width: 720px !important;
 }
@@ -219,7 +219,7 @@ def inject_workspace_css() -> None:
     WORKSPACE_CSS = """
 .stApp:has(.mb-workspace) section.main .block-container {
     max-width: 920px !important;
-    padding-top: 92px !important;
+    padding-top: 20px !important;
     padding-bottom: 40px !important;
 }
 .stApp:has(.mb-workspace) section.main div[data-testid="stVerticalBlockBorderWrapper"] {
@@ -304,7 +304,7 @@ def inject_workspace_css() -> None:
     line-height: 1.45;
 }
 """
-    inject_css(page_layout_css(920, 92, 40) + WORKSPACE_CSS)
+    inject_css(page_layout_css(920, 20, 40) + WORKSPACE_CSS)
 
 
 def workspace_marker() -> None:
@@ -779,7 +779,7 @@ def run_paid_ai(tool, prompt, cost, filename_prefix):
 
 
 def media_css():
-    inject_css(page_layout_css(1180, 28, 100) + gradient_title_css("mb-title") + """
+    inject_css(page_layout_css(1180, 20, 100) + gradient_title_css("mb-title") + """
 .mb-sub {
     text-align: center;
     color: #cbd5e1 !important;

@@ -44,7 +44,7 @@ PLATFORM_LABELS = {
 
 STUDIO_CSS = """
 .stApp:has(.ve-studio) section.main .block-container {
-    padding-top: 92px !important;
+    padding-top: 20px !important;
     max-width: 900px !important;
     padding-bottom: 32px !important;
 }
