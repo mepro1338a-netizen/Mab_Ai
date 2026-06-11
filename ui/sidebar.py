@@ -238,6 +238,10 @@ def _base_css() -> str:
   color:{_MUTED}!important; font-size:11px; margin:2px 0 0!important;
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }}
+.sb-badges {{
+  flex:0 0 auto; display:flex; flex-wrap:wrap; gap:4px;
+  justify-content:flex-end; max-width:100px;
+}}
 .sb-plan {{
   flex:0 0 auto; padding:3px 8px; border-radius:999px;
   font-size:9px; font-weight:700; letter-spacing:0.08em;
@@ -252,6 +256,12 @@ def _base_css() -> str:
 .sb-plan-default {{
   background:rgba(255,255,255,0.06);
   border:1px solid rgba(255,255,255,0.12); color:#a1a1aa!important;
+}}
+.sb-plan-admin {{
+  background:linear-gradient(135deg, rgba(34,211,238,0.30), rgba(6,182,212,0.18));
+  border:1px solid rgba(103,232,249,0.45); color:#67e8f9!important;
+  text-shadow:0 0 8px rgba(34,211,238,0.50);
+  box-shadow:0 0 10px rgba(34,211,238,0.20);
 }}
 {_SB} .st-key-nav_logout .stButton>button, {_SB} .st-key-nav_logout button {{
   width:100%!important; height:32px!important; min-height:32px!important;
@@ -301,6 +311,15 @@ def _render_nav(active: str) -> None:
                 navigate_to(page)
 
 
+def _session_is_admin() -> bool:
+    """Admin check from session_state (role/admin_level synced on login)."""
+    from security import is_admin
+    return is_admin({
+        "role": st.session_state.get("role", "user"),
+        "admin_level": st.session_state.get("admin_level", 0),
+    })
+
+
 def _plan_label(plan: str) -> str:
     key = (plan or "free").strip().lower()
     if key in ("none", ""):
@@ -327,6 +346,9 @@ def render_sidebar(active_page: str | None = None) -> None:
             with st.container(key="sb_bottom", border=False):
                 initial = (user.strip()[:1] or "U").upper()
                 plan_cls = "sb-plan-elite" if plan == "Elite" else "sb-plan-default"
+                badges = f'<span class="sb-plan {plan_cls}">{html.escape(plan)}</span>'
+                if _session_is_admin():
+                    badges += '<span class="sb-plan sb-plan-admin">Admin</span>'
                 st.markdown(
                     f'<div class="sb-user">'
                     f'<span class="sb-avatar">{html.escape(initial)}</span>'
@@ -334,7 +356,7 @@ def render_sidebar(active_page: str | None = None) -> None:
                     f'<p class="sb-un">{html.escape(user)}</p>'
                     f'<p class="sb-meta">{html.escape(tokens)} Tokens</p>'
                     f"</div>"
-                    f'<span class="sb-plan {plan_cls}">{html.escape(plan)}</span>'
+                    f'<div class="sb-badges">{badges}</div>'
                     f"</div>",
                     unsafe_allow_html=True,
                 )
