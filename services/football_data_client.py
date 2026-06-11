@@ -5,8 +5,8 @@ football-data.org matches into the API-Football fixture dict shape
 (fixture/teams/goals/league) expected by services.football_loaders and
 services.football_feed, so all downstream consumers stay untouched.
 
-Premium signals (odds, predictions, injuries, h2h) have no source here and
-remain on the legacy API-Football path in services.football_service.
+Premium signals (odds, predictions, injuries, h2h) are not available on
+the football-data.org free tier and are not fetched by the app.
 """
 from __future__ import annotations
 

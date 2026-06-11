@@ -1,4 +1,4 @@
-"""Football live-data client for API-Football (api-sports.io)."""
+"""Football live-data client — football-data.org v4 (free tier)."""
 
 from __future__ import annotations
 
@@ -14,16 +14,12 @@ import requests
 
 from config import (
     DATA_DIR,
-    FOOTBALL_API_BASE_URL,
     FOOTBALL_API_CACHE_TTL,
     FOOTBALL_FEATURES,
     FOOTBALL_API_FIXTURES_CACHE_TTL,
     FOOTBALL_API_INJURIES_CACHE_TTL,
-    FOOTBALL_API_KEY,
     FOOTBALL_API_LIVE_CACHE_TTL,
     FOOTBALL_API_STANDINGS_CACHE_TTL,
-    FOOTBALL_API_TIMEOUT,
-    FOOTBALL_BETTING_CORE_LEAGUE_IDS,
     FOOTBALL_DATA_CACHE_TTL,
     FOOTBALL_DATA_COMPETITION_CODES,
     FOOTBALL_DATA_LIVE_CACHE_TTL,
@@ -31,8 +27,6 @@ from config import (
     FOOTBALL_DEFAULT_SEASON,
     FOOTBALL_PLAN_ORDER,
     FOOTBALL_PLANS,
-    football_api_season,
-    football_api_seasons_to_try,
     football_daily_ai_limit,
     football_daily_api_limit,
     football_feature_meta,
@@ -68,6 +62,12 @@ PLAN_LABELS["none"] = "Kein Football Plan"
 _BERLIN_TZ = ZoneInfo("Europe/Berlin")
 # Statuses that should never appear in "next matches" pools.
 _FD_DONE_OR_DEAD = frozenset({"FT", "AET", "PEN", "AWD", "WO", "CANC", "PST"})
+_FREE_TIER_LEAGUE_IDS = frozenset(FOOTBALL_DATA_COMPETITION_CODES.keys())
+_FD_NOT_CONFIGURED = (
+    "football-data.org ist auf dem Server nicht konfiguriert "
+    "(FOOTBALL_DATA_API_KEY in Railway/.env). "
+    "Live-Daten erscheinen sobald der Key gesetzt ist."
+)
 
 
 def _fixture_local_date(fixture: dict[str, Any]) -> str:
@@ -160,11 +160,7 @@ def preflight_api_request(
 ) -> str:
     plan = assert_feature(username, feature_id, session_plan)
     if not api_configured:
-        raise FootballAccessError(
-            "API-Football ist auf dem Server noch nicht konfiguriert "
-            "(FOOTBALL_API_KEY in Railway/.env). Dein Plan bleibt aktiv — "
-            "Live-Daten erscheinen sobald der Key gesetzt ist."
-        )
+        raise FootballAccessError(_FD_NOT_CONFIGURED)
     if plan == "none" and not is_owner_user(username):
         raise FootballAccessError("Kein Football Premium Plan aktiv.")
     daily_limit = int(football_daily_api_limit(plan) or 0)
@@ -293,11 +289,22 @@ class FootballAPIError(Exception):
       self.api_errors = api_errors or []
 
 
+def _filter_free_tier_fixtures(fixtures: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    for fx in fixtures or []:
+        try:
+            lid = int((fx.get("league") or {}).get("id") or 0)
+        except (TypeError, ValueError):
+            continue
+        if lid in _FREE_TIER_LEAGUE_IDS:
+            out.append(fx)
+    return out
+
+
 class FootballService:
-  """API-Football client with memory + disk cache and rate-limit handling."""
+  """football-data.org client with memory + disk cache and rate-limit handling."""
 
   def __init__(self) -> None:
-      self.base_url = FOOTBALL_API_BASE_URL.rstrip("/")
       self.cache_dir = Path(DATA_DIR) / "cache" / "football"
       self.cache_dir.mkdir(parents=True, exist_ok=True)
       self._memory_cache: dict[str, tuple[float, Any]] = {}
@@ -341,12 +348,19 @@ class FootballService:
       }
 
   def is_configured(self) -> bool:
-      """Any fixture source available (football-data.org or API-Football)."""
-      return self.fd_enabled() or bool(FOOTBALL_API_KEY.strip())
+      """football-data.org v4 is the sole fixture/standings source."""
+      return self.fd_enabled()
 
   def fd_enabled(self) -> bool:
-      """football-data.org v4 is the primary fixture/standings source."""
       return is_fd_configured()
+
+  def premium_api_enabled(self) -> bool:
+      """Odds/predictions/injuries/h2h via api-sports.io — permanently disabled."""
+      return False
+
+  def _require_fd(self) -> None:
+      if not self.fd_enabled():
+          raise FootballAPIError(_FD_NOT_CONFIGURED)
 
   def _cache_key(self, endpoint: str, params: dict[str, Any]) -> str:
       payload = json.dumps(
@@ -433,292 +447,6 @@ class FootballService:
       if isinstance(errors, list):
           return errors
       return []
-
-  def _request(
-      self,
-      endpoint: str,
-      params: dict[str, Any] | None = None,
-      *,
-      feature: str = "api_fixtures",
-      live: bool = False,
-      username: str = "",
-      use_cache: bool = True,
-      ttl_override: int | None = None,
-  ) -> list[dict[str, Any]]:
-      if username:
-          try:
-              preflight_api_request(
-                  username,
-                  feature,
-                  api_configured=self.is_configured(),
-              )
-          except FootballAccessError as exc:
-              raise FootballAPIError(str(exc)) from exc
-
-      if not bool(FOOTBALL_API_KEY.strip()):
-          # _request is the API-Football path only (odds/predictions/injuries/h2h).
-          raise FootballAPIError(
-              "API-Football ist auf dem Server nicht konfiguriert "
-              "(FOOTBALL_API_KEY in Railway/.env) — dieses Feature ist deaktiviert."
-          )
-
-      clean_params = {k: v for k, v in (params or {}).items() if v not in (None, "")}
-      cache_key = self._cache_key(endpoint, clean_params)
-      ttl = int(ttl_override) if ttl_override is not None else self._ttl_for(endpoint, live, username)
-
-      if use_cache:
-          cached = self._read_cache(cache_key, ttl)
-          if cached is not None:
-              self._log_http_debug(
-                  endpoint=endpoint,
-                  params=clean_params,
-                  status_code=200,
-                  response_length=len(cached) if isinstance(cached, list) else 0,
-                  cached=True,
-                  limiter="cache",
-              )
-              return cached
-
-      if cache_key in self._inflight:
-          for _ in range(80):
-              time.sleep(0.05)
-              if use_cache:
-                  cached = self._read_cache(cache_key, ttl)
-                  if cached is not None:
-                      self._log_http_debug(
-                          endpoint=endpoint,
-                          params=clean_params,
-                          status_code=200,
-                          response_length=len(cached) if isinstance(cached, list) else 0,
-                          cached=True,
-                      )
-                      return cached
-              if cache_key not in self._inflight:
-                  break
-
-      self._inflight.add(cache_key)
-      try:
-          return self._http_request(
-              endpoint,
-              clean_params,
-              cache_key=cache_key,
-              ttl=ttl,
-              feature=feature,
-              live=live,
-              username=username,
-              use_cache=use_cache,
-              rate_key=f"football_api:{username or 'global'}",
-          )
-      finally:
-          self._inflight.discard(cache_key)
-
-  def _http_request(
-      self,
-      endpoint: str,
-      clean_params: dict[str, Any],
-      *,
-      cache_key: str,
-      ttl: int,
-      feature: str,
-      live: bool,
-      username: str,
-      use_cache: bool,
-      rate_key: str,
-  ) -> list[dict[str, Any]]:
-      allowed, rate_msg = check_rate_limit(rate_key)
-      if not allowed:
-          stale = self._read_cache_any_age(cache_key) if use_cache else None
-          if stale is not None:
-              log_warning(f"Football internal rate limit — serving stale cache: {endpoint}")
-              self._log_http_debug(
-                  endpoint=endpoint,
-                  params=clean_params,
-                  status_code=200,
-                  response_length=len(stale) if isinstance(stale, list) else 0,
-                  cached=True,
-                  error="internal_rate_limit_stale",
-                  limiter="internal",
-              )
-              return stale
-          self._log_http_debug(
-              endpoint=endpoint,
-              params=clean_params,
-              status_code=None,
-              response_length=0,
-              cached=False,
-              error="internal_rate_limit_block",
-              limiter="internal",
-          )
-          raise FootballAPIError(rate_msg)
-
-      url = f"{self.base_url}/{endpoint.lstrip('/')}"
-      headers = {
-          "x-apisports-key": FOOTBALL_API_KEY,
-          "Accept": "application/json",
-      }
-
-      try:
-          response = requests.get(
-              url,
-              headers=headers,
-              params=clean_params,
-              timeout=FOOTBALL_API_TIMEOUT,
-          )
-      except requests.Timeout as exc:
-          log_error(f"Football API timeout: {endpoint} {clean_params}")
-          raise FootballAPIError(
-              "Football API Timeout. Bitte erneut versuchen."
-          ) from exc
-      except requests.RequestException as exc:
-          log_error(f"Football API network error: {endpoint} -> {exc}")
-          raise FootballAPIError(
-              "Football API Netzwerkfehler. Bitte spaeter erneut versuchen."
-          ) from exc
-
-      rate_remaining = (
-          response.headers.get("x-ratelimit-requests-remaining")
-          or response.headers.get("X-RateLimit-Remaining")
-      )
-      dbg_headers = {
-          "x-ratelimit-requests-limit": str(
-              response.headers.get("x-ratelimit-requests-limit")
-              or response.headers.get("X-RateLimit-Limit")
-              or ""
-          ),
-          "x-ratelimit-requests-remaining": str(rate_remaining or ""),
-          "x-ratelimit-requests-reset": str(
-              response.headers.get("x-ratelimit-requests-reset")
-              or response.headers.get("X-RateLimit-Reset")
-              or ""
-          ),
-      }
-
-      if response.status_code == 429:
-          log_warning(f"Football API rate limit: {endpoint}")
-          stale = self._read_cache_any_age(cache_key) if use_cache else None
-          if stale is not None:
-              log_warning(f"Football API 429 — serving stale cache: {endpoint}")
-              self._log_http_debug(
-                  endpoint=endpoint,
-                  params=clean_params,
-                  status_code=429,
-                  response_length=len(stale) if isinstance(stale, list) else 0,
-                  cached=True,
-                  error="api_429_stale",
-                  rate_limit_remaining=rate_remaining,
-                  headers=dbg_headers,
-                  response_snippet=str(getattr(response, "text", "") or "")[:1200],
-                  limiter="api",
-              )
-              return stale
-          self._log_http_debug(
-              endpoint=endpoint,
-              params=clean_params,
-              status_code=429,
-              response_length=0,
-              cached=False,
-              error="Football API Rate Limit erreicht",
-              rate_limit_remaining=rate_remaining,
-              headers=dbg_headers,
-              response_snippet=str(getattr(response, "text", "") or "")[:1200],
-              limiter="api",
-          )
-          raise FootballAPIError(
-              "Football API Rate Limit erreicht. Bitte kurz warten oder Plan pruefen.",
-              status_code=429,
-          )
-
-      try:
-          payload = response.json()
-      except ValueError as exc:
-          log_error(f"Football API invalid JSON: {endpoint}")
-          raise FootballAPIError("Ungueltige Football API Antwort.") from exc
-
-      api_errors = self._parse_api_errors(payload)
-      if api_errors:
-          log_warning(f"Football API errors: {endpoint} -> {api_errors}")
-          if isinstance(api_errors, dict):
-              if api_errors.get("rateLimit"):
-                  stale = self._read_cache_any_age(cache_key) if use_cache else None
-                  if stale is not None:
-                      self._log_http_debug(
-                          endpoint=endpoint,
-                          params=clean_params,
-                          status_code=429,
-                          response_length=len(stale) if isinstance(stale, list) else 0,
-                          cached=True,
-                          error=str(api_errors.get("rateLimit")),
-                          rate_limit_remaining=rate_remaining,
-                      )
-                      return stale
-                  raise FootballAPIError(
-                      str(api_errors.get("rateLimit")),
-                      status_code=429,
-                      api_errors=api_errors,
-                  )
-              message = "; ".join(f"{k}: {v}" for k, v in api_errors.items())
-          else:
-              message = "; ".join(str(item) for item in api_errors)
-          self._log_http_debug(
-              endpoint=endpoint,
-              params=clean_params,
-              status_code=response.status_code,
-              response_length=0,
-              cached=False,
-              error=message,
-              rate_limit_remaining=rate_remaining,
-              headers=dbg_headers,
-              response_snippet=str(getattr(response, "text", "") or "")[:1200],
-              limiter="api",
-          )
-          raise FootballAPIError(message or "Football API Fehler.", api_errors=api_errors)
-
-      if response.status_code >= 400:
-          self._log_http_debug(
-              endpoint=endpoint,
-              params=clean_params,
-              status_code=response.status_code,
-              response_length=0,
-              cached=False,
-              error=f"HTTP {response.status_code}",
-              rate_limit_remaining=rate_remaining,
-              headers=dbg_headers,
-              response_snippet=str(getattr(response, "text", "") or "")[:1200],
-              limiter="api",
-          )
-          raise FootballAPIError(
-              f"Football API HTTP {response.status_code}",
-              status_code=response.status_code,
-          )
-
-      data = payload.get("response") or []
-      if not isinstance(data, list):
-          data = [data] if data else []
-
-      if use_cache:
-          self._write_cache(cache_key, data)
-
-      if username:
-          try:
-              record_api_success(username)
-          except FootballAccessError as exc:
-              raise FootballAPIError(str(exc)) from exc
-
-      self._log_http_debug(
-          endpoint=endpoint,
-          params=clean_params,
-          status_code=response.status_code,
-          response_length=len(data),
-          cached=False,
-          rate_limit_remaining=rate_remaining,
-          headers=dbg_headers,
-          response_snippet=str(getattr(response, "text", "") or "")[:1200],
-          limiter="api",
-      )
-      # Keep provider logs minimal in production.
-      if self._dev_mode():
-          log_info(f"Football API {endpoint} params={clean_params} results={len(data)}")
-      return data
 
   # ------------------------------------------------------------------
   # football-data.org v4 layer (primary fixture/standings source)
@@ -910,26 +638,20 @@ class FootballService:
       username: str = "",
   ) -> list[dict[str, Any]]:
       count = max(1, min(int(last_count), 15))
-      if self.fd_enabled():
-          payload = self._fd_request(
-              f"teams/{int(team_id)}/matches",
-              {"status": "FINISHED"},
-              ttl=int(FOOTBALL_DATA_CACHE_TTL),
-              feature="api_results",
-              username=username,
-          )
-          rows = map_fd_matches(payload)
-          rows.sort(
-              key=lambda fx: str((fx.get("fixture") or {}).get("date") or ""),
-              reverse=True,
-          )
-          return rows[:count]
-      return self._request(
-          "fixtures",
-          {"team": int(team_id), "last": count},
+      self._require_fd()
+      payload = self._fd_request(
+          f"teams/{int(team_id)}/matches",
+          {"status": "FINISHED"},
+          ttl=int(FOOTBALL_DATA_CACHE_TTL),
           feature="api_results",
           username=username,
       )
+      rows = map_fd_matches(payload)
+      rows.sort(
+          key=lambda fx: str((fx.get("fixture") or {}).get("date") or ""),
+          reverse=True,
+      )
+      return rows[:count]
 
   def get_fixtures_by_league_season(
       self,
@@ -940,18 +662,9 @@ class FootballService:
       ttl_override: int | None = None,
   ) -> list[dict[str, Any]]:
       """All fixtures for league+season (client-side date filter for upcoming)."""
-      if self.fd_enabled():
-          return self._fd_competition_season_fixtures(int(league_id), username=username)
-      return self._request(
-          "fixtures",
-          {
-              "league": int(league_id),
-              "season": int(season or football_api_season() or FOOTBALL_DEFAULT_SEASON),
-          },
-          feature="api_fixtures",
-          username=username,
-          ttl_override=ttl_override,
-      )
+      _ = season, ttl_override
+      self._require_fd()
+      return self._fd_competition_season_fixtures(int(league_id), username=username)
 
   def get_premium_fixtures_upcoming(
       self,

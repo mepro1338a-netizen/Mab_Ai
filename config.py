@@ -141,7 +141,7 @@ STRIPE_PRICE_FOOTBALL_STARTER = os.getenv("STRIPE_PRICE_FOOTBALL_STARTER", "")
 STRIPE_PRICE_FOOTBALL_PRO = os.getenv("STRIPE_PRICE_FOOTBALL_PRO", "")
 STRIPE_PRICE_FOOTBALL_ELITE = os.getenv("STRIPE_PRICE_FOOTBALL_ELITE", "")
 
-# API-Football (api-sports.io) — Live-Daten für Football Intelligence
+# API-Football (api-sports.io) — deprecated, nicht mehr für Fixtures/Odds genutzt
 FOOTBALL_API_KEY = os.getenv("FOOTBALL_API_KEY", "")
 FOOTBALL_API_BASE_URL = os.getenv(
     "FOOTBALL_API_BASE_URL",
@@ -155,8 +155,7 @@ FOOTBALL_API_INJURIES_CACHE_TTL = int(os.getenv("FOOTBALL_API_INJURIES_CACHE_TTL
 FOOTBALL_API_TIMEOUT = int(os.getenv("FOOTBALL_API_TIMEOUT", "20") or 20)
 FOOTBALL_DEFAULT_SEASON = int(os.getenv("FOOTBALL_DEFAULT_SEASON", "2025") or 2025)
 
-# football-data.org v4 — Free-Tier Quelle für Spielpläne + Tabellen.
-# API-Football bleibt optionaler Zusatz für Odds/Predictions/Injuries.
+# football-data.org v4 — einzige Quelle für Spielpläne, Live, Tabellen.
 FOOTBALL_DATA_API_KEY = os.getenv("FOOTBALL_DATA_API_KEY", "")
 FOOTBALL_DATA_BASE_URL = os.getenv(
     "FOOTBALL_DATA_BASE_URL",
