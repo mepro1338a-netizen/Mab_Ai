@@ -8,7 +8,7 @@ from config import APP_BASE_URL, APP_NAME, APP_TAGLINE
 from database import ensure_db_ready, get_user
 from payments import confirm_checkout_session
 from services.session_auth import enforce_active_session
-from ui.chrome import apply_nav_from_query, render_app_header
+from ui.chrome import apply_nav_from_query
 from ui.sidebar import (
     LEGACY_PAGE_ALIASES,
     NAV_ITEMS,
@@ -315,23 +315,6 @@ if page in LEGACY_PAGE_ALIASES:
 # =========================================================
 
 render_sidebar(page)
-
-PAGE_LABELS = {
-    "social_oauth": "Social Connect",
-    "home": "Dashboard",
-    "chat": "AI Chat",
-    "football": "Football AI",
-    "automation_lab": "Content Automation",
-    "coding": "Code",
-    "image": "Image",
-    "music": "Music",
-    "video": "Video",
-    "dashboard": "Profile",
-    "premium": "Premium",
-}
-
-if st.session_state.get("logged_in") and page != "home":
-    render_app_header(page_label=PAGE_LABELS.get(page, ""))
 
 PAGE_HANDLERS = {
     "social_oauth": ("Social Connect", lambda: None),

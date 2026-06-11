@@ -50,11 +50,6 @@ html, body, .stApp, .main,
     background-attachment: fixed !important;
 }}
 
-.custom-topbar {{
-    display: flex !important;
-    visibility: visible !important;
-}}
-
 h1, h2, h3, h4, h5, h6 {{
     color: #fafafa !important;
     font-weight: 800 !important;
@@ -204,9 +199,6 @@ section.main [data-testid="stTabs"] button[aria-selected="true"] {{
     color: #f8fafc !important;
 }}
 
-@media (max-width: 900px) {{
-    .custom-topbar {{ height: 64px !important; min-height: 64px !important; }}
-}}
 """
 
 

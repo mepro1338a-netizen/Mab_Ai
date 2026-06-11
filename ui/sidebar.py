@@ -18,7 +18,11 @@ _SB = 'section[data-testid="stSidebar"]'
 SIDEBAR_WIDTH = "240px"
 _NAV = '[class*="st-key-sb_nav_"]'
 _SHELL = f"{_SB} .st-key-sb_shell"
-_COL = f'{_SHELL} > [data-testid="stVerticalBlockBorderWrapper"] > [data-testid="stVerticalBlock"]'
+# Shell column = the vertical block that directly contains sb_bottom.
+# :has() keeps this independent of where Streamlit puts the st-key class
+# (1.50 puts it on the border wrapper, older builds on an outer wrapper).
+_COL = f'{_SHELL} [data-testid="stVerticalBlock"]:has(> .st-key-sb_bottom)'
+_USER_CONTENT = f'{_SB} [data-testid="stSidebarUserContent"]'
 
 _BG = "#09090b"
 _APP_BG = MB_APP_BACKGROUND
@@ -145,16 +149,46 @@ def _base_css() -> str:
 {_SB} [data-testid="stSidebarHeader"], {_SB} [data-testid="stSidebarCollapsedControl"] {{
   display:none!important; height:0!important; overflow:hidden!important;
 }}
-{_SB}>div {{ padding:0!important; height:100dvh!important; overflow:hidden!important; }}
 {_SB} [data-testid="stSidebarNav"] {{ display:none!important; }}
-{_SHELL}> [data-testid="stVerticalBlockBorderWrapper"] {{
-  height:100%!important; background:transparent!important; border:none!important;
-  padding:0!important; margin:0!important;
+/* --- Scroll chain: lock outer shell to viewport, let the nav column scroll --- */
+{_SB}>div {{
+  padding:0!important; height:100dvh!important; overflow:hidden!important;
+  display:flex!important; flex-direction:column!important;
+}}
+{_SB} [data-testid="stSidebarContent"] {{
+  flex:1 1 auto!important; min-height:0!important; overflow:hidden!important;
+  display:flex!important; flex-direction:column!important; padding:0!important;
+}}
+{_USER_CONTENT} {{
+  flex:1 1 auto!important; min-height:0!important; padding:0!important;
+  display:flex!important; flex-direction:column!important;
+  overflow-y:auto!important; overflow-x:hidden!important;
+}}
+{_USER_CONTENT}>[data-testid="stVerticalBlock"] {{
+  flex:1 1 auto!important; min-height:0!important; gap:0!important;
+  display:flex!important; flex-direction:column!important;
+}}
+{_SHELL}, {_SHELL}>div {{
+  flex:1 1 auto!important; min-height:0!important; height:auto!important;
+  display:flex!important; flex-direction:column!important;
+  background:transparent!important; border:none!important; padding:0!important; margin:0!important;
 }}
 {_COL} {{
-  display:flex!important; flex-direction:column!important; height:100%!important;
-  min-height:0!important; padding:16px 14px 14px!important; gap:2px!important;
+  flex:1 1 auto!important; min-height:0!important;
+  display:flex!important; flex-direction:column!important;
+  padding:16px 14px 0!important; gap:3px!important;
   overflow-y:auto!important; overflow-x:hidden!important;
+}}
+/* Thin, subtle sidebar scrollbar */
+{_COL}, {_USER_CONTENT} {{
+  scrollbar-width:thin; scrollbar-color:rgba(255,255,255,0.15) transparent;
+}}
+{_COL}::-webkit-scrollbar, {_USER_CONTENT}::-webkit-scrollbar {{ width:6px; height:6px; }}
+{_COL}::-webkit-scrollbar-thumb, {_USER_CONTENT}::-webkit-scrollbar-thumb {{
+  background:rgba(255,255,255,0.15); border-radius:6px;
+}}
+{_COL}::-webkit-scrollbar-track, {_USER_CONTENT}::-webkit-scrollbar-track {{
+  background:transparent;
 }}
 {_SHELL} .st-key-sb_bottom [data-testid="stVerticalBlock"] {{ gap:6px!important; }}
 {_SHELL} [data-testid="stMarkdownContainer"], {_SHELL} [data-testid="stElementContainer"] {{
@@ -162,8 +196,10 @@ def _base_css() -> str:
 }}
 {_SHELL} [data-testid="stMarkdownContainer"] p {{ margin:0!important; padding:0!important; }}
 {_SHELL} .st-key-sb_bottom {{
+  position:sticky!important; bottom:0!important; z-index:2!important;
   margin-top:auto!important; flex-shrink:0!important;
-  padding-top:14px!important; border-top:1px solid {_LINE};
+  padding-top:12px!important; padding-bottom:14px!important;
+  background:{_BG}!important; border-top:1px solid {_LINE};
 }}
 .sb-brand {{
   display:flex; align-items:center; gap:10px; padding:0 4px 14px;

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import streamlit as st
 
-_UI_VERSION = 17
+_UI_VERSION = 18
 
 
 GLOBAL_DESIGN_CSS = """
@@ -15,7 +15,6 @@ html, body, .stApp {
     .main .block-container {
         padding-top: 12px !important;
     }
-    .custom-topbar { height: 64px !important; }
     h1 { font-size: 1.65rem !important; }
     [data-testid="column"] {
         width: 100% !important;
@@ -266,7 +265,6 @@ def master_button_css() -> str:
 
 def inject_global_ui(*, force: bool = False) -> None:
     """Inject on every run — Streamlit rebuilds the page each rerun."""
-    from ui.chrome import chrome_css
     from ui.premium_foundation import BETA_GLOBAL_CSS
     from ui.prompt_ui import MABYTE_PROMPT_CSS
     from ui.styles import MB_THEME_VARS, inject_css, layout_system_css, streamlit_force_dark_css
@@ -277,7 +275,6 @@ def inject_global_ui(*, force: bool = False) -> None:
         + MB_THEME_VARS
         + streamlit_force_dark_css()
         + BETA_GLOBAL_CSS
-        + chrome_css()
         + layout_system_css()
         + GLOBAL_DESIGN_CSS
         + core_app_css()
