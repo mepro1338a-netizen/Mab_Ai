@@ -220,3 +220,15 @@ def sync_session_user(user: dict | None) -> None:
 def is_admin_user() -> bool:
     from services.session_auth import server_is_admin
     return server_is_admin()
+
+
+def require_plan_feature(
+    feature: str,
+    *,
+    user: dict | None = None,
+    message: str | None = None,
+    button_key: str = "plan_gate_upgrade",
+) -> bool:
+    """Plan-Feature-Gate — siehe services.plan_guard."""
+    from services.plan_guard import require_plan_feature as _require
+    return _require(feature, user=user, message=message, button_key=button_key)

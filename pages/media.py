@@ -7,7 +7,7 @@ from openai import OpenAI
 
 from config import OPENAI_API_KEY, OPENAI_IMAGE_MODEL, OPENAI_TEXT_MODEL, DB_PATH
 from database import spend_tokens, save_usage, get_user, update_tokens
-from ui_core import sync_session_user
+from ui_core import require_plan_feature, sync_session_user
 def render_image_studio(
     *,
     tokens_available: int,
@@ -664,6 +664,25 @@ def charge_tokens(tool, prompt, cost):
         st.error(f"Nicht genug Tokens. Benötigt: {cost}, verfügbar: {get_tokens()}")
         st.stop()
 
+    user = get_user(username()) or {}
+    feature_map = {
+        "image": "image",
+        "music": "music",
+        "coding": "coding",
+        "video": "video",
+        "reel_video": "reels",
+        "automation_unlock": "automation",
+        "automation_flow": "automation",
+    }
+    feat = feature_map.get(tool)
+    if feat:
+        from services.plan_guard import feature_blocked_message
+
+        blocked = feature_blocked_message(user, feat)
+        if blocked:
+            st.error(blocked)
+            st.stop()
+
     ok, msg = spend_tokens(username(), cost)
 
     if not ok:
@@ -851,6 +870,15 @@ div[data-testid="stAlert"] {
 
 
 def render_automation():
+    user = get_user(username()) or {}
+    if not require_plan_feature(
+        "automation",
+        user=user,
+        message="Content Automation ist ab **Grand** verfügbar.",
+        button_key="media_auto_upgrade",
+    ):
+        return
+
     unlock_cost = get_automation_unlock_cost()
     unlocked = automation_unlocked()
 
@@ -1011,6 +1039,15 @@ def run_image_generation(
 def render_image_ai():
     from config import OPENAI_API_KEY
 
+    user = get_user(username()) or {}
+    if not require_plan_feature(
+        "image",
+        user=user,
+        message="Bildgenerierung ist ab **Pro** verfügbar.",
+        button_key="media_image_upgrade",
+    ):
+        return
+
     if not OPENAI_API_KEY:
         st.warning(
             "Bildgenerierung: OPENAI_API_KEY fehlt auf dem Server. "
@@ -1034,6 +1071,15 @@ def render_image_ai():
 
 
 def render_music_ai():
+    user = get_user(username()) or {}
+    if not require_plan_feature(
+        "music",
+        user=user,
+        message="Music Studio ist ab **Pro** verfügbar.",
+        button_key="media_music_upgrade",
+    ):
+        return
+
     workspace_header("Music Studio", "Song-Konzept und Lyrics-Package generieren.")
 
     with st.container(border=True):
@@ -1055,6 +1101,15 @@ def render_music_ai():
 
 
 def render_coding_ai():
+    user = get_user(username()) or {}
+    if not require_plan_feature(
+        "coding",
+        user=user,
+        message="Code Studio ist ab **Pro** verfügbar.",
+        button_key="media_coding_upgrade",
+    ):
+        return
+
     workspace_header("Code Studio", "Code schreiben, debuggen und erklären lassen.")
 
     with st.container(border=True):

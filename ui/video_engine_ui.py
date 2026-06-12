@@ -19,9 +19,13 @@ from db.video_engine import (
     update_scheduled_post,
 )
 from pricing import GEN_AI, GEN_AI_HD, GEN_STUDIO, cost_label, get_video_generation_cost
+from services.plan_guard import (
+    free_video_studio_allowed,
+    is_free_plan,
+    user_has_feature,
+)
 from services.video_engine import (
     can_access_plan_feature,
-    can_generate_video,
     can_use_ai_video,
     can_use_automation,
     create_automation_rule,
@@ -441,13 +445,29 @@ def _tab_create(
 ) -> None:
     ai_ready = ai_provider_available()
     can_ai = can_use_ai_video(plan)
+    free_studio = free_video_studio_allowed(user)
 
-    if studio_type == "video" and not can_generate_video(plan) and not can_ai:
+    if is_free_plan(user) and studio_type == "reel":
         st.markdown(
             """
 <div class="ve-upgrade">
-    <div class="ve-upgrade-title">Pro erforderlich</div>
-    <div class="ve-upgrade-sub">KI-Videos ab Pro. Free: kurzer MaByte Studio Export.</div>
+    <div class="ve-upgrade-title">Grand erforderlich</div>
+    <div class="ve-upgrade-sub">Reels & Shorts Creator ist ab Grand verfügbar.</div>
+</div>
+            """,
+            unsafe_allow_html=True,
+        )
+        if st.button("Zu Premium", key="ve_up_reels", type="primary"):
+            st.session_state.page = "premium"
+            st.rerun()
+        return
+
+    if studio_type == "video" and not user_has_feature(user, "video") and not free_studio:
+        st.markdown(
+            """
+<div class="ve-upgrade">
+    <div class="ve-upgrade-title">Grand erforderlich</div>
+    <div class="ve-upgrade-sub">Voller Video Creator ist ab Grand verfügbar.</div>
 </div>
             """,
             unsafe_allow_html=True,
@@ -455,6 +475,18 @@ def _tab_create(
         if st.button("Zu Premium", key="ve_up_pro", type="primary"):
             st.session_state.page = "premium"
             st.rerun()
+        return
+
+    if free_studio and studio_type == "video":
+        st.markdown(
+            """
+<div class="ve-upgrade">
+    <div class="ve-upgrade-title">Free: MaByte Studio Export</div>
+    <div class="ve-upgrade-sub">Kurzer Studio-Export (max. 12s). KI-Videos ab Pro.</div>
+</div>
+            """,
+            unsafe_allow_html=True,
+        )
 
     st.markdown('<div class="ve-prompt-label">Dein Video-Konzept</div>', unsafe_allow_html=True)
     prompt = st.text_area(
@@ -491,6 +523,9 @@ def _tab_create(
     mode_options = [GEN_STUDIO, GEN_AI]
     if can_ai and ai_ready:
         mode_options.append(GEN_AI_HD)
+    if free_studio:
+        mode_options = [GEN_STUDIO]
+        can_ai = False
     default_mode = GEN_AI if (can_ai and ai_ready) else GEN_STUDIO
     gen_mode = st.radio(
         "Qualität",
@@ -520,17 +555,26 @@ def _tab_create(
         if not (prompt or "").strip():
             st.warning("Bitte Konzept eingeben.")
             return
+        if is_free_plan(user) and studio_type == "reel":
+            st.error("Reels Creator ist ab Grand verfügbar.")
+            return
         if tokens < cost:
             st.error(f"Nicht genug Tokens ({tokens} / {cost}).")
             return
         if gen_mode != GEN_STUDIO and not can_ai:
             st.error("KI-Video ab Pro-Plan.")
             return
+        if free_studio and gen_mode != GEN_STUDIO:
+            st.error("Im Free-Plan nur MaByte Studio Export verfügbar.")
+            return
         if gen_mode != GEN_STUDIO and not ai_ready:
             st.error("KI-API nicht konfiguriert (REPLICATE_API_TOKEN).")
             return
 
         charge_id = f"chg_{uuid.uuid4().hex}"
+        if is_free_plan(user) and studio_type == "reel":
+            st.error("Reels Creator ist ab Grand verfügbar.")
+            return
         ok, msg = spend_tokens(username, cost)
         if not ok:
             st.error(msg)
@@ -597,6 +641,21 @@ def _tab_library(username: str, studio_type: str) -> None:
 
 def _tab_publish_hub(username: str, user: dict, plan: str) -> None:
     """Queue, Planung, verbundene Accounts."""
+    if is_free_plan(user):
+        st.markdown(
+            """
+<div class="ve-upgrade">
+    <div class="ve-upgrade-title">Veröffentlichen ab Pro</div>
+    <div class="ve-upgrade-sub">Queue, Planung und Auto-Post sind ab Pro bzw. Grand verfügbar.</div>
+</div>
+            """,
+            unsafe_allow_html=True,
+        )
+        if st.button("Zu Premium", key="ve_up_publish", type="primary"):
+            st.session_state.page = "premium"
+            st.rerun()
+        return
+
     sub = st.tabs(["Queue", "Planen", "Accounts"])
     with sub[0]:
         _tab_queue(username, user)

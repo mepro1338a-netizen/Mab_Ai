@@ -233,6 +233,12 @@ def run_video_job(
     auto_metadata: bool = True,
     existing_job_id: str | None = None,
 ) -> tuple[dict | None, str | None]:
+    if plan_rank(plan) < 1 and studio_type == "reel":
+        return None, "Reels Creator ist ab Grand verfügbar."
+
+    if plan_rank(plan) < 1 and mode != GEN_STUDIO:
+        return None, "KI-Video ab Pro-Plan. Studio-Export ist günstiger verfügbar."
+
     if mode != GEN_STUDIO and not can_use_ai_video(plan):
         return None, "KI-Video ab Pro-Plan. Studio-Export ist günstiger verfügbar."
 

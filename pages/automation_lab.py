@@ -5,7 +5,8 @@ import html
 
 import streamlit as st
 
-from database import create_automation, list_automations
+from database import create_automation, list_automations, get_user
+from ui_core import require_plan_feature
 from ui.styles import MB_THEME_VARS, inject_css, page_layout_css
 
 _PLATFORMS = (
@@ -341,6 +342,17 @@ def render_automation_lab() -> None:
 
     _css()
     _render_header()
+
+    user = get_user(username) or {"username": username, "plan": st.session_state.get("plan", "free")}
+    if not require_plan_feature(
+        "automation",
+        user=user,
+        message="Content Automation ist ab **Grand** verfügbar.",
+        button_key="ca_plan_upgrade",
+    ):
+        st.markdown("</div>", unsafe_allow_html=True)
+        return
+
     _render_available_cards()
     _render_active_table(username)
     _render_create_form(username)
