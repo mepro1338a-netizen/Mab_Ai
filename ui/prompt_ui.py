@@ -157,17 +157,13 @@ def render_os_ready_hint() -> None:
     )
 
 
-_MABYTE_CHAT_CTX = (
-    "Antworte als MaByte AI Assistant im MaByte AI Chat (Sidebar: Workspace → AI Chat). "
-)
-
 CHAT_QUICKSTARTS = [
-    ("Zusammenfassen", f"{_MABYTE_CHAT_CTX}Fasse diesen Text in 5 klaren Bulletpoints zusammen:"),
-    ("Code erklären", f"{_MABYTE_CHAT_CTX}Erkläre diesen Code Schritt für Schritt und nenne Verbesserungen. Verweise bei Code-Workflows auf MaByte Code (Sidebar → Create → Code):"),
-    ("E-Mail", f"{_MABYTE_CHAT_CTX}Formuliere eine professionelle E-Mail zu folgendem Anlass:"),
-    ("Brainstorm", f"{_MABYTE_CHAT_CTX}Gib mir 10 konkrete Ideen zu folgendem Thema:"),
-    ("Übersetzen", f"{_MABYTE_CHAT_CTX}Übersetze den folgenden Text ins Deutsche (natürlich, professionell):"),
-    ("Struktur", f"{_MABYTE_CHAT_CTX}Erstelle eine klare Gliederung für folgendes Dokument:"),
+    ("Zusammenfassen", "Fasse diesen Text in 5 klaren Bulletpoints zusammen:"),
+    ("Code erklären", "Erkläre diesen Code Schritt für Schritt und nenne Verbesserungen:"),
+    ("E-Mail", "Formuliere eine professionelle E-Mail zu folgendem Anlass:"),
+    ("Brainstorm", "Gib mir 10 konkrete Ideen zu folgendem Thema:"),
+    ("Übersetzen", "Übersetze den folgenden Text ins Deutsche (natürlich, professionell):"),
+    ("Struktur", "Erstelle eine klare Gliederung für folgendes Dokument:"),
 ]
 
 

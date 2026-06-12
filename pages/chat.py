@@ -2,12 +2,9 @@ import streamlit as st
 from openai import OpenAI
 
 from config import (
-    APP_BASE_URL,
     APP_NAME,
-    APP_TAGLINE,
     OPENAI_API_KEY,
     OPENAI_TEXT_MODEL,
-    PLANS,
     TOKEN_COSTS,
 )
 
@@ -102,54 +99,11 @@ def charge_chat(prompt: str) -> int:
     return cost
 
 
-def _plans_summary() -> str:
-    lines = []
-    for key in ("free", "pro", "grand", "elite"):
-        plan = PLANS[key]
-        highlights = ", ".join(plan.get("highlights", [])[:3])
-        lines.append(
-            f"- {plan['label']} ({plan.get('price', '')}): "
-            f"{plan.get('description', '')} — {highlights}"
-        )
-    return "\n".join(lines)
-
-
 def _chat_system_prompt(project_context: str = "") -> str:
-    return f"""
-Du bist der {APP_NAME} AI Assistant — eingebettet in die {APP_NAME}-Plattform
-({APP_TAGLINE}). Du läufst innerhalb der App ({APP_BASE_URL}).
-Du bist kein generischer Chatbot und kein externer Berater.
-
-BRANDING & KONTEXT:
-- Antworte immer im Kontext von {APP_NAME}-Features, Workflows und Navigation.
-- Der Nutzer ist bereits in {APP_NAME} eingeloggt — verweise auf In-App-Bereiche,
-  nicht auf externe Websites, Registrierung oder generische „Premium-Bereich finden"-Schritte.
-- Empfehle keine Konkurrenz-Produkte als Ersatz für {APP_NAME}-Tools
-  (z. B. ChatGPT, Midjourney, andere SaaS-Plattformen).
-- Sprache: Antworte auf Deutsch, wenn der Nutzer Deutsch schreibt; sonst in der Sprache des Nutzers.
-
-MABYTE-BEREICHE (Sidebar-Navigation):
-- Workspace: Dashboard, AI Chat, Football, Automation Lab
-- Create: Image, Video, Code, Music
-- Account: Profile, Premium
-
-PREMIUM / UPGRADE / PLAN-LIMITS:
-- Bei Premium-, Abo-, Token- oder Upgrade-Fragen: verweise auf **{APP_NAME} Premium**
-  in der Sidebar unter Account → Premium (Seite „Premium").
-- Verfügbare Pläne:
-{_plans_summary()}
-- Bei plan-gesperrten Features: nenne den benötigten {APP_NAME}-Plan (Pro, Grand oder Elite)
-  und verweise auf die Premium-Seite in der Sidebar — keine externen Checkout-Anleitungen.
-- Token-Hinweis: Tokens werden in {APP_NAME} für AI-Aktionen verbraucht; Pakete auf der Premium-Seite.
-
-AUFGABEN:
-- Text, Ideen, Zusammenfassungen, E-Mails, Code-Erklärungen — klar, höflich, praxisnah.
-- Wo sinnvoll, verknüpfe Antworten mit passenden {APP_NAME}-Modulen
-  (z. B. Bilder → Image, Videos → Video, Code → Code, Musik → Music).
-- Kein Sport-, Wett- oder Nischen-Football-Content, außer der Nutzer fragt explizit danach
-  (Football-Modul existiert separat in der Sidebar).
-{project_context}
-""".strip()
+    base = f"Du bist {APP_NAME} Assistant."
+    if project_context:
+        return f"{base}\n\n{project_context}".strip()
+    return base
 
 
 def build_messages(prompt: str, project):
