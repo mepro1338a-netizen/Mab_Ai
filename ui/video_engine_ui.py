@@ -19,11 +19,7 @@ from db.video_engine import (
     update_scheduled_post,
 )
 from pricing import GEN_AI, GEN_AI_HD, GEN_STUDIO, cost_label, get_video_generation_cost
-from services.plan_guard import (
-    free_video_studio_allowed,
-    is_free_plan,
-    user_has_feature,
-)
+from services.plan_guard import is_free_plan, require_plan_feature, user_has_feature
 from services.video_engine import (
     can_access_plan_feature,
     can_use_ai_video,
@@ -348,6 +344,14 @@ def render_video_engine_studio(
     user: dict,
 ) -> None:
     """mode: 'reel' | 'video'"""
+    feature = "reels" if mode == "reel" else "video"
+    if not require_plan_feature(
+        feature,
+        user=user,
+        button_key=f"ve_studio_gate_{mode}",
+    ):
+        return
+
     inject_studio_css()
     plan = str(user.get("plan") or "free")
     studio_type = "reel" if mode == "reel" else "video"
@@ -445,7 +449,6 @@ def _tab_create(
 ) -> None:
     ai_ready = ai_provider_available()
     can_ai = can_use_ai_video(plan)
-    free_studio = free_video_studio_allowed(user)
 
     if is_free_plan(user) and studio_type == "reel":
         st.markdown(
@@ -462,7 +465,7 @@ def _tab_create(
             st.rerun()
         return
 
-    if studio_type == "video" and not user_has_feature(user, "video") and not free_studio:
+    if studio_type == "video" and not user_has_feature(user, "video"):
         st.markdown(
             """
 <div class="ve-upgrade">
@@ -476,17 +479,6 @@ def _tab_create(
             st.session_state.page = "premium"
             st.rerun()
         return
-
-    if free_studio and studio_type == "video":
-        st.markdown(
-            """
-<div class="ve-upgrade">
-    <div class="ve-upgrade-title">Free: MaByte Studio Export</div>
-    <div class="ve-upgrade-sub">Kurzer Studio-Export (max. 12s). KI-Videos ab Pro.</div>
-</div>
-            """,
-            unsafe_allow_html=True,
-        )
 
     st.markdown('<div class="ve-prompt-label">Dein Video-Konzept</div>', unsafe_allow_html=True)
     prompt = st.text_area(
@@ -523,9 +515,6 @@ def _tab_create(
     mode_options = [GEN_STUDIO, GEN_AI]
     if can_ai and ai_ready:
         mode_options.append(GEN_AI_HD)
-    if free_studio:
-        mode_options = [GEN_STUDIO]
-        can_ai = False
     default_mode = GEN_AI if (can_ai and ai_ready) else GEN_STUDIO
     gen_mode = st.radio(
         "Qualität",
@@ -563,9 +552,6 @@ def _tab_create(
             return
         if gen_mode != GEN_STUDIO and not can_ai:
             st.error("KI-Video ab Pro-Plan.")
-            return
-        if free_studio and gen_mode != GEN_STUDIO:
-            st.error("Im Free-Plan nur MaByte Studio Export verfügbar.")
             return
         if gen_mode != GEN_STUDIO and not ai_ready:
             st.error("KI-API nicht konfiguriert (REPLICATE_API_TOKEN).")

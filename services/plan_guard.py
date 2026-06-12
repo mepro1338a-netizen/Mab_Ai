@@ -78,11 +78,6 @@ def require_plan_feature(
     return False
 
 
-def free_video_studio_allowed(user: dict | None = None) -> bool:
-    """Free: nur kurzer MaByte Studio Export (Video-Modus, kein KI)."""
-    return is_free_plan(user)
-
-
 def feature_blocked_message(user: dict | None, feature: str) -> str | None:
     """Server-seitige Prüfung — Fehlermeldung oder None."""
     if user_has_feature(user, feature):

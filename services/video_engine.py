@@ -6,7 +6,9 @@ from __future__ import annotations
 import uuid
 from pathlib import Path
 
-from config import DATA_DIR, OPENAI_API_KEY, OPENAI_TEXT_MODEL, VIDEO_PROVIDER
+from config import DATA_DIR, OPENAI_API_KEY, OPENAI_TEXT_MODEL, VIDEO_PROVIDER, has_feature
+from database import get_user
+from security import is_admin
 from db.video_engine import (
     add_video_output,
     create_scheduled_post,
@@ -233,11 +235,13 @@ def run_video_job(
     auto_metadata: bool = True,
     existing_job_id: str | None = None,
 ) -> tuple[dict | None, str | None]:
-    if plan_rank(plan) < 1 and studio_type == "reel":
-        return None, "Reels Creator ist ab Grand verfügbar."
-
-    if plan_rank(plan) < 1 and mode != GEN_STUDIO:
-        return None, "KI-Video ab Pro-Plan. Studio-Export ist günstiger verfügbar."
+    user = get_user(username) or {}
+    plan_key = str(plan or user.get("plan") or "free").lower()
+    if not is_admin(user):
+        feat = "reels" if studio_type == "reel" else "video"
+        if not has_feature(plan_key, feat):
+            label = "Reels Creator" if studio_type == "reel" else "Video Creator"
+            return None, f"{label} ist ab Grand verfügbar."
 
     if mode != GEN_STUDIO and not can_use_ai_video(plan):
         return None, "KI-Video ab Pro-Plan. Studio-Export ist günstiger verfügbar."
