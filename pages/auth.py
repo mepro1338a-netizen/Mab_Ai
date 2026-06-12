@@ -40,8 +40,8 @@ _AUTH_CSS = """
         rgba(139, 92, 246, 0.14),
         rgba(99, 102, 241, 0.1)
     );
-    --auth-seg-btn-h: 44px;
-    --auth-submit-h: 48px;
+    --auth-seg-btn-h: 48px;
+    --auth-submit-h: 52px;
     --auth-glass-border: rgba(255, 255, 255, 0.14);
     --auth-glass-border-hover: rgba(139, 92, 246, 0.45);
     --auth-glass-blur: blur(16px);
@@ -200,6 +200,8 @@ html:has(.auth-marker) .st-key-auth_card {
 
 html:has(.auth-marker) .st-key-auth_card > [data-testid="stVerticalBlock"]:has(.auth-card-marker) {
     position: relative !important;
+    width: 100% !important;
+    min-width: min(var(--auth-w), calc(100% - 32px)) !important;
     border-radius: 14px !important;
     border: 1px solid var(--auth-line) !important;
     background: var(--auth-surface) !important;
@@ -226,6 +228,27 @@ html:has(.auth-marker) .st-key-auth_card [data-testid="stElementContainer"] {
 html:has(.auth-marker) .st-key-auth_seg_wrap {
     margin: 0 0 24px !important;
     width: 100% !important;
+    max-width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+}
+
+html:has(.auth-marker) .st-key-auth_seg_wrap [data-testid="stElementContainer"],
+html:has(.auth-marker) .st-key-auth_seg_wrap [data-testid="stVerticalBlock"],
+html:has(.auth-marker) .st-key-auth_mode_seg,
+html:has(.auth-marker) .st-key-auth_mode_seg [data-testid="stElementContainer"],
+html:has(.auth-marker) .st-key-auth_mode_seg [data-testid="stVerticalBlock"] {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+html:has(.auth-marker) .st-key-auth_mode_seg [data-testid="stElementContainer"] > div {
+    display: flex !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
 }
 
 html:has(.auth-marker) .st-key-auth_seg_wrap [data-testid="stWidgetLabel"],
@@ -486,14 +509,30 @@ _AUTH_SCOPE = (
     ".stApp:has(.auth-marker):not(:has(.mb-dash)):not(:has(.img-studio))"
     ":not(:has(.mb-workspace)):not(:has(.mb-home)) section.main"
 )
-_AUTH_SEG = (
+_AUTH_SEG_CHAIN = (
+    f"html:has(.auth-marker) {_AUTH_SCOPE} .st-key-auth_seg_wrap, "
+    f"html:has(.auth-marker) {_AUTH_SCOPE} .st-key-auth_seg_wrap [data-testid='stElementContainer'], "
+    f"html:has(.auth-marker) {_AUTH_SCOPE} .st-key-auth_seg_wrap [data-testid='stVerticalBlock'], "
+    f"html:has(.auth-marker) {_AUTH_SCOPE} .st-key-auth_mode_seg, "
+    f"html:has(.auth-marker) {_AUTH_SCOPE} .st-key-auth_mode_seg [data-testid='stElementContainer'], "
+    f"html:has(.auth-marker) {_AUTH_SCOPE} .st-key-auth_mode_seg [data-testid='stVerticalBlock'], "
+    f"{_AUTH_SCOPE} .st-key-auth_seg_wrap, "
+    f"{_AUTH_SCOPE} .st-key-auth_mode_seg"
+)
+_AUTH_SEG_TRAY = (
+    f"html:has(.auth-marker) {_AUTH_SCOPE} .st-key-auth_mode_seg [data-testid='stElementContainer'] > div, "
     f"html:has(.auth-marker) {_AUTH_SCOPE} .st-key-auth_seg_wrap [data-testid='stSegmentedControl'], "
     f"html:has(.auth-marker) {_AUTH_SCOPE} .st-key-auth_mode_seg [data-testid='stSegmentedControl'], "
+    f"{_AUTH_SCOPE} .st-key-auth_mode_seg [data-testid='stElementContainer'] > div, "
     f"{_AUTH_SCOPE} .st-key-auth_seg_wrap [data-testid='stSegmentedControl']"
 )
 _AUTH_SEG_BTN = (
+    f"html:has(.auth-marker) {_AUTH_SCOPE} .st-key-auth_mode_seg [data-testid='stElementContainer'] button, "
+    f"html:has(.auth-marker) {_AUTH_SCOPE} .st-key-auth_seg_wrap .st-key-auth_mode_seg button, "
     f"html:has(.auth-marker) {_AUTH_SCOPE} .st-key-auth_seg_wrap [data-testid='stSegmentedControl'] button, "
     f"html:has(.auth-marker) {_AUTH_SCOPE} .st-key-auth_mode_seg [data-testid='stSegmentedControl'] button, "
+    f"{_AUTH_SCOPE} .st-key-auth_mode_seg [data-testid='stElementContainer'] button, "
+    f"{_AUTH_SCOPE} .st-key-auth_seg_wrap .st-key-auth_mode_seg button, "
     f"{_AUTH_SCOPE} .st-key-auth_seg_wrap [data-testid='stSegmentedControl'] button, "
     f"{_AUTH_SCOPE} .st-key-auth_mode_seg [data-testid='stSegmentedControl'] button"
 )
@@ -518,10 +557,20 @@ html:has(.auth-marker) .st-key-auth_card [data-testid="stFormSubmitButton"] {{
     --primary-color: transparent !important;
 }}
 
-/* Segmented control — frosted glass tray, full card width */
-{_AUTH_SEG} {{
-    display: flex !important;
+/* Segmented control — full-width chain (ST 1.50: no stSegmentedControl testid) */
+{_AUTH_SEG_CHAIN} {{
     width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+}}
+
+/* Segmented control — frosted glass tray, full card width */
+{_AUTH_SEG_TRAY} {{
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: stretch !important;
+    width: 100% !important;
+    max-width: 100% !important;
     box-sizing: border-box !important;
     background: var(--auth-glass-tray) !important;
     background-color: var(--auth-glass-tray) !important;
@@ -538,10 +587,10 @@ html:has(.auth-marker) .st-key-auth_card [data-testid="stFormSubmitButton"] {{
 }}
 
 {_AUTH_SEG_BTN} {{
-    flex: 1 1 50% !important;
-    width: auto !important;
+    flex: 1 1 0 !important;
+    width: 50% !important;
     max-width: none !important;
-    min-width: 0 !important;
+    min-width: 50% !important;
     min-height: var(--auth-seg-btn-h) !important;
     height: var(--auth-seg-btn-h) !important;
     margin: 0 !important;
@@ -945,6 +994,7 @@ def render_auth() -> None:
                 options=["Anmelden", "Registrieren"],
                 key="auth_mode_seg",
                 label_visibility="collapsed",
+                width="stretch",
             )
 
         mode = "register" if choice == "Registrieren" else "login"
