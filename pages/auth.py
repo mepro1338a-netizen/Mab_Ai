@@ -40,7 +40,7 @@ _AUTH_CSS = """
         rgba(139, 92, 246, 0.14),
         rgba(99, 102, 241, 0.1)
     );
-    --auth-seg-btn-h: 36px;
+    --auth-seg-btn-h: 44px;
     --auth-submit-h: 48px;
     --auth-glass-border: rgba(255, 255, 255, 0.14);
     --auth-glass-border-hover: rgba(139, 92, 246, 0.45);
@@ -539,12 +539,14 @@ html:has(.auth-marker) .st-key-auth_card [data-testid="stFormSubmitButton"] {{
 
 {_AUTH_SEG_BTN} {{
     flex: 1 1 50% !important;
-    width: 50% !important;
+    width: auto !important;
+    max-width: none !important;
+    min-width: 0 !important;
     min-height: var(--auth-seg-btn-h) !important;
     height: var(--auth-seg-btn-h) !important;
     margin: 0 !important;
-    padding: 0 12px !important;
-    border: 1px solid transparent !important;
+    padding: 0 20px !important;
+    border: 1px solid var(--auth-glass-border) !important;
     outline: none !important;
     border-radius: 8px !important;
     font-size: 14px !important;
@@ -554,9 +556,9 @@ html:has(.auth-marker) .st-key-auth_card [data-testid="stFormSubmitButton"] {{
     background: var(--auth-glass-bg) !important;
     background-color: var(--auth-glass-bg) !important;
     background-image: none !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
-    backdrop-filter: blur(16px) !important;
-    -webkit-backdrop-filter: blur(16px) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+    backdrop-filter: var(--auth-glass-blur) !important;
+    -webkit-backdrop-filter: var(--auth-glass-blur) !important;
     transform: none !important;
     transition:
         background 0.18s ease,
@@ -566,14 +568,14 @@ html:has(.auth-marker) .st-key-auth_card [data-testid="stFormSubmitButton"] {{
 }}
 
 {_AUTH_SEG_BTN}:hover:not([aria-selected="true"]) {{
-    background: rgba(255, 255, 255, 0.09) !important;
-    background-color: rgba(255, 255, 255, 0.09) !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    background-color: rgba(255, 255, 255, 0.1) !important;
     background-image: none !important;
     color: var(--auth-text) !important;
-    border-color: rgba(255, 255, 255, 0.14) !important;
+    border-color: var(--auth-glass-border-hover) !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.08),
-        0 0 14px rgba(139, 92, 246, 0.18) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        0 0 16px rgba(139, 92, 246, 0.28) !important;
     transform: none !important;
 }}
 
@@ -595,12 +597,16 @@ html:has(.auth-marker) .st-key-auth_card [data-testid="stFormSubmitButton"] {{
     transform: none !important;
 }}
 
-html:has(.auth-marker) {_AUTH_SCOPE} .st-key-auth_card [data-testid="stFormSubmitButton"] {{
+html:has(.auth-marker) {_AUTH_SCOPE} .st-key-auth_card [data-testid="stFormSubmitButton"],
+html:has(.auth-marker) {_AUTH_SCOPE} .st-key-auth_card .st-key-auth_register_form [data-testid="stFormSubmitButton"],
+html:has(.auth-marker) {_AUTH_SCOPE} .st-key-auth_card .st-key-auth_login_form [data-testid="stFormSubmitButton"] {{
     margin-top: var(--s1) !important;
     width: 100% !important;
 }}
 
-html:has(.auth-marker) {_AUTH_SCOPE} .st-key-auth_card [data-testid="stFormSubmitButton"] > div {{
+html:has(.auth-marker) {_AUTH_SCOPE} .st-key-auth_card [data-testid="stFormSubmitButton"] > div,
+html:has(.auth-marker) {_AUTH_SCOPE} .st-key-auth_card .st-key-auth_register_form [data-testid="stFormSubmitButton"] > div,
+html:has(.auth-marker) {_AUTH_SCOPE} .st-key-auth_card .st-key-auth_login_form [data-testid="stFormSubmitButton"] > div {{
     width: 100% !important;
 }}
 
