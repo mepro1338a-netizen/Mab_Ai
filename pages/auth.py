@@ -28,17 +28,20 @@ _AUTH_CSS = """
     --auth-accent-hover: #6d28d9;
     --auth-violet: #8b5cf6;
     --auth-glass-bg: rgba(255, 255, 255, 0.06);
-    --auth-glass-bg-strong: rgba(139, 92, 246, 0.18);
-    --auth-glass-inactive: rgba(255, 255, 255, 0.05);
-    --auth-glass-submit-fill: linear-gradient(
-        rgba(139, 92, 246, 0.14),
-        rgba(99, 102, 241, 0.1)
-    );
-    --auth-glass-submit-border: linear-gradient(
+    --auth-glass-tray: rgba(255, 255, 255, 0.04);
+    --auth-glass-inactive-text: #d4d4d8;
+    --auth-glass-active-fill: rgba(139, 92, 246, 0.2);
+    --auth-glass-border-grad: linear-gradient(
         90deg,
         rgba(139, 92, 246, 0.75),
         rgba(99, 102, 241, 0.75)
     );
+    --auth-glass-submit-fill: linear-gradient(
+        rgba(139, 92, 246, 0.14),
+        rgba(99, 102, 241, 0.1)
+    );
+    --auth-seg-btn-h: 36px;
+    --auth-submit-h: 48px;
     --auth-glass-border: rgba(255, 255, 255, 0.14);
     --auth-glass-border-hover: rgba(139, 92, 246, 0.45);
     --auth-glass-blur: blur(16px);
@@ -221,7 +224,7 @@ html:has(.auth-marker) .st-key-auth_card [data-testid="stElementContainer"] {
 }
 
 html:has(.auth-marker) .st-key-auth_seg_wrap {
-    margin: 0 0 20px !important;
+    margin: 0 0 24px !important;
     width: 100% !important;
 }
 
@@ -232,76 +235,6 @@ html:has(.auth-marker) .st-key-auth_mode_seg [data-testid="stWidgetLabel"] {
     margin: 0 !important;
     padding: 0 !important;
     overflow: hidden !important;
-}
-
-html:has(.auth-marker) .stApp section.main .st-key-auth_seg_wrap [data-testid="stSegmentedControl"],
-html:has(.auth-marker) .stApp section.main .st-key-auth_mode_seg [data-testid="stSegmentedControl"] {
-    width: 100% !important;
-    background: rgba(255, 255, 255, 0.06) !important;
-    background-color: rgba(255, 255, 255, 0.06) !important;
-    background-image: none !important;
-    border: 1px solid var(--auth-glass-border) !important;
-    border-radius: 12px !important;
-    padding: 4px !important;
-    gap: 4px !important;
-    backdrop-filter: var(--auth-glass-blur) !important;
-    -webkit-backdrop-filter: var(--auth-glass-blur) !important;
-    box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.08),
-        0 4px 24px rgba(0, 0, 0, 0.18) !important;
-}
-
-html:has(.auth-marker) .stApp section.main .st-key-auth_seg_wrap [data-testid="stSegmentedControl"] button,
-html:has(.auth-marker) .stApp section.main .st-key-auth_mode_seg [data-testid="stSegmentedControl"] button {
-    flex: 1 !important;
-    min-height: 38px !important;
-    height: 38px !important;
-    border: 1px solid rgba(255, 255, 255, 0.12) !important;
-    outline: none !important;
-    border-radius: 8px !important;
-    font-size: 13px !important;
-    font-weight: 600 !important;
-    color: var(--auth-muted) !important;
-    background: var(--auth-glass-inactive) !important;
-    background-color: var(--auth-glass-inactive) !important;
-    background-image: none !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
-    backdrop-filter: blur(16px) !important;
-    -webkit-backdrop-filter: blur(16px) !important;
-    transition:
-        background 0.15s ease,
-        color 0.15s ease,
-        border-color 0.15s ease,
-        box-shadow 0.15s ease !important;
-}
-
-html:has(.auth-marker) .stApp section.main .st-key-auth_seg_wrap [data-testid="stSegmentedControl"] button:hover:not([aria-selected="true"]),
-html:has(.auth-marker) .stApp section.main .st-key-auth_mode_seg [data-testid="stSegmentedControl"] button:hover:not([aria-selected="true"]) {
-    background: var(--auth-glass-bg) !important;
-    border-color: rgba(255, 255, 255, 0.16) !important;
-    color: var(--auth-text) !important;
-    box-shadow: 0 0 12px rgba(139, 92, 246, 0.16) !important;
-}
-
-html:has(.auth-marker) .stApp section.main .st-key-auth_seg_wrap [data-testid="stSegmentedControl"] button:focus,
-html:has(.auth-marker) .stApp section.main .st-key-auth_mode_seg [data-testid="stSegmentedControl"] button:focus,
-html:has(.auth-marker) .stApp section.main .st-key-auth_seg_wrap [data-testid="stSegmentedControl"] button:focus-visible,
-html:has(.auth-marker) .stApp section.main .st-key-auth_mode_seg [data-testid="stSegmentedControl"] button:focus-visible {
-    outline: none !important;
-    box-shadow: none !important;
-}
-
-html:has(.auth-marker) .stApp section.main .st-key-auth_seg_wrap [data-testid="stSegmentedControl"] button[aria-selected="true"],
-html:has(.auth-marker) .stApp section.main .st-key-auth_mode_seg [data-testid="stSegmentedControl"] button[aria-selected="true"] {
-    background: var(--auth-glass-bg-strong) !important;
-    background-color: rgba(139, 92, 246, 0.18) !important;
-    background-image: none !important;
-    border-color: rgba(139, 92, 246, 0.45) !important;
-    color: var(--auth-text) !important;
-    box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.1),
-        0 0 16px rgba(139, 92, 246, 0.28),
-        0 0 0 1px rgba(139, 92, 246, 0.22) !important;
 }
 
 .auth-intro {
@@ -462,100 +395,6 @@ html:has(.auth-marker) .st-key-auth_card [data-testid="stCheckbox"] label p {
     line-height: 1.45 !important;
 }
 
-html:has(.auth-marker) .stApp section.main .st-key-auth_card [data-testid="stFormSubmitButton"] {
-    margin-top: var(--s1) !important;
-    width: 100% !important;
-}
-
-html:has(.auth-marker) .stApp section.main .st-key-auth_card [data-testid="stForm"] [data-testid="stFormSubmitButton"] button,
-html:has(.auth-marker) .stApp section.main .st-key-auth_card [data-testid="stFormSubmitButton"] button,
-html:has(.auth-marker) .stApp section.main .st-key-auth_card button[kind="primary"],
-html:has(.auth-marker) .stApp section.main .st-key-auth_card .stButton > button[kind="primary"],
-html:has(.auth-marker) .stApp section.main .st-key-auth_card button[data-testid="baseButton-primary"],
-html:has(.auth-marker) .stApp section.main .st-key-auth_card button[data-testid="stBaseButton-primary"] {
-    width: 100% !important;
-    min-height: var(--auth-input-h) !important;
-    height: var(--auth-input-h) !important;
-    border: 1px solid transparent !important;
-    border-radius: 12px !important;
-    background:
-        var(--auth-glass-submit-fill) padding-box,
-        var(--auth-glass-submit-border) border-box !important;
-    background-color: transparent !important;
-    color: #fafafa !important;
-    font-size: 14px !important;
-    font-weight: 600 !important;
-    backdrop-filter: blur(16px) !important;
-    -webkit-backdrop-filter: blur(16px) !important;
-    box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.12),
-        0 0 18px rgba(139, 92, 246, 0.2),
-        0 4px 16px rgba(0, 0, 0, 0.22) !important;
-    transition:
-        background 0.15s ease,
-        border-color 0.15s ease,
-        box-shadow 0.15s ease,
-        transform 0.12s ease !important;
-}
-
-html:has(.auth-marker) .stApp section.main .st-key-auth_card [data-testid="stForm"] [data-testid="stFormSubmitButton"] button:hover,
-html:has(.auth-marker) .stApp section.main .st-key-auth_card [data-testid="stFormSubmitButton"] button:hover,
-html:has(.auth-marker) .stApp section.main .st-key-auth_card button[kind="primary"]:hover,
-html:has(.auth-marker) .stApp section.main .st-key-auth_card .stButton > button[kind="primary"]:hover,
-html:has(.auth-marker) .stApp section.main .st-key-auth_card button[data-testid="baseButton-primary"]:hover,
-html:has(.auth-marker) .stApp section.main .st-key-auth_card button[data-testid="stBaseButton-primary"]:hover {
-    background:
-        linear-gradient(rgba(139, 92, 246, 0.24), rgba(99, 102, 241, 0.16)) padding-box,
-        linear-gradient(90deg, rgba(167, 139, 250, 0.85), rgba(129, 140, 248, 0.85)) border-box !important;
-    background-color: transparent !important;
-    border-color: transparent !important;
-    transform: translateY(-1px) !important;
-    box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.16),
-        0 0 32px rgba(139, 92, 246, 0.38),
-        0 6px 20px rgba(0, 0, 0, 0.28) !important;
-}
-
-html:has(.auth-marker) .stApp section.main .st-key-auth_card [data-testid="stForm"] [data-testid="stFormSubmitButton"] button:active,
-html:has(.auth-marker) .stApp section.main .st-key-auth_card [data-testid="stFormSubmitButton"] button:active,
-html:has(.auth-marker) .stApp section.main .st-key-auth_card .stButton > button[kind="primary"]:active,
-html:has(.auth-marker) .stApp section.main .st-key-auth_card button[data-testid="baseButton-primary"]:active,
-html:has(.auth-marker) .stApp section.main .st-key-auth_card button[data-testid="stBaseButton-primary"]:active {
-    transform: translateY(0) !important;
-}
-
-html:has(.auth-marker) .stApp section.main .st-key-auth_card [data-testid="stForm"] [data-testid="stFormSubmitButton"] button:disabled,
-html:has(.auth-marker) .stApp section.main .st-key-auth_card [data-testid="stFormSubmitButton"] button:disabled,
-html:has(.auth-marker) .stApp section.main .st-key-auth_card .stButton > button[kind="primary"]:disabled,
-html:has(.auth-marker) .stApp section.main .st-key-auth_card button[data-testid="baseButton-primary"]:disabled,
-html:has(.auth-marker) .stApp section.main .st-key-auth_card button[data-testid="stBaseButton-primary"]:disabled {
-    opacity: 0.45 !important;
-    background: rgba(255, 255, 255, 0.04) !important;
-    background-image: none !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    color: rgba(255, 255, 255, 0.55) !important;
-    box-shadow: none !important;
-    transform: none !important;
-    cursor: not-allowed !important;
-}
-
-html:has(.auth-marker) .stApp section.main .st-key-auth_card [data-testid="stForm"] [data-testid="stFormSubmitButton"] button p,
-html:has(.auth-marker) .stApp section.main .st-key-auth_card [data-testid="stFormSubmitButton"] button p,
-html:has(.auth-marker) .stApp section.main .st-key-auth_card .stButton > button[kind="primary"] p,
-html:has(.auth-marker) .stApp section.main .st-key-auth_card button[data-testid="baseButton-primary"] p,
-html:has(.auth-marker) .stApp section.main .st-key-auth_card button[data-testid="stBaseButton-primary"] p {
-    color: #fafafa !important;
-    font-size: 14px !important;
-    font-weight: 600 !important;
-}
-
-html:has(.auth-marker) .stApp section.main .st-key-auth_card [data-testid="stForm"] [data-testid="stFormSubmitButton"] button:disabled p,
-html:has(.auth-marker) .stApp section.main .st-key-auth_card [data-testid="stFormSubmitButton"] button:disabled p,
-html:has(.auth-marker) .stApp section.main .st-key-auth_card button[data-testid="baseButton-primary"]:disabled p,
-html:has(.auth-marker) .stApp section.main .st-key-auth_card button[data-testid="stBaseButton-primary"]:disabled p {
-    color: rgba(255, 255, 255, 0.55) !important;
-}
-
 /* Secondary / fallback buttons — excludes password-eye tertiary toggles */
 html:has(.auth-marker) .stApp section.main .st-key-auth_card .stButton > button:not([kind="primary"]),
 html:has(.auth-marker) .stApp section.main .st-key-auth_card .stButton > button[kind="secondary"],
@@ -582,171 +421,6 @@ html:has(.auth-marker) .stApp section.main .st-key-auth_card button[data-testid=
         inset 0 1px 0 rgba(255, 255, 255, 0.08),
         0 0 14px rgba(139, 92, 246, 0.28) !important;
     transform: translateY(-1px) !important;
-}
-
-/* Beat app_shell MAIN_BUTTON_CSS + Streamlit primary theme (max specificity, last in cascade) */
-html:has(.auth-marker) .stApp:not(:has(.mb-dash)):not(:has(.img-studio)):not(:has(.mb-workspace)):not(:has(.mb-home)) section.main .st-key-auth_seg_wrap [data-testid="stSegmentedControl"],
-.stApp:has(.auth-marker):not(:has(.mb-dash)):not(:has(.img-studio)):not(:has(.mb-workspace)):not(:has(.mb-home)) section.main .st-key-auth_seg_wrap [data-testid="stSegmentedControl"] {
-    display: flex !important;
-    width: 100% !important;
-    background: rgba(255, 255, 255, 0.06) !important;
-    background-color: rgba(255, 255, 255, 0.06) !important;
-    background-image: none !important;
-    border: 1px solid var(--auth-glass-border) !important;
-    border-radius: 12px !important;
-    padding: 4px !important;
-    gap: 4px !important;
-    backdrop-filter: blur(16px) !important;
-    -webkit-backdrop-filter: blur(16px) !important;
-    box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.08),
-        0 4px 24px rgba(0, 0, 0, 0.18) !important;
-}
-
-html:has(.auth-marker) .stApp:not(:has(.mb-dash)):not(:has(.img-studio)):not(:has(.mb-workspace)):not(:has(.mb-home)) section.main .st-key-auth_seg_wrap [data-testid="stSegmentedControl"] button,
-html:has(.auth-marker) .stApp:not(:has(.mb-dash)):not(:has(.img-studio)):not(:has(.mb-workspace)):not(:has(.mb-home)) section.main .st-key-auth_mode_seg [data-testid="stSegmentedControl"] button,
-.stApp:has(.auth-marker):not(:has(.mb-dash)):not(:has(.img-studio)):not(:has(.mb-workspace)):not(:has(.mb-home)) section.main .st-key-auth_seg_wrap [data-testid="stSegmentedControl"] button,
-.stApp:has(.auth-marker):not(:has(.mb-dash)):not(:has(.img-studio)):not(:has(.mb-workspace)):not(:has(.mb-home)) section.main .st-key-auth_mode_seg [data-testid="stSegmentedControl"] button {
-    flex: 1 !important;
-    min-height: 38px !important;
-    height: 38px !important;
-    border: 1px solid rgba(255, 255, 255, 0.12) !important;
-    border-radius: 8px !important;
-    font-size: 13px !important;
-    font-weight: 600 !important;
-    color: var(--auth-muted) !important;
-    background: rgba(255, 255, 255, 0.05) !important;
-    background-color: rgba(255, 255, 255, 0.05) !important;
-    background-image: none !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
-    backdrop-filter: blur(16px) !important;
-    -webkit-backdrop-filter: blur(16px) !important;
-    transform: none !important;
-}
-
-/* Tab: Anmelden (login) — inactive */
-html:has(.auth-marker) .stApp section.main .st-key-auth_seg_wrap [data-testid="stSegmentedControl"] button:first-child:not([aria-selected="true"]),
-html:has(.auth-marker) .stApp section.main .st-key-auth_mode_seg [data-testid="stSegmentedControl"] button:first-child:not([aria-selected="true"]),
-.stApp:has(.auth-marker) section.main .st-key-auth_seg_wrap [data-testid="stSegmentedControl"] button:first-child:not([aria-selected="true"]) {
-    background: rgba(255, 255, 255, 0.05) !important;
-    background-color: rgba(255, 255, 255, 0.05) !important;
-    border-color: rgba(255, 255, 255, 0.12) !important;
-}
-
-/* Tab: Registrieren — inactive */
-html:has(.auth-marker) .stApp section.main .st-key-auth_seg_wrap [data-testid="stSegmentedControl"] button:last-child:not([aria-selected="true"]),
-html:has(.auth-marker) .stApp section.main .st-key-auth_mode_seg [data-testid="stSegmentedControl"] button:last-child:not([aria-selected="true"]),
-.stApp:has(.auth-marker) section.main .st-key-auth_seg_wrap [data-testid="stSegmentedControl"] button:last-child:not([aria-selected="true"]) {
-    background: rgba(255, 255, 255, 0.05) !important;
-    background-color: rgba(255, 255, 255, 0.05) !important;
-    border-color: rgba(255, 255, 255, 0.12) !important;
-}
-
-html:has(.auth-marker) .stApp:not(:has(.mb-dash)):not(:has(.img-studio)):not(:has(.mb-workspace)):not(:has(.mb-home)) section.main .st-key-auth_seg_wrap [data-testid="stSegmentedControl"] button:hover:not([aria-selected="true"]),
-.stApp:has(.auth-marker):not(:has(.mb-dash)):not(:has(.img-studio)):not(:has(.mb-workspace)):not(:has(.mb-home)) section.main .st-key-auth_seg_wrap [data-testid="stSegmentedControl"] button:hover:not([aria-selected="true"]) {
-    background: rgba(255, 255, 255, 0.08) !important;
-    background-color: rgba(255, 255, 255, 0.08) !important;
-    background-image: none !important;
-    border-color: rgba(255, 255, 255, 0.2) !important;
-    color: var(--auth-text) !important;
-    box-shadow: 0 0 12px rgba(139, 92, 246, 0.16) !important;
-    transform: none !important;
-}
-
-/* Tab: active (Anmelden or Registrieren) */
-html:has(.auth-marker) .stApp:not(:has(.mb-dash)):not(:has(.img-studio)):not(:has(.mb-workspace)):not(:has(.mb-home)) section.main .st-key-auth_seg_wrap [data-testid="stSegmentedControl"] button[aria-selected="true"],
-html:has(.auth-marker) .stApp:not(:has(.mb-dash)):not(:has(.img-studio)):not(:has(.mb-workspace)):not(:has(.mb-home)) section.main .st-key-auth_mode_seg [data-testid="stSegmentedControl"] button[aria-selected="true"],
-.stApp:has(.auth-marker):not(:has(.mb-dash)):not(:has(.img-studio)):not(:has(.mb-workspace)):not(:has(.mb-home)) section.main .st-key-auth_seg_wrap [data-testid="stSegmentedControl"] button[aria-selected="true"],
-.stApp:has(.auth-marker):not(:has(.mb-dash)):not(:has(.img-studio)):not(:has(.mb-workspace)):not(:has(.mb-home)) section.main .st-key-auth_mode_seg [data-testid="stSegmentedControl"] button[aria-selected="true"] {
-    background: rgba(139, 92, 246, 0.18) !important;
-    background-color: rgba(139, 92, 246, 0.18) !important;
-    background-image: none !important;
-    border-color: rgba(139, 92, 246, 0.45) !important;
-    color: var(--auth-text) !important;
-    box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.1),
-        0 0 16px rgba(139, 92, 246, 0.28),
-        0 0 0 1px rgba(139, 92, 246, 0.22) !important;
-    transform: none !important;
-}
-
-/* Submit: login + register — glass gradient border (Early-Access pill style) */
-html:has(.auth-marker) .stApp:not(:has(.mb-dash)):not(:has(.img-studio)):not(:has(.mb-workspace)):not(:has(.mb-home)) section.main .st-key-auth_card [data-testid="stFormSubmitButton"] button,
-html:has(.auth-marker) .stApp:not(:has(.mb-dash)):not(:has(.img-studio)):not(:has(.mb-workspace)):not(:has(.mb-home)) section.main .st-key-auth_card .st-key-auth_login_form [data-testid="stFormSubmitButton"] button,
-html:has(.auth-marker) .stApp:not(:has(.mb-dash)):not(:has(.img-studio)):not(:has(.mb-workspace)):not(:has(.mb-home)) section.main .st-key-auth_card .st-key-auth_register_form [data-testid="stFormSubmitButton"] button,
-html:has(.auth-marker) .stApp:not(:has(.mb-dash)):not(:has(.img-studio)):not(:has(.mb-workspace)):not(:has(.mb-home)) section.main .st-key-auth_card button[kind="primary"],
-html:has(.auth-marker) .stApp:not(:has(.mb-dash)):not(:has(.img-studio)):not(:has(.mb-workspace)):not(:has(.mb-home)) section.main .st-key-auth_card button[data-testid="stBaseButton-primary"],
-.stApp:has(.auth-marker):not(:has(.mb-dash)):not(:has(.img-studio)):not(:has(.mb-workspace)):not(:has(.mb-home)) section.main .st-key-auth_card [data-testid="stFormSubmitButton"] button,
-.stApp:has(.auth-marker):not(:has(.mb-dash)):not(:has(.img-studio)):not(:has(.mb-workspace)):not(:has(.mb-home)) section.main .st-key-auth_card .st-key-auth_login_form [data-testid="stFormSubmitButton"] button,
-.stApp:has(.auth-marker):not(:has(.mb-dash)):not(:has(.img-studio)):not(:has(.mb-workspace)):not(:has(.mb-home)) section.main .st-key-auth_card .st-key-auth_register_form [data-testid="stFormSubmitButton"] button,
-.stApp:has(.auth-marker):not(:has(.mb-dash)):not(:has(.img-studio)):not(:has(.mb-workspace)):not(:has(.mb-home)) section.main .st-key-auth_card button[kind="primary"],
-.stApp:has(.auth-marker):not(:has(.mb-dash)):not(:has(.img-studio)):not(:has(.mb-workspace)):not(:has(.mb-home)) section.main .st-key-auth_card button[data-testid="stBaseButton-primary"] {
-    border: 1px solid transparent !important;
-    background:
-        linear-gradient(rgba(139, 92, 246, 0.14), rgba(99, 102, 241, 0.1)) padding-box,
-        linear-gradient(90deg, rgba(139, 92, 246, 0.75), rgba(99, 102, 241, 0.75)) border-box !important;
-    background-color: transparent !important;
-    color: #fafafa !important;
-    backdrop-filter: blur(16px) !important;
-    -webkit-backdrop-filter: blur(16px) !important;
-    box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.12),
-        0 0 18px rgba(139, 92, 246, 0.2),
-        0 4px 16px rgba(0, 0, 0, 0.22) !important;
-    transform: none !important;
-}
-
-html:has(.auth-marker) .stApp:not(:has(.mb-dash)):not(:has(.img-studio)):not(:has(.mb-workspace)):not(:has(.mb-home)) section.main .st-key-auth_card [data-testid="stFormSubmitButton"] button:hover,
-html:has(.auth-marker) .stApp:not(:has(.mb-dash)):not(:has(.img-studio)):not(:has(.mb-workspace)):not(:has(.mb-home)) section.main .st-key-auth_card .st-key-auth_login_form [data-testid="stFormSubmitButton"] button:hover,
-html:has(.auth-marker) .stApp:not(:has(.mb-dash)):not(:has(.img-studio)):not(:has(.mb-workspace)):not(:has(.mb-home)) section.main .st-key-auth_card .st-key-auth_register_form [data-testid="stFormSubmitButton"] button:hover,
-html:has(.auth-marker) .stApp:not(:has(.mb-dash)):not(:has(.img-studio)):not(:has(.mb-workspace)):not(:has(.mb-home)) section.main .st-key-auth_card button[kind="primary"]:hover,
-html:has(.auth-marker) .stApp:not(:has(.mb-dash)):not(:has(.img-studio)):not(:has(.mb-workspace)):not(:has(.mb-home)) section.main .st-key-auth_card button[data-testid="stBaseButton-primary"]:hover,
-.stApp:has(.auth-marker):not(:has(.mb-dash)):not(:has(.img-studio)):not(:has(.mb-workspace)):not(:has(.mb-home)) section.main .st-key-auth_card [data-testid="stFormSubmitButton"] button:hover,
-.stApp:has(.auth-marker):not(:has(.mb-dash)):not(:has(.img-studio)):not(:has(.mb-workspace)):not(:has(.mb-home)) section.main .st-key-auth_card .st-key-auth_login_form [data-testid="stFormSubmitButton"] button:hover,
-.stApp:has(.auth-marker):not(:has(.mb-dash)):not(:has(.img-studio)):not(:has(.mb-workspace)):not(:has(.mb-home)) section.main .st-key-auth_card .st-key-auth_register_form [data-testid="stFormSubmitButton"] button:hover,
-.stApp:has(.auth-marker):not(:has(.mb-dash)):not(:has(.img-studio)):not(:has(.mb-workspace)):not(:has(.mb-home)) section.main .st-key-auth_card button[kind="primary"]:hover,
-.stApp:has(.auth-marker):not(:has(.mb-dash)):not(:has(.img-studio)):not(:has(.mb-workspace)):not(:has(.mb-home)) section.main .st-key-auth_card button[data-testid="stBaseButton-primary"]:hover {
-    background:
-        linear-gradient(rgba(139, 92, 246, 0.24), rgba(99, 102, 241, 0.16)) padding-box,
-        linear-gradient(90deg, rgba(167, 139, 250, 0.85), rgba(129, 140, 248, 0.85)) border-box !important;
-    background-color: transparent !important;
-    border-color: transparent !important;
-    color: #fafafa !important;
-    transform: translateY(-1px) !important;
-    box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.16),
-        0 0 32px rgba(139, 92, 246, 0.38),
-        0 6px 20px rgba(0, 0, 0, 0.28) !important;
-}
-
-.stApp:has(.auth-marker):not(:has(.mb-dash)):not(:has(.img-studio)):not(:has(.mb-workspace)):not(:has(.mb-home)) section.main .st-key-auth_card .stButton > button:not([kind="primary"]),
-.stApp:has(.auth-marker):not(:has(.mb-dash)):not(:has(.img-studio)):not(:has(.mb-workspace)):not(:has(.mb-home)) section.main .st-key-auth_card button[data-testid="stBaseButton-secondary"],
-html:has(.auth-marker) .stApp:not(:has(.mb-dash)):not(:has(.img-studio)):not(:has(.mb-workspace)):not(:has(.mb-home)) section.main .st-key-auth_card .stButton > button:not([kind="primary"]),
-html:has(.auth-marker) .stApp:not(:has(.mb-dash)):not(:has(.img-studio)):not(:has(.mb-workspace)):not(:has(.mb-home)) section.main .st-key-auth_card button[data-testid="stBaseButton-secondary"] {
-    background: var(--auth-glass-bg) !important;
-    background-image: none !important;
-    background-color: transparent !important;
-    border: 1px solid var(--auth-glass-border) !important;
-    backdrop-filter: var(--auth-glass-blur) !important;
-    -webkit-backdrop-filter: var(--auth-glass-blur) !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
-}
-
-.stApp:has(.auth-marker):not(:has(.mb-dash)):not(:has(.img-studio)):not(:has(.mb-workspace)):not(:has(.mb-home)) section.main .st-key-auth_card [data-testid="stTextInput"] button[data-testid="stBaseButton-tertiary"],
-html:has(.auth-marker) .stApp:not(:has(.mb-dash)):not(:has(.img-studio)):not(:has(.mb-workspace)):not(:has(.mb-home)) section.main .st-key-auth_card [data-testid="stTextInput"] button[data-testid="stBaseButton-tertiary"] {
-    width: 32px !important;
-    height: 32px !important;
-    min-height: 32px !important;
-    max-height: 32px !important;
-    border-radius: 999px !important;
-    background: var(--auth-glass-bg) !important;
-    background-image: none !important;
-    background-color: transparent !important;
-    border: 1px solid rgba(255, 255, 255, 0.14) !important;
-    backdrop-filter: var(--auth-glass-blur) !important;
-    -webkit-backdrop-filter: var(--auth-glass-blur) !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
-    transform: none !important;
 }
 
 html:has(.auth-marker) .st-key-auth_card [data-testid="stAlert"] {
@@ -779,7 +453,7 @@ html:has(.auth-marker) .stApp {
 html:has(.auth-marker) .st-key-auth_card,
 html:has(.auth-marker) .st-key-auth_card [data-testid="stForm"],
 html:has(.auth-marker) .st-key-auth_card [data-testid="stFormSubmitButton"] {
-    --primary-color: rgba(139, 92, 246, 0.18) !important;
+    --primary-color: transparent !important;
 }
 
 @media (max-width: 640px) {
@@ -807,47 +481,213 @@ html:has(.auth-marker) .st-key-auth_card [data-testid="stFormSubmitButton"] {
 }
 """
 
-# Injected last — wins over Streamlit theme primary (#7c3aed) and any earlier auth rules.
-_AUTH_GLASS_FINAL = """
-html:has(.auth-marker) .st-key-auth_card [data-testid="stSegmentedControl"] button {
+# Injected last in render_auth() — wins over Streamlit primary theme + app_shell.
+_AUTH_SCOPE = (
+    ".stApp:has(.auth-marker):not(:has(.mb-dash)):not(:has(.img-studio))"
+    ":not(:has(.mb-workspace)):not(:has(.mb-home)) section.main"
+)
+_AUTH_SEG = (
+    f"html:has(.auth-marker) {_AUTH_SCOPE} .st-key-auth_seg_wrap [data-testid='stSegmentedControl'], "
+    f"html:has(.auth-marker) {_AUTH_SCOPE} .st-key-auth_mode_seg [data-testid='stSegmentedControl'], "
+    f"{_AUTH_SCOPE} .st-key-auth_seg_wrap [data-testid='stSegmentedControl']"
+)
+_AUTH_SEG_BTN = (
+    f"html:has(.auth-marker) {_AUTH_SCOPE} .st-key-auth_seg_wrap [data-testid='stSegmentedControl'] button, "
+    f"html:has(.auth-marker) {_AUTH_SCOPE} .st-key-auth_mode_seg [data-testid='stSegmentedControl'] button, "
+    f"{_AUTH_SCOPE} .st-key-auth_seg_wrap [data-testid='stSegmentedControl'] button, "
+    f"{_AUTH_SCOPE} .st-key-auth_mode_seg [data-testid='stSegmentedControl'] button"
+)
+_AUTH_SUBMIT_BTN = (
+    f"html:has(.auth-marker) {_AUTH_SCOPE} .st-key-auth_card [data-testid='stFormSubmitButton'] button, "
+    f"html:has(.auth-marker) {_AUTH_SCOPE} .st-key-auth_card .st-key-auth_login_form [data-testid='stFormSubmitButton'] button, "
+    f"html:has(.auth-marker) {_AUTH_SCOPE} .st-key-auth_card .st-key-auth_register_form [data-testid='stFormSubmitButton'] button, "
+    f"html:has(.auth-marker) {_AUTH_SCOPE} .st-key-auth_card button[kind='primary'], "
+    f"html:has(.auth-marker) {_AUTH_SCOPE} .st-key-auth_card button[data-testid='stBaseButton-primary'], "
+    f"{_AUTH_SCOPE} .st-key-auth_card [data-testid='stFormSubmitButton'] button, "
+    f"{_AUTH_SCOPE} .st-key-auth_card .st-key-auth_login_form [data-testid='stFormSubmitButton'] button, "
+    f"{_AUTH_SCOPE} .st-key-auth_card .st-key-auth_register_form [data-testid='stFormSubmitButton'] button, "
+    f"{_AUTH_SCOPE} .st-key-auth_card button[kind='primary'], "
+    f"{_AUTH_SCOPE} .st-key-auth_card button[data-testid='stBaseButton-primary']"
+)
+
+_AUTH_BUTTONS_FINAL = f"""
+/* _AUTH_BUTTONS_FINAL — tabs + submit glass (Early-Access pill language) */
+html:has(.auth-marker) .st-key-auth_card,
+html:has(.auth-marker) .st-key-auth_card [data-testid="stForm"],
+html:has(.auth-marker) .st-key-auth_card [data-testid="stFormSubmitButton"] {{
+    --primary-color: transparent !important;
+}}
+
+/* Segmented control — frosted glass tray, full card width */
+{_AUTH_SEG} {{
+    display: flex !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    background: var(--auth-glass-tray) !important;
+    background-color: var(--auth-glass-tray) !important;
+    background-image: none !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-radius: 12px !important;
+    padding: 4px !important;
+    gap: 4px !important;
     backdrop-filter: blur(16px) !important;
     -webkit-backdrop-filter: blur(16px) !important;
-}
-
-html:has(.auth-marker) .st-key-auth_card [data-testid="stSegmentedControl"] button:not([aria-selected="true"]) {
-    background: rgba(255, 255, 255, 0.05) !important;
-    background-color: rgba(255, 255, 255, 0.05) !important;
-    background-image: none !important;
-    border: 1px solid rgba(255, 255, 255, 0.12) !important;
-}
-
-html:has(.auth-marker) .st-key-auth_card [data-testid="stSegmentedControl"] button[aria-selected="true"] {
-    background: rgba(139, 92, 246, 0.18) !important;
-    background-color: rgba(139, 92, 246, 0.18) !important;
-    background-image: none !important;
-    border: 1px solid rgba(139, 92, 246, 0.45) !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.1),
-        0 0 16px rgba(139, 92, 246, 0.28),
-        0 0 0 1px rgba(139, 92, 246, 0.22) !important;
-}
+        inset 0 1px 0 rgba(255, 255, 255, 0.06),
+        0 4px 20px rgba(0, 0, 0, 0.2) !important;
+}}
 
-html:has(.auth-marker) .st-key-auth_card [data-testid="stFormSubmitButton"] button,
-html:has(.auth-marker) .st-key-auth_card .st-key-auth_login_form [data-testid="stFormSubmitButton"] button,
-html:has(.auth-marker) .st-key-auth_card .st-key-auth_register_form [data-testid="stFormSubmitButton"] button,
-html:has(.auth-marker) .st-key-auth_card button[kind="primary"],
-html:has(.auth-marker) .st-key-auth_card button[data-testid="stBaseButton-primary"] {
-    background:
-        linear-gradient(rgba(139, 92, 246, 0.14), rgba(99, 102, 241, 0.1)) padding-box,
-        linear-gradient(90deg, rgba(139, 92, 246, 0.75), rgba(99, 102, 241, 0.75)) border-box !important;
-    background-color: transparent !important;
+{_AUTH_SEG_BTN} {{
+    flex: 1 1 50% !important;
+    width: 50% !important;
+    min-height: var(--auth-seg-btn-h) !important;
+    height: var(--auth-seg-btn-h) !important;
+    margin: 0 !important;
+    padding: 0 12px !important;
     border: 1px solid transparent !important;
+    outline: none !important;
+    border-radius: 8px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    line-height: 1 !important;
+    color: var(--auth-glass-inactive-text) !important;
+    background: var(--auth-glass-bg) !important;
+    background-color: var(--auth-glass-bg) !important;
+    background-image: none !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    transform: none !important;
+    transition:
+        background 0.18s ease,
+        color 0.18s ease,
+        box-shadow 0.18s ease,
+        border-color 0.18s ease !important;
+}}
+
+{_AUTH_SEG_BTN}:hover:not([aria-selected="true"]) {{
+    background: rgba(255, 255, 255, 0.09) !important;
+    background-color: rgba(255, 255, 255, 0.09) !important;
+    background-image: none !important;
+    color: var(--auth-text) !important;
+    border-color: rgba(255, 255, 255, 0.14) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.08),
+        0 0 14px rgba(139, 92, 246, 0.18) !important;
+    transform: none !important;
+}}
+
+{_AUTH_SEG_BTN}:focus,
+{_AUTH_SEG_BTN}:focus-visible {{
+    outline: none !important;
+}}
+
+{_AUTH_SEG_BTN}[aria-selected="true"] {{
+    border: 1px solid transparent !important;
+    color: var(--auth-text) !important;
+    background:
+        linear-gradient(var(--auth-glass-active-fill), var(--auth-glass-active-fill)) padding-box,
+        var(--auth-glass-border-grad) border-box !important;
+    background-color: transparent !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.12),
+        0 0 22px rgba(139, 92, 246, 0.22) !important;
+    transform: none !important;
+}}
+
+html:has(.auth-marker) {_AUTH_SCOPE} .st-key-auth_card [data-testid="stFormSubmitButton"] {{
+    margin-top: var(--s1) !important;
+    width: 100% !important;
+}}
+
+html:has(.auth-marker) {_AUTH_SCOPE} .st-key-auth_card [data-testid="stFormSubmitButton"] > div {{
+    width: 100% !important;
+}}
+
+{_AUTH_SUBMIT_BTN} {{
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    width: 100% !important;
+    min-height: var(--auth-submit-h) !important;
+    height: auto !important;
+    padding: 12px 20px !important;
+    border: 1px solid transparent !important;
+    border-radius: 12px !important;
+    background:
+        var(--auth-glass-submit-fill) padding-box,
+        var(--auth-glass-border-grad) border-box !important;
+    background-color: transparent !important;
+    color: var(--auth-text) !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.01em !important;
     backdrop-filter: blur(16px) !important;
     -webkit-backdrop-filter: blur(16px) !important;
     box-shadow:
         inset 0 1px 0 rgba(255, 255, 255, 0.12),
-        0 0 18px rgba(139, 92, 246, 0.2) !important;
-}
+        0 0 22px rgba(139, 92, 246, 0.18),
+        0 4px 16px rgba(0, 0, 0, 0.2) !important;
+    transform: none !important;
+    transition:
+        background 0.18s ease,
+        box-shadow 0.18s ease,
+        transform 0.12s ease !important;
+}}
+
+{_AUTH_SUBMIT_BTN}::after {{
+    content: "›" !important;
+    font-size: 18px !important;
+    line-height: 1 !important;
+    opacity: 0.88 !important;
+    transform: translateY(-1px) !important;
+}}
+
+{_AUTH_SUBMIT_BTN}:hover {{
+    background:
+        linear-gradient(rgba(139, 92, 246, 0.24), rgba(99, 102, 241, 0.16)) padding-box,
+        linear-gradient(90deg, rgba(167, 139, 250, 0.85), rgba(129, 140, 248, 0.85)) border-box !important;
+    background-color: transparent !important;
+    border-color: transparent !important;
+    color: var(--auth-text) !important;
+    transform: translateY(-1px) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.16),
+        0 0 32px rgba(139, 92, 246, 0.38),
+        0 6px 20px rgba(0, 0, 0, 0.26) !important;
+}}
+
+{_AUTH_SUBMIT_BTN}:active {{
+    transform: translateY(0) !important;
+}}
+
+{_AUTH_SUBMIT_BTN}:disabled {{
+    opacity: 0.45 !important;
+    background: rgba(255, 255, 255, 0.04) !important;
+    background-image: none !important;
+    background-color: rgba(255, 255, 255, 0.04) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    color: rgba(255, 255, 255, 0.55) !important;
+    box-shadow: none !important;
+    transform: none !important;
+    cursor: not-allowed !important;
+}}
+
+{_AUTH_SUBMIT_BTN}:disabled::after {{
+    opacity: 0.35 !important;
+}}
+
+{_AUTH_SUBMIT_BTN} p {{
+    margin: 0 !important;
+    color: var(--auth-text) !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+}}
+
+{_AUTH_SUBMIT_BTN}:disabled p {{
+    color: rgba(255, 255, 255, 0.55) !important;
+}}
 """
 
 
@@ -1121,6 +961,4 @@ def render_auth() -> None:
             unsafe_allow_html=True,
         )
 
-    # Re-inject after widgets so auth glass wins over Streamlit primary-button theme.
-    inject_css(_AUTH_CSS)
-    inject_css(_AUTH_GLASS_FINAL)
+    inject_css(_AUTH_BUTTONS_FINAL)
