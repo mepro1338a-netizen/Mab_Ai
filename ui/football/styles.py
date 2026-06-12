@@ -54,17 +54,34 @@ FOOTBALL_CSS = """
 
 .fb2-panel {
   padding: 16px 18px 14px; margin-bottom: 20px;
-  border-radius: 12px; border: 1px solid rgba(255,255,255,.08);
-  background: rgba(9,9,11,.42);
-  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-  box-shadow: 0 4px 24px rgba(0,0,0,.18);
+  border-radius: 14px; border: 1px solid rgba(255,255,255,.1);
+  background: linear-gradient(155deg, rgba(15,15,20,.72), rgba(9,9,11,.55));
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 4px 28px rgba(0,0,0,.22), inset 0 1px 0 rgba(255,255,255,.04);
+}
+.fb2-panel-head {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px;
+  margin-bottom: 14px; padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.fb2-panel-title {
+  font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase;
+  color: #a78bfa;
+}
+.fb2-panel-sub {
+  font-size: 12px; color: #71717a; font-weight: 500; line-height: 1.4;
+}
+.fb2-panel-warn {
+  margin: 10px 0 0; padding: 8px 12px; border-radius: 8px;
+  font-size: 12px; color: #fca5a5; line-height: 1.45;
+  background: rgba(239,68,68,.08); border: 1px solid rgba(239,68,68,.22);
 }
 .fb2-panel [data-testid="column"] { min-width: 0; }
 .fb2-panel .stSelectbox { margin-bottom: 0 !important; }
 .fb2-panel .stSelectbox label {
-  font-size: 10px !important; font-weight: 700 !important;
-  letter-spacing: .08em !important; text-transform: uppercase !important;
-  color: #71717a !important; margin-bottom: 6px !important;
+  font-size: 11px !important; font-weight: 700 !important;
+  letter-spacing: .04em !important; text-transform: none !important;
+  color: #a1a1aa !important; margin-bottom: 6px !important;
 }
 .fb2-panel [data-baseweb="select"] > div {
   min-height: 40px !important;

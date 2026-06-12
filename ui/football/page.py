@@ -146,12 +146,22 @@ def _render_filter_panel() -> tuple[str, str, int]:
 
     st.markdown('<div class="fb2-panel">', unsafe_allow_html=True)
 
+    st.markdown(
+        """
+<div class="fb2-panel-head">
+  <span class="fb2-panel-title">Spiel-Filter</span>
+  <span class="fb2-panel-sub">Zeitraum, Wettbewerb und Liga für KI-Analyse</span>
+</div>
+        """,
+        unsafe_allow_html=True,
+    )
+
     col_time, col_cat, col_league = st.columns(3, gap="medium")
 
     with col_time:
         time_choice = _sync_selectbox(
             "fb_time_sel",
-            "Zeitraum",
+            "⏱️ Zeitraum",
             _time_labels(),
             _label_for_time(time_key),
         )
@@ -164,7 +174,7 @@ def _render_filter_panel() -> tuple[str, str, int]:
     with col_cat:
         cat_choice = _sync_selectbox(
             "fb_category_sel",
-            "Wettbewerb",
+            "🏆 Wettbewerb",
             _category_labels(),
             _label_for_category(competition),
         )
@@ -186,7 +196,7 @@ def _render_filter_panel() -> tuple[str, str, int]:
     with col_league:
         league_label = _sync_selectbox(
             f"fb_league_sel_{competition}",
-            "Liga / Turnier",
+            "🏟️ Liga & Turnier",
             labels,
             labels[ids.index(league_id)],
         )
@@ -197,7 +207,13 @@ def _render_filter_panel() -> tuple[str, str, int]:
         _clear_feed()
 
     available = available_league_options(competition)
-    if len(available) < len(options):
+    if league_id and not league_has_free_tier_data(league_id):
+        st.markdown(
+            '<p class="fb2-panel-warn">🔒 Premium-Wettbewerb — '
+            "im Free-Tier keine Live-Daten. Bitte eine Liga mit ✓ wählen.</p>",
+            unsafe_allow_html=True,
+        )
+    elif len(available) < len(options):
         st.caption(PREMIUM_LEAGUE_HINT)
 
     st.markdown("</div>", unsafe_allow_html=True)
