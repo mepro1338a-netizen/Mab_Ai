@@ -79,7 +79,7 @@ def is_admin(user: dict) -> bool:
     role = user.get("role", "user")
     admin_level = int(user.get("admin_level", 0) or 0)
 
-    return role in ["admin", "owner"] or admin_level >= 1
+    return role in ("supporter", "moderator", "admin", "owner") or admin_level >= 1
 
 
 def is_owner(user: dict) -> bool:

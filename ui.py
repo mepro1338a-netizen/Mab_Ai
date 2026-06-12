@@ -27,6 +27,7 @@ from pages.automation_lab import render_automation_lab
 from pages.premium import render_premium
 
 from pages.account import render_dashboard
+from pages.admin import render_admin
 
 
 def render_football() -> None:
@@ -329,12 +330,19 @@ PAGE_HANDLERS = {
     "video": ("Video", lambda: render_media("video")),
     "dashboard": ("Profile", render_dashboard),
     "premium": ("Premium", render_premium),
+    "admin": ("Admin Panel", render_admin),
 }
 
 if page == "auth" and st.session_state.get("logged_in"):
     st.session_state.page = st.session_state.pop("post_login_page", None) or "home"
     st.rerun()
 elif page in PAGE_HANDLERS:
+    if page == "admin":
+        from services.session_auth import server_is_supporter
+
+        if not server_is_supporter():
+            st.session_state.page = "home"
+            st.rerun()
     label, handler = PAGE_HANDLERS[page]
     render_slogan_header()
     safe_render(label, handler)

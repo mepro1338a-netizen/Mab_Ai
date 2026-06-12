@@ -3,6 +3,7 @@ import sys
 
 from db.core import *  # noqa: F403
 from db.users import *  # noqa: F403  # includes secure_set_football_plan, register_account
+from db.support import *  # noqa: F403
 from db.video_engine import *  # noqa: F403
 from db.app import *  # noqa: F403
 

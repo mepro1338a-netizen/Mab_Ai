@@ -5,9 +5,10 @@ from __future__ import annotations
 
 import streamlit as st
 
-from ui.sidebar import LEGACY_PAGE_ALIASES, VALID_NAV_PAGES, navigate_to
+from ui.sidebar import LEGACY_PAGE_ALIASES, STAFF_NAV_PAGE, VALID_NAV_PAGES, navigate_to
+from services.session_auth import server_is_supporter
 
-_VALID_NAV = VALID_NAV_PAGES
+_VALID_NAV = VALID_NAV_PAGES | frozenset({STAFF_NAV_PAGE})
 
 
 def _qp_first(value) -> str:
@@ -35,6 +36,9 @@ def apply_nav_from_query() -> None:
         return
     target = LEGACY_PAGE_ALIASES.get(raw, raw)
     if target not in _VALID_NAV:
+        _clear_query_key("nav")
+        return
+    if target == STAFF_NAV_PAGE and not server_is_supporter():
         _clear_query_key("nav")
         return
     _clear_query_key("nav")

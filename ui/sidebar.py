@@ -50,9 +50,12 @@ NAV_HIGHLIGHT_ALIASES: dict[str, str] = {
     "social_oauth": "dashboard",
 }
 
+STAFF_NAV_PAGE = "admin"
+STAFF_NAV_ITEM = ("Admin", STAFF_NAV_PAGE)
+
 SIDEBAR_NAV_ITEMS = NAV_ITEMS
 VALID_NAV_PAGES = frozenset(p for _, p in NAV_ITEMS)
-ROUTE_PAGES = VALID_NAV_PAGES
+ROUTE_PAGES = VALID_NAV_PAGES | frozenset({STAFF_NAV_PAGE})
 
 _NAV_ICONS: dict[str, str] = {
     "home": ":material/grid_view:",
@@ -65,6 +68,7 @@ _NAV_ICONS: dict[str, str] = {
     "music": ":material/music_note:",
     "dashboard": ":material/person:",
     "premium": ":material/workspace_premium:",
+    "admin": ":material/admin_panel_settings:",
 }
 
 _LOGO = (
@@ -81,6 +85,8 @@ def navigate_to(page: str) -> None:
     target = LEGACY_PAGE_ALIASES.get(page, page)
     if target not in ROUTE_PAGES:
         return
+    if target == STAFF_NAV_PAGE and not _session_is_staff():
+        return
     if st.session_state.get("page") != target:
         st.session_state.page = target
         st.rerun()
@@ -89,7 +95,7 @@ def navigate_to(page: str) -> None:
 def _resolve_active(active_page: str | None) -> str:
     raw = (active_page or st.session_state.get("page") or "home").strip()
     page = LEGACY_PAGE_ALIASES.get(raw, raw)
-    if page in VALID_NAV_PAGES:
+    if page in ROUTE_PAGES:
         return page
     return NAV_HIGHLIGHT_ALIASES.get(page, "home")
 
@@ -309,6 +315,23 @@ def _render_nav(active: str) -> None:
             )
             if clicked and page != active:
                 navigate_to(page)
+    if _session_is_staff():
+        label, page = STAFF_NAV_ITEM
+        st.markdown(f'<p class="sb-sec">Team</p>', unsafe_allow_html=True)
+        clicked = st.button(
+            label,
+            key=_nav_key(page),
+            icon=_NAV_ICONS.get(page),
+            use_container_width=True,
+            type="tertiary",
+        )
+        if clicked and page != active:
+            navigate_to(page)
+
+
+def _session_is_staff() -> bool:
+    from services.session_auth import server_is_supporter
+    return server_is_supporter()
 
 
 def _session_is_admin() -> bool:
