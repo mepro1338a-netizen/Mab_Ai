@@ -8,7 +8,7 @@ from zoneinfo import ZoneInfo
 
 from core.config import get_settings
 from core.exceptions import AnalysisError
-from core.models import MatchAnalysisResponse, MatchData, RiskLevel, TeamFormResponse, TipResponse
+from core.models import MatchAnalysisResponse, MatchData, RiskLevel, TeamFormResponse, TipResponse, TipsTodayResponse
 from logger import log_info, log_warning
 from services.football_service import FootballAPIError, FootballService, get_football_service
 
@@ -118,7 +118,7 @@ def _venue_record(matches: list[dict[str, Any]], team_id: int, *, home: bool) ->
     return f"{wins}W-{draws}D-{losses}L"
 
 
-def calculate_form_score(team_last_matches: list[dict[str, Any]], team_id: int) -> float:
+def _form_score_from_matches(team_last_matches: list[dict[str, Any]], team_id: int) -> float:
     """Weighted form score 0–100 from last five finished matches."""
     if not team_last_matches:
         return 50.0
@@ -136,7 +136,20 @@ def calculate_form_score(team_last_matches: list[dict[str, Any]], team_id: int) 
     return round((total_pts / max_pts) * 100.0, 1)
 
 
-def calculate_confidence_score(features: dict[str, Any]) -> int:
+def calculate_form_score(
+    team_id: int,
+    team_last_matches: list[dict[str, Any]] | None = None,
+    *,
+    football_service: FootballService | None = None,
+) -> float:
+    """Form score 0–100 for a team (fetches recent matches when not supplied)."""
+    if team_last_matches is None:
+        svc = football_service or get_football_service()
+        team_last_matches = svc.get_recent_fixtures(team_id, last_count=5)
+    return _form_score_from_matches(team_last_matches, team_id)
+
+
+def _confidence_from_features(features: dict[str, Any]) -> int:
     """Combine form, ranking, goals, and home advantage into 0–100 confidence."""
     home_form = float(features.get("home_form") or 50.0)
     away_form = float(features.get("away_form") or 50.0)
@@ -164,7 +177,31 @@ def calculate_confidence_score(features: dict[str, Any]) -> int:
     return int(max(0, min(100, round(score))))
 
 
-def _risk_from_confidence(confidence: int) -> RiskLevel:
+def calculate_confidence_score(
+    home_score: float,
+    away_score: float,
+    *,
+    home_rank: int | None = None,
+    away_rank: int | None = None,
+    home_advantage_boost: float = 6.0,
+    goals_edge: float | None = None,
+) -> int:
+    """Confidence 0–100 from home/away form scores (optional rank and goals edge)."""
+    if goals_edge is None:
+        goals_edge = abs(home_score - away_score) * 0.08
+    return _confidence_from_features(
+        {
+            "home_form": home_score,
+            "away_form": away_score,
+            "home_rank": home_rank,
+            "away_rank": away_rank,
+            "home_advantage_boost": home_advantage_boost,
+            "goals_edge": goals_edge,
+        }
+    )
+
+
+def determine_risk_level(confidence: int) -> RiskLevel:
     if confidence >= 70:
         return RiskLevel.LOW
     if confidence >= 55:
@@ -195,8 +232,8 @@ def _build_factors(match_data: MatchData, home_form: float, away_form: float) ->
 
 def generate_tip(match_data: MatchData) -> TipResponse:
     """Produce winner prediction, confidence, risk, and suggested market."""
-    home_form = calculate_form_score(match_data.home_matches, match_data.home_team_id)
-    away_form = calculate_form_score(match_data.away_matches, match_data.away_team_id)
+    home_form = _form_score_from_matches(match_data.home_matches, match_data.home_team_id)
+    away_form = _form_score_from_matches(match_data.away_matches, match_data.away_team_id)
 
     home_rank = (match_data.home_standing or {}).get("rank")
     away_rank = (match_data.away_standing or {}).get("rank")
@@ -213,8 +250,8 @@ def generate_tip(match_data: MatchData) -> TipResponse:
         "home_advantage_boost": 6.0,
         "goals_edge": abs(home_gd - away_gd) * 0.8,
     }
-    confidence = calculate_confidence_score(features)
-    risk = _risk_from_confidence(confidence)
+    confidence = _confidence_from_features(features)
+    risk = determine_risk_level(confidence)
     factors = _build_factors(match_data, home_form, away_form)
 
     match_label = f"{match_data.home_name} vs {match_data.away_name}"
@@ -241,7 +278,7 @@ def generate_tip(match_data: MatchData) -> TipResponse:
         prediction = "Draw"
         suggested = "Draw or Double Chance"
         confidence = max(40, confidence - 8)
-        risk = _risk_from_confidence(confidence)
+        risk = determine_risk_level(confidence)
     elif form_delta > 0:
         prediction = f"{match_data.home_name} Win"
         suggested = f"{match_data.home_name} or Draw"
@@ -354,8 +391,8 @@ class FootballAIService:
         tip = generate_tip(bundle)
         result = MatchAnalysisResponse(
             **tip.model_dump(),
-            home_form_score=calculate_form_score(bundle.home_matches, home_team_id),
-            away_form_score=calculate_form_score(bundle.away_matches, away_team_id),
+            home_form_score=_form_score_from_matches(bundle.home_matches, home_team_id),
+            away_form_score=_form_score_from_matches(bundle.away_matches, away_team_id),
             home_rank=(bundle.home_standing or {}).get("rank"),
             away_rank=(bundle.away_standing or {}).get("rank"),
             league=bundle.league_name,
@@ -391,6 +428,12 @@ class FootballAIService:
 
         self._cache_set(cache_key, tips)
         return tips
+
+    def tips_for_today_response(self) -> TipsTodayResponse:
+        """Today's tips wrapped for the HTTP API."""
+        tips = self.tips_for_today()
+        today = datetime.now(_BERLIN_TZ).date().isoformat()
+        return TipsTodayResponse(date=today, count=len(tips), tips=tips)
 
     def team_form(self, team_id: int) -> TeamFormResponse:
         """Form breakdown for a single team."""
@@ -429,7 +472,7 @@ class FootballAIService:
         result = TeamFormResponse(
             team_id=team_id,
             team_name=team_name,
-            form_score=calculate_form_score(matches, team_id),
+            form_score=_form_score_from_matches(matches, team_id),
             last_matches=form_chars,
             goals_scored=scored,
             goals_conceded=conceded,

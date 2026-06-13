@@ -2,16 +2,12 @@
 
 from __future__ import annotations
 
-from datetime import datetime
-from zoneinfo import ZoneInfo
-
 from fastapi import APIRouter, Depends
 
 from core.models import MatchAnalysisResponse, TeamFormResponse, TipsTodayResponse
 from services.football_ai_service import FootballAIService, get_football_ai_service
 
 router = APIRouter(prefix="/ai", tags=["football-ai"])
-_BERLIN_TZ = ZoneInfo("Europe/Berlin")
 
 
 def _ai_service() -> FootballAIService:
@@ -36,12 +32,16 @@ def match_analysis(
     response_model=TipsTodayResponse,
     summary="Today's AI tips for scheduled fixtures",
 )
+@router.get(
+    "/today-tips",
+    response_model=TipsTodayResponse,
+    summary="Today's AI tips (alias)",
+    include_in_schema=True,
+)
 def tips_today(
     ai: FootballAIService = Depends(_ai_service),
 ) -> TipsTodayResponse:
-    tips = ai.tips_for_today()
-    today = datetime.now(_BERLIN_TZ).date().isoformat()
-    return TipsTodayResponse(date=today, count=len(tips), tips=tips)
+    return ai.tips_for_today_response()
 
 
 @router.get(
