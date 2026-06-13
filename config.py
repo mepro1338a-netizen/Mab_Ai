@@ -162,6 +162,9 @@ FOOTBALL_DATA_STANDINGS_CACHE_TTL = int(
     os.getenv("FOOTBALL_DATA_STANDINGS_CACHE_TTL", "43200") or 43200
 )  # 12 h
 
+# Football AI FastAPI (optional — Railway second service)
+FOOTBALL_AI_API_URL = os.getenv("FOOTBALL_AI_API_URL", "").strip().rstrip("/")
+
 
 def football_api_season() -> int:
     """API-Football season year (start year of e.g. 2025/26 → 2025)."""

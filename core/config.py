@@ -34,7 +34,25 @@ class Settings(BaseSettings):
         default=2025,
         validation_alias="FOOTBALL_DEFAULT_SEASON",
     )
-    api_cors_origins: str = Field(default="*", validation_alias="API_CORS_ORIGINS")
+    app_base_url: str = Field(
+        default="http://localhost:8501",
+        validation_alias="APP_BASE_URL",
+    )
+    api_cors_origins: str = Field(default="", validation_alias="API_CORS_ORIGINS")
+
+    def cors_origins(self) -> list[str]:
+        """Explicit API_CORS_ORIGINS, else APP_BASE_URL (+ localhost for dev)."""
+        raw = self.api_cors_origins.strip()
+        if raw == "*":
+            return ["*"]
+        if raw:
+            return [o.strip().rstrip("/") for o in raw.split(",") if o.strip()]
+        origins: list[str] = []
+        for candidate in (self.app_base_url, "http://localhost:8501"):
+            origin = candidate.strip().rstrip("/")
+            if origin and origin not in origins:
+                origins.append(origin)
+        return origins
 
 
 @lru_cache
