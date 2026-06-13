@@ -10,23 +10,21 @@ the football-data.org free tier and are not fetched by the app.
 """
 from __future__ import annotations
 
-import os
+import time
 from typing import Any
 
 import requests
 
-from config import (
+from config import FOOTBALL_DATA_ID_TO_LEAGUE_ID
+from core.config import (
     FOOTBALL_DATA_BASE_URL,
-    FOOTBALL_DATA_ID_TO_LEAGUE_ID,
     FOOTBALL_DATA_TIMEOUT,
+    get_football_data_api_key,
 )
 from logger import log_error, log_warning
 
 _FD_BASE_URL = "https://api.football-data.org/v4"
-
-
-def _football_data_api_key() -> str:
-    return os.getenv("FOOTBALL_DATA_API_KEY", "").strip()
+_MAX_RETRIES = 2
 
 
 class FootballDataError(Exception):
@@ -38,12 +36,29 @@ class FootballDataError(Exception):
 
 
 def is_fd_configured() -> bool:
-    return bool(_football_data_api_key())
+    return bool(get_football_data_api_key())
+
+
+def _transient_status(status_code: int) -> bool:
+    return status_code == 429 or status_code >= 500
+
+
+def _request_once(
+    url: str,
+    headers: dict[str, str],
+    params: dict[str, Any],
+) -> requests.Response:
+    return requests.get(
+        url,
+        headers=headers,
+        params=params,
+        timeout=FOOTBALL_DATA_TIMEOUT,
+    )
 
 
 def fd_get(path: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
     """GET against football-data.org v4 (auth via X-Auth-Token header)."""
-    api_key = _football_data_api_key()
+    api_key = get_football_data_api_key()
     if not api_key:
         raise FootballDataError(
             "football-data.org Key fehlt (FOOTBALL_DATA_API_KEY in Railway/.env)."
@@ -54,41 +69,58 @@ def fd_get(path: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
         "X-Auth-Token": api_key,
         "Accept": "application/json",
     }
-    try:
-        response = requests.get(
-            url,
-            headers=headers,
-            params=params or {},
-            timeout=FOOTBALL_DATA_TIMEOUT,
-        )
-    except requests.Timeout as exc:
-        log_error(f"football-data timeout: {path}")
-        raise FootballDataError("Spieldaten-API Timeout. Bitte erneut versuchen.") from exc
-    except requests.RequestException as exc:
-        log_error(f"football-data network error: {path} -> {exc}")
-        raise FootballDataError("Spieldaten-API Netzwerkfehler.") from exc
+    query = params or {}
 
-    if response.status_code == 429:
-        log_warning(f"football-data rate limit (10/min): {path}")
-        raise FootballDataError(
-            "Spieldaten-API Rate Limit erreicht. Bitte kurz warten.",
-            status_code=429,
-        )
-    if response.status_code in (401, 403):
-        log_warning(f"football-data auth/plan error {response.status_code}: {path}")
-        raise FootballDataError(
-            "Spieldaten-API: Zugriff verweigert (Key oder Free-Tier-Plan pruefen).",
-            status_code=response.status_code,
-        )
-    if response.status_code >= 400:
-        raise FootballDataError(
-            f"Spieldaten-API HTTP {response.status_code}",
-            status_code=response.status_code,
-        )
-    try:
-        return response.json() or {}
-    except ValueError as exc:
-        raise FootballDataError("Ungueltige Spieldaten-API Antwort.") from exc
+    for attempt in range(_MAX_RETRIES + 1):
+        try:
+            response = _request_once(url, headers, query)
+        except requests.Timeout as exc:
+            log_warning(f"football-data timeout (attempt {attempt + 1}/{_MAX_RETRIES + 1}): {path}")
+            if attempt < _MAX_RETRIES:
+                time.sleep(0.5 * (attempt + 1))
+                continue
+            log_error(f"football-data timeout: {path}")
+            raise FootballDataError("Spieldaten-API Timeout. Bitte erneut versuchen.") from exc
+        except requests.RequestException as exc:
+            log_error(f"football-data network error: {path} -> {exc}")
+            raise FootballDataError("Spieldaten-API Netzwerkfehler.") from exc
+
+        status = response.status_code
+        if _transient_status(status):
+            log_warning(
+                f"football-data transient HTTP {status} "
+                f"(attempt {attempt + 1}/{_MAX_RETRIES + 1}): {path}"
+            )
+            if attempt < _MAX_RETRIES:
+                time.sleep(0.5 * (attempt + 1))
+                continue
+            if status == 429:
+                raise FootballDataError(
+                    "Spieldaten-API Rate Limit erreicht. Bitte kurz warten.",
+                    status_code=429,
+                )
+            raise FootballDataError(
+                f"Spieldaten-API HTTP {status}",
+                status_code=status,
+            )
+
+        if status in (401, 403):
+            log_warning(f"football-data auth/plan error {status}: {path}")
+            raise FootballDataError(
+                "Spieldaten-API: Zugriff verweigert (Key oder Free-Tier-Plan pruefen).",
+                status_code=status,
+            )
+        if status >= 400:
+            raise FootballDataError(
+                f"Spieldaten-API HTTP {status}",
+                status_code=status,
+            )
+        try:
+            return response.json() or {}
+        except ValueError as exc:
+            raise FootballDataError("Ungueltige Spieldaten-API Antwort.") from exc
+
+    raise FootballDataError("Spieldaten-API Anfrage fehlgeschlagen.")
 
 
 # football-data.org status -> API-Football short codes used by parse_match_card.

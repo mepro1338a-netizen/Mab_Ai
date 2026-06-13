@@ -29,6 +29,16 @@ uvicorn main:app --host 0.0.0.0 --port "$PORT"
 
 Ohne `FOOTBALL_DATA_API_KEY` bricht der API-Service beim Start ab (`RuntimeError` in der FastAPI-Lifespan — Streamlit bleibt unberührt).
 
+### Secret Management
+
+| Regel | Umsetzung |
+|-------|-----------|
+| Einziger Env-Reader | `core/config.py` liest `FOOTBALL_DATA_API_KEY` (und verwandte `FOOTBALL_DATA_*` Vars) via `os.getenv` |
+| Services | `football_data_client.py` nutzt `get_football_data_api_key()` aus `core.config` — kein direktes `os.getenv` |
+| Streamlit | Root-`config.py` re-exportiert aus `core.config` (kein zweites Lesen) |
+| Startup-Check | `require_football_data_api_key()` in `api/app.py` Lifespan — FastAPI startet nicht ohne Key |
+| Keine Hardcodes | Kein Key im Repo, keine Auto-Generierung, kein öffentlicher Client-Key |
+
 ## 3. Umgebungsvariablen (Streamlit-Service)
 
 | Variable | Beschreibung |

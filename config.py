@@ -149,18 +149,15 @@ FOOTBALL_API_INJURIES_CACHE_TTL = int(os.getenv("FOOTBALL_API_INJURIES_CACHE_TTL
 FOOTBALL_API_TIMEOUT = int(os.getenv("FOOTBALL_API_TIMEOUT", "20") or 20)
 FOOTBALL_DEFAULT_SEASON = int(os.getenv("FOOTBALL_DEFAULT_SEASON", "2025") or 2025)
 
-# football-data.org v4 — einzige Quelle für Spielpläne, Live, Tabellen.
-FOOTBALL_DATA_API_KEY = os.getenv("FOOTBALL_DATA_API_KEY", "")
-FOOTBALL_DATA_BASE_URL = os.getenv(
-    "FOOTBALL_DATA_BASE_URL",
-    "https://api.football-data.org/v4",
+# football-data.org v4 — env vars read once in core.config (re-exported for Streamlit).
+from core.config import (
+    FOOTBALL_DATA_API_KEY,
+    FOOTBALL_DATA_BASE_URL,
+    FOOTBALL_DATA_CACHE_TTL,
+    FOOTBALL_DATA_LIVE_CACHE_TTL,
+    FOOTBALL_DATA_STANDINGS_CACHE_TTL,
+    FOOTBALL_DATA_TIMEOUT,
 )
-FOOTBALL_DATA_TIMEOUT = int(os.getenv("FOOTBALL_DATA_TIMEOUT", "20") or 20)
-FOOTBALL_DATA_CACHE_TTL = int(os.getenv("FOOTBALL_DATA_CACHE_TTL", "21600") or 21600)  # 6 h
-FOOTBALL_DATA_LIVE_CACHE_TTL = int(os.getenv("FOOTBALL_DATA_LIVE_CACHE_TTL", "120") or 120)
-FOOTBALL_DATA_STANDINGS_CACHE_TTL = int(
-    os.getenv("FOOTBALL_DATA_STANDINGS_CACHE_TTL", "43200") or 43200
-)  # 12 h
 
 # Football AI FastAPI (optional — Railway second service)
 FOOTBALL_AI_API_URL = os.getenv("FOOTBALL_AI_API_URL", "").strip().rstrip("/")
