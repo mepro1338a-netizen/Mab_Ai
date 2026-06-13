@@ -23,7 +23,8 @@ from ui.admin_ui import (
     render_kpi_grid,
     render_section,
     render_ticket_card,
-    render_user_header,
+    render_team_card,
+    render_team_permissions,
     render_user_name_cell,
     render_user_status_pill,
     render_user_table_header,
@@ -704,17 +705,8 @@ def render_team():
         render_empty_state("Kein Team", "Weise Rollen unter Users zu.")
         return
     for member in staff:
-        st.markdown(render_user_header(member), unsafe_allow_html=True)
-    st.markdown(
-        """
-| Rolle | Level | Rechte |
-|--------|-------|--------|
-| Supporter | 1 | Tickets |
-| Moderator | 2 | + Users, Codes, Usage, Revenue |
-| Admin | 3 | + Rollen, Security, Audit |
-| Owner | 1337 | Vollzugriff + System |
-        """
-    )
+        render_team_card(member)
+    render_team_permissions()
 
 
 def render_console():

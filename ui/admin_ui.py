@@ -397,6 +397,71 @@ div[data-testid="stTabs"] [data-baseweb="tab"] {
     background: rgba(0,0,0,.35);
     border: 1px solid rgba(34,197,94,.12);
 }
+.adm-team-card {
+    border-radius: 18px;
+    padding: 16px 18px;
+    margin-bottom: 10px;
+    background: linear-gradient(145deg, rgba(14,16,34,.92), rgba(8,10,24,.96));
+    border: 1px solid rgba(255,255,255,.07);
+}
+.adm-team-card.staff { border-color: rgba(168,85,247,.35); }
+.adm-team-card.banned { border-color: rgba(239,68,68,.4); }
+.adm-team-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.adm-team-name {
+    color: #f0fdf4 !important;
+    font-size: 17px;
+    font-weight: 1000;
+}
+.adm-team-email {
+    color: #94a3b8 !important;
+    font-size: 12px;
+    margin-top: 3px;
+}
+.adm-team-role {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+}
+.adm-team-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+}
+.adm-team-perms {
+    margin-top: 14px;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,.06);
+}
+.adm-team-perms table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+.adm-team-perms th,
+.adm-team-perms td {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid rgba(255,255,255,.05);
+    color: #cbd5e1 !important;
+}
+.adm-team-perms th {
+    background: rgba(8,10,22,.85);
+    color: #94a3b8 !important;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+}
+.adm-team-perms tr:last-child td { border-bottom: none; }
 """
 
 
@@ -407,18 +472,14 @@ def inject_admin_ui_css() -> None:
 def render_hero(role: str, level: int, *, is_owner: bool) -> None:
     owner_pill = '<span class="adm-pill owner">OWNER ACCESS</span>' if is_owner else ""
     st.markdown(
-        f"""
-<div class="adm-hero">
-    <div class="adm-kicker">MaByte · Interne Steuerung</div>
-    <div class="adm-title">Admin Control</div>
-    <div class="adm-sub">Dashboard für Nutzer, Umsatz, Sicherheit & Support</div>
-    <div class="adm-pill-row">
-        {owner_pill}
-        <span class="adm-pill role">{html.escape(role.upper())}</span>
-        <span class="adm-pill lvl">Level {level}</span>
-    </div>
-</div>
-        """,
+        f'<div class="adm-hero">'
+        f'<div class="adm-kicker">MaByte · Interne Steuerung</div>'
+        f'<div class="adm-title">Admin Control</div>'
+        f'<div class="adm-sub">Dashboard für Nutzer, Umsatz, Sicherheit & Support</div>'
+        f'<div class="adm-pill-row">{owner_pill}'
+        f'<span class="adm-pill role">{html.escape(role.upper())}</span>'
+        f'<span class="adm-pill lvl">Level {level}</span>'
+        f'</div></div>',
         unsafe_allow_html=True,
     )
 
@@ -496,13 +557,15 @@ def render_distribution_bars(title: str, data: dict[str, Any], *, max_items: int
 def render_ticket_card(item: dict) -> str:
     status = str(item.get("status") or "open")
     cls = "open" if status == "open" else "closed"
-    return f"""
-<div class="adm-ticket {cls}">
-    <div class="subj">#{item.get('id')} ┬À {html.escape(str(item.get('subject') or 'Ticket'))}</div>
-    <div class="meta">{html.escape(str(item.get('category') or ''))} ┬À {html.escape(str(item.get('username') or ''))} ┬À {html.escape(str(item.get('created_at', ''))[:16])}</div>
-    <div class="body">{html.escape(str(item.get('message') or '')[:500])}</div>
-</div>
-    """
+    return (
+        f'<div class="adm-ticket {cls}">'
+        f'<div class="subj">#{item.get("id")} · {html.escape(str(item.get("subject") or "Ticket"))}</div>'
+        f'<div class="meta">{html.escape(str(item.get("category") or ""))} · '
+        f'{html.escape(str(item.get("username") or ""))} · '
+        f'{html.escape(str(item.get("created_at", ""))[:16])}</div>'
+        f'<div class="body">{html.escape(str(item.get("message") or "")[:500])}</div>'
+        f'</div>'
+    )
 
 
 def render_user_header(item: dict) -> str:
@@ -517,17 +580,69 @@ def render_user_header(item: dict) -> str:
     chips = [
         f'<span class="adm-chip plan">{html.escape(str(item.get("plan") or "free"))}</span>',
         f'<span class="adm-chip fb">{html.escape(str(item.get("football_plan") or "none"))}</span>',
-        f'<span class="adm-chip">{html.escape(role)} ┬À L{level}</span>',
+        f'<span class="adm-chip">{html.escape(role)} · L{level}</span>',
     ]
     if banned:
         chips.append('<span class="adm-chip bad">GESPERRT</span>')
-    return f"""
-<div class="{cls}">
-    <div class="uname">{html.escape(str(item.get('username') or ''))}</div>
-    <div class="uemail">{html.escape(str(item.get('email') or ''))}</div>
-    <div class="adm-chip-row">{"".join(chips)}</div>
-</div>
-    """
+    return (
+        f'<div class="{cls}">'
+        f'<div class="uname">{html.escape(str(item.get("username") or ""))}</div>'
+        f'<div class="uemail">{html.escape(str(item.get("email") or ""))}</div>'
+        f'<div class="adm-chip-row">{"".join(chips)}</div>'
+        f'</div>'
+    )
+
+
+def render_team_card(item: dict) -> None:
+    """Team directory row with inline role pills (no indented HTML — Streamlit-safe)."""
+    banned = int(item.get("is_banned") or 0) == 1
+    role = str(item.get("role") or "user")
+    level = int(item.get("admin_level") or 0)
+    cls = "adm-team-card"
+    if banned:
+        cls += " banned"
+    elif level >= 1:
+        cls += " staff"
+    pill_cls = "owner" if role == "owner" else "role"
+    meta = [
+        f'<span class="adm-chip plan">{html.escape(str(item.get("plan") or "free"))}</span>',
+        f'<span class="adm-chip fb">{html.escape(str(item.get("football_plan") or "none"))}</span>',
+    ]
+    if banned:
+        meta.append('<span class="adm-chip bad">GESPERRT</span>')
+    st.markdown(
+        f'<div class="{cls}">'
+        f'<div class="adm-team-head">'
+        f'<div><div class="adm-team-name">{html.escape(str(item.get("username") or ""))}</div>'
+        f'<div class="adm-team-email">{html.escape(str(item.get("email") or ""))}</div></div>'
+        f'<div class="adm-team-role">'
+        f'<span class="adm-pill {pill_cls}">{html.escape(role.upper())}</span>'
+        f'<span class="adm-pill lvl">Level {level}</span>'
+        f'</div></div>'
+        f'<div class="adm-team-meta">{"".join(meta)}</div>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+
+
+def render_team_permissions() -> None:
+    rows = [
+        ("Supporter", "1", "Tickets"),
+        ("Moderator", "2", "+ Users, Codes, Usage, Revenue"),
+        ("Admin", "3", "+ Rollen, Security, Audit"),
+        ("Owner", "1337", "Vollzugriff + System"),
+    ]
+    body = "".join(
+        f"<tr><td>{html.escape(name)}</td><td>{html.escape(lvl)}</td>"
+        f"<td>{html.escape(rights)}</td></tr>"
+        for name, lvl, rights in rows
+    )
+    st.markdown(
+        f'<div class="adm-team-perms"><table>'
+        f'<thead><tr><th>Rolle</th><th>Level</th><th>Rechte</th></tr></thead>'
+        f'<tbody>{body}</tbody></table></div>',
+        unsafe_allow_html=True,
+    )
 
 
 USER_TABLE_COLS = [2.3, 1.05, 1.05, 1.15, 0.85, 0.75, 0.55]
