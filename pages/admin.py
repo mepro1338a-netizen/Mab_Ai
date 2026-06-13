@@ -24,6 +24,10 @@ from ui.admin_ui import (
     render_section,
     render_ticket_card,
     render_user_header,
+    render_user_name_cell,
+    render_user_status_pill,
+    render_user_table_header,
+    USER_TABLE_COLS,
 )
 from ui.premium_foundation import render_status_badge, render_empty_state
 from ui.stripe_admin_diagnostics import render_stripe_admin_diagnostics
@@ -416,6 +420,143 @@ def _filter_users(users, search, role_f, plan_f, banned_f, fb_f):
         yield item
 
 
+def _plan_options() -> list[str]:
+    return list(PLANS.keys())
+
+
+def _fb_options() -> list[str]:
+    return ["none", *FOOTBALL_PLANS.keys()]
+
+
+def _plan_label(key: str) -> str:
+    return str(PLANS.get(key, {}).get("label") or key)
+
+
+def _fb_label(key: str) -> str:
+    if key == "none":
+        return "Keiner"
+    return str(FOOTBALL_PLANS.get(key, {}).get("label") or key)
+
+
+def _role_options() -> list[str]:
+    opts = ["user", "supporter", "moderator", "admin"]
+    if is_owner():
+        opts.append("owner")
+    return opts
+
+
+def _apply_user_row(actor: str, uname: str, item: dict, *, role: str, plan: str, fb: str, tokens: int) -> tuple[bool, str]:
+    messages: list[str] = []
+    ok_all = True
+    cur_tokens = safe_int(item.get("tokens"))
+    cur_plan = str(item.get("plan") or "free")
+    cur_fb = str(item.get("football_plan") or "none")
+    cur_role = str(item.get("role") or "user")
+
+    if tokens != cur_tokens:
+        ok, msg = secure_update_tokens(actor, uname, int(tokens))
+        ok_all = ok_all and ok
+        messages.append(msg)
+    if plan != cur_plan:
+        ok, msg = secure_set_plan(actor, uname, plan)
+        ok_all = ok_all and ok
+        messages.append(msg)
+    if fb != cur_fb:
+        ok, msg = secure_set_football_plan(actor, uname, fb)
+        ok_all = ok_all and ok
+        messages.append(msg)
+    if can_manage_roles() and role != cur_role:
+        ok, msg = secure_set_role(actor, uname, role)
+        ok_all = ok_all and ok
+        messages.append(msg)
+        if ok:
+            refresh_actor_from_db()
+
+    if not messages:
+        return True, "Keine Änderungen."
+    return ok_all, " · ".join(messages)
+
+
+def _render_user_row(actor: str, item: dict) -> None:
+    uname = str(item.get("username") or "")
+    if not uname:
+        return
+
+    current_plan = str(item.get("plan") or "free")
+    current_fb = str(item.get("football_plan") or "none")
+    current_role = str(item.get("role") or "user")
+    if current_role not in _role_options():
+        current_role = "user"
+    current_tokens = safe_int(item.get("tokens"))
+    banned = safe_int(item.get("is_banned")) == 1
+    is_staff = int(item.get("admin_level") or 0) >= 1
+    protected_owner = uname == OWNER_USERNAME and not is_owner()
+
+    cols = st.columns(USER_TABLE_COLS)
+    with cols[0]:
+        render_user_name_cell(item)
+    with cols[1]:
+        if can_manage_roles() and not protected_owner:
+            role = st.selectbox(
+                "Rolle",
+                _role_options(),
+                index=_role_options().index(current_role),
+                key=f"ur_role_{uname}",
+                label_visibility="collapsed",
+            )
+        else:
+            role = current_role
+            st.caption(current_role)
+    with cols[2]:
+        plans = _plan_options()
+        plan = st.selectbox(
+            "Plan",
+            plans,
+            index=plans.index(current_plan) if current_plan in plans else 0,
+            format_func=_plan_label,
+            key=f"ur_plan_{uname}",
+            label_visibility="collapsed",
+        )
+    with cols[3]:
+        fb_plans = _fb_options()
+        fb = st.selectbox(
+            "Football",
+            fb_plans,
+            index=fb_plans.index(current_fb) if current_fb in fb_plans else 0,
+            format_func=_fb_label,
+            key=f"ur_fb_{uname}",
+            label_visibility="collapsed",
+        )
+    with cols[4]:
+        tokens = st.number_input(
+            "Tokens",
+            min_value=0,
+            max_value=1_000_000,
+            value=current_tokens,
+            key=f"ur_tok_{uname}",
+            label_visibility="collapsed",
+        )
+    with cols[5]:
+        render_user_status_pill(banned=banned, is_staff=is_staff and not banned)
+        if not protected_owner:
+            ban_label = "Freigeben" if banned else "Sperren"
+            if st.button(ban_label, key=f"ur_ban_{uname}", use_container_width=True):
+                ok, msg = secure_ban_user(actor, uname, not banned)
+                st.success(msg) if ok else st.error(msg)
+                st.rerun()
+    with cols[6]:
+        if st.button("Speichern", key=f"ur_save_{uname}", type="primary", use_container_width=True):
+            ok, msg = _apply_user_row(
+                actor, uname, item, role=role, plan=plan, fb=fb, tokens=int(tokens),
+            )
+            st.success(msg) if ok else st.error(msg)
+            st.rerun()
+        if is_admin() and uname != OWNER_USERNAME and st.button("Löschen", key=f"ur_del_{uname}", use_container_width=True):
+            ok, msg = secure_delete_user(actor, uname)
+            st.success(msg) if ok else st.error(msg)
+            st.rerun()
+
+
 def render_users():
     if not is_moderator():
         st.warning("Supporter: nur Tickets.")
@@ -425,7 +566,10 @@ def render_users():
     actor = current_username()
     users = list_users()
 
-    render_section("User Operations", f"{len(users)} Accounts · sichere Verwaltung ohne Auto-Linking")
+    render_section(
+        "User Operations",
+        f"{len(users)} Accounts · Inline-Bearbeitung · Rolle, Plan, Football & Status",
+    )
 
     with st.container(border=True):
         c1, c2, c3, c4, c5 = st.columns(5)
@@ -434,83 +578,37 @@ def render_users():
         with c2:
             role_f = st.selectbox("Rolle", ["all", "user", "supporter", "moderator", "admin", "owner"], key="adm_f_role")
         with c3:
-            plan_f = st.selectbox("Plan", ["all", *PLANS.keys()], key="adm_f_plan")
+            plan_f = st.selectbox("Plan", ["all", *_plan_options()], key="adm_f_plan")
         with c4:
             fb_f = st.selectbox("Football", ["all", "none", *FOOTBALL_PLANS.keys()], key="adm_f_fb")
         with c5:
             banned_f = st.selectbox("Status", ["all", "active", "banned"], key="adm_f_ban")
 
     filtered = list(_filter_users(users, search, role_f, plan_f, banned_f, fb_f))
-    st.caption(f"{len(filtered)} Treffer")
+    page_size = 25
+    total_pages = max(1, (len(filtered) + page_size - 1) // page_size)
+    pg1, pg2 = st.columns([4, 1])
+    with pg1:
+        st.caption(f"{len(filtered)} Treffer · direkte Zeilenbearbeitung")
+    with pg2:
+        page = st.number_input("Seite", min_value=1, max_value=total_pages, value=1, key="adm_user_page")
 
-    for item in filtered[:40]:
-        uname = str(item.get("username") or "")
-        st.markdown(render_user_header(item), unsafe_allow_html=True)
+    start = (int(page) - 1) * page_size
+    page_items = filtered[start : start + page_size]
 
-        with st.expander(f"Verwalten · {uname}", expanded=False):
-            current_plan = str(item.get("plan") or "free")
-            current_fb = str(item.get("football_plan") or "none")
-            current_role_val = str(item.get("role") or "user")
-            current_tokens = safe_int(item.get("tokens"))
-            banned = safe_int(item.get("is_banned")) == 1
+    if not page_items:
+        render_empty_state("Keine Nutzer", "Filter anpassen oder Suche zurücksetzen.")
+        return
 
-            g1, g2, g3 = st.columns(3)
-            with g1:
-                new_tokens = st.number_input("Tokens", 0, 1_000_000, current_tokens, key=f"tok_{uname}")
-                if st.button("Tokens speichern", key=f"save_tok_{uname}"):
-                    ok, msg = secure_update_tokens(actor, uname, int(new_tokens))
-                    st.success(msg) if ok else st.error(msg)
-                    st.rerun()
-            with g2:
-                plans = list(PLANS.keys())
-                new_plan = st.selectbox("Plan", plans, index=plans.index(current_plan) if current_plan in plans else 0, key=f"pl_{uname}")
-                if st.button("Plan speichern", key=f"save_pl_{uname}"):
-                    ok, msg = secure_set_plan(actor, uname, new_plan)
-                    st.success(msg) if ok else st.error(msg)
-                    st.rerun()
-            with g3:
-                fb_plans = ["none", *FOOTBALL_PLANS.keys()]
-                fb_i = fb_plans.index(current_fb) if current_fb in fb_plans else 0
-                new_fb = st.selectbox("Football", fb_plans, index=fb_i, key=f"fb_{uname}",
-                    format_func=lambda x: "Keiner" if x == "none" else FOOTBALL_PLANS.get(x, {}).get("label", x))
-                if st.button("FB speichern", key=f"save_fb_{uname}"):
-                    ok, msg = secure_set_football_plan(actor, uname, new_fb)
-                    st.success(msg) if ok else st.error(msg)
-                    st.rerun()
+    with st.container(border=True):
+        render_user_table_header()
+        for i, item in enumerate(page_items):
+            if i:
+                st.markdown('<hr class="adm-row-div">', unsafe_allow_html=True)
+            _render_user_row(actor, item)
 
-            g4, g5 = st.columns(2)
-            with g4:
-                if can_manage_roles():
-                    role_opts = ["user", "supporter", "moderator", "admin"] + (["owner"] if is_owner() else [])
-                    if current_role_val not in role_opts:
-                        current_role_val = "user"
-                    new_role = st.selectbox("Rolle", role_opts, index=role_opts.index(current_role_val), key=f"role_{uname}")
-                    if st.button("Rolle speichern", key=f"save_role_{uname}"):
-                        ok, msg = secure_set_role(actor, uname, new_role)
-                        if ok:
-                            st.success(msg)
-                            refresh_actor_from_db()
-                        else:
-                            st.error(msg)
-                        st.rerun()
-                else:
-                    st.info("Rollen: nur Admin/Owner")
-            with g5:
-                if uname == OWNER_USERNAME and not is_owner():
-                    st.warning("Owner geschützt.")
-                else:
-                    if st.button("Sperren" if not banned else "Entsperren", key=f"ban_{uname}"):
-                        ok, msg = secure_ban_user(actor, uname, not banned)
-                        st.success(msg) if ok else st.error(msg)
-                        st.rerun()
-                    if is_admin() and uname != OWNER_USERNAME:
-                        if st.button("Account löschen", key=f"del_{uname}", type="primary"):
-                            ok, msg = secure_delete_user(actor, uname)
-                            st.success(msg) if ok else st.error(msg)
-                            st.rerun()
-
-    if len(filtered) > 40:
-        st.caption("Zeige max. 40 User — Filter verfeinern.")
+    if len(filtered) > page_size:
+        st.caption(f"Seite {page} von {total_pages} · max. {page_size} Zeilen pro Seite")
 
 
 def render_revenue():
@@ -666,7 +764,7 @@ def render_admin():
 
     tabs = ["Command Center", "Users", "Leads", "Tickets", "Revenue", "Codes", "Analytics"]
     if is_admin():
-        tabs.extend(["Security", "Team"])
+        tabs.extend(["Stripe", "Security", "Team"])
     if is_owner():
         tabs.append("Owner OS")
 

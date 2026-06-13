@@ -205,6 +205,63 @@ div[data-testid="stTabs"] [data-baseweb="tab-list"] {
     border-radius: 14px !important;
     padding: 6px !important;
 }
+.adm-user-table {
+    border-radius: 16px;
+    border: 1px solid rgba(168,85,247,.14);
+    background: linear-gradient(160deg, rgba(10,12,28,.92), rgba(6,8,18,.98));
+    overflow: hidden;
+    margin-top: 8px;
+}
+.adm-user-table-head {
+    display: grid;
+    grid-template-columns: 2.3fr 1.05fr 1.05fr 1.15fr 0.85fr 0.75fr 0.55fr;
+    gap: 6px;
+    padding: 10px 14px;
+    background: rgba(8,10,22,.85);
+    border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.adm-user-table-head span {
+    color: #64748b !important;
+    font-size: 10px;
+    font-weight: 1000;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+}
+.adm-user-cell-name {
+    color: #f8fafc !important;
+    font-size: 13px;
+    font-weight: 900;
+    line-height: 1.25;
+}
+.adm-user-cell-email {
+    color: #64748b !important;
+    font-size: 11px;
+    margin-top: 2px;
+}
+.adm-user-cell-meta {
+    color: #475569 !important;
+    font-size: 10px;
+    margin-top: 3px;
+}
+.adm-status-pill {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 900;
+    border: 1px solid rgba(255,255,255,.08);
+}
+.adm-status-pill.active { color: #86efac !important; background: rgba(34,197,94,.12); border-color: rgba(34,197,94,.25); }
+.adm-status-pill.banned { color: #fca5a5 !important; background: rgba(239,68,68,.12); border-color: rgba(239,68,68,.3); }
+.adm-status-pill.staff { color: #e9d5ff !important; background: rgba(168,85,247,.15); border-color: rgba(168,85,247,.25); }
+.adm-row-div {
+    border: none;
+    border-top: 1px solid rgba(255,255,255,.05);
+    margin: 0;
+}
+div[data-testid="stVerticalBlockBorderWrapper"]:has(.adm-user-table) {
+    border-color: rgba(168,85,247,.12) !important;
+}
 """
 
 
@@ -312,6 +369,42 @@ def render_user_header(item: dict) -> str:
     <div class="adm-chip-row">{"".join(chips)}</div>
 </div>
     """
+
+
+USER_TABLE_COLS = [2.3, 1.05, 1.05, 1.15, 0.85, 0.75, 0.55]
+USER_TABLE_LABELS = ["Nutzer", "Rolle", "Plan", "Football", "Tokens", "Status", "Aktion"]
+
+
+def render_user_table_header() -> None:
+    cells = "".join(f"<span>{html.escape(label)}</span>" for label in USER_TABLE_LABELS)
+    st.markdown(f'<div class="adm-user-table-head">{cells}</div>', unsafe_allow_html=True)
+
+
+def render_user_name_cell(item: dict) -> None:
+    uname = html.escape(str(item.get("username") or ""))
+    email = html.escape(str(item.get("email") or ""))
+    role = str(item.get("role") or "user")
+    level = int(item.get("admin_level") or 0)
+    meta = f"{html.escape(role)} · L{level}" if level else html.escape(role)
+    st.markdown(
+        f'<div class="adm-user-cell-name">{uname}</div>'
+        f'<div class="adm-user-cell-email">{email}</div>'
+        f'<div class="adm-user-cell-meta">{meta}</div>',
+        unsafe_allow_html=True,
+    )
+
+
+def render_user_status_pill(*, banned: bool, is_staff: bool) -> None:
+    if banned:
+        cls, label = "banned", "Gesperrt"
+    elif is_staff:
+        cls, label = "staff", "Staff"
+    else:
+        cls, label = "active", "Aktiv"
+    st.markdown(
+        f'<span class="adm-status-pill {cls}">{label}</span>',
+        unsafe_allow_html=True,
+    )
 
 
 def render_activity_feed(items: list[tuple[str, str]]) -> None:
