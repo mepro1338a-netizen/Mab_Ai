@@ -75,7 +75,6 @@ def render_dashboard() -> None:
             {"Workspace": "AI Chat", "Action": "Prompt", "Cost": TOKEN_COSTS.get("chat", 1)},
             {"Workspace": "Code", "Action": "Coding", "Cost": TOKEN_COSTS.get("coding", 10)},
             {"Workspace": "Image", "Action": "Bild", "Cost": TOKEN_COSTS.get("image", 10)},
-            {"Workspace": "Music", "Action": "Song", "Cost": TOKEN_COSTS.get("music", 50)},
             {"Workspace": "Video", "Action": "Video", "Cost": TOKEN_COSTS.get("video_base", 10)},
             {"Workspace": "Football", "Action": "Analyse", "Cost": TOKEN_COSTS.get("football_report", 80)},
             {"Workspace": "Content", "Action": "Automation", "Cost": TOKEN_COSTS.get("automation_job", 100)},

@@ -106,16 +106,12 @@ REPLICATE_API_TOKEN = os.getenv("REPLICATE_API_TOKEN", "")
 STABILITY_API_KEY = os.getenv("STABILITY_API_KEY", "")
 FAL_KEY = os.getenv("FAL_KEY", "")
 
-SUNO_API_URL = os.getenv("SUNO_API_URL", "")
-SUNO_API_KEY = os.getenv("SUNO_API_KEY", "")
-
 OPENAI_TEXT_MODEL = os.getenv("OPENAI_TEXT_MODEL", "gpt-4o-mini")
 OPENAI_CODING_MODEL = os.getenv("OPENAI_CODING_MODEL", "gpt-4.1")
 OPENAI_IMAGE_MODEL = os.getenv("OPENAI_IMAGE_MODEL", "gpt-image-1")
 
 IMAGE_PROVIDER = os.getenv("IMAGE_PROVIDER", "openai")
 VIDEO_PROVIDER = os.getenv("VIDEO_PROVIDER", "auto").strip().lower()
-MUSIC_PROVIDER = os.getenv("MUSIC_PROVIDER", "openai")
 
 # VIDEO_MODEL = Railway-Alias (legacy); bevorzugt REPLICATE_VIDEO_MODEL
 REPLICATE_VIDEO_MODEL = (
@@ -125,10 +121,8 @@ REPLICATE_VIDEO_MODEL = (
 REPLICATE_REELS_MODEL = (
     os.getenv("REPLICATE_REELS_MODEL", "").strip() or REPLICATE_VIDEO_MODEL
 )
-REPLICATE_MUSIC_MODEL = os.getenv("REPLICATE_MUSIC_MODEL", "")
 
 FAL_VIDEO_ENDPOINT = os.getenv("FAL_VIDEO_ENDPOINT", "")
-FAL_MUSIC_ENDPOINT = os.getenv("FAL_MUSIC_ENDPOINT", "")
 
 STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY", "")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
@@ -360,7 +354,6 @@ TOKEN_COSTS = {
     "chat": 1,
     "coding": 10,
     "image": 15,
-    "music": 50,
     "reels": 120,
     "viral_hook": 40,
     "reel_script": 150,
@@ -395,7 +388,6 @@ DAILY_LIMITS = {
         "chat": 25,
         "coding": 0,
         "image": 0,
-        "music": 0,
         "reels": 0,
         "video": 0,
         "football_report": 0,
@@ -406,7 +398,6 @@ DAILY_LIMITS = {
         "chat": 300,
         "coding": 50,
         "image": 40,
-        "music": 10,
         "reels": 0,
         "video": 0,
         "football_report": 0,
@@ -417,7 +408,6 @@ DAILY_LIMITS = {
         "chat": 1000,
         "coding": 200,
         "image": 120,
-        "music": 40,
         "reels": 30,
         "video": 10,
         "football_report": 3,
@@ -428,7 +418,6 @@ DAILY_LIMITS = {
         "chat": 5000,
         "coding": 1000,
         "image": 500,
-        "music": 150,
         "reels": 150,
         "video": 30,
         "football_report": 50,
@@ -472,12 +461,6 @@ WORKSPACES = {
         "label": "Media Studio",
         "feature": "video",
         "min_plan": "grand",
-    },
-
-    "music_studio": {
-        "label": "Music Studio",
-        "feature": "music",
-        "min_plan": "pro",
     },
 
     "football_intelligence": {
@@ -536,17 +519,14 @@ PLANS = {
             "chat",
             "coding",
             "image",
-            "music",
             "developer_os",
             "creative_workspace",
-            "music_studio",
         ],
         "limits": DAILY_LIMITS["pro"],
         "highlights": [
             "1.000 Tokens / Monat",
             "Developer OS",
             "Creative Workspace",
-            "Music Studio",
         ],
     },
 
@@ -565,7 +545,6 @@ PLANS = {
             "chat",
             "coding",
             "image",
-            "music",
             "reels",
             "video",
             "automation",

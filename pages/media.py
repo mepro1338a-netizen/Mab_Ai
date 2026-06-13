@@ -336,7 +336,6 @@ from pricing import (
     get_reel_script_cost,
     get_reel_video_cost,
     get_automation_unlock_cost,
-    get_music_cost,
     get_coding_cost,
 )
 from services.code_parser import (
@@ -673,7 +672,6 @@ def charge_tokens(tool, prompt, cost):
     user = get_user(username()) or {}
     feature_map = {
         "image": "image",
-        "music": "music",
         "coding": "coding",
         "video": "video",
         "reel_video": "reels",
@@ -737,10 +735,6 @@ _TOOL_SYSTEM = {
         "Umschließe Code mit Markdown-Fences und Sprach-Tags (```html, ```css, ```javascript). "
         "Bei mehreren Dateien markiere die erste Zeile jedes Blocks mit einem Datei-Hinweis "
         "(<!-- file: index.html -->, // file: app.js, # file: styles.css, /* file: styles.css */)."
-    ),
-    "music": (
-        "Du bist MaByte Music Studio. Erstelle Song-Konzepte, Struktur, Lyrics "
-        "und Arrangement-Hinweise — kreativ und professionell."
     ),
 }
 
@@ -1141,36 +1135,6 @@ def render_image_ai():
     )
 
 
-def render_music_ai():
-    user = get_user(username()) or {}
-    if not require_plan_feature(
-        "music",
-        user=user,
-        message="Music Studio ist ab **Pro** verfügbar.",
-        button_key="media_music_upgrade",
-    ):
-        return
-
-    workspace_header("Music Studio", "Song-Konzept und Lyrics-Package generieren.")
-
-    with st.container(border=True):
-        topic = st.text_input(
-            "Thema",
-            placeholder="z.B. Melancholisches Piano, 90 BPM, ruhige Atmosphäre",
-            key="music_topic",
-        )
-        genre = st.selectbox("Genre", ["Rap", "Trap", "Pop", "EDM", "Phonk", "Afro", "Rock"], key="music_genre")
-        length = st.selectbox("Länge", ["short", "medium", "long"], key="music_length")
-        cost = get_music_cost(length=length)
-        st.metric("Kosten", f"{cost} Tokens")
-
-    if st.button("Song Package generieren", width="stretch", key="btn_music", type="primary"):
-        if not topic:
-            st.warning("Bitte Thema eingeben.")
-            return
-        run_paid_ai("music", topic, cost, "mabyte_music")
-
-
 def render_coding_ai():
     user = get_user(username()) or {}
     if not require_plan_feature(
@@ -1304,10 +1268,6 @@ def render_media(active_tool="reels"):
         workspace_marker()
         inject_workspace_css()
         render_image_ai()
-    elif active_tool == "music":
-        workspace_marker()
-        inject_workspace_css()
-        render_music_ai()
     elif active_tool == "coding":
         workspace_marker()
         inject_workspace_css()

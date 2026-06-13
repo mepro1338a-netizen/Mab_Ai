@@ -326,7 +326,6 @@ PAGE_HANDLERS = {
     "automation_lab": ("Content Automation", render_automation_lab),
     "coding": ("Code", lambda: render_media("coding")),
     "image": ("Image", lambda: render_media("image")),
-    "music": ("Music", lambda: render_media("music")),
     "video": ("Video", lambda: render_media("video")),
     "dashboard": ("Profile", render_dashboard),
     "premium": ("Premium", render_premium),

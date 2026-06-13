@@ -33,7 +33,7 @@ _BTN_H = 36
 
 NAV_SECTIONS: list[tuple[str, list[tuple[str, str]]]] = [
     ("Workspace", [("Dashboard", "home"), ("AI Chat", "chat"), ("Football", "football"), ("Automation", "automation_lab")]),
-    ("Create", [("Image", "image"), ("Video", "video"), ("Code", "coding"), ("Music", "music")]),
+    ("Create", [("Image", "image"), ("Video", "video"), ("Code", "coding")]),
     ("Account", [("Profile", "dashboard"), ("Premium", "premium")]),
 ]
 
@@ -65,7 +65,6 @@ _NAV_ICONS: dict[str, str] = {
     "image": ":material/image:",
     "video": ":material/movie:",
     "coding": ":material/code:",
-    "music": ":material/music_note:",
     "dashboard": ":material/person:",
     "premium": ":material/workspace_premium:",
     "admin": ":material/admin_panel_settings:",

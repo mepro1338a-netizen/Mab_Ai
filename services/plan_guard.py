@@ -8,7 +8,6 @@ from security import is_admin
 
 FEATURE_MESSAGES: dict[str, str] = {
     "image": "Bildgenerierung ist ab **Pro** verfügbar.",
-    "music": "Music Studio ist ab **Pro** verfügbar.",
     "coding": "Code Studio ist ab **Pro** verfügbar.",
     "video": "Voller Video Creator ist ab **Grand** verfügbar.",
     "reels": "Reels & Shorts Creator ist ab **Grand** verfügbar.",
