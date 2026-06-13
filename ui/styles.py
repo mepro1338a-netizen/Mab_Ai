@@ -95,14 +95,37 @@ section.main .block-container,
     max-width: var(--mb-content-max) !important;
     padding-left: var(--mb-content-pad-x) !important;
     padding-right: var(--mb-content-pad-x) !important;
-    padding-top: 20px !important;
+    padding-top: 8px !important;
     padding-bottom: 42px !important;
     margin-left: auto !important;
     margin-right: auto !important;
 }
+.stApp:not(:has(.auth-marker)) [data-testid="stHeader"] {
+    height: 0 !important;
+    min-height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+    visibility: hidden !important;
+}
+.stApp:not(:has(.auth-marker)) [data-testid="stMainBlockContainer"],
+.stApp:not(:has(.auth-marker)) [data-testid="stAppViewBlockContainer"] {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+}
+.stApp:not(:has(.auth-marker)) section.main [data-testid="stVerticalBlock"] {
+    gap: 0.65rem !important;
+}
+.stApp:not(:has(.auth-marker)) [data-testid="stElementContainer"]:has(.mb-slogan-header) {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+.stApp:not(:has(.auth-marker)) .mb-slogan-header {
+    margin-top: 0 !important;
+}
 .stApp:has(.mb-dash) section.main .block-container,
 .stApp:has(.mb-home) section.main .block-container {
-    padding-top: 20px !important;
+    padding-top: 8px !important;
     margin-left: auto !important;
     margin-right: auto !important;
 }
@@ -114,6 +137,7 @@ section.main .block-container,
     .main .block-container {
         padding-left: 1rem !important;
         padding-right: 1rem !important;
+        padding-top: 6px !important;
     }
 }
 """

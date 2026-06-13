@@ -12,7 +12,7 @@ ADMIN_UI_CSS = """
 .adm-hero {
     border-radius: 28px;
     padding: 28px 32px;
-    margin-bottom: 22px;
+    margin: 0 0 14px 0;
     background:
         radial-gradient(circle at 92% 8%, rgba(239,68,68,.12), transparent 38%),
         radial-gradient(circle at 8% 0%, rgba(168,85,247,.28), transparent 42%),
@@ -88,7 +88,7 @@ ADMIN_UI_CSS = """
 .adm-section {
     border-radius: 22px;
     padding: 20px 22px;
-    margin-bottom: 16px;
+    margin: 0 0 12px 0;
     background: linear-gradient(160deg, rgba(14,16,36,.94), rgba(8,10,24,.98));
     border: 1px solid rgba(168,85,247,.12);
 }
@@ -262,6 +262,83 @@ div[data-testid="stTabs"] [data-baseweb="tab-list"] {
 div[data-testid="stVerticalBlockBorderWrapper"]:has(.adm-user-table) {
     border-color: rgba(168,85,247,.12) !important;
 }
+.stApp:has(.adm-hero) div[data-testid="stTabs"] {
+    margin-top: 0 !important;
+}
+.stApp:has(.adm-hero) div[data-testid="stTabs"] [role="tabpanel"] {
+    padding-top: 4px !important;
+}
+.stApp:has(.adm-hero) [data-testid="stElementContainer"]:has(.adm-section) {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+.stApp:has(.adm-hero) [data-testid="stElementContainer"]:has(.adm-section-title) {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+.adm-console-wrap {
+    border-radius: 18px;
+    padding: 18px 20px;
+    margin-bottom: 14px;
+    background: linear-gradient(160deg, rgba(6,10,8,.96), rgba(4,8,6,.99));
+    border: 1px solid rgba(34,197,94,.18);
+    box-shadow: inset 0 0 40px rgba(0,0,0,.35);
+}
+.adm-console-title {
+    color: #86efac !important;
+    font-size: 11px;
+    font-weight: 1000;
+    letter-spacing: .16em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+}
+.adm-console-log {
+    font-family: "Cascadia Code", "Consolas", "Courier New", monospace;
+    font-size: 12px;
+    line-height: 1.55;
+    color: #a7f3d0 !important;
+    background: rgba(0,0,0,.45);
+    border: 1px solid rgba(34,197,94,.12);
+    border-radius: 12px;
+    padding: 14px 16px;
+    max-height: 320px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+.adm-console-line {
+    margin: 0 0 4px 0;
+}
+.adm-console-line.dim { color: #64748b !important; }
+.adm-console-line.warn { color: #fbbf24 !important; }
+.adm-console-line.err { color: #f87171 !important; }
+.adm-console-kv {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 12px;
+}
+@media (max-width: 900px) { .adm-console-kv { grid-template-columns: 1fr; } }
+.adm-console-kv .item {
+    border-radius: 12px;
+    padding: 12px 14px;
+    background: rgba(0,0,0,.35);
+    border: 1px solid rgba(34,197,94,.1);
+}
+.adm-console-kv .k {
+    color: #64748b !important;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+.adm-console-kv .v {
+    color: #ecfdf5 !important;
+    font-size: 14px;
+    font-weight: 800;
+    margin-top: 4px;
+    font-family: "Cascadia Code", "Consolas", monospace;
+}
 """
 
 
@@ -409,7 +486,7 @@ def render_user_status_pill(*, banned: bool, is_staff: bool) -> None:
 
 def render_activity_feed(items: list[tuple[str, str]]) -> None:
     if not items:
-        st.markdown('<div class="adm-empty">Keine Aktivit├ñt</div>', unsafe_allow_html=True)
+        st.markdown('<div class="adm-empty">Keine Aktivität</div>', unsafe_allow_html=True)
         return
     blocks = [
         f'<div class="adm-activity"><div class="t">{html.escape(t)}</div>'
@@ -417,3 +494,25 @@ def render_activity_feed(items: list[tuple[str, str]]) -> None:
         for t, d in items
     ]
     st.markdown("".join(blocks), unsafe_allow_html=True)
+
+
+def render_console_kv(items: list[tuple[str, str]]) -> None:
+    cells = "".join(
+        f'<div class="item"><div class="k">{html.escape(k)}</div>'
+        f'<div class="v">{html.escape(v)}</div></div>'
+        for k, v in items
+    )
+    st.markdown(f'<div class="adm-console-kv">{cells}</div>', unsafe_allow_html=True)
+
+
+def render_console_log(lines: list[tuple[str, str]], *, title: str = "Log") -> None:
+    """Render terminal log lines: (css_class, text) where class is dim|warn|err|empty."""
+    body = "".join(
+        f'<div class="adm-console-line {html.escape(cls)}">{html.escape(text)}</div>'
+        for cls, text in lines
+    ) or '<div class="adm-console-line dim">Keine Einträge.</div>'
+    st.markdown(
+        f'<div class="adm-console-wrap"><div class="adm-console-title">{html.escape(title)}</div>'
+        f'<div class="adm-console-log">{body}</div></div>',
+        unsafe_allow_html=True,
+    )

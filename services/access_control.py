@@ -1,4 +1,4 @@
-﻿"""Server-side plan / admin gates — never UI-only."""
+"""Server-side plan / admin gates — never UI-only."""
 from __future__ import annotations
 
 import streamlit as st
@@ -49,6 +49,26 @@ def require_admin_panel() -> dict:
         st.session_state.page = "home"
         st.stop()
     return user or {}
+
+
+def require_owner() -> dict:
+    """Owner-only gate: role owner, admin_level >= 1337, or OWNER_USERNAME."""
+    require_login_server()
+    user = load_server_user()
+    from database import OWNER_USERNAME
+
+    if not user:
+        st.error("Nur Owner-Zugriff.")
+        st.session_state.page = "home"
+        st.stop()
+    role = str(user.get("role") or "user").strip().lower()
+    level = int(user.get("admin_level") or 0)
+    uname = str(user.get("username") or "").strip().lower()
+    if not (uname == OWNER_USERNAME.strip().lower() or role == "owner" or level >= 1337):
+        st.error("Nur Owner-Zugriff.")
+        st.session_state.page = "home"
+        st.stop()
+    return user
 
 
 def can_access_plan_feature(user: dict | None, min_plan: str) -> bool:

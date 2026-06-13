@@ -12,8 +12,8 @@ html, body, .stApp {
     overflow-x: hidden !important;
 }
 @media (max-width: 768px) {
-    .main .block-container {
-        padding-top: 12px !important;
+    .stApp:not(:has(.auth-marker)) .main .block-container {
+        padding-top: 6px !important;
     }
     h1 { font-size: 1.65rem !important; }
     [data-testid="column"] {

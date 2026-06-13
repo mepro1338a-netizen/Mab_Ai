@@ -13,7 +13,7 @@ _HEADER_IMAGE_PATH = Path(__file__).resolve().parent.parent / "assets" / "header
 _SLOGAN_HEADER_CSS = """
 .mb-slogan-header {
     width: 100%;
-    margin: 0 0 20px 0;
+    margin: 0 0 12px 0;
     border-radius: 12px;
     overflow: hidden;
     border: 1px solid rgba(255, 255, 255, 0.08);
@@ -55,10 +55,8 @@ def render_slogan_header() -> None:
         return
     inject_css(_SLOGAN_HEADER_CSS)
     st.markdown(
-        f"""
-<div class="mb-slogan-header">
+        f"""<div class="mb-slogan-header">
 <img src="{uri}" alt="One system. Infinite intelligence." />
-</div>
-        """,
+</div>""",
         unsafe_allow_html=True,
     )

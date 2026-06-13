@@ -27,6 +27,8 @@ from ui.admin_ui import (
     render_user_name_cell,
     render_user_status_pill,
     render_user_table_header,
+    render_console_kv,
+    render_console_log,
     USER_TABLE_COLS,
 )
 from ui.premium_foundation import render_status_badge, render_empty_state
@@ -159,7 +161,7 @@ def require_panel_access():
 
 
 def admin_css():
-    inject_css(page_layout_css(1400, 88, 48))
+    inject_css(page_layout_css(1400, 8, 48))
     inject_admin_ui_css()
     inject_css("""
 .stTextInput input, .stNumberInput input, .stSelectbox div[data-baseweb="select"] > div,
@@ -703,6 +705,97 @@ def render_team():
     )
 
 
+def render_console():
+    from services.access_control import require_owner
+    from ui.app_shell import _UI_VERSION
+
+    require_owner()
+    refresh_actor_from_db()
+
+    render_section("Owner-Konsole", "Systemdiagnose, Logs und Schnellaktionen — nur Owner")
+
+    import os
+
+    m = platform_metrics()
+    commit = (
+        os.getenv("RAILWAY_GIT_COMMIT_SHA")
+        or os.getenv("GIT_COMMIT")
+        or os.getenv("SOURCE_VERSION")
+        or "—"
+    )[:12]
+    railway_env = os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("RAILWAY_ENVIRONMENT_NAME") or "—"
+    railway_service = os.getenv("RAILWAY_SERVICE_NAME") or "—"
+    railway_domain = os.getenv("RAILWAY_PUBLIC_DOMAIN") or "—"
+
+    render_console_kv([
+        ("UI-Version", f"v{_UI_VERSION}"),
+        ("Commit", commit),
+        ("Streamlit", st.__version__),
+        ("Nutzer", str(m.get("users_total", 0))),
+        ("DB", str(DB_PATH.name)),
+        ("Railway", railway_env),
+        ("Service", railway_service),
+        ("Domain", railway_domain),
+    ])
+
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        if st.button("Cache leeren (data)", key="owner_clr_data", width="stretch"):
+            st.cache_data.clear()
+            st.success("Daten-Cache geleert.")
+    with c2:
+        if st.button("Cache leeren (resource)", key="owner_clr_res", width="stretch"):
+            st.cache_resource.clear()
+            st.success("Resource-Cache geleert.")
+    with c3:
+        st.link_button(
+            "Railway Deploy",
+            "https://railway.app/dashboard",
+            width="stretch",
+        )
+
+    env_rows = env_health_snapshot()
+    env_lines = [
+        ("", f"ok  {label}") if ok else ("warn", f"miss {label}")
+        for label, ok in env_rows
+    ]
+    render_console_log(env_lines, title="Umgebung (ohne Secrets)")
+
+    audit_lines = []
+    if list_audit_logs:
+        for row in list_audit_logs(limit=30):
+            audit_lines.append((
+                "",
+                f"{str(row.get('created_at', ''))[:16]}  {row.get('actor', '?')}"
+                f" → {row.get('action', '?')}  {row.get('target', '')}",
+            ))
+    render_console_log(audit_lines, title="Admin-Aktionen (Audit)")
+
+    login_lines = []
+    for row in list_login_logs(limit=25):
+        ok = safe_int(row.get("success")) == 1
+        cls = "" if ok else "err"
+        login_lines.append((
+            cls,
+            f"{str(row.get('created_at', ''))[:16]}  {row.get('username', '?')}"
+            f"  {'OK' if ok else 'FAIL'}  {row.get('ip_address', '')}",
+        ))
+    render_console_log(login_lines, title="Login-Log (Tail)")
+
+    if recent_activity:
+        feed = []
+        for row in (recent_activity(limit=20) or [])[:20]:
+            feed.append((
+                "",
+                f"{str(row.get('created_at', row.get('ts', '')))[:16]}  "
+                f"{row.get('tool', row.get('action', 'system'))}  "
+                f"{row.get('username', '')}",
+            ))
+        render_console_log(feed, title="Aktivität (System)")
+
+    st.caption("Diagnose: schreibgeschützt. Keine Secrets in dieser Ansicht.")
+
+
 def render_owner_os():
     if not is_owner():
         st.warning("Nur Owner (mepro1337).")
@@ -766,7 +859,7 @@ def render_admin():
     if is_admin():
         tabs.extend(["Stripe", "Security", "Team"])
     if is_owner():
-        tabs.append("Owner OS")
+        tabs.extend(["Konsole", "Owner OS"])
 
     tab_objs = st.tabs(tabs)
     idx = 0
@@ -805,5 +898,8 @@ def render_admin():
         idx += 1
 
     if is_owner():
+        with tab_objs[idx]:
+            render_console()
+        idx += 1
         with tab_objs[idx]:
             render_owner_os()
