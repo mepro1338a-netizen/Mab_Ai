@@ -24,8 +24,10 @@ Der Streamlit-Service bleibt unverändert (`railway.toml` + `Dockerfile`).
 `PORT` wird von Railway gesetzt. `start_api.sh` startet:
 
 ```bash
-uvicorn api.app:app --host 0.0.0.0 --port "$PORT"
+uvicorn main:app --host 0.0.0.0 --port "$PORT"
 ```
+
+Ohne `FOOTBALL_DATA_API_KEY` bricht der API-Service beim Start ab (`RuntimeError` in der FastAPI-Lifespan — Streamlit bleibt unberührt).
 
 ## 3. Umgebungsvariablen (Streamlit-Service)
 
@@ -76,8 +78,9 @@ Ohne `API_CORS_ORIGINS` gilt `APP_BASE_URL` als Fallback (falls auf dem API-Serv
 
 | Datei | Rolle |
 |-------|--------|
-| `start_api.sh` | Start mit Railway `$PORT` |
+| `main.py` | FastAPI-Einstieg (`app` re-export) + Streamlit bei `streamlit run main.py` |
+| `start_api.sh` | Start mit Railway `$PORT` (`uvicorn main:app`) |
 | `railway.api.toml` | Build (Nixpacks) + Healthcheck |
 | `Procfile.api` | Alternative Start-Definition |
-| `api/app.py` | FastAPI-App |
-| `core/config.py` | API-Settings (Pydantic) |
+| `api/app.py` | FastAPI-App-Factory + Startup-Key-Check |
+| `core/config.py` | API-Settings (Pydantic) + `require_football_data_api_key()` |

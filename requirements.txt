@@ -1,4 +1,4 @@
-# Main app: streamlit run main.py | API: uvicorn api.app:app --reload | Webhook: python webhook_service.py
+# Main app: streamlit run main.py | API: uvicorn main:app --reload | Webhook: python webhook_service.py
 aiohttp>=3.9.0
 fastapi>=0.115.0
 uvicorn[standard]>=0.32.0

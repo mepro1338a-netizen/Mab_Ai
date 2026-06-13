@@ -1,8 +1,11 @@
 ﻿"""
-MaByte — Streamlit UI entry.
+MaByte entry — Streamlit UI or FastAPI Football AI API.
 
-Production (Railway):
+Streamlit (Railway main app):
   streamlit run main.py --server.port=$PORT --server.address=0.0.0.0
+
+Football AI API (Railway API service):
+  uvicorn main:app --host 0.0.0.0 --port $PORT
 
 Stripe webhook: separate Railway service (webhook_service.py).
 """
@@ -15,6 +18,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
+
+# FastAPI ASGI app (uvicorn main:app). Startup key check runs in api.app lifespan only.
+from api.app import app  # noqa: F401
 
 
 def configure_production_env() -> None:
@@ -60,11 +66,11 @@ def bootstrap_database() -> None:
             pass
 
 
-configure_production_env()
-log_startup()
-bootstrap_database()
+if __name__ != "main__":
+    configure_production_env()
+    log_startup()
+    bootstrap_database()
 
-# Streamlit executes this file; load the UI layer (ui.py).
-import runpy
+    import runpy
 
-runpy.run_path(str(ROOT / "ui.py"), run_name="__streamlit__")
+    runpy.run_path(str(ROOT / "ui.py"), run_name="__streamlit__")

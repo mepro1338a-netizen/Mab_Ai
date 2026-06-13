@@ -1,14 +1,22 @@
 """FastAPI application factory for MaByte Football AI API."""
 from __future__ import annotations
 
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.routes.football_ai_routes import router as football_ai_router
-from core.config import get_settings
+from core.config import get_settings, require_football_data_api_key
 from core.exceptions import register_exception_handlers
 from core.models import HealthResponse
 from services.football_data_client import is_fd_configured
+
+
+@asynccontextmanager
+async def _lifespan(_: FastAPI):
+    require_football_data_api_key()
+    yield
 
 
 def create_app() -> FastAPI:
@@ -17,6 +25,7 @@ def create_app() -> FastAPI:
         title="MaByte Football AI API",
         description="Deterministic football match tips powered by football-data.org v4.",
         version="1.0.0",
+        lifespan=_lifespan,
     )
 
     origins = settings.cors_origins()

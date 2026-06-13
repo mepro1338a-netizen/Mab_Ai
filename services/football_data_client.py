@@ -10,17 +10,23 @@ the football-data.org free tier and are not fetched by the app.
 """
 from __future__ import annotations
 
+import os
 from typing import Any
 
 import requests
 
 from config import (
-    FOOTBALL_DATA_API_KEY,
     FOOTBALL_DATA_BASE_URL,
     FOOTBALL_DATA_ID_TO_LEAGUE_ID,
     FOOTBALL_DATA_TIMEOUT,
 )
 from logger import log_error, log_warning
+
+_FD_BASE_URL = "https://api.football-data.org/v4"
+
+
+def _football_data_api_key() -> str:
+    return os.getenv("FOOTBALL_DATA_API_KEY", "").strip()
 
 
 class FootballDataError(Exception):
@@ -32,18 +38,20 @@ class FootballDataError(Exception):
 
 
 def is_fd_configured() -> bool:
-    return bool(FOOTBALL_DATA_API_KEY.strip())
+    return bool(_football_data_api_key())
 
 
 def fd_get(path: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
     """GET against football-data.org v4 (auth via X-Auth-Token header)."""
-    if not is_fd_configured():
+    api_key = _football_data_api_key()
+    if not api_key:
         raise FootballDataError(
             "football-data.org Key fehlt (FOOTBALL_DATA_API_KEY in Railway/.env)."
         )
-    url = f"{FOOTBALL_DATA_BASE_URL.rstrip('/')}/{path.lstrip('/')}"
+    base = (FOOTBALL_DATA_BASE_URL or _FD_BASE_URL).rstrip("/")
+    url = f"{base}/{path.lstrip('/')}"
     headers = {
-        "X-Auth-Token": FOOTBALL_DATA_API_KEY.strip(),
+        "X-Auth-Token": api_key,
         "Accept": "application/json",
     }
     try:

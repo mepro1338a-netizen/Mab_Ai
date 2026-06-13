@@ -1,6 +1,7 @@
 """Pydantic settings for the Football AI FastAPI service."""
 from __future__ import annotations
 
+import os
 from functools import lru_cache
 
 from pydantic import Field
@@ -58,3 +59,14 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
+
+
+def require_football_data_api_key() -> str:
+    """Fail fast when the FastAPI service starts without a football-data.org key."""
+    key = os.getenv("FOOTBALL_DATA_API_KEY", "").strip()
+    if not key:
+        raise RuntimeError(
+            "FOOTBALL_DATA_API_KEY is required to start the Football AI API. "
+            "Set it in Railway or .env."
+        )
+    return key
