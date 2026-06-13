@@ -124,12 +124,14 @@ section.main .block-container,
     margin-top: 0 !important;
 }
 .stApp:has(.mb-dash) section.main .block-container,
-.stApp:has(.mb-home) section.main .block-container {
+.stApp:has(.mb-home) section.main .block-container,
+.stApp:has(.mb-prof) section.main .block-container {
     padding-top: 8px !important;
     margin-left: auto !important;
     margin-right: auto !important;
 }
-.stApp:has(.mb-dash) section.main .block-container {
+.stApp:has(.mb-dash) section.main .block-container,
+.stApp:has(.mb-prof) section.main .block-container {
     padding-bottom: 48px !important;
 }
 @media (max-width: 768px) {

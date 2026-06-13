@@ -98,15 +98,123 @@ _CSS = """
 }
 .ca-status.active { background: rgba(34,197,94,.15); color: #4ade80; }
 .ca-status.paused { background: rgba(113,113,122,.2); color: #a1a1aa; }
-.ca-form {
-  padding: 24px 22px; border-radius: 16px;
-  background: linear-gradient(145deg, rgba(24,24,27,.94), rgba(15,15,20,.9));
-  border: 1px solid rgba(139,92,246,.2);
-  box-shadow: 0 16px 48px rgba(0,0,0,.4);
-}
 .ca-empty {
   padding: 28px 20px; text-align: center; color: #64748b; font-size: 14px;
   border: 1px dashed rgba(255,255,255,.1); border-radius: 14px;
+}
+
+/* ---- Form controls (scoped via .mb-auto page marker) ---- */
+.stApp:has(.mb-auto) section.main .block-container {
+  max-width: 1080px !important;
+}
+.stApp:has(.mb-auto) .st-key-ca_form_wrap div[data-testid="stVerticalBlockBorderWrapper"] {
+  padding: 24px 22px !important;
+  border-radius: 16px !important;
+  background: linear-gradient(145deg, rgba(24,24,27,.72), rgba(15,15,20,.55)) !important;
+  border: 1px solid rgba(139,92,246,.22) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  box-shadow: 0 16px 48px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.04) !important;
+}
+.stApp:has(.mb-auto) .st-key-ca_form_wrap [data-testid="column"] { min-width: 0; }
+.stApp:has(.mb-auto) .st-key-ca_form_wrap [data-testid="stSelectbox"] { margin-bottom: 0 !important; }
+.stApp:has(.mb-auto) .st-key-ca_form_wrap [data-testid="stSelectbox"] label[data-testid="stWidgetLabel"] p,
+.stApp:has(.mb-auto) .st-key-ca_form_wrap [data-testid="stSelectbox"] label p,
+.stApp:has(.mb-auto) .st-key-ca_form_prompt label[data-testid="stWidgetLabel"] p,
+.stApp:has(.mb-auto) .st-key-ca_form_prompt label p {
+  font-size: 11px !important; font-weight: 700 !important;
+  letter-spacing: .06em !important; text-transform: uppercase !important;
+  color: #a1a1aa !important; margin-bottom: 6px !important;
+}
+.stApp:has(.mb-auto) .st-key-ca_form_wrap [data-testid="stSelectbox"] [data-baseweb="select"] > div,
+.stApp:has(.mb-auto) .st-key-ca_form_wrap div[data-baseweb="select"] > div {
+  min-height: 42px !important; border-radius: 12px !important;
+  border: 1px solid rgba(255,255,255,.1) !important;
+  background: rgba(24,24,27,.65) !important;
+  backdrop-filter: blur(12px) !important; -webkit-backdrop-filter: blur(12px) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.04) !important;
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease !important;
+}
+.stApp:has(.mb-auto) .st-key-ca_form_wrap [data-baseweb="select"]:hover > div {
+  border-color: rgba(139,92,246,.35) !important;
+  background: rgba(30,27,46,.72) !important;
+}
+.stApp:has(.mb-auto) .st-key-ca_form_wrap [data-baseweb="select"]:focus-within > div {
+  border-color: rgba(139,92,246,.65) !important;
+  box-shadow: 0 0 0 1px rgba(139,92,246,.25), inset 0 1px 0 rgba(255,255,255,.04) !important;
+}
+.stApp:has(.mb-auto) .st-key-ca_form_wrap [data-baseweb="select"] span {
+  color: #f4f4f5 !important; font-size: 13px !important; font-weight: 500 !important;
+}
+.stApp:has(.mb-auto) .st-key-ca_form_wrap [data-baseweb="select"] svg { fill: #a78bfa !important; }
+.stApp:has(.mb-auto) .st-key-ca_form_prompt [data-testid="stTextArea"] > div,
+.stApp:has(.mb-auto) .st-key-ca_form_prompt div[data-baseweb="textarea"] {
+  border-radius: 12px !important;
+  border: 1px solid rgba(255,255,255,.1) !important;
+  background: rgba(24,24,27,.65) !important;
+  backdrop-filter: blur(12px) !important; -webkit-backdrop-filter: blur(12px) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.04) !important;
+  transition: border-color .15s ease, box-shadow .15s ease !important;
+}
+.stApp:has(.mb-auto) .st-key-ca_form_prompt div[data-baseweb="textarea"]:hover {
+  border-color: rgba(139,92,246,.35) !important;
+}
+.stApp:has(.mb-auto) .st-key-ca_form_prompt div[data-baseweb="textarea"]:focus-within {
+  border-color: rgba(139,92,246,.65) !important;
+  box-shadow: 0 0 0 1px rgba(139,92,246,.25), inset 0 1px 0 rgba(255,255,255,.04) !important;
+}
+.stApp:has(.mb-auto) .st-key-ca_form_prompt textarea {
+  background: transparent !important; color: #f4f4f5 !important;
+  -webkit-text-fill-color: #f4f4f5 !important; font-size: 14px !important; line-height: 1.5 !important;
+}
+.stApp:has(.mb-auto) .st-key-ca_form_prompt textarea::placeholder {
+  color: rgba(161,161,170,.75) !important; -webkit-text-fill-color: rgba(161,161,170,.75) !important;
+}
+.stApp:has(.mb-auto) [class*="st-key-ca_card_"] .stButton > button,
+.stApp:has(.mb-auto) [class*="st-key-ca_card_"] button[data-testid="stBaseButton-primary"] {
+  min-height: 42px !important; border-radius: 12px !important;
+  border: 1px solid rgba(139,92,246,.35) !important;
+  background: rgba(124,58,237,.14) !important;
+  background-color: rgba(124,58,237,.14) !important;
+  color: #e9d5ff !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 4px 16px rgba(0,0,0,.2) !important;
+  font-weight: 600 !important; font-size: 13px !important;
+  backdrop-filter: blur(10px) !important; -webkit-backdrop-filter: blur(10px) !important;
+}
+.stApp:has(.mb-auto) [class*="st-key-ca_card_"] .stButton > button:hover,
+.stApp:has(.mb-auto) [class*="st-key-ca_card_"] button[data-testid="stBaseButton-primary"]:hover {
+  border-color: rgba(167,139,250,.55) !important;
+  background: rgba(124,58,237,.28) !important;
+  background-color: rgba(124,58,237,.28) !important;
+  color: #faf5ff !important;
+  box-shadow: 0 0 20px rgba(139,92,246,.2), inset 0 1px 0 rgba(255,255,255,.08) !important;
+  transform: translateY(-1px) !important;
+}
+.stApp:has(.mb-auto) [class*="st-key-ca_card_"] .stButton > button p,
+.stApp:has(.mb-auto) [class*="st-key-ca_card_"] button[data-testid="stBaseButton-primary"] p {
+  color: inherit !important; font-weight: 600 !important;
+}
+.stApp:has(.mb-auto) .st-key-ca_start .stButton > button,
+.stApp:has(.mb-auto) .st-key-ca_start button[data-testid="stBaseButton-primary"] {
+  min-height: 46px !important; border-radius: 12px !important;
+  border: 1px solid rgba(139,92,246,.45) !important;
+  background: linear-gradient(135deg, rgba(124,58,237,.95), rgba(99,102,241,.88)) !important;
+  background-color: #7c3aed !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 24px rgba(124,58,237,.35), inset 0 1px 0 rgba(255,255,255,.12) !important;
+  font-weight: 700 !important;
+}
+.stApp:has(.mb-auto) .st-key-ca_start .stButton > button:hover,
+.stApp:has(.mb-auto) .st-key-ca_start button[data-testid="stBaseButton-primary"]:hover {
+  border-color: rgba(167,139,250,.65) !important;
+  background: linear-gradient(135deg, rgba(109,40,217,.98), rgba(91,33,182,.92)) !important;
+  background-color: #6d28d9 !important;
+  box-shadow: 0 10px 28px rgba(124,58,237,.45), inset 0 1px 0 rgba(255,255,255,.14) !important;
+  transform: translateY(-1px) !important;
+}
+.stApp:has(.mb-auto) .st-key-ca_start .stButton > button p,
+.stApp:has(.mb-auto) .st-key-ca_start button[data-testid="stBaseButton-primary"] p {
+  color: #ffffff !important; font-weight: 700 !important;
 }
 """
 
@@ -151,7 +259,7 @@ def _automation_name(platform: str, content_type: str) -> str:
 def _render_header() -> None:
     st.markdown(
         """
-<div class="ca-page">
+<div class="ca-page mb-auto">
   <h1 class="ca-h1">Content Automation</h1>
   <p class="ca-sub">Plattformen und Prompts speichern — automatisches Veröffentlichen folgt in der Beta.</p>
   <p class="ca-beta-note">Status: Konfiguration aktiv · Ausführung (Posting) noch nicht live</p>
@@ -270,9 +378,7 @@ def _render_create_form(username: str) -> None:
     if st.session_state.get("ca_form_platform") not in platform_keys:
         st.session_state["ca_form_platform"] = "instagram"
 
-    with st.container():
-        st.markdown('<div class="ca-form">', unsafe_allow_html=True)
-
+    with st.container(key="ca_form_wrap", border=True):
         c1, c2, c3 = st.columns(3)
         with c1:
             platform = st.selectbox(
@@ -324,8 +430,6 @@ def _render_create_form(username: str) -> None:
                     "Automatische Ausführung folgt in einem späteren Beta-Update."
                 )
                 st.rerun()
-
-        st.markdown("</div>", unsafe_allow_html=True)
 
 
 def render_automation_lab() -> None:

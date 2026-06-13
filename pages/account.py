@@ -8,13 +8,14 @@ import streamlit as st
 
 from config import PLANS, TOKEN_COSTS
 from database import get_user, list_purchases
-from ui.components import (
-    inject_dashboard_css,
-    render_daily_limits,
-    render_header,
-    render_payments,
-    render_recent_activity,
-    render_stats,
+from ui.account_ui import (
+    inject_profile_css,
+    render_profile_ambient,
+    render_profile_daily_limits,
+    render_profile_header,
+    render_profile_payments,
+    render_profile_recent_activity,
+    render_profile_stats,
 )
 from ui_core import require_login, sync_session_user
 
@@ -41,7 +42,7 @@ def _nav(page: str) -> None:
 def render_dashboard() -> None:
     require_login()
     _refresh_user()
-    inject_dashboard_css()
+    inject_profile_css()
 
     plan_key = _current_plan_key()
     plan = _current_plan()
@@ -55,9 +56,13 @@ def render_dashboard() -> None:
     user = str(st.session_state.get("user", "User"))
     username = str(st.session_state.get("user") or "")
 
-    st.markdown('<div class="mb-dash" aria-hidden="true"></div>', unsafe_allow_html=True)
-    render_header(user=user, greeting=f"Profil · {html.escape(user)} — Nutzung, Limits und Zahlungen.")
-    render_stats(
+    st.markdown('<div class="mb-prof" aria-hidden="true"></div>', unsafe_allow_html=True)
+    render_profile_ambient()
+    render_profile_header(
+        user=user,
+        greeting=f"Profil · {html.escape(user)} — Nutzung, Limits und Zahlungen.",
+    )
+    render_profile_stats(
         plan_label=str(plan.get("label", plan_key)),
         tokens=tokens,
         football_label=fb_label,
@@ -68,7 +73,7 @@ def render_dashboard() -> None:
         _nav("home")
 
     with st.container(border=True):
-        render_daily_limits(plan_key)
+        render_profile_daily_limits(plan_key)
 
     with st.expander("Token-Kosten (Referenz)", expanded=False):
         token_rows = [
@@ -84,8 +89,8 @@ def render_dashboard() -> None:
     col_a, col_b = st.columns(2)
     with col_a:
         with st.container(border=True):
-            render_recent_activity(username, limit=12)
+            render_profile_recent_activity(username, limit=12)
 
     with col_b:
         with st.container(border=True):
-            render_payments(username, purchases=list_purchases(username))
+            render_profile_payments(username, purchases=list_purchases(username))
