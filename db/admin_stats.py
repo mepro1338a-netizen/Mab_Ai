@@ -138,6 +138,19 @@ def env_health_snapshot() -> list[tuple[str, bool]]:
     return [(label, bool(os.getenv(key, "").strip())) for key, label in keys]
 
 
+
+def vacuum_database() -> tuple[bool, str]:
+    """SQLite VACUUM — reclaims space and optimizes the DB file."""
+    try:
+        from db.core import get_connection
+        conn = get_connection()
+        conn.execute("VACUUM")
+        conn.close()
+        return True, "Datenbank optimiert (VACUUM)."
+    except Exception as exc:
+        return False, str(exc)
+
+
 def football_usage_aggregate() -> list[dict]:
     conn = get_connection()
     cur = conn.cursor()

@@ -29,6 +29,10 @@ from ui.admin_ui import (
     render_user_table_header,
     render_console_kv,
     render_console_log,
+    render_console_section,
+    close_console_section,
+    render_filter_bar,
+    close_filter_bar,
     USER_TABLE_COLS,
 )
 from ui.premium_foundation import render_status_badge, render_empty_state
@@ -175,6 +179,7 @@ def admin_css():
 
 
 def render_command_center():
+    render_section("Übersicht", "Live-KPIs, Verteilungen und letzte Aktivität")
     m = platform_metrics()
     render_kpi_grid([
         ("Nutzer", str(m["users_total"]), f"+{m['users_new_7d']} diese Woche", "default"),
@@ -311,6 +316,7 @@ def render_tickets():
         render_empty_state("Inbox leer", "Neue Support-Anfragen erscheinen hier.")
         return
 
+    render_filter_bar("Tickets filtern")
     f1, f2, f3, f4 = st.columns(4)
     with f1:
         status_filter = st.selectbox(
@@ -328,6 +334,7 @@ def render_tickets():
             "Offen",
             sum(1 for t in tickets if str(t.get("status") or "") in ("open", "in_progress")),
         )
+    close_filter_bar()
 
     shown = 0
     actor = current_username()
@@ -573,10 +580,10 @@ def render_users():
         f"{len(users)} Accounts · Inline-Bearbeitung · Rolle, Plan, Football & Status",
     )
 
-    with st.container(border=True):
-        c1, c2, c3, c4, c5 = st.columns(5)
-        with c1:
-            search = st.text_input("Suche", placeholder="User / Email", key="adm_user_search")
+    render_filter_bar("Nutzer filtern")
+    c1, c2, c3, c4, c5 = st.columns(5)
+    with c1:
+        search = st.text_input("Suche", placeholder="User / Email", key="adm_user_search")
         with c2:
             role_f = st.selectbox("Rolle", ["all", "user", "supporter", "moderator", "admin", "owner"], key="adm_f_role")
         with c3:
@@ -585,6 +592,7 @@ def render_users():
             fb_f = st.selectbox("Football", ["all", "none", *FOOTBALL_PLANS.keys()], key="adm_f_fb")
         with c5:
             banned_f = st.selectbox("Status", ["all", "active", "banned"], key="adm_f_ban")
+    close_filter_bar()
 
     filtered = list(_filter_users(users, search, role_f, plan_f, banned_f, fb_f))
     page_size = 25
@@ -632,7 +640,8 @@ def render_codes():
     if not is_moderator():
         return
     render_section("Redeem Codes", "Tokens, Pläne & Combos ausgeben")
-    with st.container(border=True):
+    render_filter_bar("Code erstellen")
+    with st.container(border=False):
         c1, c2, c3 = st.columns(3)
         with c1:
             code_type = st.selectbox("Typ", ["tokens", "plan", "combo"], key="adm_code_type")
@@ -653,6 +662,7 @@ def render_codes():
             )
             st.success("Code erstellt")
             st.code(code)
+    close_filter_bar()
     safe_df(list_codes(), height=360)
 
 
@@ -662,6 +672,7 @@ def render_security():
         return
     render_section("Security & Audit", "Login-Versuche und Admin-Aktionen")
 
+    render_filter_bar("Sicherheitsaktionen")
     c1, c2 = st.columns(2)
     with c1:
         if st.button("Login-Logs leeren", width="stretch"):
@@ -671,6 +682,7 @@ def render_security():
     with c2:
         failed = sum(1 for l in list_login_logs(limit=100) if not safe_int(l.get("success")))
         st.metric("Fehlversuche (letzte 100)", failed)
+    close_filter_bar()
 
     tab_login, tab_audit = st.tabs(["Login Logs", "Audit Trail"])
     with tab_login:
@@ -708,11 +720,21 @@ def render_team():
 def render_console():
     from services.access_control import require_owner
     from ui.app_shell import _UI_VERSION
+    from db.admin_stats import vacuum_database
+    from database import add_audit_log, ensure_db_ready
+    from ui.admin_ui import (
+        render_console_section,
+        close_console_section,
+    )
 
     require_owner()
     refresh_actor_from_db()
+    actor = current_username()
 
-    render_section("Owner-Konsole", "Systemdiagnose, Logs und Schnellaktionen — nur Owner")
+    render_section(
+        "Owner-Konsole",
+        "Systemsteuerung, Schnellaktionen und Live-Logs — nur Owner",
+    )
 
     import os
 
@@ -727,73 +749,207 @@ def render_console():
     railway_service = os.getenv("RAILWAY_SERVICE_NAME") or "—"
     railway_domain = os.getenv("RAILWAY_PUBLIC_DOMAIN") or "—"
 
+    render_console_section("System", "Laufzeit, Deployment und Plattform-KPIs")
     render_console_kv([
         ("UI-Version", f"v{_UI_VERSION}"),
         ("Commit", commit),
         ("Streamlit", st.__version__),
         ("Nutzer", str(m.get("users_total", 0))),
+        ("Aktiv 24h", str(m.get("users_active_24h", 0))),
+        ("Offene Tickets", str(m.get("tickets_open", 0))),
         ("DB", str(DB_PATH.name)),
         ("Railway", railway_env),
         ("Service", railway_service),
         ("Domain", railway_domain),
     ])
+    close_console_section()
 
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        if st.button("Cache leeren (data)", key="owner_clr_data", width="stretch"):
+    render_console_section("Aktionen", "Cache, Datenbank, Tokens und Codes")
+    a1, a2, a3, a4 = st.columns(4)
+    with a1:
+        if st.button("Cache (Daten)", key="owner_clr_data", width="stretch"):
             st.cache_data.clear()
+            add_audit_log(actor, "console_cache_data", "", "cleared")
             st.success("Daten-Cache geleert.")
-    with c2:
-        if st.button("Cache leeren (resource)", key="owner_clr_res", width="stretch"):
+    with a2:
+        if st.button("Cache (Ressourcen)", key="owner_clr_res", width="stretch"):
             st.cache_resource.clear()
+            add_audit_log(actor, "console_cache_resource", "", "cleared")
             st.success("Resource-Cache geleert.")
-    with c3:
-        st.link_button(
-            "Railway Deploy",
-            "https://railway.app/dashboard",
-            width="stretch",
-        )
+    with a3:
+        if st.button("DB prüfen", key="owner_db_ready", width="stretch"):
+            ok = ensure_db_ready()
+            if ok:
+                add_audit_log(actor, "console_db_ready", "", "ok")
+                st.success("Datenbank bereit.")
+            else:
+                st.error("DB-Init fehlgeschlagen.")
+    with a4:
+        if st.button("DB VACUUM", key="owner_db_vacuum", width="stretch"):
+            ok, msg = vacuum_database()
+            if ok:
+                add_audit_log(actor, "console_vacuum", "", "ok")
+                st.success(msg)
+            else:
+                st.error(msg)
 
+    b1, b2, b3, b4 = st.columns(4)
+    with b1:
+        if st.button("Login-Logs leeren", key="owner_clr_login", width="stretch"):
+            clear_login_logs()
+            add_audit_log(actor, "console_clear_login_logs", "", "")
+            st.success("Login-Logs gelöscht.")
+            st.rerun()
+    with b2:
+        if st.button("Owner erzwingen", key="owner_force_role", width="stretch"):
+            set_role(OWNER_USERNAME, "owner", 1337)
+            add_audit_log(actor, "console_force_owner", OWNER_USERNAME, "")
+            st.success("Owner-Rechte gesetzt.")
+            st.rerun()
+    with b3:
+        st.link_button("Railway Deploy", "https://railway.app/dashboard", width="stretch")
+    with b4:
+        users = list_users()
+        if users:
+            csv_buf = io.StringIO()
+            pd.DataFrame(users).to_csv(csv_buf, index=False)
+            st.download_button(
+                "User-Export",
+                csv_buf.getvalue(),
+                file_name=f"mabyte_users_{datetime.utcnow().strftime('%Y%m%d')}.csv",
+                mime="text/csv",
+                key="owner_csv_dl",
+                width="stretch",
+            )
+
+    st.markdown("**Schnell: Tokens vergeben**")
+    t1, t2, t3 = st.columns([2, 1, 1])
+    with t1:
+        quick_user = st.text_input("Username", key="console_quick_user", placeholder="username")
+    with t2:
+        quick_tokens = st.number_input("Tokens setzen", 0, 10_000_000, 1000, key="console_quick_tok")
+    with t3:
+        st.write("")
+        st.write("")
+        if st.button("Anwenden", key="console_quick_grant", width="stretch"):
+            uname = quick_user.strip().lower()
+            if not uname:
+                st.error("Username eingeben.")
+            else:
+                ok, msg = secure_update_tokens(actor, uname, int(quick_tokens))
+                if ok:
+                    st.success(msg)
+                    st.rerun()
+                else:
+                    st.error(msg)
+
+    st.markdown("**Schnell: Redeem-Code**")
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        qc_type = st.selectbox("Typ", ["tokens", "plan", "combo"], key="console_code_type")
+    with c2:
+        qc_tok = st.number_input("Tokens", 0, 100000, 500, key="console_code_tok")
+    with c3:
+        qc_plan = st.selectbox("Plan", ["", *PLANS.keys()], key="console_code_plan")
+    with c4:
+        qc_days = st.number_input("Tage", 1, 365, 30, key="console_code_days")
+    if st.button("Code generieren", key="console_code_gen", type="primary"):
+        code = create_redeem_code(
+            code_type=qc_type,
+            tokens=int(qc_tok),
+            plan=qc_plan,
+            max_uses=1,
+            created_by=actor,
+            days_valid=int(qc_days),
+        )
+        add_audit_log(actor, "console_redeem_code", qc_type, code[:20])
+        st.success("Code erstellt")
+        st.code(code)
+    close_console_section()
+
+    render_console_section("Nutzer-Schnellsuche", "Account finden und direkt bearbeiten")
+    render_filter_bar("Suche")
+    s1, s2 = st.columns([3, 1])
+    with s1:
+        console_search = st.text_input(
+            "User / E-Mail",
+            key="console_user_search",
+            placeholder="z.B. mepro1337 oder email@domain.de",
+            label_visibility="collapsed",
+        )
+    with s2:
+        do_search = st.button("Laden", key="console_user_load", width="stretch")
+    close_filter_bar()
+
+    if do_search or console_search:
+        query = console_search.strip().lower()
+        found = None
+        if query:
+            found = get_user(query)
+            if not found:
+                for u in list_users():
+                    if query in str(u.get("username") or "").lower() or query in str(u.get("email") or "").lower():
+                        found = u
+                        break
+        if found:
+            st.markdown('<div class="adm-user-quick">', unsafe_allow_html=True)
+            _render_user_row(actor, found)
+            st.markdown("</div>", unsafe_allow_html=True)
+        elif query:
+            st.warning("Kein Nutzer gefunden.")
+    close_console_section()
+
+    render_console_section("Konfiguration", "Umgebungsvariablen (ohne Secret-Werte)")
     env_rows = env_health_snapshot()
+    ok_count = sum(1 for _, ok in env_rows if ok)
+    st.caption(f"{ok_count}/{len(env_rows)} Variablen gesetzt")
     env_lines = [
         ("", f"ok  {label}") if ok else ("warn", f"miss {label}")
         for label, ok in env_rows
     ]
-    render_console_log(env_lines, title="Umgebung (ohne Secrets)")
+    render_console_log(env_lines, title="ENV-Check")
+    close_console_section()
 
-    audit_lines = []
-    if list_audit_logs:
-        for row in list_audit_logs(limit=30):
-            audit_lines.append((
-                "",
-                f"{str(row.get('created_at', ''))[:16]}  {row.get('actor', '?')}"
-                f" → {row.get('action', '?')}  {row.get('target', '')}",
+    render_console_section("Logs", "Audit, Login und Systemaktivität")
+    log_audit, log_login, log_activity = st.tabs(["Audit", "Login", "Aktivität"])
+
+    with log_audit:
+        audit_lines = []
+        if list_audit_logs:
+            for row in list_audit_logs(limit=40):
+                audit_lines.append((
+                    "",
+                    f"{str(row.get('created_at', ''))[:16]}  {row.get('actor', '?')}"
+                    f" → {row.get('action', '?')}  {row.get('target', '')}",
+                ))
+        render_console_log(audit_lines, title="Admin-Aktionen")
+
+    with log_login:
+        login_lines = []
+        for row in list_login_logs(limit=30):
+            ok_row = safe_int(row.get("success")) == 1
+            cls = "" if ok_row else "err"
+            login_lines.append((
+                cls,
+                f"{str(row.get('created_at', ''))[:16]}  {row.get('username', '?')}"
+                f"  {'OK' if ok_row else 'FAIL'}  {row.get('ip_address', '')}",
             ))
-    render_console_log(audit_lines, title="Admin-Aktionen (Audit)")
+        render_console_log(login_lines, title="Login-Tail")
 
-    login_lines = []
-    for row in list_login_logs(limit=25):
-        ok = safe_int(row.get("success")) == 1
-        cls = "" if ok else "err"
-        login_lines.append((
-            cls,
-            f"{str(row.get('created_at', ''))[:16]}  {row.get('username', '?')}"
-            f"  {'OK' if ok else 'FAIL'}  {row.get('ip_address', '')}",
-        ))
-    render_console_log(login_lines, title="Login-Log (Tail)")
-
-    if recent_activity:
-        feed = []
-        for row in (recent_activity(limit=20) or [])[:20]:
-            feed.append((
-                "",
-                f"{str(row.get('created_at', row.get('ts', '')))[:16]}  "
-                f"{row.get('tool', row.get('action', 'system'))}  "
-                f"{row.get('username', '')}",
-            ))
-        render_console_log(feed, title="Aktivität (System)")
-
-    st.caption("Diagnose: schreibgeschützt. Keine Secrets in dieser Ansicht.")
+    with log_activity:
+        if recent_activity:
+            feed = []
+            for row in (recent_activity(limit=25) or [])[:25]:
+                feed.append((
+                    "",
+                    f"{str(row.get('created_at', row.get('ts', '')))[:16]}  "
+                    f"{row.get('tool', row.get('action', 'system'))}  "
+                    f"{row.get('username', '')}",
+                ))
+            render_console_log(feed, title="System-Aktivität")
+        else:
+            st.info("Keine Aktivitätsdaten.")
+    close_console_section()
 
 
 def render_owner_os():
@@ -801,7 +957,7 @@ def render_owner_os():
         st.warning("Nur Owner (mepro1337).")
         return
 
-    render_section("Owner Operations", "System, Export, Bulk-Aktionen")
+    render_section("Owner Betrieb", "Erweiterte Exporte — Schnellaktionen in der Konsole")
 
     c1, c2 = st.columns(2)
     with c1:
@@ -855,11 +1011,11 @@ def render_admin():
         render_tickets()
         return
 
-    tabs = ["Command Center", "Users", "Leads", "Tickets", "Revenue", "Codes", "Analytics"]
+    tabs = ["Übersicht", "Nutzer", "Leads", "Tickets", "Umsatz", "Codes", "Analytics"]
     if is_admin():
-        tabs.extend(["Stripe", "Security", "Team"])
+        tabs.extend(["Stripe", "Sicherheit", "Team"])
     if is_owner():
-        tabs.extend(["Konsole", "Owner OS"])
+        tabs.extend(["Konsole", "Owner Betrieb"])
 
     tab_objs = st.tabs(tabs)
     idx = 0

@@ -339,6 +339,64 @@ div[data-testid="stVerticalBlockBorderWrapper"]:has(.adm-user-table) {
     margin-top: 4px;
     font-family: "Cascadia Code", "Consolas", monospace;
 }
+.adm-console-section {
+    border-radius: 16px;
+    padding: 16px 18px;
+    margin: 0 0 14px 0;
+    background: linear-gradient(160deg, rgba(6,12,10,.92), rgba(4,8,6,.98));
+    border: 1px solid rgba(34,197,94,.14);
+}
+.adm-console-section .st {
+    color: #86efac !important;
+    font-size: 13px;
+    font-weight: 1000;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+}
+.adm-console-section .ss {
+    color: #64748b !important;
+    font-size: 11px;
+    margin-bottom: 10px;
+}
+.adm-filter-bar {
+    border-radius: 14px;
+    padding: 12px 14px;
+    margin: 0 0 12px 0;
+    background: rgba(8,10,22,.75);
+    border: 1px solid rgba(168,85,247,.1);
+}
+.adm-filter-bar-label {
+    color: #64748b !important;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+}
+.adm-panel-card {
+    border-radius: 18px;
+    padding: 4px 0 8px 0;
+    margin-bottom: 10px;
+}
+.adm-two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+@media (max-width: 900px) { .adm-two-col { grid-template-columns: 1fr; } }
+div[data-testid="stTabs"] [data-baseweb="tab"] {
+    font-size: 12px !important;
+    font-weight: 800 !important;
+    padding: 8px 14px !important;
+}
+.adm-user-quick {
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-top: 8px;
+    background: rgba(0,0,0,.35);
+    border: 1px solid rgba(34,197,94,.12);
+}
 """
 
 
@@ -351,9 +409,9 @@ def render_hero(role: str, level: int, *, is_owner: bool) -> None:
     st.markdown(
         f"""
 <div class="adm-hero">
-    <div class="adm-kicker">MaByte ┬À Internal Operations</div>
+    <div class="adm-kicker">MaByte · Interne Steuerung</div>
     <div class="adm-title">Admin Control</div>
-    <div class="adm-sub">Enterprise Command Center ÔÇö Users, Revenue, Security & Support</div>
+    <div class="adm-sub">Dashboard für Nutzer, Umsatz, Sicherheit & Support</div>
     <div class="adm-pill-row">
         {owner_pill}
         <span class="adm-pill role">{html.escape(role.upper())}</span>
@@ -385,9 +443,33 @@ def render_kpi_grid(metrics: list[tuple[str, str, str, str]]) -> None:
 def render_section(title: str, subtitle: str = "") -> None:
     sub = f'<div class="adm-section-sub">{html.escape(subtitle)}</div>' if subtitle else ""
     st.markdown(
-        f'<div class="adm-section"><div class="adm-section-title">{html.escape(title)}</div>{sub}</div>',
+        f'<div class="adm-section adm-panel-card">'
+        f'<div class="adm-section-title">{html.escape(title)}</div>{sub}</div>',
         unsafe_allow_html=True,
     )
+
+
+def render_filter_bar(label: str = "Filter") -> None:
+    st.markdown(
+        f'<div class="adm-filter-bar"><div class="adm-filter-bar-label">{html.escape(label)}</div>',
+        unsafe_allow_html=True,
+    )
+
+
+def close_filter_bar() -> None:
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
+def render_console_section(title: str, subtitle: str = "") -> None:
+    sub = f'<div class="ss">{html.escape(subtitle)}</div>' if subtitle else ""
+    st.markdown(
+        f'<div class="adm-console-section"><div class="st">{html.escape(title)}</div>{sub}',
+        unsafe_allow_html=True,
+    )
+
+
+def close_console_section() -> None:
+    st.markdown("</div>", unsafe_allow_html=True)
 
 
 def render_distribution_bars(title: str, data: dict[str, Any], *, max_items: int = 8) -> None:
