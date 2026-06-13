@@ -339,6 +339,12 @@ from pricing import (
     get_music_cost,
     get_coding_cost,
 )
+from services.code_parser import (
+    build_zip,
+    download_label_for_file,
+    parse_code_output,
+    prose_without_code_blocks,
+)
 
 
 client = OpenAI(api_key=OPENAI_API_KEY)
@@ -727,7 +733,10 @@ _TOOL_SYSTEM = {
     "coding": (
         "Du bist MaByte Code Assistant. Antworte ausschließlich zu Programmierung: "
         "Code schreiben, debuggen, refactoren, APIs, Architektur. "
-        "Liefere sauberen, produktionsnahen Code mit kurzen Erklärungen."
+        "Liefere sauberen, produktionsnahen Code mit kurzen Erklärungen. "
+        "Umschließe Code mit Markdown-Fences und Sprach-Tags (```html, ```css, ```javascript). "
+        "Bei mehreren Dateien markiere die erste Zeile jedes Blocks mit einem Datei-Hinweis "
+        "(<!-- file: index.html -->, // file: app.js, # file: styles.css, /* file: styles.css */)."
     ),
     "music": (
         "Du bist MaByte Music Studio. Erstelle Song-Konzepte, Struktur, Lyrics "
@@ -769,12 +778,68 @@ def render_download(result, prefix):
     )
 
 
+def render_coding_preview(result: str) -> None:
+    files = parse_code_output(result)
+    prose = prose_without_code_blocks(result)
+
+    if prose:
+        st.markdown(prose)
+
+    if files:
+        for item in files:
+            st.markdown(f"**{item.filename}**")
+            st.code(item.content, language=item.language or None)
+    else:
+        st.markdown(result)
+
+
+def render_code_download(result: str, prefix: str) -> None:
+    files = parse_code_output(result)
+
+    if not files:
+        render_download(result, prefix)
+        return
+
+    if len(files) == 1:
+        item = files[0]
+        st.download_button(
+            download_label_for_file(item),
+            data=item.content.encode("utf-8"),
+            file_name=item.filename,
+            mime=item.mime,
+            width="stretch",
+            key=f"code_dl_{item.filename}",
+        )
+        return
+
+    st.download_button(
+        "Alle Dateien als ZIP",
+        data=build_zip(files),
+        file_name=f"{prefix}_{uuid.uuid4().hex[:6]}.zip",
+        mime="application/zip",
+        width="stretch",
+        key="code_dl_zip",
+    )
+
+    cols = st.columns(min(len(files), 3))
+    for index, item in enumerate(files):
+        with cols[index % len(cols)]:
+            st.download_button(
+                item.filename,
+                data=item.content.encode("utf-8"),
+                file_name=item.filename,
+                mime=item.mime,
+                width="stretch",
+                key=f"code_dl_{index}_{item.filename}",
+            )
+
+
 def run_paid_ai(tool, prompt, cost, filename_prefix):
     charge_tokens(tool, prompt, cost)
 
     try:
         with st.spinner("MaByte generiert..."):
-            result = ai_generate(prompt)
+            result = ai_generate(prompt, tool=tool)
 
         save_usage(
             username=username(),
@@ -789,9 +854,15 @@ def run_paid_ai(tool, prompt, cost, filename_prefix):
         st.success("Fertig generiert.")
 
         with st.container(border=True):
-            st.markdown(result)
+            if tool == "coding":
+                render_coding_preview(result)
+            else:
+                st.markdown(result)
 
-        render_download(result, filename_prefix)
+        if tool == "coding":
+            render_code_download(result, filename_prefix)
+        else:
+            render_download(result, filename_prefix)
 
     except Exception as e:
         refund_tokens(cost, tool, prompt)
