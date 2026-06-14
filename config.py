@@ -151,12 +151,18 @@ FOOTBALL_DEFAULT_SEASON = int(os.getenv("FOOTBALL_DEFAULT_SEASON", "2025") or 20
 
 # football-data.org v4 — env vars read once in core.config (re-exported for Streamlit).
 from core.config import (
+    FOOTBALL_API_INCLUDE,
+    FOOTBALL_API_PROVIDER,
     FOOTBALL_DATA_API_KEY,
     FOOTBALL_DATA_BASE_URL,
     FOOTBALL_DATA_CACHE_TTL,
     FOOTBALL_DATA_LIVE_CACHE_TTL,
     FOOTBALL_DATA_STANDINGS_CACHE_TTL,
     FOOTBALL_DATA_TIMEOUT,
+    SPORTMONKS_API_KEY,
+    SPORTMONKS_BASE_URL,
+    get_football_api_provider,
+    is_football_api_configured,
 )
 
 # Football AI FastAPI (optional — Railway second service)
@@ -313,6 +319,26 @@ FOOTBALL_DATA_ID_TO_LEAGUE_ID: dict[int, int] = {
     2018: 4,     # EC
     2016: 40,    # ELC
     2013: 71,    # BSA
+}
+
+# Internal (API-Football style) league ID -> SportMonks league_id
+SPORTMONKS_LEAGUE_IDS: dict[int, int] = {
+    78: 82,     # Bundesliga
+    39: 8,      # Premier League
+    140: 564,   # La Liga
+    135: 384,   # Serie A
+    61: 301,    # Ligue 1
+    2: 2,       # Champions League
+    88: 72,     # Eredivisie
+    94: 462,    # Primeira Liga
+    1: 732,     # World Cup
+    4: 1326,    # European Championship
+    40: 9,      # Championship
+    71: 648,    # Brasileirão Serie A
+}
+
+SPORTMONKS_LEAGUE_ID_TO_INTERNAL: dict[int, int] = {
+    sm_id: internal_id for internal_id, sm_id in SPORTMONKS_LEAGUE_IDS.items()
 }
 
 # Football AI Topspiele — union of curated competition leagues (excl. friendlies id 10)

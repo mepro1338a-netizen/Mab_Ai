@@ -13,12 +13,23 @@ Der Streamlit-Service bleibt unverändert (`railway.toml` + `Dockerfile`).
 
 ## 2. Umgebungsvariablen (API-Service)
 
+### Provider wählen
+
+| `FOOTBALL_API_PROVIDER` | Quelle | Erforderlicher Key |
+|-------------------------|--------|-------------------|
+| `football-data.org` (Default) | [football-data.org v4](https://www.football-data.org/client/register) | `FOOTBALL_DATA_API_KEY` |
+| `sportmonks` | [SportMonks Football API v3](https://www.sportmonks.com/) | `SPORTMONKS_API_KEY` |
+
 | Variable | Pflicht | Beschreibung |
 |----------|---------|--------------|
-| `FOOTBALL_DATA_API_KEY` | **Ja** | Key von [football-data.org](https://www.football-data.org/client/register) |
+| `FOOTBALL_API_PROVIDER` | Nein | `football-data.org` (Default) oder `sportmonks` |
+| `FOOTBALL_DATA_API_KEY` | Ja* | football-data.org Token (* wenn Provider = football-data.org) |
+| `SPORTMONKS_API_KEY` | Ja* | SportMonks Token (* wenn Provider = sportmonks) |
+| `FOOTBALL_API_INCLUDE` | Nein | SportMonks `include`-Parameter (Default: `participants;scores;periods;events;league.country;round`) |
+| `SPORTMONKS_BASE_URL` | Nein | Default: `https://api.sportmonks.com/v3/football` |
 | `API_CORS_ORIGINS` | Empfohlen | Komma-getrennte Streamlit-Origins, z. B. `https://mabai-production.up.railway.app,https://mabyte.de` |
 | `FOOTBALL_AI_CACHE_TTL` | Nein | Tip-Cache in Sekunden (Default: `900`) |
-| `FOOTBALL_DATA_CACHE_TTL` | Nein | football-data.org Cache (Default: `21600`) |
+| `FOOTBALL_DATA_CACHE_TTL` | Nein | Fixture-Cache (Default: `21600`) |
 | `PORT` | Auto | Von Railway gesetzt — nicht manuell setzen |
 
 `PORT` wird von Railway gesetzt. `start_api.sh` startet:
@@ -27,24 +38,28 @@ Der Streamlit-Service bleibt unverändert (`railway.toml` + `Dockerfile`).
 uvicorn main:app --host 0.0.0.0 --port "$PORT"
 ```
 
-Ohne `FOOTBALL_DATA_API_KEY` bricht der API-Service beim Start ab (`RuntimeError` in der FastAPI-Lifespan — Streamlit bleibt unberührt).
+Ohne passenden API-Key bricht der API-Service beim Start ab (`RuntimeError` in der FastAPI-Lifespan — Streamlit bleibt unberührt).
 
 ### Secret Management
 
 | Regel | Umsetzung |
 |-------|-----------|
-| Einziger Env-Reader | `core/config.py` liest `FOOTBALL_DATA_API_KEY` (und verwandte `FOOTBALL_DATA_*` Vars) via `os.getenv` |
-| Services | `football_data_client.py` nutzt `get_football_data_api_key()` aus `core.config` — kein direktes `os.getenv` |
+| Einziger Env-Reader | `core/config.py` liest `FOOTBALL_*` / `SPORTMONKS_*` via `os.getenv` |
+| Services | `football_data_client.py` / `sportmonks_client.py` nutzen Getter aus `core.config` — kein direktes `os.getenv` |
 | Streamlit | Root-`config.py` re-exportiert aus `core.config` (kein zweites Lesen) |
-| Startup-Check | `require_football_data_api_key()` in `api/app.py` Lifespan — FastAPI startet nicht ohne Key |
-| Keine Hardcodes | Kein Key im Repo, keine Auto-Generierung, kein öffentlicher Client-Key |
+| Startup-Check | `require_football_data_api_key()` in `api/app.py` Lifespan — prüft Provider + Key |
+| Keine Hardcodes | **Kein Token im Repo.** Nur in Railway Variables oder lokale `.env` (gitignored) |
+| Token-Rotation | Token, die in Chats/Logs auftauchen, sofort rotieren und nur in Railway/.env setzen |
 
 ## 3. Umgebungsvariablen (Streamlit-Service)
 
 | Variable | Beschreibung |
 |----------|--------------|
-| `FOOTBALL_AI_API_URL` | Öffentliche API-URL, z. B. `https://football-ai-production.up.railway.app` (für künftige UI-Anbindung) |
-| `FOOTBALL_DATA_API_KEY` | Kann auf Streamlit bleiben (lokale Football-Features); API-Service braucht eigenen Key |
+| `FOOTBALL_AI_API_URL` | Öffentliche API-URL, z. B. `https://football-ai-production.up.railway.app` |
+| `FOOTBALL_API_PROVIDER` | Gleicher Provider wie API-Service |
+| `FOOTBALL_DATA_API_KEY` | football-data.org Key (wenn Provider = football-data.org) |
+| `SPORTMONKS_API_KEY` | SportMonks Key (wenn Provider = sportmonks) |
+| `FOOTBALL_API_INCLUDE` | Optional — SportMonks Includes (siehe oben) |
 
 ## 4. Healthcheck
 
@@ -93,4 +108,6 @@ Ohne `API_CORS_ORIGINS` gilt `APP_BASE_URL` als Fallback (falls auf dem API-Serv
 | `railway.api.toml` | Build (Nixpacks) + Healthcheck |
 | `Procfile.api` | Alternative Start-Definition |
 | `api/app.py` | FastAPI-App-Factory + Startup-Key-Check |
-| `core/config.py` | API-Settings (Pydantic) + `require_football_data_api_key()` |
+| `core/config.py` | Provider-Settings + `require_football_data_api_key()` |
+| `services/football_data_client.py` | football-data.org HTTP + Mapper |
+| `services/sportmonks_client.py` | SportMonks HTTP + Mapper |

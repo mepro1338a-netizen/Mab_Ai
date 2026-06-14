@@ -10,7 +10,13 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 load_dotenv()
 
-# Single source of truth — only place that reads FOOTBALL_DATA_* from the environment.
+# Single source of truth — only place that reads FOOTBALL_* provider env vars.
+FOOTBALL_API_PROVIDER = os.getenv("FOOTBALL_API_PROVIDER", "football-data.org").strip().lower()
+FOOTBALL_API_INCLUDE = os.getenv(
+    "FOOTBALL_API_INCLUDE",
+    "participants;scores;periods;events;league.country;round",
+).strip()
+
 FOOTBALL_DATA_API_KEY = os.getenv("FOOTBALL_DATA_API_KEY", "").strip()
 FOOTBALL_DATA_BASE_URL = os.getenv(
     "FOOTBALL_DATA_BASE_URL",
@@ -23,14 +29,48 @@ FOOTBALL_DATA_STANDINGS_CACHE_TTL = int(
     os.getenv("FOOTBALL_DATA_STANDINGS_CACHE_TTL", "43200") or 43200
 )
 
+SPORTMONKS_API_KEY = os.getenv("SPORTMONKS_API_KEY", "").strip()
+SPORTMONKS_BASE_URL = os.getenv(
+    "SPORTMONKS_BASE_URL",
+    "https://api.sportmonks.com/v3/football",
+).strip()
+
+
+def get_football_api_provider() -> str:
+    """Return active football data provider: football-data.org or sportmonks."""
+    provider = FOOTBALL_API_PROVIDER or "football-data.org"
+    if provider in ("sportmonks", "sm"):
+        return "sportmonks"
+    return "football-data.org"
+
 
 def get_football_data_api_key() -> str:
     """Return the configured football-data.org API key (may be empty)."""
     return FOOTBALL_DATA_API_KEY
 
 
+def get_sportmonks_api_key() -> str:
+    """Return the configured SportMonks API key (may be empty)."""
+    return SPORTMONKS_API_KEY
+
+
+def is_football_api_configured() -> bool:
+    """True when the configured provider has a valid API key."""
+    if get_football_api_provider() == "sportmonks":
+        return bool(SPORTMONKS_API_KEY)
+    return bool(FOOTBALL_DATA_API_KEY)
+
+
 def require_football_data_api_key() -> str:
-    """Fail fast when the FastAPI service starts without a football-data.org key."""
+    """Fail fast when the FastAPI service starts without a football API key."""
+    provider = get_football_api_provider()
+    if provider == "sportmonks":
+        if not SPORTMONKS_API_KEY:
+            raise RuntimeError(
+                "SPORTMONKS_API_KEY is required when FOOTBALL_API_PROVIDER=sportmonks. "
+                "Set it in Railway or .env (never commit the token)."
+            )
+        return SPORTMONKS_API_KEY
     if not FOOTBALL_DATA_API_KEY:
         raise RuntimeError(
             "FOOTBALL_DATA_API_KEY is required to start the Football AI API. "

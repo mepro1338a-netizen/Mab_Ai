@@ -7,10 +7,9 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.routes.football_ai_routes import router as football_ai_router
-from core.config import get_settings, require_football_data_api_key
+from core.config import get_settings, is_football_api_configured, require_football_data_api_key
 from core.exceptions import register_exception_handlers
 from core.models import HealthResponse
-from services.football_data_client import is_fd_configured
 
 
 @asynccontextmanager
@@ -23,7 +22,7 @@ def create_app() -> FastAPI:
     settings = get_settings()
     app = FastAPI(
         title="MaByte Football AI API",
-        description="Deterministic football match tips powered by football-data.org v4.",
+        description="Deterministic football match tips powered by football-data.org or SportMonks.",
         version="1.0.0",
         lifespan=_lifespan,
     )
@@ -44,7 +43,7 @@ def create_app() -> FastAPI:
     def health() -> HealthResponse:
         return HealthResponse(
             status="ok",
-            football_api_configured=is_fd_configured(),
+            football_api_configured=is_football_api_configured(),
         )
 
     return app
