@@ -5,7 +5,7 @@ import html
 
 import streamlit as st
 
-from config import football_plan_rank
+from config import football_api_env_hint, football_plan_rank, is_football_api_configured
 from services.football_api import FootballAPIError, get_football_service
 from services.football_feed import fetch_match_detail, resolve_competition_board
 from ui.components import format_num
@@ -278,17 +278,18 @@ def render_football_betting_board(
         st.markdown("</div>", unsafe_allow_html=True)
         return
 
-    service = get_football_service()
-    if not service.is_configured():
+    if not is_football_api_configured():
+        env_hint = html.escape(football_api_env_hint())
         st.markdown(
-            '<div class="fb2-gate">Football Intelligence benötigt <strong>FOOTBALL_DATA_API_KEY</strong> '
-            "(football-data.org) in der Server-Umgebung (Railway Variables oder lokale .env). "
+            f'<div class="fb2-gate">Football Intelligence benötigt <strong>{env_hint}</strong> '
+            "in der Server-Umgebung (Railway Variables oder lokale .env). "
             "Ohne Key werden keine Spiele geladen.</div>",
             unsafe_allow_html=True,
         )
         st.markdown("</div>", unsafe_allow_html=True)
         return
 
+    service = get_football_service()
     sel = st.session_state.get("fb_sel")
 
     if sel:

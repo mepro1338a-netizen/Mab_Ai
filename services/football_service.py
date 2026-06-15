@@ -30,7 +30,7 @@ from config import (
 )
 import os
 
-from core.config import get_football_api_provider
+from core.config import get_football_api_provider, is_football_api_configured
 from services.football_data_client import (
     FootballDataError,
     fd_get,
@@ -370,9 +370,7 @@ class FootballService:
 
   def is_configured(self) -> bool:
       """True when the active provider has an API key."""
-      if self._use_sportmonks():
-          return is_sm_configured()
-      return self.fd_enabled()
+      return is_football_api_configured()
 
   def fd_enabled(self) -> bool:
       return is_fd_configured()

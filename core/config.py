@@ -61,6 +61,13 @@ def is_football_api_configured() -> bool:
     return bool(FOOTBALL_DATA_API_KEY)
 
 
+def football_api_env_hint() -> str:
+    """Required env vars for the active provider (for UI / error messages)."""
+    if get_football_api_provider() == "sportmonks":
+        return "SPORTMONKS_API_KEY + FOOTBALL_API_PROVIDER=sportmonks"
+    return "FOOTBALL_DATA_API_KEY"
+
+
 def require_football_data_api_key() -> str:
     """Fail fast when the FastAPI service starts without a football API key."""
     provider = get_football_api_provider()

@@ -13,6 +13,8 @@ from config import (
     FOOTBALL_LIVE_SORT_PRIORITY,
     FOOTBALL_PREMIUM_LEAGUE_IDS,
     FOOTBALL_UPCOMING_HORIZON_DAYS,
+    football_api_env_hint,
+    is_football_api_configured,
 )
 from services.football_service import FootballAPIError, FootballService
 
@@ -407,7 +409,7 @@ def fetch_premium_dashboard(
     errors: list[str] = []
     empty = {
         "configured": False, "today": today_s,
-        "errors": ["football-data.org ist nicht konfiguriert (FOOTBALL_DATA_API_KEY)."],
+        "errors": [f"Football-API nicht konfiguriert ({football_api_env_hint()})."],
         "top_matches": [], "live_now": [], "all_premium": [], "next_matches": [], "extended": [],
         "premium_count": 0,
         "raw_live_count": 0,
@@ -417,7 +419,7 @@ def fetch_premium_dashboard(
         "include_live": include_live,
         "include_raw": include_raw,
     }
-    if not service.is_configured():
+    if not is_football_api_configured():
         return empty
 
     upcoming_rows = _fetch_rows(

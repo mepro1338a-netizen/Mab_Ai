@@ -161,6 +161,7 @@ from core.config import (
     FOOTBALL_DATA_TIMEOUT,
     SPORTMONKS_API_KEY,
     SPORTMONKS_BASE_URL,
+    football_api_env_hint,
     get_football_api_provider,
     is_football_api_configured,
 )
