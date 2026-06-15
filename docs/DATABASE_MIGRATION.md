@@ -190,6 +190,37 @@ curl -sS https://web-production-734b0.up.railway.app/_stcore/health
 
 ---
 
+## Owner-Account (`mepro1337`)
+
+Owner access uses **both** env and DB:
+
+| Mechanism | Effect |
+|-----------|--------|
+| `OWNER_USERNAME` env | Protected username; always treated as owner in code |
+| DB `role='owner'`, `admin_level=1337` | Persisted privileges; synced on login and admin panel |
+
+After DB restore or if owner rights are wrong, promote the account:
+
+```bash
+# Local
+python tools/set_owner.py
+
+# Railway (user must already exist in restored DB)
+railway run python tools/set_owner.py
+```
+
+Or SQL (replace username if needed):
+
+```sql
+UPDATE users SET role='owner', admin_level=1337 WHERE username='mepro1337';
+```
+
+On app startup, `ensure_db_ready()` also calls `force_owner_account()` — if `mepro1337` exists, role/plan are corrected automatically.
+
+If the DB has **zero users** (fresh install), register/login first, then run `set_owner.py`.
+
+---
+
 ## Kurz-Checkliste
 
 - [ ] Altes Railway-Konto: `mabai.db` von `/data` exportiert

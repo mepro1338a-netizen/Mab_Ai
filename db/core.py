@@ -2,9 +2,7 @@
 import sqlite3
 from datetime import datetime
 
-from config import DB_PATH
-
-OWNER_USERNAME = "mepro1337"
+from config import DB_PATH, OWNER_USERNAME
 
 ROLE_LEVELS = {
     "user": 0,

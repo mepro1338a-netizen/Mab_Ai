@@ -30,6 +30,9 @@ except OSError as _data_dir_err:
     )
 DB_PATH = DATA_DIR / "mabai.db"
 
+# Protected owner account (not a secret — used for role enforcement)
+OWNER_USERNAME = os.getenv("OWNER_USERNAME", "mepro1337").strip().lower()
+
 LOGO_PATH = BASE_DIR / "logo1.png"
 FAVICON_PATH = BASE_DIR / "Logo24mp.png"
 HEADER_PATH = BASE_DIR / "neuerheader.png"
