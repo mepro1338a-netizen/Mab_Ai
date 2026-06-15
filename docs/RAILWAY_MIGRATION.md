@@ -26,7 +26,8 @@ Anleitung zum **Neu-Anlegen** des MaByte-Projekts auf dem Railway-Konto **maksig
 | **Stripe Webhook** (optional) | `railway.webhook.toml` + `Dockerfile.webhook` | `sh start-webhook.sh` | `/healthz` |
 
 Weitere Details zur Football-API: [`docs/RAILWAY_API.md`](RAILWAY_API.md)  
-Allgemeines Deploy: [`docs/RAILWAY_DEPLOY.md`](RAILWAY_DEPLOY.md)
+Allgemeines Deploy: [`docs/RAILWAY_DEPLOY.md`](RAILWAY_DEPLOY.md)  
+**SQLite-Daten vom alten Server:** [`docs/DATABASE_MIGRATION.md`](DATABASE_MIGRATION.md)
 
 ---
 
@@ -356,6 +357,7 @@ In der App (Admin-Bereich): Railway-Environment, Domain und konfigurierte Keys p
 - [ ] GitHub-Zugriff auf `mepro1338a-netizen/Mab_Ai` für Railway OAuth
 - [ ] Neues Projekt + Streamlit-Service deployed (`railway.toml`)
 - [ ] Volume `/data` + `DATA_DIR=/data`
+- [ ] **`mabai.db` vom alten Volume nach `/data` kopiert** — siehe [`DATABASE_MIGRATION.md`](DATABASE_MIGRATION.md)
 - [ ] Alle Variables kopiert (keine Secrets committed)
 - [ ] Domain generiert, `APP_BASE_URL` aktualisiert
 - [ ] Optional: Football-API-Service + `FOOTBALL_AI_API_URL` + `API_CORS_ORIGINS`
