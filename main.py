@@ -19,8 +19,9 @@ ROOT = Path(__file__).resolve().parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-# FastAPI ASGI app (uvicorn main:app). Startup key check runs in api.app lifespan only.
-from api.app import app  # noqa: F401
+# uvicorn imports this module as "main" — load ASGI app only then (not for Streamlit).
+if __name__ == "main":
+    from api.app import app  # noqa: F401
 
 
 def configure_production_env() -> None:
@@ -66,7 +67,7 @@ def bootstrap_database() -> None:
             pass
 
 
-if __name__ != "main__":
+if __name__ == "__main__":
     configure_production_env()
     log_startup()
     bootstrap_database()
