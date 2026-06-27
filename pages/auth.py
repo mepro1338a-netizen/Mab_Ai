@@ -1,4 +1,4 @@
-﻿"""MaByte Auth — Login & Registrierung."""
+﻿"""MaByte Auth — Login (Betaphase)."""
 from __future__ import annotations
 
 import streamlit as st
@@ -190,6 +190,16 @@ html:has(.auth-marker) [data-testid="stMainBlockContainer"] {
 
 .auth-slogan-plain {
     color: #f4f4f5;
+}
+
+.auth-beta-sub {
+    margin: 0;
+    text-align: center;
+    font-size: clamp(13px, 2.2vw, 16px);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    line-height: 1.4;
+    color: var(--auth-muted);
 }
 
 html:has(.auth-marker) .st-key-auth_card {
@@ -754,17 +764,17 @@ def _get_mode() -> str:
 def _set_mode(mode: str) -> None:
     st.session_state.gate_mode = mode
     st.session_state.auth_mode = mode
-    st.session_state["auth_mode_seg"] = "Registrieren" if mode == "register" else "Anmelden"
 
 
 def _render_slogan_header() -> None:
     st.markdown(
         """
 <div class="auth-slogan-bar" role="banner">
-  <span class="auth-early-pill">Early Access</span>
+  <span class="auth-early-pill">Betaphase</span>
   <p class="auth-slogan-line">
-    <span class="auth-slogan-grad">One</span><span class="auth-slogan-plain"> system. </span><span class="auth-slogan-grad">Infinite</span><span class="auth-slogan-plain"> intelligence.</span>
+    <span class="auth-slogan-grad">MaByte</span><span class="auth-slogan-plain"> offizieller Start in die </span><span class="auth-slogan-grad">Betaphase</span>
   </p>
+  <p class="auth-beta-sub">Infos coming soon.</p>
 </div>
         """,
         unsafe_allow_html=True,
@@ -928,6 +938,13 @@ def handle_google_oauth_callback() -> None:
 
 
 def _render_login_form() -> None:
+    st.markdown(
+        '<div class="auth-intro">'
+        '<p class="auth-title">Anmelden</p>'
+        '<p class="auth-sub">Melde dich mit deinem bestehenden Konto an.</p>'
+        "</div>",
+        unsafe_allow_html=True,
+    )
     with st.form("auth_login_form", clear_on_submit=False, border=False):
         username = st.text_input("Benutzername", key="auth_user")
         password = st.text_input("Passwort", type="password", key="auth_pass")
@@ -967,13 +984,7 @@ def _render_register_form() -> None:
 
 
 def render_auth() -> None:
-    if _get_mode() not in ("login", "register"):
-        _set_mode("login")
-    elif "gate_mode" not in st.session_state:
-        _set_mode("login")
-
-    if "auth_mode_seg" not in st.session_state:
-        st.session_state.auth_mode_seg = "Registrieren" if _get_mode() == "register" else "Anmelden"
+    _set_mode("login")
 
     st.markdown(
         '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">',
@@ -987,30 +998,10 @@ def render_auth() -> None:
 
     with st.container(key="auth_card", border=False):
         st.markdown('<span class="auth-card-marker" hidden aria-hidden="true"></span>', unsafe_allow_html=True)
-
-        with st.container(key="auth_seg_wrap"):
-            choice = st.segmented_control(
-                label=" ",
-                options=["Anmelden", "Registrieren"],
-                key="auth_mode_seg",
-                label_visibility="collapsed",
-                width="stretch",
-            )
-
-        mode = "register" if choice == "Registrieren" else "login"
-        st.session_state.gate_mode = mode
-        st.session_state.auth_mode = mode
-        st.markdown(
-            f'<span class="auth-mode-{mode}" hidden aria-hidden="true"></span>',
-            unsafe_allow_html=True,
-        )
+        st.markdown('<span class="auth-mode-login" hidden aria-hidden="true"></span>', unsafe_allow_html=True)
 
         _show_notice()
-
-        if mode == "register":
-            _render_register_form()
-        else:
-            _render_login_form()
+        _render_login_form()
 
         st.markdown(
             '<p class="auth-footer">Verschlüsselte Übertragung</p>',
