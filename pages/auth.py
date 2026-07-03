@@ -1,4 +1,4 @@
-﻿"""MaByte Auth — Login (Betaphase)."""
+﻿"""MaByte Auth — Login & Registrierung (Betaphase)."""
 from __future__ import annotations
 
 import streamlit as st
@@ -764,6 +764,7 @@ def _get_mode() -> str:
 def _set_mode(mode: str) -> None:
     st.session_state.gate_mode = mode
     st.session_state.auth_mode = mode
+    st.session_state["auth_mode_seg"] = "Registrieren" if mode == "register" else "Anmelden"
 
 
 def _render_slogan_header() -> None:
@@ -984,7 +985,13 @@ def _render_register_form() -> None:
 
 
 def render_auth() -> None:
-    _set_mode("login")
+    if _get_mode() not in ("login", "register"):
+        _set_mode("login")
+    elif "gate_mode" not in st.session_state:
+        _set_mode("login")
+
+    if "auth_mode_seg" not in st.session_state:
+        st.session_state.auth_mode_seg = "Registrieren" if _get_mode() == "register" else "Anmelden"
 
     st.markdown(
         '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">',
@@ -998,10 +1005,30 @@ def render_auth() -> None:
 
     with st.container(key="auth_card", border=False):
         st.markdown('<span class="auth-card-marker" hidden aria-hidden="true"></span>', unsafe_allow_html=True)
-        st.markdown('<span class="auth-mode-login" hidden aria-hidden="true"></span>', unsafe_allow_html=True)
+
+        with st.container(key="auth_seg_wrap"):
+            choice = st.segmented_control(
+                label=" ",
+                options=["Anmelden", "Registrieren"],
+                key="auth_mode_seg",
+                label_visibility="collapsed",
+                width="stretch",
+            )
+
+        mode = "register" if choice == "Registrieren" else "login"
+        st.session_state.gate_mode = mode
+        st.session_state.auth_mode = mode
+        st.markdown(
+            f'<span class="auth-mode-{mode}" hidden aria-hidden="true"></span>',
+            unsafe_allow_html=True,
+        )
 
         _show_notice()
-        _render_login_form()
+
+        if mode == "register":
+            _render_register_form()
+        else:
+            _render_login_form()
 
         st.markdown(
             '<p class="auth-footer">Verschlüsselte Übertragung</p>',
