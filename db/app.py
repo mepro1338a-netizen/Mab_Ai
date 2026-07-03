@@ -1224,15 +1224,45 @@ def football_plan_limits(plan_key: str) -> dict:
     }
 
 
-def force_owner_account() -> None:
+def _log_owner(msg: str) -> None:
+    try:
+        from logger import log_info
+
+        log_info(msg, category="auth")
+    except Exception:
+        import sys
+
+        print(f"[MaByte] {msg}", file=sys.stderr)
+
+
+def force_owner_account() -> bool:
+    """Idempotently promote OWNER_USERNAME to owner/elite.
+
+    Returns True if the owner row exists (and is now correct), False if the
+    account has not been registered yet. Safe to call repeatedly — on startup,
+    on login and on every authenticated request — so the owner is promoted as
+    soon as the account exists, without needing a restart or the Railway CLI.
+    """
     from db.users import get_user, set_plan, set_role
 
     user = get_user(OWNER_USERNAME)
     if not user:
-        return
+        # Owner account not registered yet — nothing to promote (yet).
+        return False
+
+    changed = False
     if user.get("role") != "owner" or int(user.get("admin_level") or 0) != 1337:
         set_role(OWNER_USERNAME, "owner", 1337)
+        changed = True
     if user.get("plan") != "elite":
         set_plan(OWNER_USERNAME, "elite")
         set_football_plan(OWNER_USERNAME, "football_elite")
+        changed = True
+
+    if changed:
+        _log_owner(
+            f"force_owner_account: promoted '{OWNER_USERNAME}' to owner/elite "
+            "(role=owner, admin_level=1337, plan=elite, football_plan=football_elite)."
+        )
+    return True
 

@@ -7,7 +7,8 @@ from typing import Any
 
 import streamlit as st
 
-from database import get_user
+from config import OWNER_USERNAME
+from database import force_owner_account, get_user
 from security import is_admin as db_is_admin
 
 # Keys cleared on logout / session rotation (anti-fixation)
@@ -151,8 +152,37 @@ def enforce_active_session() -> dict | None:
         logout_session()
         return None
 
+    user = _self_heal_owner(user)
+
     sync_from_user_record(user)
     return user
+
+
+def _self_heal_owner(user: dict) -> dict:
+    """Promote the protected owner account on login / every request.
+
+    force_owner_account() only runs at cold start, so an owner who registers
+    *after* boot would stay on the free plan until the next restart. Re-running
+    it here (idempotent, owner-only) guarantees mepro1337 becomes owner/elite on
+    the very next login or rerun — no redeploy or Railway CLI needed.
+    """
+    try:
+        username = (user.get("username") or "").strip().lower()
+        if username != OWNER_USERNAME:
+            return user
+        if user.get("role") == "owner" and int(user.get("admin_level") or 0) == 1337 \
+                and user.get("plan") == "elite":
+            return user
+        force_owner_account()
+        refreshed = get_user(username)
+        return refreshed or user
+    except Exception as exc:
+        try:
+            from logger import log_warning
+            log_warning(f"owner self-heal skipped: {exc}", category="auth")
+        except Exception:
+            pass
+        return user
 
 
 def server_is_admin() -> bool:
