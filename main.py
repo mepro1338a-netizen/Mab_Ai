@@ -36,6 +36,8 @@ def configure_production_env() -> None:
     # Force off — Railway may set these; setdefault does not override existing env.
     os.environ["STREAMLIT_SERVER_ENABLECORS"] = "false"
     os.environ["STREAMLIT_SERVER_ENABLEXSRFPROTECTION"] = "false"
+    os.environ["STREAMLIT_SERVER_ENABLEWEBSOCKETCOMPRESSION"] = "false"
+    os.environ.setdefault("STREAMLIT_SERVER_WEBSOCKETPINGINTERVAL", "25")
 
 
 def log_startup() -> None:

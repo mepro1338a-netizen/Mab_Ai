@@ -4,11 +4,13 @@ showSidebarNavigation = false
 [server]
 headless = true
 address = "0.0.0.0"
-port = 8501
+# Port: set via Railway $PORT in start.sh — do not hardcode here.
 # Railway reverse proxy: XSRF with wrong origin (0.0.0.0) breaks the UI — keep off in prod.
 enableCORS = false
 enableXsrfProtection = false
 enableWebsocketCompression = false
+# Keepalive for Railway proxy (Streamlit 1.48+); lowers idle-timeout disconnects.
+websocketPingInterval = 25
 maxUploadSize = 200
 
 [browser]

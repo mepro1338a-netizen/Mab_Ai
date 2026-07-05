@@ -7,4 +7,6 @@ exec streamlit run main.py \
   --server.headless=true \
   --server.enableCORS=false \
   --server.enableXsrfProtection=false \
+  --server.enableWebsocketCompression=false \
+  --server.websocketPingInterval=25 \
   --browser.gatherUsageStats=false
