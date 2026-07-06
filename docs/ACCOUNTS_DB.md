@@ -6,6 +6,34 @@ Railway** (Volume) — ohne Volume gehen die Accounts bei jedem Redeploy verlore
 
 ---
 
+## Symptom: "die Datenbank greift nicht" / Accounts nach Deploy weg
+
+> **Ursache in 99 % der Fälle:** In Railway ist **kein Volume auf `/data`**
+> gemountet. Die App schreibt dann in das Container-Dateisystem (`<repo>/data`),
+> das bei jedem Redeploy gelöscht wird.
+
+**In 60 Sekunden prüfen:**
+
+1. Railway → Service (Streamlit) → **Deployments** → letzte Logs öffnen. Beim
+   Boot loggt MaByte jetzt eine Zeile wie:
+   ```
+   DB boot: DATA_DIR=/data DB_PATH=/data/mabai.db env_DATA_DIR=/data
+   railway=True db_exists=True db_size=... users_before_init=... writable=True
+   ```
+   Wenn `DATA_DIR` nicht `/data` ist **oder** `writable=False` erscheint **oder**
+   die Warnung `Railway erkannt, aber DATA_DIR liegt NICHT auf /data` auftaucht →
+   siehe Fix in Abschnitt 3.
+
+2. Alternativ als One-off im Railway-Service:
+   ```bash
+   railway run python tools/db_status.py
+   ```
+   Zeigt DATA_DIR, DB-Pfad, Größe, User-Anzahl und einen Volume-Check.
+
+**Fix (immer derselbe):** siehe [Abschnitt 3 — Persistenz garantieren](#3-persistenz-garantieren-railway--die-wichtigen-schritte).
+
+---
+
 ## 1. Was existiert bereits
 
 - **Engine:** SQLite, eine einzige Datei `{DATA_DIR}/mabai.db` (`config.py` → `DB_PATH`).
@@ -89,6 +117,13 @@ DB-Gesamtüberblick (Integrität, alle Tabellen, Zeilen):
 ```bash
 python tools/db_migrate.py inspect
 railway run python tools/db_migrate.py inspect
+```
+
+Persistenz-Check (kurz, mit Volume-Erkennung):
+
+```bash
+python tools/db_status.py            # DATA_DIR, DB, Größe, User-Anzahl, Volume-Check
+railway run python tools/db_status.py
 ```
 
 Im Admin-Panel (`pages/admin.py`) gibt es zusätzlich einen **User-Export als CSV**.
