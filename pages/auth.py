@@ -14,57 +14,74 @@ _DEFAULT_USE_CASE = "Sonstiges"
 _DEFAULT_COUNTRY = "Deutschland"
 
 _AUTH_CSS = """
-/* MaByte Auth */
+/* MaByte Auth — Marble edition */
 :root {
-    --auth-bg: #09090b;
-    --auth-surface: rgba(24, 24, 27, 0.98);
-    --auth-line: rgba(255, 255, 255, 0.09);
-    --auth-text: #fafafa;
-    --auth-muted: #a1a1aa;
-    --auth-hint: #71717a;
-    --auth-field: #18181b;
-    --auth-field-line: rgba(255, 255, 255, 0.11);
-    --auth-accent: #7c3aed;
-    --auth-accent-hover: #6d28d9;
-    --auth-violet: #8b5cf6;
-    --auth-glass-bg: rgba(255, 255, 255, 0.06);
-    --auth-glass-tray: rgba(255, 255, 255, 0.04);
-    --auth-glass-inactive-text: #d4d4d8;
-    --auth-glass-active-fill: rgba(139, 92, 246, 0.2);
+    /* Marble palette (Carrara/Statuario inspired) */
+    --auth-marble-base: #ebe7e0;
+    --auth-marble-hi: #f6f3ee;
+    --auth-marble-mid: #d5d0c7;
+    --auth-marble-lo: #b6b1a7;
+    --auth-vein: rgba(90, 84, 74, 0.10);
+    --auth-vein-strong: rgba(48, 44, 38, 0.16);
+
+    /* Neutral tokens (legacy names preserved for cross-block usage) */
+    --auth-bg: #ebe7e0;
+    --auth-surface: rgba(255, 255, 255, 0.62);
+    --auth-line: rgba(80, 76, 68, 0.18);
+    --auth-text: #141414;
+    --auth-muted: #5a564f;
+    --auth-hint: #8a857c;
+    --auth-field: rgba(255, 255, 255, 0.72);
+    --auth-field-line: rgba(80, 76, 68, 0.22);
+    --auth-accent: #1a1a1a;
+    --auth-accent-hover: #050505;
+    --auth-violet: #4a4640;
+
+    /* Glass tokens (graphite on marble) */
+    --auth-glass-bg: rgba(255, 255, 255, 0.55);
+    --auth-glass-tray: rgba(255, 255, 255, 0.42);
+    --auth-glass-inactive-text: #4a4640;
+    --auth-glass-active-fill: rgba(20, 20, 18, 0.95);
     --auth-glass-border-grad: linear-gradient(
         90deg,
-        rgba(139, 92, 246, 0.75),
-        rgba(99, 102, 241, 0.75)
+        rgba(70, 66, 58, 0.7),
+        rgba(140, 134, 122, 0.6)
     );
     --auth-glass-submit-fill: linear-gradient(
-        rgba(139, 92, 246, 0.14),
-        rgba(99, 102, 241, 0.1)
+        180deg,
+        rgba(20, 20, 18, 0.98),
+        rgba(56, 54, 50, 0.98)
     );
+
     --auth-seg-btn-h: 48px;
     --auth-submit-h: 52px;
-    --auth-glass-border: rgba(255, 255, 255, 0.14);
-    --auth-glass-border-hover: rgba(139, 92, 246, 0.45);
-    --auth-glass-blur: blur(16px);
+    --auth-glass-border: rgba(80, 76, 68, 0.22);
+    --auth-glass-border-hover: rgba(20, 20, 18, 0.55);
+    --auth-glass-blur: blur(18px);
     --auth-radius: 10px;
     --auth-input-h: 44px;
     --auth-pad: 36px;
     --auth-w: 440px;
-    --auth-banner-h: 140px;
+    --auth-banner-h: 160px;
     --s1: 8px;
     --s2: 16px;
     --s3: 24px;
 }
 
-html:has(.auth-marker),
+html:has(.auth-marker) {
+    background-color: var(--auth-marble-base) !important;
+}
+
 html:has(.auth-marker) body,
 html:has(.auth-marker) .stApp,
 html:has(.auth-marker) [data-testid="stAppViewContainer"],
 html:has(.auth-marker) section.main,
 html:has(.auth-marker) [data-testid="stMain"],
 html:has(.auth-marker) section.main .block-container,
-html:has(.auth-marker) [data-testid="stMain"] .block-container {
-    background: var(--auth-bg) !important;
-    background-color: var(--auth-bg) !important;
+html:has(.auth-marker) [data-testid="stMain"] .block-container,
+html:has(.auth-marker) [data-testid="stMainBlockContainer"] {
+    background: transparent !important;
+    background-color: transparent !important;
     background-image: none !important;
     color: var(--auth-text) !important;
     font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
@@ -80,14 +97,31 @@ html:has(.auth-marker) [data-testid="stHeader"] {
     display: none !important;
 }
 
+/* Marble background — layered gradients simulate polished marble */
 .auth-bg {
     position: fixed;
     inset: 0;
     z-index: 0;
     pointer-events: none;
     background:
-        radial-gradient(ellipse 70% 45% at 50% -15%, rgba(124, 58, 237, 0.12), transparent 62%),
-        var(--auth-bg);
+        linear-gradient(112deg,
+            transparent 41.4%, var(--auth-vein-strong) 41.7%, transparent 42.0%,
+            transparent 45.4%, var(--auth-vein) 45.7%, transparent 46.0%),
+        linear-gradient(82deg,
+            transparent 64.4%, var(--auth-vein) 64.7%, transparent 65.0%,
+            transparent 78.4%, var(--auth-vein-strong) 78.7%, transparent 79.0%),
+        linear-gradient(148deg,
+            transparent 11.8%, var(--auth-vein) 12.2%, transparent 12.6%,
+            transparent 88.4%, var(--auth-vein) 88.8%, transparent 89.2%),
+        radial-gradient(ellipse 46% 42% at 22% 28%, rgba(255, 255, 255, 0.70), transparent 65%),
+        radial-gradient(ellipse 38% 32% at 78% 18%, rgba(255, 255, 255, 0.55), transparent 70%),
+        radial-gradient(ellipse 52% 42% at 55% 82%, rgba(255, 255, 255, 0.50), transparent 65%),
+        radial-gradient(ellipse 32% 26% at 12% 75%, rgba(150, 143, 132, 0.32), transparent 70%),
+        radial-gradient(ellipse 42% 36% at 92% 88%, rgba(140, 133, 122, 0.36), transparent 65%),
+        linear-gradient(135deg,
+            var(--auth-marble-hi) 0%,
+            var(--auth-marble-base) 45%,
+            var(--auth-marble-mid) 100%);
 }
 
 html:has(.auth-marker) [data-testid="stAppViewContainer"],
@@ -123,16 +157,17 @@ html:has(.auth-marker) [data-testid="stMainBlockContainer"] {
     margin-left: -50vw;
     margin-right: -50vw;
     margin-bottom: var(--s3);
-    height: var(--auth-banner-h);
     min-height: var(--auth-banner-h);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 12px;
+    gap: 14px;
     box-sizing: border-box;
-    padding: 0 clamp(6px, 1.2vw, 16px);
-    background: linear-gradient(180deg, #0a1020 0%, #050816 100%);
+    padding: 28px clamp(6px, 1.2vw, 16px);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0));
+    border-bottom: 1px solid rgba(80, 76, 68, 0.14);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
     overflow: hidden;
 }
 
@@ -143,20 +178,23 @@ html:has(.auth-marker) [data-testid="stMainBlockContainer"] {
     flex-wrap: wrap;
     gap: 8px;
     max-width: calc(100% - 16px);
-    padding: 10px 22px;
+    padding: 9px 22px;
     border: 1px solid transparent;
     border-radius: 999px;
     background:
-        linear-gradient(rgba(9, 9, 11, 0.88), rgba(9, 9, 11, 0.88)) padding-box,
-        linear-gradient(90deg, rgba(139, 92, 246, 0.75), rgba(99, 102, 241, 0.75)) border-box;
-    color: #c4b5fd;
-    font-size: 13px;
+        linear-gradient(rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.7)) padding-box,
+        linear-gradient(90deg, rgba(70, 66, 58, 0.6), rgba(140, 134, 122, 0.5)) border-box;
+    color: #1a1a1a;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 12px;
     font-weight: 700;
-    letter-spacing: 0.16em;
+    letter-spacing: 0.26em;
     text-transform: uppercase;
     line-height: 1;
     white-space: nowrap;
-    box-shadow: 0 0 22px rgba(139, 92, 246, 0.18);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.7),
+        0 2px 12px rgba(30, 26, 20, 0.10);
 }
 
 .auth-early-pill::before {
@@ -165,23 +203,27 @@ html:has(.auth-marker) [data-testid="stMainBlockContainer"] {
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: #8b5cf6;
-    box-shadow: 0 0 10px rgba(139, 92, 246, 0.85);
+    background: #1a1a1a;
+    box-shadow: 0 0 6px rgba(30, 26, 20, 0.35);
 }
 
 .auth-slogan-line {
     margin: 0;
     width: 100%;
     text-align: center;
-    font-size: clamp(15px, calc((100vw - 20px) / 16.5), 44px);
-    font-weight: 700;
-    letter-spacing: clamp(0.06em, 0.45vw, 0.16em);
+    font-size: clamp(17px, calc((100vw - 20px) / 15), 48px);
+    font-weight: 500;
+    letter-spacing: 0.04em;
     line-height: 1;
     white-space: nowrap;
 }
 
 .auth-slogan-grad {
-    background: linear-gradient(90deg, #c084fc 0%, #818cf8 48%, #6366f1 100%);
+    font-family: "Playfair Display", "Cormorant Garamond", "Times New Roman", serif;
+    font-weight: 800;
+    font-style: normal;
+    letter-spacing: -0.01em;
+    background: linear-gradient(180deg, #050505 0%, #262624 55%, #4a4640 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -189,17 +231,21 @@ html:has(.auth-marker) [data-testid="stMainBlockContainer"] {
 }
 
 .auth-slogan-plain {
-    color: #f4f4f5;
+    color: var(--auth-muted);
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    font-size: 0.72em;
 }
 
 .auth-beta-sub {
     margin: 0;
     text-align: center;
-    font-size: clamp(13px, 2.2vw, 16px);
-    font-weight: 500;
-    letter-spacing: 0.04em;
+    font-size: clamp(11px, 1.8vw, 13px);
+    font-weight: 600;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
     line-height: 1.4;
-    color: var(--auth-muted);
+    color: var(--auth-hint);
 }
 
 html:has(.auth-marker) .st-key-auth_card {
@@ -212,14 +258,16 @@ html:has(.auth-marker) .st-key-auth_card > [data-testid="stVerticalBlock"]:has(.
     position: relative !important;
     width: 100% !important;
     min-width: min(var(--auth-w), calc(100% - 32px)) !important;
-    border-radius: 14px !important;
-    border: 1px solid var(--auth-line) !important;
+    border-radius: 16px !important;
+    border: 1px solid rgba(255, 255, 255, 0.65) !important;
     background: var(--auth-surface) !important;
-    backdrop-filter: blur(24px) !important;
-    -webkit-backdrop-filter: blur(24px) !important;
+    backdrop-filter: blur(28px) saturate(140%) !important;
+    -webkit-backdrop-filter: blur(28px) saturate(140%) !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.06),
-        0 20px 40px -16px rgba(0, 0, 0, 0.55) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.75),
+        inset 0 -1px 0 rgba(80, 76, 68, 0.08),
+        0 24px 44px -20px rgba(30, 26, 20, 0.32),
+        0 4px 14px rgba(30, 26, 20, 0.08) !important;
     padding: var(--auth-pad) !important;
     gap: 0 !important;
     align-items: stretch !important;
@@ -277,17 +325,18 @@ html:has(.auth-marker) .st-key-auth_mode_seg [data-testid="stWidgetLabel"] {
 
 .auth-title {
     margin: 0;
-    font-size: 18px;
-    font-weight: 600;
+    font-family: "Playfair Display", "Cormorant Garamond", "Times New Roman", serif;
+    font-size: 22px;
+    font-weight: 700;
     letter-spacing: -0.015em;
-    line-height: 1.3;
+    line-height: 1.25;
     color: var(--auth-text) !important;
 }
 
 .auth-sub {
-    margin: 4px 0 0;
+    margin: 6px 0 0;
     font-size: 13px;
-    line-height: 1.45;
+    line-height: 1.5;
     color: var(--auth-muted) !important;
 }
 
@@ -340,15 +389,22 @@ html:has(.auth-marker) .st-key-auth_card [data-testid="stTextInput"] input {
     min-height: var(--auth-input-h) !important;
     height: var(--auth-input-h) !important;
     font-size: 14px !important;
-    padding: 0 40px 0 12px !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04) !important;
-    transition: border-color 0.15s ease, box-shadow 0.15s ease !important;
+    padding: 0 40px 0 14px !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.65),
+        inset 0 -1px 0 rgba(80, 76, 68, 0.05) !important;
+    transition:
+        border-color 0.15s ease,
+        box-shadow 0.15s ease,
+        background 0.15s ease !important;
 }
 
 html:has(.auth-marker) .st-key-auth_card .st-key-auth_user input,
 html:has(.auth-marker) .st-key-auth_card .st-key-reg_user input,
 html:has(.auth-marker) .st-key-auth_card .st-key-reg_email input {
-    padding-right: 12px !important;
+    padding-right: 14px !important;
 }
 
 html:has(.auth-marker) .st-key-auth_card [data-testid="stTextInput"] input::placeholder {
@@ -357,12 +413,16 @@ html:has(.auth-marker) .st-key-auth_card [data-testid="stTextInput"] input::plac
 }
 
 html:has(.auth-marker) .st-key-auth_card [data-testid="stTextInput"] input:hover {
-    border-color: rgba(255, 255, 255, 0.16) !important;
+    border-color: rgba(80, 76, 68, 0.36) !important;
+    background: rgba(255, 255, 255, 0.78) !important;
 }
 
 html:has(.auth-marker) .st-key-auth_card [data-testid="stTextInput"] input:focus {
-    border-color: rgba(124, 58, 237, 0.55) !important;
-    box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15) !important;
+    border-color: rgba(20, 20, 18, 0.6) !important;
+    background: rgba(255, 255, 255, 0.86) !important;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.7),
+        0 0 0 3px rgba(20, 20, 18, 0.09) !important;
     outline: none !important;
 }
 
@@ -384,14 +444,14 @@ html:has(.auth-marker) .stApp section.main .st-key-auth_card [data-testid="stTex
     min-height: 32px !important;
     max-height: 32px !important;
     padding: 0 !important;
-    border: 1px solid rgba(255, 255, 255, 0.14) !important;
+    border: 1px solid rgba(80, 76, 68, 0.22) !important;
     border-radius: 999px !important;
-    background: var(--auth-glass-bg) !important;
+    background: rgba(255, 255, 255, 0.6) !important;
     background-image: none !important;
     color: var(--auth-muted) !important;
     backdrop-filter: var(--auth-glass-blur) !important;
     -webkit-backdrop-filter: var(--auth-glass-blur) !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
     transition:
         background 0.15s ease,
         border-color 0.15s ease,
@@ -401,19 +461,19 @@ html:has(.auth-marker) .stApp section.main .st-key-auth_card [data-testid="stTex
 
 html:has(.auth-marker) .stApp section.main .st-key-auth_card [data-testid="stTextInput"] [data-testid="stButton"] button:hover,
 html:has(.auth-marker) .stApp section.main .st-key-auth_card [data-testid="stTextInput"] button[data-testid="stBaseButton-tertiary"]:hover {
-    background: rgba(139, 92, 246, 0.12) !important;
-    border-color: var(--auth-glass-border-hover) !important;
+    background: rgba(255, 255, 255, 0.9) !important;
+    border-color: rgba(20, 20, 18, 0.45) !important;
     color: var(--auth-text) !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.08),
-        0 0 10px rgba(139, 92, 246, 0.2) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.85),
+        0 2px 8px rgba(30, 26, 20, 0.12) !important;
 }
 
 html:has(.auth-marker) .stApp section.main .st-key-auth_card [data-testid="stTextInput"] [data-testid="stButton"] button:disabled,
 html:has(.auth-marker) .stApp section.main .st-key-auth_card [data-testid="stTextInput"] button[data-testid="stBaseButton-tertiary"]:disabled {
     opacity: 0.4 !important;
-    background: rgba(255, 255, 255, 0.03) !important;
-    border-color: rgba(255, 255, 255, 0.06) !important;
+    background: rgba(255, 255, 255, 0.4) !important;
+    border-color: rgba(80, 76, 68, 0.12) !important;
     box-shadow: none !important;
     transform: none !important;
 }
@@ -437,22 +497,21 @@ html:has(.auth-marker) .stApp section.main .st-key-auth_card button[data-testid=
     border: 1px solid var(--auth-glass-border) !important;
     background: var(--auth-glass-bg) !important;
     background-image: none !important;
-    background-color: transparent !important;
     color: var(--auth-text) !important;
     font-weight: 600 !important;
     backdrop-filter: var(--auth-glass-blur) !important;
     -webkit-backdrop-filter: var(--auth-glass-blur) !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75) !important;
 }
 
 html:has(.auth-marker) .stApp section.main .st-key-auth_card .stButton > button:not([kind="primary"]):hover,
 html:has(.auth-marker) .stApp section.main .st-key-auth_card .stButton > button[kind="secondary"]:hover,
 html:has(.auth-marker) .stApp section.main .st-key-auth_card button[data-testid="stBaseButton-secondary"]:hover {
-    background: rgba(139, 92, 246, 0.1) !important;
+    background: rgba(255, 255, 255, 0.72) !important;
     border-color: var(--auth-glass-border-hover) !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.08),
-        0 0 14px rgba(139, 92, 246, 0.28) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.85),
+        0 4px 14px rgba(30, 26, 20, 0.14) !important;
     transform: translateY(-1px) !important;
 }
 
@@ -461,7 +520,13 @@ html:has(.auth-marker) .st-key-auth_card [data-testid="stAlert"] {
     font-size: 14px !important;
     margin: 0 0 var(--s2) !important;
     width: 100% !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(80, 76, 68, 0.18) !important;
+    background: rgba(255, 255, 255, 0.55) !important;
+    color: var(--auth-text) !important;
+}
+
+html:has(.auth-marker) .st-key-auth_card [data-testid="stAlert"] p {
+    color: var(--auth-text) !important;
 }
 
 html:has(.auth-marker) .st-key-auth_card [data-testid="stMarkdownContainer"] {
@@ -473,14 +538,17 @@ html:has(.auth-marker) .st-key-auth_card [data-testid="stMarkdownContainer"] {
 .auth-footer {
     margin: 20px 0 0;
     padding-top: var(--s2);
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-top: 1px solid rgba(80, 76, 68, 0.14);
     text-align: center;
-    font-size: 11px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.24em;
+    text-transform: uppercase;
     color: var(--auth-hint) !important;
 }
 
 html:has(.auth-marker) .stApp {
-    --background-color: #09090b !important;
+    --background-color: #ebe7e0 !important;
 }
 
 html:has(.auth-marker) .st-key-auth_card,
@@ -493,19 +561,20 @@ html:has(.auth-marker) .st-key-auth_card [data-testid="stFormSubmitButton"] {
     html:has(.auth-marker) {
         --auth-pad: 28px;
         --auth-w: 100%;
-        --auth-banner-h: 104px;
+        --auth-banner-h: 128px;
     }
     html:has(.auth-marker) .auth-slogan-line {
-        font-size: clamp(13px, calc((100vw - 16px) / 15), 28px);
-        letter-spacing: clamp(0.04em, 0.35vw, 0.1em);
+        font-size: clamp(14px, calc((100vw - 16px) / 14), 30px);
+        letter-spacing: 0.03em;
     }
     html:has(.auth-marker) .auth-slogan-bar {
-        gap: 8px;
+        gap: 10px;
+        padding: 18px clamp(6px, 1.2vw, 14px);
     }
     html:has(.auth-marker) .auth-early-pill {
-        font-size: 12px;
-        padding: 8px 18px;
-        letter-spacing: 0.14em;
+        font-size: 11px;
+        padding: 7px 16px;
+        letter-spacing: 0.2em;
     }
     html:has(.auth-marker) [data-testid="stMain"] {
         justify-content: flex-start !important;
@@ -574,7 +643,7 @@ html:has(.auth-marker) .st-key-auth_card [data-testid="stFormSubmitButton"] {{
     box-sizing: border-box !important;
 }}
 
-/* Segmented control — frosted glass tray, full card width */
+/* Segmented control — frosted white glass tray on marble */
 {_AUTH_SEG_TRAY} {{
     display: flex !important;
     flex-direction: row !important;
@@ -585,15 +654,15 @@ html:has(.auth-marker) .st-key-auth_card [data-testid="stFormSubmitButton"] {{
     background: var(--auth-glass-tray) !important;
     background-color: var(--auth-glass-tray) !important;
     background-image: none !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border: 1px solid rgba(80, 76, 68, 0.20) !important;
     border-radius: 12px !important;
     padding: 4px !important;
     gap: 4px !important;
-    backdrop-filter: blur(16px) !important;
-    -webkit-backdrop-filter: blur(16px) !important;
+    backdrop-filter: blur(18px) saturate(140%) !important;
+    -webkit-backdrop-filter: blur(18px) saturate(140%) !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.06),
-        0 4px 20px rgba(0, 0, 0, 0.2) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.75),
+        0 6px 22px rgba(30, 26, 20, 0.10) !important;
 }}
 
 {_AUTH_SEG_BTN} {{
@@ -605,19 +674,19 @@ html:has(.auth-marker) .st-key-auth_card [data-testid="stFormSubmitButton"] {{
     height: var(--auth-seg-btn-h) !important;
     margin: 0 !important;
     padding: 0 20px !important;
-    border: 1px solid var(--auth-glass-border) !important;
+    border: 1px solid transparent !important;
     outline: none !important;
     border-radius: 8px !important;
-    font-size: 14px !important;
+    font-size: 13px !important;
     font-weight: 600 !important;
+    letter-spacing: 0.08em !important;
+    text-transform: uppercase !important;
     line-height: 1 !important;
     color: var(--auth-glass-inactive-text) !important;
-    background: var(--auth-glass-bg) !important;
-    background-color: var(--auth-glass-bg) !important;
+    background: transparent !important;
+    background-color: transparent !important;
     background-image: none !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
-    backdrop-filter: var(--auth-glass-blur) !important;
-    -webkit-backdrop-filter: var(--auth-glass-blur) !important;
+    box-shadow: none !important;
     transform: none !important;
     transition:
         background 0.18s ease,
@@ -627,14 +696,12 @@ html:has(.auth-marker) .st-key-auth_card [data-testid="stFormSubmitButton"] {{
 }}
 
 {_AUTH_SEG_BTN}:hover:not([aria-selected="true"]) {{
-    background: rgba(255, 255, 255, 0.1) !important;
-    background-color: rgba(255, 255, 255, 0.1) !important;
+    background: rgba(255, 255, 255, 0.55) !important;
+    background-color: rgba(255, 255, 255, 0.55) !important;
     background-image: none !important;
     color: var(--auth-text) !important;
-    border-color: var(--auth-glass-border-hover) !important;
-    box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.1),
-        0 0 16px rgba(139, 92, 246, 0.28) !important;
+    border-color: rgba(80, 76, 68, 0.22) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
     transform: none !important;
 }}
 
@@ -645,14 +712,15 @@ html:has(.auth-marker) .st-key-auth_card [data-testid="stFormSubmitButton"] {{
 
 {_AUTH_SEG_BTN}[aria-selected="true"] {{
     border: 1px solid transparent !important;
-    color: var(--auth-text) !important;
+    color: #fafaf6 !important;
     background:
         linear-gradient(var(--auth-glass-active-fill), var(--auth-glass-active-fill)) padding-box,
         var(--auth-glass-border-grad) border-box !important;
     background-color: transparent !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.12),
-        0 0 22px rgba(139, 92, 246, 0.22) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.14),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.5),
+        0 8px 22px rgba(20, 20, 18, 0.35) !important;
     transform: none !important;
 }}
 
@@ -673,54 +741,56 @@ html:has(.auth-marker) {_AUTH_SCOPE} .st-key-auth_card .st-key-auth_login_form [
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: 6px !important;
+    gap: 10px !important;
     width: 100% !important;
     min-height: var(--auth-submit-h) !important;
     height: auto !important;
-    padding: 12px 20px !important;
+    padding: 14px 22px !important;
     border: 1px solid transparent !important;
     border-radius: 12px !important;
     background:
         var(--auth-glass-submit-fill) padding-box,
         var(--auth-glass-border-grad) border-box !important;
     background-color: transparent !important;
-    color: var(--auth-text) !important;
-    font-size: 14px !important;
+    color: #fafaf6 !important;
+    font-size: 13px !important;
     font-weight: 600 !important;
-    letter-spacing: 0.01em !important;
-    backdrop-filter: blur(16px) !important;
-    -webkit-backdrop-filter: blur(16px) !important;
+    letter-spacing: 0.16em !important;
+    text-transform: uppercase !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.12),
-        0 0 22px rgba(139, 92, 246, 0.18),
-        0 4px 16px rgba(0, 0, 0, 0.2) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.15),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.5),
+        0 12px 30px rgba(20, 20, 18, 0.34),
+        0 3px 10px rgba(20, 20, 18, 0.18) !important;
     transform: none !important;
     transition:
         background 0.18s ease,
         box-shadow 0.18s ease,
-        transform 0.12s ease !important;
+        transform 0.12s ease,
+        border-color 0.18s ease !important;
 }}
 
 {_AUTH_SUBMIT_BTN}::after {{
     content: "›" !important;
-    font-size: 18px !important;
+    font-size: 20px !important;
     line-height: 1 !important;
-    opacity: 0.88 !important;
+    opacity: 0.95 !important;
     transform: translateY(-1px) !important;
 }}
 
 {_AUTH_SUBMIT_BTN}:hover {{
     background:
-        linear-gradient(rgba(139, 92, 246, 0.24), rgba(99, 102, 241, 0.16)) padding-box,
-        linear-gradient(90deg, rgba(167, 139, 250, 0.85), rgba(129, 140, 248, 0.85)) border-box !important;
+        linear-gradient(180deg, rgba(6, 6, 5, 1), rgba(46, 44, 40, 1)) padding-box,
+        linear-gradient(90deg, rgba(50, 46, 40, 0.9), rgba(160, 154, 142, 0.7)) border-box !important;
     background-color: transparent !important;
     border-color: transparent !important;
-    color: var(--auth-text) !important;
+    color: #ffffff !important;
     transform: translateY(-1px) !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.16),
-        0 0 32px rgba(139, 92, 246, 0.38),
-        0 6px 20px rgba(0, 0, 0, 0.26) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.22),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.6),
+        0 18px 36px rgba(20, 20, 18, 0.42),
+        0 4px 12px rgba(20, 20, 18, 0.22) !important;
 }}
 
 {_AUTH_SUBMIT_BTN}:active {{
@@ -728,12 +798,12 @@ html:has(.auth-marker) {_AUTH_SCOPE} .st-key-auth_card .st-key-auth_login_form [
 }}
 
 {_AUTH_SUBMIT_BTN}:disabled {{
-    opacity: 0.45 !important;
-    background: rgba(255, 255, 255, 0.04) !important;
+    opacity: 0.55 !important;
+    background: rgba(80, 76, 68, 0.18) !important;
     background-image: none !important;
-    background-color: rgba(255, 255, 255, 0.04) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    color: rgba(255, 255, 255, 0.55) !important;
+    background-color: rgba(80, 76, 68, 0.18) !important;
+    border: 1px solid rgba(80, 76, 68, 0.24) !important;
+    color: rgba(20, 20, 18, 0.55) !important;
     box-shadow: none !important;
     transform: none !important;
     cursor: not-allowed !important;
@@ -745,13 +815,19 @@ html:has(.auth-marker) {_AUTH_SCOPE} .st-key-auth_card .st-key-auth_login_form [
 
 {_AUTH_SUBMIT_BTN} p {{
     margin: 0 !important;
-    color: var(--auth-text) !important;
-    font-size: 14px !important;
+    color: #fafaf6 !important;
+    font-size: 13px !important;
     font-weight: 600 !important;
+    letter-spacing: 0.16em !important;
+    text-transform: uppercase !important;
+}}
+
+{_AUTH_SUBMIT_BTN}:hover p {{
+    color: #ffffff !important;
 }}
 
 {_AUTH_SUBMIT_BTN}:disabled p {{
-    color: rgba(255, 255, 255, 0.55) !important;
+    color: rgba(20, 20, 18, 0.55) !important;
 }}
 """
 
@@ -994,7 +1070,12 @@ def render_auth() -> None:
         st.session_state.auth_mode_seg = "Registrieren" if _get_mode() == "register" else "Anmelden"
 
     st.markdown(
-        '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">',
+        '<link rel="preconnect" href="https://fonts.googleapis.com">'
+        '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
+        '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?'
+        'family=Inter:wght@400;500;600;700'
+        '&family=Playfair+Display:ital,wght@0,600;0,700;0,800;0,900;1,700;1,800'
+        '&display=swap">',
         unsafe_allow_html=True,
     )
     inject_css(_AUTH_CSS)
