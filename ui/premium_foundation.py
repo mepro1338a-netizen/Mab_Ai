@@ -13,8 +13,8 @@ BETA_GLOBAL_CSS = """
 div[data-testid="stAppViewContainer"],
 div[data-testid="stAppViewContainer"] > section,
 div[data-testid="stAppViewContainer"] > section > div {
-    background: #09090b !important;
-    background-color: #09090b !important;
+    background: transparent !important;
+    background-color: transparent !important;
 }
 div[data-testid="stVerticalBlockBorderWrapper"] > div {
     background: transparent !important;

@@ -4,7 +4,7 @@ from pathlib import Path
 import streamlit as st
 
 from ui.app_shell import inject_global_ui
-from ui.styles import MB_APP_BACKGROUND
+from ui.styles import MB_MARBLE_BACKGROUND
 
 
 ASSET_DIR = Path("assets")
@@ -43,10 +43,8 @@ button[title="Fullscreen"],
 html, body, .stApp, .main,
 [data-testid="stAppViewContainer"],
 [data-testid="stAppViewBlockContainer"] {{
-    background:
-        radial-gradient(circle at top left, rgba(168,85,247,.10), transparent 24%),
-        radial-gradient(circle at top right, rgba(96,165,250,.08), transparent 26%),
-        linear-gradient(180deg, #050816 0%, #081226 48%, #050711 100%) !important;
+    background: {MB_MARBLE_BACKGROUND} !important;
+    background-color: #141416 !important;
     background-attachment: fixed !important;
 }}
 

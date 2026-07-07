@@ -38,10 +38,41 @@ MB_THEME_VARS = """
     --mb-label-weight: 700;
     --mb-label-spacing: 0.12em;
     --mb-label-color: #a78bfa;
+    /* Nero Marquina marble tokens — shared with pages/auth.py `.auth-bg` recipe */
+    --mb-marble-base: #141416;
+    --mb-marble-hi:   #2c2c30;
+    --mb-marble-lo:   #050506;
+    --mb-marble-vein: rgba(220, 220, 225, 0.10);
+    --mb-marble-vein-strong: rgba(240, 240, 245, 0.16);
 }
 """
 
+# Legacy sidebar/base background — kept for the sidebar (imported by ui/sidebar.py).
 MB_APP_BACKGROUND = "linear-gradient(180deg, #09090b 0%, #18181b 42%, #09090b 100%)"
+
+# Global Nero-Marquina marble background — nine-layer gradient stack lifted from
+# pages/auth.py `.auth-bg`, adapted as a single `background:` shorthand so it can
+# be applied to `.stApp` / view containers on logged-in pages. Paired with
+# `background-attachment: fixed` so every parent + child paints an identical
+# viewport-anchored pattern (no tiling artefacts on scroll).
+MB_MARBLE_BACKGROUND = (
+    "linear-gradient(112deg,"
+    " transparent 41.4%, var(--mb-marble-vein-strong) 41.7%, transparent 42.0%,"
+    " transparent 45.4%, var(--mb-marble-vein) 45.7%, transparent 46.0%),"
+    "linear-gradient(82deg,"
+    " transparent 64.4%, var(--mb-marble-vein) 64.7%, transparent 65.0%,"
+    " transparent 78.4%, var(--mb-marble-vein-strong) 78.7%, transparent 79.0%),"
+    "linear-gradient(148deg,"
+    " transparent 11.8%, var(--mb-marble-vein) 12.2%, transparent 12.6%,"
+    " transparent 88.4%, var(--mb-marble-vein) 88.8%, transparent 89.2%),"
+    "radial-gradient(ellipse 46% 42% at 22% 28%, rgba(255,255,255,0.06), transparent 65%),"
+    "radial-gradient(ellipse 38% 32% at 78% 18%, rgba(255,255,255,0.05), transparent 70%),"
+    "radial-gradient(ellipse 52% 42% at 55% 82%, rgba(255,255,255,0.04), transparent 65%),"
+    "radial-gradient(ellipse 32% 26% at 12% 75%, rgba(0,0,0,0.45), transparent 70%),"
+    "radial-gradient(ellipse 42% 36% at 92% 88%, rgba(0,0,0,0.55), transparent 65%),"
+    "linear-gradient(135deg,"
+    " var(--mb-marble-hi) 0%, var(--mb-marble-base) 45%, var(--mb-marble-lo) 100%)"
+)
 
 AUTH_EXTRA_VARS = """
 :root {
@@ -53,7 +84,7 @@ STREAMLIT_THEME_VARS = """
 .stApp,
 .stApp[data-theme="light"],
 .stApp[data-theme="dark"] {
-    --background-color: #09090b !important;
+    --background-color: #141416 !important;
     --secondary-background-color: #18181b !important;
     --text-color: #fafafa !important;
     --primary-color: #7c3aed !important;
@@ -168,7 +199,7 @@ def streamlit_force_dark_css() -> str:
         + """
 html, body {
     color-scheme: dark !important;
-    background-color: #09090b !important;
+    background-color: #141416 !important;
 }
 
 .stApp,
@@ -186,9 +217,10 @@ section.main .block-container,
 .main,
 .main .block-container {
     background: """
-        + MB_APP_BACKGROUND
+        + MB_MARBLE_BACKGROUND
         + """ !important;
-    background-color: #09090b !important;
+    background-color: #141416 !important;
+    background-attachment: fixed !important;
     color: #e4e4e7 !important;
 }
 
