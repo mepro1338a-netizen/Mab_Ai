@@ -16,16 +16,16 @@ _DEFAULT_COUNTRY = "Deutschland"
 _AUTH_CSS = """
 /* MaByte Auth — Marble edition */
 :root {
-    /* Marble palette (Carrara/Statuario inspired) */
-    --auth-marble-base: #ebe7e0;
-    --auth-marble-hi: #f6f3ee;
-    --auth-marble-mid: #d5d0c7;
-    --auth-marble-lo: #b6b1a7;
-    --auth-vein: rgba(90, 84, 74, 0.10);
-    --auth-vein-strong: rgba(48, 44, 38, 0.16);
+    /* Marble palette (cool concrete grey) */
+    --auth-marble-base: #c5c3c0;
+    --auth-marble-hi: #d8d6d3;
+    --auth-marble-mid: #a8a6a3;
+    --auth-marble-lo: #8f8d8a;
+    --auth-vein: rgba(60, 60, 58, 0.14);
+    --auth-vein-strong: rgba(30, 30, 28, 0.20);
 
     /* Neutral tokens (legacy names preserved for cross-block usage) */
-    --auth-bg: #ebe7e0;
+    --auth-bg: #c5c3c0;
     --auth-surface: rgba(255, 255, 255, 0.62);
     --auth-line: rgba(80, 76, 68, 0.18);
     --auth-text: #141414;
@@ -113,11 +113,11 @@ html:has(.auth-marker) [data-testid="stHeader"] {
         linear-gradient(148deg,
             transparent 11.8%, var(--auth-vein) 12.2%, transparent 12.6%,
             transparent 88.4%, var(--auth-vein) 88.8%, transparent 89.2%),
-        radial-gradient(ellipse 46% 42% at 22% 28%, rgba(255, 255, 255, 0.70), transparent 65%),
-        radial-gradient(ellipse 38% 32% at 78% 18%, rgba(255, 255, 255, 0.55), transparent 70%),
-        radial-gradient(ellipse 52% 42% at 55% 82%, rgba(255, 255, 255, 0.50), transparent 65%),
-        radial-gradient(ellipse 32% 26% at 12% 75%, rgba(150, 143, 132, 0.32), transparent 70%),
-        radial-gradient(ellipse 42% 36% at 92% 88%, rgba(140, 133, 122, 0.36), transparent 65%),
+        radial-gradient(ellipse 46% 42% at 22% 28%, rgba(255, 255, 255, 0.42), transparent 65%),
+        radial-gradient(ellipse 38% 32% at 78% 18%, rgba(255, 255, 255, 0.32), transparent 70%),
+        radial-gradient(ellipse 52% 42% at 55% 82%, rgba(255, 255, 255, 0.28), transparent 65%),
+        radial-gradient(ellipse 32% 26% at 12% 75%, rgba(80, 80, 78, 0.34), transparent 70%),
+        radial-gradient(ellipse 42% 36% at 92% 88%, rgba(70, 70, 68, 0.38), transparent 65%),
         linear-gradient(135deg,
             var(--auth-marble-hi) 0%,
             var(--auth-marble-base) 45%,
@@ -548,7 +548,7 @@ html:has(.auth-marker) .st-key-auth_card [data-testid="stMarkdownContainer"] {
 }
 
 html:has(.auth-marker) .stApp {
-    --background-color: #ebe7e0 !important;
+    --background-color: #c5c3c0 !important;
 }
 
 html:has(.auth-marker) .st-key-auth_card,
