@@ -16,47 +16,47 @@ _DEFAULT_COUNTRY = "Deutschland"
 _AUTH_CSS = """
 /* MaByte Auth — Marble edition */
 :root {
-    /* Marble palette (cool concrete grey) */
-    --auth-marble-base: #c5c3c0;
-    --auth-marble-hi: #d8d6d3;
-    --auth-marble-mid: #a8a6a3;
-    --auth-marble-lo: #8f8d8a;
-    --auth-vein: rgba(60, 60, 58, 0.14);
-    --auth-vein-strong: rgba(30, 30, 28, 0.20);
+    /* Marble palette (Nero Marquina — near-black polished stone) */
+    --auth-marble-base: #141416;
+    --auth-marble-hi: #2c2c30;
+    --auth-marble-mid: #0f0f11;
+    --auth-marble-lo: #050506;
+    --auth-vein: rgba(220, 220, 225, 0.10);
+    --auth-vein-strong: rgba(240, 240, 245, 0.16);
 
-    /* Neutral tokens (legacy names preserved for cross-block usage) */
-    --auth-bg: #c5c3c0;
-    --auth-surface: rgba(255, 255, 255, 0.62);
-    --auth-line: rgba(80, 76, 68, 0.18);
-    --auth-text: #141414;
-    --auth-muted: #5a564f;
-    --auth-hint: #8a857c;
-    --auth-field: rgba(255, 255, 255, 0.72);
-    --auth-field-line: rgba(80, 76, 68, 0.22);
-    --auth-accent: #1a1a1a;
-    --auth-accent-hover: #050505;
-    --auth-violet: #4a4640;
+    /* Neutral tokens (light on dark; legacy names preserved) */
+    --auth-bg: #141416;
+    --auth-surface: rgba(20, 20, 22, 0.55);
+    --auth-line: rgba(255, 255, 255, 0.08);
+    --auth-text: #f4f4f5;
+    --auth-muted: #a1a1a5;
+    --auth-hint: #71717a;
+    --auth-field: rgba(20, 20, 22, 0.55);
+    --auth-field-line: rgba(255, 255, 255, 0.14);
+    --auth-accent: #f4f4f5;
+    --auth-accent-hover: #ffffff;
+    --auth-violet: #a1a1a5;
 
-    /* Glass tokens (graphite on marble) */
-    --auth-glass-bg: rgba(255, 255, 255, 0.55);
-    --auth-glass-tray: rgba(255, 255, 255, 0.42);
-    --auth-glass-inactive-text: #4a4640;
-    --auth-glass-active-fill: rgba(20, 20, 18, 0.95);
+    /* Glass tokens (graphite pill + silver-white glow on near-black marble) */
+    --auth-glass-bg: rgba(20, 20, 22, 0.55);
+    --auth-glass-tray: rgba(10, 10, 12, 0.55);
+    --auth-glass-inactive-text: #a1a1a5;
+    --auth-glass-active-fill: rgba(48, 48, 52, 0.95);
     --auth-glass-border-grad: linear-gradient(
         90deg,
-        rgba(70, 66, 58, 0.7),
-        rgba(140, 134, 122, 0.6)
+        rgba(240, 240, 245, 0.55),
+        rgba(160, 160, 170, 0.30)
     );
     --auth-glass-submit-fill: linear-gradient(
         180deg,
-        rgba(20, 20, 18, 0.98),
-        rgba(56, 54, 50, 0.98)
+        rgba(38, 38, 42, 0.98),
+        rgba(70, 70, 76, 0.98)
     );
 
     --auth-seg-btn-h: 48px;
     --auth-submit-h: 52px;
-    --auth-glass-border: rgba(80, 76, 68, 0.22);
-    --auth-glass-border-hover: rgba(20, 20, 18, 0.55);
+    --auth-glass-border: rgba(255, 255, 255, 0.14);
+    --auth-glass-border-hover: rgba(255, 255, 255, 0.55);
     --auth-glass-blur: blur(18px);
     --auth-radius: 10px;
     --auth-input-h: 44px;
@@ -113,15 +113,15 @@ html:has(.auth-marker) [data-testid="stHeader"] {
         linear-gradient(148deg,
             transparent 11.8%, var(--auth-vein) 12.2%, transparent 12.6%,
             transparent 88.4%, var(--auth-vein) 88.8%, transparent 89.2%),
-        radial-gradient(ellipse 46% 42% at 22% 28%, rgba(255, 255, 255, 0.42), transparent 65%),
-        radial-gradient(ellipse 38% 32% at 78% 18%, rgba(255, 255, 255, 0.32), transparent 70%),
-        radial-gradient(ellipse 52% 42% at 55% 82%, rgba(255, 255, 255, 0.28), transparent 65%),
-        radial-gradient(ellipse 32% 26% at 12% 75%, rgba(80, 80, 78, 0.34), transparent 70%),
-        radial-gradient(ellipse 42% 36% at 92% 88%, rgba(70, 70, 68, 0.38), transparent 65%),
+        radial-gradient(ellipse 46% 42% at 22% 28%, rgba(255, 255, 255, 0.06), transparent 65%),
+        radial-gradient(ellipse 38% 32% at 78% 18%, rgba(255, 255, 255, 0.05), transparent 70%),
+        radial-gradient(ellipse 52% 42% at 55% 82%, rgba(255, 255, 255, 0.04), transparent 65%),
+        radial-gradient(ellipse 32% 26% at 12% 75%, rgba(0, 0, 0, 0.45), transparent 70%),
+        radial-gradient(ellipse 42% 36% at 92% 88%, rgba(0, 0, 0, 0.55), transparent 65%),
         linear-gradient(135deg,
             var(--auth-marble-hi) 0%,
             var(--auth-marble-base) 45%,
-            var(--auth-marble-mid) 100%);
+            var(--auth-marble-lo) 100%);
 }
 
 html:has(.auth-marker) [data-testid="stAppViewContainer"],
@@ -165,9 +165,9 @@ html:has(.auth-marker) [data-testid="stMainBlockContainer"] {
     gap: 14px;
     box-sizing: border-box;
     padding: 28px clamp(6px, 1.2vw, 16px);
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0));
-    border-bottom: 1px solid rgba(80, 76, 68, 0.14);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(0, 0, 0, 0.20));
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
     overflow: hidden;
 }
 
@@ -182,9 +182,9 @@ html:has(.auth-marker) [data-testid="stMainBlockContainer"] {
     border: 1px solid transparent;
     border-radius: 999px;
     background:
-        linear-gradient(rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.7)) padding-box,
-        linear-gradient(90deg, rgba(70, 66, 58, 0.6), rgba(140, 134, 122, 0.5)) border-box;
-    color: #1a1a1a;
+        linear-gradient(rgba(30, 30, 34, 0.85), rgba(18, 18, 22, 0.75)) padding-box,
+        linear-gradient(90deg, rgba(240, 240, 245, 0.55), rgba(160, 160, 170, 0.30)) border-box;
+    color: #f4f4f5;
     font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     font-size: 12px;
     font-weight: 700;
@@ -193,8 +193,8 @@ html:has(.auth-marker) [data-testid="stMainBlockContainer"] {
     line-height: 1;
     white-space: nowrap;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.7),
-        0 2px 12px rgba(30, 26, 20, 0.10);
+        inset 0 1px 0 rgba(255, 255, 255, 0.10),
+        0 2px 12px rgba(0, 0, 0, 0.45);
 }
 
 .auth-early-pill::before {
@@ -203,8 +203,8 @@ html:has(.auth-marker) [data-testid="stMainBlockContainer"] {
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: #1a1a1a;
-    box-shadow: 0 0 6px rgba(30, 26, 20, 0.35);
+    background: #f4f4f5;
+    box-shadow: 0 0 6px rgba(255, 255, 255, 0.45);
 }
 
 .auth-slogan-line {
@@ -223,7 +223,7 @@ html:has(.auth-marker) [data-testid="stMainBlockContainer"] {
     font-weight: 800;
     font-style: normal;
     letter-spacing: -0.01em;
-    background: linear-gradient(180deg, #050505 0%, #262624 55%, #4a4640 100%);
+    background: linear-gradient(180deg, #f4f4f5 0%, #d0d0d4 55%, #8a8a90 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -259,15 +259,15 @@ html:has(.auth-marker) .st-key-auth_card > [data-testid="stVerticalBlock"]:has(.
     width: 100% !important;
     min-width: min(var(--auth-w), calc(100% - 32px)) !important;
     border-radius: 16px !important;
-    border: 1px solid rgba(255, 255, 255, 0.65) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
     background: var(--auth-surface) !important;
     backdrop-filter: blur(28px) saturate(140%) !important;
     -webkit-backdrop-filter: blur(28px) saturate(140%) !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.75),
-        inset 0 -1px 0 rgba(80, 76, 68, 0.08),
-        0 24px 44px -20px rgba(30, 26, 20, 0.32),
-        0 4px 14px rgba(30, 26, 20, 0.08) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.08),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.40),
+        0 30px 60px -20px rgba(0, 0, 0, 0.70),
+        0 8px 22px rgba(0, 0, 0, 0.40) !important;
     padding: var(--auth-pad) !important;
     gap: 0 !important;
     align-items: stretch !important;
@@ -393,8 +393,8 @@ html:has(.auth-marker) .st-key-auth_card [data-testid="stTextInput"] input {
     backdrop-filter: blur(8px) !important;
     -webkit-backdrop-filter: blur(8px) !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.65),
-        inset 0 -1px 0 rgba(80, 76, 68, 0.05) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.06),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.30) !important;
     transition:
         border-color 0.15s ease,
         box-shadow 0.15s ease,
@@ -413,16 +413,16 @@ html:has(.auth-marker) .st-key-auth_card [data-testid="stTextInput"] input::plac
 }
 
 html:has(.auth-marker) .st-key-auth_card [data-testid="stTextInput"] input:hover {
-    border-color: rgba(80, 76, 68, 0.36) !important;
-    background: rgba(255, 255, 255, 0.78) !important;
+    border-color: rgba(255, 255, 255, 0.30) !important;
+    background: rgba(30, 30, 34, 0.65) !important;
 }
 
 html:has(.auth-marker) .st-key-auth_card [data-testid="stTextInput"] input:focus {
-    border-color: rgba(20, 20, 18, 0.6) !important;
-    background: rgba(255, 255, 255, 0.86) !important;
+    border-color: rgba(255, 255, 255, 0.60) !important;
+    background: rgba(30, 30, 34, 0.75) !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.7),
-        0 0 0 3px rgba(20, 20, 18, 0.09) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.10),
+        0 0 0 3px rgba(255, 255, 255, 0.10) !important;
     outline: none !important;
 }
 
@@ -444,14 +444,14 @@ html:has(.auth-marker) .stApp section.main .st-key-auth_card [data-testid="stTex
     min-height: 32px !important;
     max-height: 32px !important;
     padding: 0 !important;
-    border: 1px solid rgba(80, 76, 68, 0.22) !important;
+    border: 1px solid rgba(255, 255, 255, 0.14) !important;
     border-radius: 999px !important;
-    background: rgba(255, 255, 255, 0.6) !important;
+    background: rgba(30, 30, 34, 0.60) !important;
     background-image: none !important;
     color: var(--auth-muted) !important;
     backdrop-filter: var(--auth-glass-blur) !important;
     -webkit-backdrop-filter: var(--auth-glass-blur) !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
     transition:
         background 0.15s ease,
         border-color 0.15s ease,
@@ -461,19 +461,19 @@ html:has(.auth-marker) .stApp section.main .st-key-auth_card [data-testid="stTex
 
 html:has(.auth-marker) .stApp section.main .st-key-auth_card [data-testid="stTextInput"] [data-testid="stButton"] button:hover,
 html:has(.auth-marker) .stApp section.main .st-key-auth_card [data-testid="stTextInput"] button[data-testid="stBaseButton-tertiary"]:hover {
-    background: rgba(255, 255, 255, 0.9) !important;
-    border-color: rgba(20, 20, 18, 0.45) !important;
+    background: rgba(48, 48, 52, 0.90) !important;
+    border-color: rgba(255, 255, 255, 0.45) !important;
     color: var(--auth-text) !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.85),
-        0 2px 8px rgba(30, 26, 20, 0.12) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.10),
+        0 2px 8px rgba(0, 0, 0, 0.45) !important;
 }
 
 html:has(.auth-marker) .stApp section.main .st-key-auth_card [data-testid="stTextInput"] [data-testid="stButton"] button:disabled,
 html:has(.auth-marker) .stApp section.main .st-key-auth_card [data-testid="stTextInput"] button[data-testid="stBaseButton-tertiary"]:disabled {
     opacity: 0.4 !important;
-    background: rgba(255, 255, 255, 0.4) !important;
-    border-color: rgba(80, 76, 68, 0.12) !important;
+    background: rgba(20, 20, 22, 0.35) !important;
+    border-color: rgba(255, 255, 255, 0.06) !important;
     box-shadow: none !important;
     transform: none !important;
 }
@@ -501,17 +501,17 @@ html:has(.auth-marker) .stApp section.main .st-key-auth_card button[data-testid=
     font-weight: 600 !important;
     backdrop-filter: var(--auth-glass-blur) !important;
     -webkit-backdrop-filter: var(--auth-glass-blur) !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
 }
 
 html:has(.auth-marker) .stApp section.main .st-key-auth_card .stButton > button:not([kind="primary"]):hover,
 html:has(.auth-marker) .stApp section.main .st-key-auth_card .stButton > button[kind="secondary"]:hover,
 html:has(.auth-marker) .stApp section.main .st-key-auth_card button[data-testid="stBaseButton-secondary"]:hover {
-    background: rgba(255, 255, 255, 0.72) !important;
+    background: rgba(38, 38, 42, 0.75) !important;
     border-color: var(--auth-glass-border-hover) !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.85),
-        0 4px 14px rgba(30, 26, 20, 0.14) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.10),
+        0 4px 14px rgba(0, 0, 0, 0.45) !important;
     transform: translateY(-1px) !important;
 }
 
@@ -520,8 +520,8 @@ html:has(.auth-marker) .st-key-auth_card [data-testid="stAlert"] {
     font-size: 14px !important;
     margin: 0 0 var(--s2) !important;
     width: 100% !important;
-    border: 1px solid rgba(80, 76, 68, 0.18) !important;
-    background: rgba(255, 255, 255, 0.55) !important;
+    border: 1px solid rgba(255, 255, 255, 0.10) !important;
+    background: rgba(20, 20, 22, 0.55) !important;
     color: var(--auth-text) !important;
 }
 
@@ -538,7 +538,7 @@ html:has(.auth-marker) .st-key-auth_card [data-testid="stMarkdownContainer"] {
 .auth-footer {
     margin: 20px 0 0;
     padding-top: var(--s2);
-    border-top: 1px solid rgba(80, 76, 68, 0.14);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
     text-align: center;
     font-size: 10px;
     font-weight: 600;
@@ -548,7 +548,7 @@ html:has(.auth-marker) .st-key-auth_card [data-testid="stMarkdownContainer"] {
 }
 
 html:has(.auth-marker) .stApp {
-    --background-color: #c5c3c0 !important;
+    --background-color: #141416 !important;
 }
 
 html:has(.auth-marker) .st-key-auth_card,
@@ -654,15 +654,16 @@ html:has(.auth-marker) .st-key-auth_card [data-testid="stFormSubmitButton"] {{
     background: var(--auth-glass-tray) !important;
     background-color: var(--auth-glass-tray) !important;
     background-image: none !important;
-    border: 1px solid rgba(80, 76, 68, 0.20) !important;
+    border: 1px solid rgba(255, 255, 255, 0.10) !important;
     border-radius: 12px !important;
     padding: 4px !important;
     gap: 4px !important;
     backdrop-filter: blur(18px) saturate(140%) !important;
     -webkit-backdrop-filter: blur(18px) saturate(140%) !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.75),
-        0 6px 22px rgba(30, 26, 20, 0.10) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.06),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.35),
+        0 6px 22px rgba(0, 0, 0, 0.40) !important;
 }}
 
 {_AUTH_SEG_BTN} {{
@@ -696,12 +697,12 @@ html:has(.auth-marker) .st-key-auth_card [data-testid="stFormSubmitButton"] {{
 }}
 
 {_AUTH_SEG_BTN}:hover:not([aria-selected="true"]) {{
-    background: rgba(255, 255, 255, 0.55) !important;
-    background-color: rgba(255, 255, 255, 0.55) !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+    background-color: rgba(255, 255, 255, 0.05) !important;
     background-image: none !important;
     color: var(--auth-text) !important;
-    border-color: rgba(80, 76, 68, 0.22) !important;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+    border-color: rgba(255, 255, 255, 0.18) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
     transform: none !important;
 }}
 
@@ -718,9 +719,10 @@ html:has(.auth-marker) .st-key-auth_card [data-testid="stFormSubmitButton"] {{
         var(--auth-glass-border-grad) border-box !important;
     background-color: transparent !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.14),
-        inset 0 -1px 0 rgba(0, 0, 0, 0.5),
-        0 8px 22px rgba(20, 20, 18, 0.35) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.18),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.55),
+        0 8px 22px rgba(0, 0, 0, 0.55),
+        0 0 0 1px rgba(240, 240, 245, 0.06) !important;
     transform: none !important;
 }}
 
@@ -758,10 +760,10 @@ html:has(.auth-marker) {_AUTH_SCOPE} .st-key-auth_card .st-key-auth_login_form [
     letter-spacing: 0.16em !important;
     text-transform: uppercase !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.15),
-        inset 0 -1px 0 rgba(0, 0, 0, 0.5),
-        0 12px 30px rgba(20, 20, 18, 0.34),
-        0 3px 10px rgba(20, 20, 18, 0.18) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.18),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.55),
+        0 12px 30px rgba(0, 0, 0, 0.55),
+        0 3px 10px rgba(0, 0, 0, 0.40) !important;
     transform: none !important;
     transition:
         background 0.18s ease,
@@ -780,17 +782,18 @@ html:has(.auth-marker) {_AUTH_SCOPE} .st-key-auth_card .st-key-auth_login_form [
 
 {_AUTH_SUBMIT_BTN}:hover {{
     background:
-        linear-gradient(180deg, rgba(6, 6, 5, 1), rgba(46, 44, 40, 1)) padding-box,
-        linear-gradient(90deg, rgba(50, 46, 40, 0.9), rgba(160, 154, 142, 0.7)) border-box !important;
+        linear-gradient(180deg, rgba(56, 56, 60, 1), rgba(96, 96, 102, 1)) padding-box,
+        linear-gradient(90deg, rgba(240, 240, 245, 0.75), rgba(180, 180, 190, 0.45)) border-box !important;
     background-color: transparent !important;
     border-color: transparent !important;
     color: #ffffff !important;
     transform: translateY(-1px) !important;
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.22),
-        inset 0 -1px 0 rgba(0, 0, 0, 0.6),
-        0 18px 36px rgba(20, 20, 18, 0.42),
-        0 4px 12px rgba(20, 20, 18, 0.22) !important;
+        inset 0 1px 0 rgba(255, 255, 255, 0.28),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.60),
+        0 18px 36px rgba(0, 0, 0, 0.60),
+        0 4px 12px rgba(0, 0, 0, 0.40),
+        0 0 0 1px rgba(240, 240, 245, 0.08) !important;
 }}
 
 {_AUTH_SUBMIT_BTN}:active {{
@@ -799,11 +802,11 @@ html:has(.auth-marker) {_AUTH_SCOPE} .st-key-auth_card .st-key-auth_login_form [
 
 {_AUTH_SUBMIT_BTN}:disabled {{
     opacity: 0.55 !important;
-    background: rgba(80, 76, 68, 0.18) !important;
+    background: rgba(30, 30, 34, 0.55) !important;
     background-image: none !important;
-    background-color: rgba(80, 76, 68, 0.18) !important;
-    border: 1px solid rgba(80, 76, 68, 0.24) !important;
-    color: rgba(20, 20, 18, 0.55) !important;
+    background-color: rgba(30, 30, 34, 0.55) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    color: rgba(244, 244, 245, 0.55) !important;
     box-shadow: none !important;
     transform: none !important;
     cursor: not-allowed !important;
@@ -827,7 +830,7 @@ html:has(.auth-marker) {_AUTH_SCOPE} .st-key-auth_card .st-key-auth_login_form [
 }}
 
 {_AUTH_SUBMIT_BTN}:disabled p {{
-    color: rgba(20, 20, 18, 0.55) !important;
+    color: rgba(244, 244, 245, 0.55) !important;
 }}
 """
 
