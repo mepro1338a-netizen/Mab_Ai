@@ -32,7 +32,16 @@ _TEXT = "#d4d4d8"
 _BTN_H = 36
 
 NAV_SECTIONS: list[tuple[str, list[tuple[str, str]]]] = [
-    ("Workspace", [("Dashboard", "home"), ("AI Chat", "chat"), ("Football", "football"), ("Automation", "automation_lab")]),
+    (
+        "Workspace",
+        [
+            ("Dashboard", "home"),
+            ("AI Chat", "chat"),
+            ("Football", "football"),
+            ("Trading", "trading"),
+            ("Automation", "automation_lab"),
+        ],
+    ),
     ("Create", [("Image", "image"), ("Video", "video"), ("Code", "coding")]),
     ("Account", [("Profile", "dashboard"), ("Premium", "premium")]),
 ]
@@ -61,6 +70,7 @@ _NAV_ICONS: dict[str, str] = {
     "home": ":material/grid_view:",
     "chat": ":material/chat_bubble:",
     "football": ":material/sports_soccer:",
+    "trading": ":material/candlestick_chart:",
     "automation_lab": ":material/account_tree:",
     "image": ":material/image:",
     "video": ":material/movie:",

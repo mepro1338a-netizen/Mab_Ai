@@ -28,6 +28,7 @@ from pages.premium import render_premium
 
 from pages.account import render_dashboard
 from pages.admin import render_admin
+from pages.trading import render_trading
 
 
 def render_football() -> None:
@@ -323,6 +324,7 @@ PAGE_HANDLERS = {
     "home": ("Dashboard", render_home),
     "chat": ("AI Chat", render_chat),
     "football": ("Football AI", render_football),
+    "trading": ("Trading", render_trading),
     "automation_lab": ("Content Automation", render_automation_lab),
     "coding": ("Code", lambda: render_media("coding")),
     "image": ("Image", lambda: render_media("image")),
